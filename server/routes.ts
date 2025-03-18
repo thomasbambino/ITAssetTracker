@@ -720,6 +720,507 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Software routes
+  app.get('/api/software', async (req: Request, res: Response) => {
+    try {
+      const software = await storage.getSoftware();
+      res.json(software);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching software" });
+    }
+  });
+
+  app.get('/api/software/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const softwareItem = await storage.getSoftwareById(id);
+      
+      if (!softwareItem) {
+        return res.status(404).json({ message: "Software not found" });
+      }
+      
+      // Get assignments for this software
+      const assignments = await storage.getSoftwareAssignments(id);
+      
+      res.json({ ...softwareItem, assignments });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching software details" });
+    }
+  });
+
+  app.post('/api/software', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertSoftwareSchema.parse(req.body);
+      const softwareItem = await storage.createSoftware(validatedData);
+      res.status(201).json(softwareItem);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid software data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating software" });
+    }
+  });
+
+  app.put('/api/software/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertSoftwareSchema.partial().parse(req.body);
+      
+      const softwareItem = await storage.updateSoftware(id, validatedData);
+      if (!softwareItem) {
+        return res.status(404).json({ message: "Software not found" });
+      }
+      
+      res.json(softwareItem);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid software data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating software" });
+    }
+  });
+
+  app.delete('/api/software/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSoftware(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Software not found or has active assignments" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting software" });
+    }
+  });
+
+  app.get('/api/software/status/:status', async (req: Request, res: Response) => {
+    try {
+      const status = req.params.status;
+      
+      if (!['active', 'expired', 'pending'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status. Must be one of: active, expired, pending" });
+      }
+      
+      const softwareItems = await storage.getSoftwareByStatus(status);
+      res.json(softwareItems);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching software by status" });
+    }
+  });
+
+  app.get('/api/software/expiring/:days', async (req: Request, res: Response) => {
+    try {
+      const days = parseInt(req.params.days);
+      
+      if (isNaN(days) || days < 1) {
+        return res.status(400).json({ message: "Days parameter must be a positive number" });
+      }
+      
+      const softwareItems = await storage.getSoftwareExpiringSoon(days);
+      res.json(softwareItems);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching expiring software" });
+    }
+  });
+
+  // Software Assignment routes
+  app.get('/api/software-assignments/software/:softwareId', async (req: Request, res: Response) => {
+    try {
+      const softwareId = parseInt(req.params.softwareId);
+      const assignments = await storage.getSoftwareAssignments(softwareId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching software assignments" });
+    }
+  });
+
+  app.get('/api/software-assignments/user/:userId', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const assignments = await storage.getSoftwareAssignmentsByUser(userId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching user software assignments" });
+    }
+  });
+
+  app.get('/api/software-assignments/device/:deviceId', async (req: Request, res: Response) => {
+    try {
+      const deviceId = parseInt(req.params.deviceId);
+      const assignments = await storage.getSoftwareAssignmentsByDevice(deviceId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching device software assignments" });
+    }
+  });
+
+  app.post('/api/software-assignments', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertSoftwareAssignmentSchema.parse(req.body);
+      const assignment = await storage.createSoftwareAssignment(validatedData);
+      res.status(201).json(assignment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid assignment data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating software assignment" });
+    }
+  });
+
+  app.put('/api/software-assignments/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertSoftwareAssignmentSchema.partial().parse(req.body);
+      
+      const assignment = await storage.updateSoftwareAssignment(id, validatedData);
+      if (!assignment) {
+        return res.status(404).json({ message: "Software assignment not found" });
+      }
+      
+      res.json(assignment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid assignment data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating software assignment" });
+    }
+  });
+
+  app.delete('/api/software-assignments/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSoftwareAssignment(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Software assignment not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting software assignment" });
+    }
+  });
+
+  // ===== Maintenance Records =====
+  // Get all maintenance records
+  app.get('/api/maintenance', async (req: Request, res: Response) => {
+    try {
+      const records = await storage.getMaintenanceRecords();
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching maintenance records" });
+    }
+  });
+
+  // Get scheduled maintenance
+  app.get('/api/maintenance/scheduled', async (req: Request, res: Response) => {
+    try {
+      const records = await storage.getScheduledMaintenance();
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching scheduled maintenance" });
+    }
+  });
+
+  // Get maintenance record by ID
+  app.get('/api/maintenance/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const record = await storage.getMaintenanceRecordById(id);
+      
+      if (!record) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      res.json(record);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching maintenance record" });
+    }
+  });
+
+  // Get maintenance records for device
+  app.get('/api/devices/:id/maintenance', async (req: Request, res: Response) => {
+    try {
+      const deviceId = parseInt(req.params.id);
+      const records = await storage.getMaintenanceRecordsByDevice(deviceId);
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching device maintenance records" });
+    }
+  });
+
+  // Create maintenance record
+  app.post('/api/maintenance', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertMaintenanceRecordSchema.parse(req.body);
+      const record = await storage.createMaintenanceRecord(validatedData);
+      res.status(201).json(record);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid maintenance data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating maintenance record" });
+    }
+  });
+
+  // Update maintenance record
+  app.put('/api/maintenance/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertMaintenanceRecordSchema.partial().parse(req.body);
+      
+      const record = await storage.updateMaintenanceRecord(id, validatedData);
+      if (!record) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      res.json(record);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid maintenance data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating maintenance record" });
+    }
+  });
+
+  // Delete maintenance record
+  app.delete('/api/maintenance/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMaintenanceRecord(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting maintenance record" });
+    }
+  });
+
+  // ===== QR Codes =====
+  // Get all QR codes
+  app.get('/api/qrcodes', async (req: Request, res: Response) => {
+    try {
+      const qrCodes = await storage.getQrCodes();
+      res.json(qrCodes);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching QR codes" });
+    }
+  });
+
+  // Get QR code by ID
+  app.get('/api/qrcodes/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const qrCode = await storage.getQrCodeById(id);
+      
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+      
+      res.json(qrCode);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching QR code" });
+    }
+  });
+
+  // Get QR code by code value
+  app.get('/api/qrcodes/code/:code', async (req: Request, res: Response) => {
+    try {
+      const code = req.params.code;
+      const qrCode = await storage.getQrCodeByCode(code);
+      
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+      
+      res.json(qrCode);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching QR code" });
+    }
+  });
+
+  // Get QR code for device
+  app.get('/api/devices/:id/qrcode', async (req: Request, res: Response) => {
+    try {
+      const deviceId = parseInt(req.params.id);
+      const qrCode = await storage.getQrCodeByDeviceId(deviceId);
+      
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found for device" });
+      }
+      
+      res.json(qrCode);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching device QR code" });
+    }
+  });
+
+  // Create QR code
+  app.post('/api/qrcodes', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertQrCodeSchema.parse(req.body);
+      const qrCode = await storage.createQrCode(validatedData);
+      res.status(201).json(qrCode);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid QR code data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating QR code" });
+    }
+  });
+
+  // Update QR code
+  app.put('/api/qrcodes/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertQrCodeSchema.partial().parse(req.body);
+      
+      const qrCode = await storage.updateQrCode(id, validatedData);
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+      
+      res.json(qrCode);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid QR code data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating QR code" });
+    }
+  });
+
+  // Delete QR code
+  app.delete('/api/qrcodes/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteQrCode(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting QR code" });
+    }
+  });
+
+  // Record QR code scan
+  app.post('/api/qrcodes/:id/scan', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const qrCode = await storage.recordQrCodeScan(id);
+      
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+      
+      res.json(qrCode);
+    } catch (error) {
+      res.status(500).json({ message: "Error recording QR code scan" });
+    }
+  });
+
+  // ===== Notifications =====
+  // Get user notifications
+  app.get('/api/users/:id/notifications', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const notifications = await storage.getNotifications(userId, limit);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching notifications" });
+    }
+  });
+
+  // Get unread notifications
+  app.get('/api/users/:id/notifications/unread', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const notifications = await storage.getUnreadNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching unread notifications" });
+    }
+  });
+
+  // Create notification
+  app.post('/api/notifications', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertNotificationSchema.parse(req.body);
+      const notification = await storage.createNotification(validatedData);
+      res.status(201).json(notification);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid notification data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating notification" });
+    }
+  });
+
+  // Mark notification as read
+  app.put('/api/notifications/:id/read', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const notification = await storage.markNotificationAsRead(id);
+      
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ message: "Error marking notification as read" });
+    }
+  });
+
+  // Delete notification
+  app.delete('/api/notifications/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteNotification(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting notification" });
+    }
+  });
+
+  // ===== Branding =====
+  // Get branding settings
+  app.get('/api/branding', async (req: Request, res: Response) => {
+    try {
+      const branding = await storage.getBrandingSettings();
+      res.json(branding || {});
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching branding settings" });
+    }
+  });
+
+  // Update branding settings
+  app.put('/api/branding', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertBrandingSettingsSchema.partial().parse(req.body);
+      const branding = await storage.updateBrandingSettings(validatedData);
+      res.json(branding);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid branding data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating branding settings" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
