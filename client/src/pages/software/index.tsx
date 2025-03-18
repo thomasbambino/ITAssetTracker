@@ -11,6 +11,7 @@ import { formatDate, formatCurrency } from "@/lib/utils";
 import { SoftwareForm } from "@/components/forms/SoftwareForm";
 import { SoftwareAssignmentForm } from "@/components/forms/SoftwareAssignmentForm";
 import { queryClient } from "@/lib/queryClient";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 // Define the software type based on our schema
 interface Software {
@@ -45,12 +46,12 @@ export default function Software() {
   const [selectedSoftware, setSelectedSoftware] = useState<Software | null>(null);
   
   // Query for fetching all software
-  const { data: softwareList = [], isLoading: isSoftwareLoading } = useQuery({
+  const { data: softwareList = [], isLoading: isSoftwareLoading } = useQuery<Software[]>({
     queryKey: ['/api/software'],
   });
   
   // Query for fetching expiring software
-  const { data: expiringSoftware = [], isLoading: isExpiringLoading } = useQuery({
+  const { data: expiringSoftware = [], isLoading: isExpiringLoading } = useQuery<Software[]>({
     queryKey: ['/api/software/expiring/30'],
   });
 
@@ -137,25 +138,29 @@ export default function Software() {
     setIsAssignDialogOpen(true);
   };
 
+  const pageActions = (
+    <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <DialogTrigger asChild>
+        <Button><Plus className="h-4 w-4 mr-2" /> Add Software</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Add New Software</DialogTitle>
+          <DialogDescription>
+            Enter the details of the software license or application.
+          </DialogDescription>
+        </DialogHeader>
+        <SoftwareForm onSuccess={handleSoftwareFormSuccess} />
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Software Management</h1>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Add Software</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Add New Software</DialogTitle>
-              <DialogDescription>
-                Enter the details of the software license or application.
-              </DialogDescription>
-            </DialogHeader>
-            <SoftwareForm onSuccess={handleSoftwareFormSuccess} />
-          </DialogContent>
-        </Dialog>
-      </div>
+    <PageContainer 
+      title="Software Management"
+      description="Manage software licenses and installations across your organization"
+      actions={pageActions}
+    >
       
       {/* Expiring Software Alert */}
       {expiringSoftware.length > 0 && (
@@ -318,6 +323,6 @@ export default function Software() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }
