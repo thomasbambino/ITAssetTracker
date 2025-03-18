@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, unique, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, unique, pgEnum, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -93,3 +93,132 @@ export const insertActivityLogSchema = createInsertSchema(activityLog).omit({
 
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLog.$inferSelect;
+
+// Software management schemas
+export const softwareStatus = pgEnum('software_status', ['active', 'expired', 'pending']);
+
+export const software = pgTable("software", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  vendor: text("vendor").notNull(),
+  licenseType: text("license_type").notNull(), // 'perpetual', 'subscription', 'open_source'
+  purchaseCost: integer("purchase_cost"), // Store in cents
+  purchaseDate: timestamp("purchase_date"),
+  expiryDate: timestamp("expiry_date"),
+  licenseKey: text("license_key"),
+  seats: integer("seats"), // Number of allowed users
+  notes: text("notes"),
+  status: softwareStatus("status").default('active'),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSoftwareSchema = createInsertSchema(software).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSoftware = z.infer<typeof insertSoftwareSchema>;
+export type Software = typeof software.$inferSelect;
+
+// Software assignment
+export const softwareAssignments = pgTable("software_assignments", {
+  id: serial("id").primaryKey(),
+  softwareId: integer("software_id").notNull().references(() => software.id),
+  userId: integer("user_id").references(() => users.id),
+  deviceId: integer("device_id").references(() => devices.id),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  assignedBy: integer("assigned_by").references(() => users.id),
+  notes: text("notes"),
+});
+
+export const insertSoftwareAssignmentSchema = createInsertSchema(softwareAssignments).omit({
+  id: true,
+});
+
+export type InsertSoftwareAssignment = z.infer<typeof insertSoftwareAssignmentSchema>;
+export type SoftwareAssignment = typeof softwareAssignments.$inferSelect;
+
+// Maintenance tracking
+export const maintenanceStatus = pgEnum('maintenance_status', ['scheduled', 'in_progress', 'completed', 'cancelled']);
+
+export const maintenanceRecords = pgTable("maintenance_records", {
+  id: serial("id").primaryKey(),
+  deviceId: integer("device_id").notNull().references(() => devices.id),
+  maintenanceType: text("maintenance_type").notNull(), // 'repair', 'upgrade', 'cleaning', etc.
+  description: text("description").notNull(),
+  scheduledDate: timestamp("scheduled_date"),
+  completedDate: timestamp("completed_date"),
+  cost: integer("cost"), // Store in cents
+  performedBy: text("performed_by"),
+  status: maintenanceStatus("status").default('scheduled'),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMaintenanceRecordSchema = createInsertSchema(maintenanceRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertMaintenanceRecord = z.infer<typeof insertMaintenanceRecordSchema>;
+export type MaintenanceRecord = typeof maintenanceRecords.$inferSelect;
+
+// QR/Barcode tracking
+export const qrCodes = pgTable("qr_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  deviceId: integer("device_id").references(() => devices.id),
+  generatedAt: timestamp("generated_at").defaultNow(),
+  lastScanned: timestamp("last_scanned"),
+  scanCount: integer("scan_count").default(0),
+});
+
+export const insertQrCodeSchema = createInsertSchema(qrCodes).omit({
+  id: true,
+  generatedAt: true,
+  scanCount: true,
+});
+
+export type InsertQrCode = z.infer<typeof insertQrCodeSchema>;
+export type QrCode = typeof qrCodes.$inferSelect;
+
+// Notifications
+export const notificationTypes = pgEnum('notification_type', ['warranty_expiry', 'maintenance_due', 'license_expiry', 'device_assigned']);
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  type: notificationTypes("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  relatedId: integer("related_id"), // ID of related item (device, software, etc.)
+  relatedType: text("related_type"), // Type of related item ('device', 'software', etc.)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
+// Custom branding
+export const brandingSettings = pgTable("branding_settings", {
+  id: serial("id").primaryKey(),
+  companyName: text("company_name"),
+  logo: text("logo"), // URL to logo image
+  primaryColor: text("primary_color").default('#1E40AF'),
+  accentColor: text("accent_color").default('#3B82F6'),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertBrandingSettingsSchema = createInsertSchema(brandingSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertBrandingSettings = z.infer<typeof insertBrandingSettingsSchema>;
+export type BrandingSettings = typeof brandingSettings.$inferSelect;

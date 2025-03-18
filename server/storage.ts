@@ -1,8 +1,14 @@
 import { 
   categories, devices, users, assignmentHistory, activityLog,
+  software, softwareAssignments, maintenanceRecords, qrCodes, 
+  notifications, brandingSettings,
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
+  type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
+  type Notification, type BrandingSettings,
   type InsertCategory, type InsertDevice, type InsertUser, 
-  type InsertAssignmentHistory, type InsertActivityLog 
+  type InsertAssignmentHistory, type InsertActivityLog,
+  type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
+  type InsertQrCode, type InsertNotification, type InsertBrandingSettings
 } from "@shared/schema";
 
 export interface IStorage {
@@ -42,6 +48,53 @@ export interface IStorage {
   // Activity log operations
   getActivityLogs(limit?: number): Promise<ActivityLog[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  
+  // Software operations
+  getSoftware(): Promise<Software[]>;
+  getSoftwareById(id: number): Promise<Software | undefined>;
+  createSoftware(software: InsertSoftware): Promise<Software>;
+  updateSoftware(id: number, software: Partial<InsertSoftware>): Promise<Software | undefined>;
+  deleteSoftware(id: number): Promise<boolean>;
+  getSoftwareByStatus(status: string): Promise<Software[]>;
+  getSoftwareExpiringSoon(days: number): Promise<Software[]>;
+  
+  // Software assignment operations
+  getSoftwareAssignments(softwareId: number): Promise<SoftwareAssignment[]>;
+  getSoftwareAssignmentsByUser(userId: number): Promise<SoftwareAssignment[]>;
+  getSoftwareAssignmentsByDevice(deviceId: number): Promise<SoftwareAssignment[]>;
+  createSoftwareAssignment(assignment: InsertSoftwareAssignment): Promise<SoftwareAssignment>;
+  updateSoftwareAssignment(id: number, assignment: Partial<InsertSoftwareAssignment>): Promise<SoftwareAssignment | undefined>;
+  deleteSoftwareAssignment(id: number): Promise<boolean>;
+  
+  // Maintenance operations
+  getMaintenanceRecords(): Promise<MaintenanceRecord[]>;
+  getMaintenanceRecordById(id: number): Promise<MaintenanceRecord | undefined>;
+  getMaintenanceRecordsByDevice(deviceId: number): Promise<MaintenanceRecord[]>;
+  createMaintenanceRecord(record: InsertMaintenanceRecord): Promise<MaintenanceRecord>;
+  updateMaintenanceRecord(id: number, record: Partial<InsertMaintenanceRecord>): Promise<MaintenanceRecord | undefined>;
+  deleteMaintenanceRecord(id: number): Promise<boolean>;
+  getScheduledMaintenance(): Promise<MaintenanceRecord[]>;
+  
+  // QR/Barcode operations
+  getQrCodes(): Promise<QrCode[]>;
+  getQrCodeById(id: number): Promise<QrCode | undefined>;
+  getQrCodeByDeviceId(deviceId: number): Promise<QrCode | undefined>;
+  getQrCodeByCode(code: string): Promise<QrCode | undefined>;
+  createQrCode(qrCode: InsertQrCode): Promise<QrCode>;
+  updateQrCode(id: number, qrCode: Partial<InsertQrCode>): Promise<QrCode | undefined>;
+  deleteQrCode(id: number): Promise<boolean>;
+  recordQrCodeScan(id: number): Promise<QrCode | undefined>;
+  
+  // Notification operations
+  getNotifications(userId: number, limit?: number): Promise<Notification[]>;
+  getUnreadNotifications(userId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  deleteNotification(id: number): Promise<boolean>;
+  
+  // Branding operations
+  getBrandingSettings(): Promise<BrandingSettings | undefined>;
+  updateBrandingSettings(settings: Partial<InsertBrandingSettings>): Promise<BrandingSettings>;
 }
 
 export class MemStorage implements IStorage {
