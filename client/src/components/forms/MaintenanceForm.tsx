@@ -107,16 +107,18 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
     try {
       if (record?.id) {
         // Update existing record
-        await apiRequest(`/api/maintenance/${record.id}`, {
-          method: "PUT",
-          body: JSON.stringify(values),
-        });
+        await apiRequest(
+          "PUT",
+          `/api/maintenance/${record.id}`,
+          values
+        );
       } else {
         // Create new record
-        await apiRequest("/api/maintenance", {
-          method: "POST",
-          body: JSON.stringify(values),
-        });
+        await apiRequest(
+          "POST",
+          "/api/maintenance",
+          values
+        );
       }
 
       if (onSuccess) {

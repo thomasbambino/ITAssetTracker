@@ -105,16 +105,18 @@ export function QrCodeForm({ qrCode, onSuccess, onCancel }: QrCodeFormProps) {
     try {
       if (qrCode?.id) {
         // Update existing QR code
-        await apiRequest(`/api/qrcodes/${qrCode.id}`, {
-          method: "PUT",
-          body: JSON.stringify(values),
-        });
+        await apiRequest(
+          "PUT",
+          `/api/qrcodes/${qrCode.id}`,
+          values
+        );
       } else {
         // Create new QR code
-        await apiRequest("/api/qrcodes", {
-          method: "POST",
-          body: JSON.stringify(values),
-        });
+        await apiRequest(
+          "POST",
+          "/api/qrcodes",
+          values
+        );
       }
 
       if (onSuccess) {

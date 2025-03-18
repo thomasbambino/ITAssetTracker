@@ -123,16 +123,18 @@ export function SoftwareAssignmentForm({
       
       if (assignmentId) {
         // Update existing assignment
-        await apiRequest(`/api/software-assignments/${assignmentId}`, {
-          method: "PUT",
-          body: JSON.stringify(dataToSubmit),
-        });
+        await apiRequest(
+          "PUT",
+          `/api/software-assignments/${assignmentId}`,
+          dataToSubmit
+        );
       } else {
         // Create new assignment
-        await apiRequest("/api/software-assignments", {
-          method: "POST",
-          body: JSON.stringify(dataToSubmit),
-        });
+        await apiRequest(
+          "POST",
+          "/api/software-assignments",
+          dataToSubmit
+        );
       }
       
       if (onSuccess) {
