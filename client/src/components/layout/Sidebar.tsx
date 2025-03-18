@@ -9,6 +9,10 @@ import {
   HistoryIcon,
   FileBarChart2Icon,
   SettingsIcon,
+  WrenchIcon,
+  BellIcon,
+  QrCodeIcon,
+  PaintbrushIcon,
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -41,6 +45,21 @@ export function Sidebar() {
       icon: BoxIcon,
     },
     {
+      href: '/maintenance',
+      label: 'Maintenance',
+      icon: WrenchIcon,
+    },
+    {
+      href: '/qrcodes',
+      label: 'QR Codes',
+      icon: QrCodeIcon,
+    },
+    {
+      href: '/notifications',
+      label: 'Notifications',
+      icon: BellIcon,
+    },
+    {
       href: '/history',
       label: 'History',
       icon: HistoryIcon,
@@ -49,6 +68,11 @@ export function Sidebar() {
       href: '/reports',
       label: 'Reports',
       icon: FileBarChart2Icon,
+    },
+    {
+      href: '/branding',
+      label: 'Branding',
+      icon: PaintbrushIcon,
     },
     {
       href: '/settings',

@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, CheckCircle, Clock, Plus, Tool, AlertTriangle, Calendar } from "lucide-react";
+import { CalendarClock, CheckCircle, Clock, Plus, Wrench, AlertTriangle, Calendar } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { MaintenanceForm } from "@/components/forms/MaintenanceForm";
 import { queryClient } from "@/lib/queryClient";
@@ -67,7 +67,7 @@ export default function Maintenance() {
       cell: (record: MaintenanceRecord) => {
         const statusMap = {
           scheduled: { label: "Scheduled", icon: <CalendarClock className="h-4 w-4 mr-1" />, class: "bg-blue-100 text-blue-800" },
-          in_progress: { label: "In Progress", icon: <Tool className="h-4 w-4 mr-1" />, class: "bg-yellow-100 text-yellow-800" },
+          in_progress: { label: "In Progress", icon: <Wrench className="h-4 w-4 mr-1" />, class: "bg-yellow-100 text-yellow-800" },
           completed: { label: "Completed", icon: <CheckCircle className="h-4 w-4 mr-1" />, class: "bg-green-100 text-green-800" },
           cancelled: { label: "Cancelled", icon: <AlertTriangle className="h-4 w-4 mr-1" />, class: "bg-red-100 text-red-800" },
         };
@@ -223,7 +223,7 @@ export default function Maintenance() {
                   {
                     label: "Edit",
                     onClick: handleEditClick,
-                    icon: <Tool className="h-4 w-4" />
+                    icon: <Wrench className="h-4 w-4" />
                   }
                 ]}
                 emptyState={
@@ -263,7 +263,7 @@ export default function Maintenance() {
                   {
                     label: "Edit",
                     onClick: handleEditClick,
-                    icon: <Tool className="h-4 w-4" />
+                    icon: <Wrench className="h-4 w-4" />
                   }
                 ]}
               />
@@ -290,7 +290,7 @@ export default function Maintenance() {
                   {
                     label: "View",
                     onClick: handleEditClick,
-                    icon: <Tool className="h-4 w-4" />
+                    icon: <Wrench className="h-4 w-4" />
                   }
                 ]}
               />

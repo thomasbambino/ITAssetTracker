@@ -14,6 +14,10 @@ import Software from "@/pages/software";
 import History from "@/pages/history";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import Maintenance from "@/pages/maintenance";
+import Notifications from "@/pages/notifications";
+import QrCodes from "@/pages/qrcodes";
+import Branding from "@/pages/branding";
 
 function Router() {
   return (
@@ -25,6 +29,10 @@ function Router() {
       <Route path="/devices/:id" component={DeviceDetails} />
       <Route path="/categories" component={Categories} />
       <Route path="/software" component={Software} />
+      <Route path="/maintenance" component={Maintenance} />
+      <Route path="/notifications" component={Notifications} />
+      <Route path="/qrcodes" component={QrCodes} />
+      <Route path="/branding" component={Branding} />
       <Route path="/history" component={History} />
       <Route path="/reports" component={Reports} />
       <Route path="/settings" component={Settings} />
