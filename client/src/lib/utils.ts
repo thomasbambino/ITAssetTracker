@@ -116,3 +116,8 @@ export function generateAssetTag(): string {
   
   return `${prefix}-${timestamp}-${random}`;
 }
+
+// Format number with commas
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat().format(value);
+}

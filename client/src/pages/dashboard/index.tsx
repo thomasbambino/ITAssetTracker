@@ -15,11 +15,23 @@ import {
   AlertTriangleIcon,
   CalendarXIcon
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  Cell, 
+  Legend,
+  LabelList
+} from 'recharts';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { CsvImport } from '@/components/ui/csv-import';
 import { useCsvExport } from '@/hooks/use-csv';
+import { formatNumber } from '@/lib/utils';
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -97,7 +109,22 @@ export default function Dashboard() {
   })) || [];
 
   // Chart colors
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  const CATEGORY_COLORS = {
+    'Desktop': '#4ADE80',     // Green
+    'Laptop': '#3B82F6',      // Blue
+    'Mobile': '#FB923C',      // Orange
+    'Tablet': '#F472B6',      // Pink
+    'Server': '#A78BFA',      // Purple
+    'Monitor': '#F87171',     // Red
+    'Printer': '#FBBF24',     // Yellow
+    'Network': '#60A5FA',     // Light Blue
+    'Accessories': '#94A3B8', // Gray
+    'Other': '#64748B'        // Dark Gray
+  };
+
+  // Sort data for better visualization
+  const sortedCategoryData = [...(categoryChartData || [])].sort((a, b) => b.value - a.value);
+  const sortedDepartmentData = [...(departmentChartData || [])].sort((a, b) => b.value - a.value);
 
   return (
     <div className="px-4 py-6 sm:px-6 lg:px-8 mt-10 md:mt-0">
@@ -210,31 +237,48 @@ export default function Dashboard() {
             <div className="flex items-center justify-center h-full">
               <p>Loading chart data...</p>
             </div>
-          ) : categoryChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={true}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percentage }) => `${name} (${percentage}%)`}
-                >
-                  {categoryChartData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
+          ) : sortedCategoryData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={sortedCategoryData}
+                layout="vertical"
+                margin={{
+                  top: 10,
+                  right: 30,
+                  left: 100,
+                  bottom: 10,
+                }}
+              >
+                <XAxis type="number" hide />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={100} 
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip 
                   formatter={(value: any, name: any, props: any) => [
                     `${value} devices (${props.payload.percentage}%)`,
                     name
                   ]}
+                  cursor={{ fill: '#f5f5f5' }}
                 />
-                <Legend />
-              </PieChart>
+                <Bar dataKey="value" radius={[4, 4, 4, 4]}>
+                  {sortedCategoryData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={CATEGORY_COLORS[entry.name] || '#64748B'} 
+                    />
+                  ))}
+                  <LabelList 
+                    dataKey="percentage" 
+                    position="right" 
+                    formatter={(value: number) => `${value}%`}
+                    style={{ fontWeight: "500", fill: "#64748B" }}
+                  />
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -248,22 +292,35 @@ export default function Dashboard() {
             <div className="flex items-center justify-center h-full">
               <p>Loading chart data...</p>
             </div>
-          ) : departmentChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
+          ) : sortedDepartmentData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart
-                data={departmentChartData}
+                data={sortedDepartmentData}
+                layout="vertical"
                 margin={{
-                  top: 20,
+                  top: 10,
                   right: 30,
-                  left: 20,
-                  bottom: 60,
+                  left: 100,
+                  bottom: 10,
                 }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
-                <YAxis />
-                <Tooltip formatter={(value) => [`${value} devices`]} />
-                <Bar dataKey="value" fill="#3B82F6" />
+                <XAxis type="number" hide />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={90}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip formatter={(value) => [`${value} devices`]} cursor={{ fill: '#f5f5f5' }} />
+                <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 4, 4]}>
+                  <LabelList 
+                    dataKey="value" 
+                    position="right" 
+                    formatter={(value: number) => formatNumber(value)}
+                    style={{ fontWeight: "500", fill: "#64748B" }}
+                  />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           ) : (
