@@ -31,6 +31,9 @@ import { format } from "date-fns";
 
 // Create a schema for device creation/update
 const formSchema = insertDeviceSchema.extend({
+  // Make sure serial number and assetTag are required with clear error messages
+  serialNumber: z.string().min(1, "Serial number is required"),
+  assetTag: z.string().min(1, "Asset tag is required"),
   categoryId: z.coerce.number().nullable(),
   purchaseDate: z.date().nullable().optional(),
   warrantyEOL: z.date().nullable().optional(),
@@ -138,6 +141,12 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
   const handleGenerateAssetTag = () => {
     form.setValue("assetTag", generateAssetTag());
   };
+  
+  // Generate a random serial number
+  const handleGenerateSerialNumber = () => {
+    const randomSerial = `SN-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
+    form.setValue("serialNumber", randomSerial);
+  };
 
   return (
     <Form {...form}>
@@ -178,7 +187,18 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             name="serialNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Serial Number</FormLabel>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Serial Number</FormLabel>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateSerialNumber}
+                    className="h-6 text-xs"
+                  >
+                    Generate
+                  </Button>
+                </div>
                 <FormControl>
                   <Input placeholder="Serial Number" {...field} />
                 </FormControl>
@@ -192,7 +212,18 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             name="assetTag"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Asset Tag</FormLabel>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Asset Tag</FormLabel>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateAssetTag}
+                    className="h-6 text-xs"
+                  >
+                    Generate
+                  </Button>
+                </div>
                 <FormControl>
                   <Input placeholder="Asset Tag" {...field} />
                 </FormControl>
