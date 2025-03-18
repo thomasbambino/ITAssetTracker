@@ -192,10 +192,10 @@ export default function BrandingPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Branding & Customization</h1>
-      </div>
+    <PageContainer
+      title="Branding & Customization"
+      description="Configure your organization's appearance and identity settings"
+    >
       
       <Tabs defaultValue="settings" className="space-y-4">
         <TabsList>
@@ -348,6 +348,6 @@ export default function BrandingPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 }
