@@ -66,16 +66,18 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
     try {
       // If we have initial data, this is an update
       if (initialData?.id) {
-        await apiRequest(`/api/branding`, {
-          method: "PUT",
-          body: JSON.stringify(data),
-        });
+        await apiRequest(
+          "PUT",
+          `/api/branding`,
+          data
+        );
       } else {
         // Otherwise, it's a create
-        await apiRequest(`/api/branding`, {
-          method: "PUT",
-          body: JSON.stringify(data),
-        });
+        await apiRequest(
+          "PUT",
+          `/api/branding`,
+          data
+        );
       }
       
       // Show success message

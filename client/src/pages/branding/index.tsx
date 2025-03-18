@@ -102,15 +102,16 @@ export default function BrandingPage() {
       if (!theme) return;
       
       // In a real implementation, this would update the branding settings and apply the theme
-      await apiRequest('/api/branding', {
-        method: "PUT",
-        body: JSON.stringify({
+      await apiRequest(
+        "PUT", 
+        '/api/branding',
+        {
           ...brandingSettings,
           theme: themeName,
           primaryColor: theme.colors.primary,
           accentColor: theme.colors.text,
-        }),
-      });
+        }
+      );
       
       setActiveTheme(themeName);
       refetch();

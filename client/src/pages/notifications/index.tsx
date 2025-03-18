@@ -48,9 +48,10 @@ export default function NotificationsPage() {
   // Mark notification as read
   const markAsRead = async (notification: Notification) => {
     try {
-      await apiRequest(`/api/notifications/${notification.id}/read`, {
-        method: "PUT",
-      });
+      await apiRequest(
+        "PUT",
+        `/api/notifications/${notification.id}/read`
+      );
       
       // Invalidate queries to refresh the list
       queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}/notifications`] });
@@ -63,9 +64,10 @@ export default function NotificationsPage() {
   // Delete notification
   const deleteNotification = async (notification: Notification) => {
     try {
-      await apiRequest(`/api/notifications/${notification.id}`, {
-        method: "DELETE",
-      });
+      await apiRequest(
+        "DELETE",
+        `/api/notifications/${notification.id}`
+      );
       
       // Invalidate queries to refresh the list
       queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}/notifications`] });

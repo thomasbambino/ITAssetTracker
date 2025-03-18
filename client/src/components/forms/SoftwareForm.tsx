@@ -101,16 +101,18 @@ export function SoftwareForm({ software, onSuccess, onCancel }: SoftwareFormProp
     try {
       if (software?.id) {
         // Update existing software
-        await apiRequest(`/api/software/${software.id}`, {
-          method: "PUT",
-          body: JSON.stringify(values),
-        });
+        await apiRequest(
+          "PUT",
+          `/api/software/${software.id}`,
+          values
+        );
       } else {
         // Create new software
-        await apiRequest("/api/software", {
-          method: "POST",
-          body: JSON.stringify(values),
-        });
+        await apiRequest(
+          "POST",
+          "/api/software",
+          values
+        );
       }
 
       if (onSuccess) {
