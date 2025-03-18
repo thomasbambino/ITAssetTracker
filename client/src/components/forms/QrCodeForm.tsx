@@ -103,19 +103,28 @@ export function QrCodeForm({ qrCode, onSuccess, onCancel }: QrCodeFormProps) {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
+      // Format data to ensure proper handling of dates and IDs
+      const formattedData = {
+        ...values,
+        deviceId: values.deviceId ? parseInt(values.deviceId.toString()) : null,
+        // QR codes may have createdAt or lastScanned dates
+        createdAt: values.createdAt ? new Date(values.createdAt) : null,
+        lastScanned: values.lastScanned ? new Date(values.lastScanned) : null
+      };
+      
       if (qrCode?.id) {
         // Update existing QR code
         await apiRequest(
           "PUT",
           `/api/qrcodes/${qrCode.id}`,
-          values
+          formattedData
         );
       } else {
         // Create new QR code
         await apiRequest(
           "POST",
           "/api/qrcodes",
-          values
+          formattedData
         );
       }
 

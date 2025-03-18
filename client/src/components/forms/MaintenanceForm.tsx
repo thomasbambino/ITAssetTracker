@@ -105,19 +105,28 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
+      // Format data to ensure dates are properly handled
+      const formattedData = {
+        ...values,
+        scheduledDate: values.scheduledDate ? new Date(values.scheduledDate) : null,
+        completedDate: values.completedDate ? new Date(values.completedDate) : null,
+        cost: values.cost ? parseInt(values.cost.toString()) : null,
+        deviceId: values.deviceId ? parseInt(values.deviceId.toString()) : null,
+      };
+      
       if (record?.id) {
         // Update existing record
         await apiRequest(
           "PUT",
           `/api/maintenance/${record.id}`,
-          values
+          formattedData
         );
       } else {
         // Create new record
         await apiRequest(
           "POST",
           "/api/maintenance",
-          values
+          formattedData
         );
       }
 

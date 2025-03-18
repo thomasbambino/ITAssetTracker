@@ -111,13 +111,13 @@ export function SoftwareAssignmentForm({
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      // Prepare the data for submission
+      // Prepare the data for submission with proper date handling
       const dataToSubmit = {
-        softwareId: values.softwareId,
-        userId: values.assignmentType === "user" ? values.userId : null,
-        deviceId: values.assignmentType === "device" ? values.deviceId : null,
-        assignmentDate: values.assignmentDate,
-        expiryDate: values.expiryDate,
+        softwareId: values.softwareId ? parseInt(values.softwareId.toString()) : null,
+        userId: values.assignmentType === "user" ? parseInt(values.userId!.toString()) : null,
+        deviceId: values.assignmentType === "device" ? parseInt(values.deviceId!.toString()) : null,
+        assignmentDate: values.assignmentDate ? new Date(values.assignmentDate) : new Date(),
+        expiryDate: values.expiryDate ? new Date(values.expiryDate) : null,
         notes: values.notes,
       };
       
