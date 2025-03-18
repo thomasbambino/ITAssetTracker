@@ -10,6 +10,7 @@ import { CalendarClock, CheckCircle, Clock, Plus, Wrench, AlertTriangle, Calenda
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { MaintenanceForm } from "@/components/forms/MaintenanceForm";
 import { queryClient } from "@/lib/queryClient";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 // Define maintenance record type based on our schema
 interface MaintenanceRecord {
@@ -124,30 +125,34 @@ export default function Maintenance() {
 
   const dueMaintenanceCount = getDueMaintenanceCount();
 
+  const pageActions = (
+    <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <DialogTrigger asChild>
+        <Button><Plus className="h-4 w-4 mr-2" /> New Maintenance Record</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{selectedRecord ? "Edit Maintenance Record" : "New Maintenance Record"}</DialogTitle>
+          <DialogDescription>
+            {selectedRecord 
+              ? "Update the maintenance record details."
+              : "Enter the details for the new maintenance record."}
+          </DialogDescription>
+        </DialogHeader>
+        <MaintenanceForm 
+          record={selectedRecord} 
+          onSuccess={handleMaintenanceFormSuccess} 
+        />
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Maintenance Tracker</h1>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> New Maintenance Record</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>{selectedRecord ? "Edit Maintenance Record" : "New Maintenance Record"}</DialogTitle>
-              <DialogDescription>
-                {selectedRecord 
-                  ? "Update the maintenance record details."
-                  : "Enter the details for the new maintenance record."}
-              </DialogDescription>
-            </DialogHeader>
-            <MaintenanceForm 
-              record={selectedRecord} 
-              onSuccess={handleMaintenanceFormSuccess} 
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
+    <PageContainer
+      title="Maintenance Tracker"
+      description="Schedule and manage maintenance for your assets"
+      actions={pageActions}
+    >
       
       {/* Maintenance Due Alert */}
       {dueMaintenanceCount > 0 && (
@@ -298,6 +303,6 @@ export default function Maintenance() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 }

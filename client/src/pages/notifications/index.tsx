@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 // Define notification type based on our schema
 interface Notification {
@@ -185,16 +186,18 @@ export default function NotificationsPage() {
     </div>
   );
 
+  const pageActions = unreadNotifications.length > 0 ? (
+    <Button variant="outline" onClick={markAllAsRead}>
+      Mark All as Read
+    </Button>
+  ) : null;
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Notifications</h1>
-        {unreadNotifications.length > 0 && (
-          <Button variant="outline" onClick={markAllAsRead}>
-            Mark All as Read
-          </Button>
-        )}
-      </div>
+    <PageContainer 
+      title="Notifications"
+      description="View and manage your system notifications"
+      actions={pageActions}
+    >
       
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
@@ -306,6 +309,6 @@ export default function NotificationsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }
