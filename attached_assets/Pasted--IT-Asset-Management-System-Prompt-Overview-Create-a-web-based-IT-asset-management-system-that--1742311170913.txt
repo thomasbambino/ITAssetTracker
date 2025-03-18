@@ -1,0 +1,99 @@
+# IT Asset Management System Prompt
+
+## Overview
+Create a web-based IT asset management system that tracks hardware devices, software licenses, and user assignments. The application should provide a comprehensive dashboard with search capabilities and detailed views of users and assets.
+
+## Core Features
+
+### Data Import/Export
+- Import users and devices from CSV files
+- Export data to CSV format for reporting
+
+### User Management
+- User data: First Name, Last Name, Email, Phone Number
+- User profile page displaying all assigned devices and software
+- Department-based grouping 
+
+### Device Management
+- Device data: Brand, Model, Serial Number, Asset Tag, Tag (Category), Purchase Cost, Purchase Date, Purchased By, Warranty EOL
+- Ability to assign devices to users
+- History tracking of device assignments
+
+### Tag/Category System
+- Admin ability to create and manage tags/categories (Laptop, Desktop, Desk Phone, etc.)
+- Assign tags to devices for better organization and filtering
+
+### Software/Account Management
+- Track software licenses and accounts assigned to users
+- Create department-based software/account templates for quick assignment
+- Ability to modify template assignments for individual users
+
+### Dashboard
+- Overview of system metrics (total assets, assigned vs. unassigned, etc.)
+- Visual representation of data (charts for asset distribution, warranty status, etc.)
+- Quick search functionality to find users and their assigned devices
+
+### Search Functionality
+- Global search across users, devices, and software
+- Advanced filtering options (by department, device type, warranty status, etc.)
+
+## Technical Requirements
+- Web-based application with responsive design
+- Database for storing all asset and user information
+- User authentication with role-based access (admin vs. regular users)
+- Secure API for data handling
+- Custom branding capabilities (logo, color scheme, company name)
+
+## Enhanced Features
+
+### Custom Branding
+- Company logo integration throughout the interface
+- Customizable color schemes to match corporate identity
+- Ability to set organization name and contact details
+- Custom welcome messages and email templates
+- White-label documentation and user guides
+
+### 1. Asset Lifecycle Management
+- Track device status (new, in use, in repair, decommissioned)
+- Visual lifecycle indicators on dashboard and device pages
+- Automated status updates based on events
+
+### 2. Maintenance Tracking
+- Log and schedule maintenance activities for devices
+- Maintenance history with technician notes
+- Track repair costs and service providers
+
+### 3. Notification System
+- Automated alerts for warranty expirations
+- Maintenance due reminders
+- Low inventory alerts
+- Custom notification rules for administrators
+
+### 4. Reporting
+- Customizable reports for inventory audits
+- Budget planning tools with cost analysis
+- Compliance reporting for software licensing
+- Asset utilization reports
+- Export reports in multiple formats (PDF, CSV, Excel)
+
+### 5. QR/Barcode Integration
+- Generate QR codes and barcodes for physical assets
+- Mobile scanning capability for quick asset identification
+- Link scanned codes directly to asset detail pages
+
+### 6. Bulk Operations
+- Mass import, update, and assignment of devices
+- Batch processing for software deployment
+- Group actions for device categorization
+
+### 8. Audit Trail
+- Comprehensive logging of all system changes
+- User action tracking for accountability
+- Timestamped history of device and user modifications
+- Exportable audit logs for compliance purposes
+
+### 10. Check-in/Check-out System
+- Temporary equipment loan management
+- Due date tracking for borrowed equipment
+- Email notifications for overdue items
+- Signature capture for equipment receipt
