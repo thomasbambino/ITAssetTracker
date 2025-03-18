@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { QrCodeForm } from "@/components/forms/QrCodeForm";
 import { QrCodeScanner } from "@/components/qrcodes/QrCodeScanner";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 // Define the QR code type based on our schema
 interface QrCode {
@@ -121,46 +122,50 @@ export default function QrCodesPage() {
     window.alert("In a production environment, this would generate a downloadable version of the QR code.");
   };
 
+  const pageActions = (
+    <div className="flex space-x-2">
+      <Dialog open={isScannerDialogOpen} onOpenChange={setIsScannerDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <Smartphone className="h-4 w-4 mr-2" /> Scan QR Code
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Scan QR Code</DialogTitle>
+            <DialogDescription>
+              Use your camera to scan a QR code. This will record the scan in the system.
+            </DialogDescription>
+          </DialogHeader>
+          <QrCodeScanner onScanSuccess={handleScanSuccess} />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" /> Create QR Code
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create QR Code</DialogTitle>
+            <DialogDescription>
+              Generate a QR code for a device that you can print and attach to the equipment.
+            </DialogDescription>
+          </DialogHeader>
+          <QrCodeForm onSuccess={handleQrCodeFormSuccess} />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">QR Code Management</h1>
-        <div className="flex space-x-2">
-          <Dialog open={isScannerDialogOpen} onOpenChange={setIsScannerDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Smartphone className="h-4 w-4 mr-2" /> Scan QR Code
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Scan QR Code</DialogTitle>
-                <DialogDescription>
-                  Use your camera to scan a QR code. This will record the scan in the system.
-                </DialogDescription>
-              </DialogHeader>
-              <QrCodeScanner onScanSuccess={handleScanSuccess} />
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" /> Create QR Code
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create QR Code</DialogTitle>
-                <DialogDescription>
-                  Generate a QR code for a device that you can print and attach to the equipment.
-                </DialogDescription>
-              </DialogHeader>
-              <QrCodeForm onSuccess={handleQrCodeFormSuccess} />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+    <PageContainer
+      title="QR Code Management"
+      description="Generate and manage QR codes for your IT assets"
+      actions={pageActions}
+    >
       
       <Card>
         <CardHeader>
@@ -214,6 +219,6 @@ export default function QrCodesPage() {
           </div>
         </CardFooter>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

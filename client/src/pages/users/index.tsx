@@ -8,6 +8,7 @@ import { PlusIcon, FileInput, FileOutput, Trash2Icon, EditIcon } from 'lucide-re
 import { ActionButton } from '@/components/dashboard/ActionButton';
 import { useCsvImport, useCsvExport } from '@/hooks/use-csv';
 import { CsvImport } from '@/components/ui/csv-import';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { User } from '@shared/schema';
 import { 
   AlertDialog,
@@ -105,36 +106,34 @@ export default function Users() {
     });
   };
   
+  const pageActions = (
+    <div className="flex flex-wrap gap-2">
+      <ActionButton
+        icon={<PlusIcon className="h-4 w-4" />}
+        label="Add User"
+        onClick={() => navigate('/users/new')}
+      />
+      <CsvImport 
+        url="/api/import/users"
+        entityName="Users"
+        onSuccess={handleImportSuccess}
+      />
+      <ActionButton
+        icon={<FileOutput className="h-4 w-4" />}
+        label="Export CSV"
+        onClick={exportCsv}
+        variant="secondary"
+        disabled={isExporting}
+      />
+    </div>
+  );
+
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8 mt-10 md:mt-0">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Users</h1>
-          <p className="mt-1 text-sm text-gray-600">Manage users in your organization</p>
-        </div>
-        
-        {/* Actions */}
-        <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
-          <ActionButton
-            icon={<PlusIcon className="h-4 w-4" />}
-            label="Add User"
-            onClick={() => navigate('/users/new')}
-          />
-          <CsvImport 
-            url="/api/import/users"
-            entityName="Users"
-            onSuccess={handleImportSuccess}
-          />
-          <ActionButton
-            icon={<FileOutput className="h-4 w-4" />}
-            label="Export CSV"
-            onClick={exportCsv}
-            variant="secondary"
-            disabled={isExporting}
-          />
-        </div>
-      </div>
+    <PageContainer
+      title="Users"
+      description="Manage users in your organization"
+      actions={pageActions}
+    >
       
       {/* Users Table */}
       <DataTable
@@ -179,6 +178,6 @@ export default function Users() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageContainer>
   );
 }
