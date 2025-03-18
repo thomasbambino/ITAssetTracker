@@ -286,19 +286,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/devices', async (req: Request, res: Response) => {
     try {
-      // Preprocess data to handle date objects
-      const requestData = { ...req.body };
-      
-      // Convert date strings to Date objects if they exist
-      if (requestData.purchaseDate && typeof requestData.purchaseDate === 'string') {
-        requestData.purchaseDate = new Date(requestData.purchaseDate);
-      }
-      
-      if (requestData.warrantyEOL && typeof requestData.warrantyEOL === 'string') {
-        requestData.warrantyEOL = new Date(requestData.warrantyEOL);
-      }
-      
-      const validatedData = insertDeviceSchema.parse(requestData);
+      // The insertDeviceSchema now handles date conversion
+      const validatedData = insertDeviceSchema.parse(req.body);
       const device = await storage.createDevice(validatedData);
       res.status(201).json(device);
     } catch (error) {
@@ -314,19 +303,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Preprocess data to handle date objects
-      const requestData = { ...req.body };
-      
-      // Convert date strings to Date objects if they exist
-      if (requestData.purchaseDate && typeof requestData.purchaseDate === 'string') {
-        requestData.purchaseDate = new Date(requestData.purchaseDate);
-      }
-      
-      if (requestData.warrantyEOL && typeof requestData.warrantyEOL === 'string') {
-        requestData.warrantyEOL = new Date(requestData.warrantyEOL);
-      }
-      
-      const validatedData = insertDeviceSchema.partial().parse(requestData);
+      // The insertDeviceSchema now handles date conversion
+      const validatedData = insertDeviceSchema.partial().parse(req.body);
       
       const device = await storage.updateDevice(id, validatedData);
       if (!device) {

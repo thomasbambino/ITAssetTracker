@@ -51,9 +51,28 @@ export const devices = pgTable("devices", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertDeviceSchema = createInsertSchema(devices).omit({
+// Base schema that matches database structure
+const baseDeviceSchema = createInsertSchema(devices).omit({
   id: true,
   createdAt: true,
+});
+
+// Enhanced schema with custom date validation
+export const insertDeviceSchema = baseDeviceSchema.extend({
+  // Override the date fields to accept strings
+  purchaseDate: z.union([
+    z.string().transform((str) => new Date(str)), 
+    z.date(),
+    z.null()
+  ]).optional(),
+  warrantyEOL: z.union([
+    z.string().transform((str) => new Date(str)), 
+    z.date(),
+    z.null()
+  ]).optional(),
+  // Make these fields required
+  serialNumber: z.string().min(1, "Serial number is required"),
+  assetTag: z.string().min(1, "Asset tag is required")
 });
 
 export type InsertDevice = z.infer<typeof insertDeviceSchema>;
