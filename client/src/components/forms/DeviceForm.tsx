@@ -31,6 +31,7 @@ import { format } from "date-fns";
 
 // Create a schema for device creation/update
 const formSchema = insertDeviceSchema.extend({
+  categoryId: z.coerce.number().nullable(),
   purchaseDate: z.date().nullable().optional(),
   warrantyEOL: z.date().nullable().optional(),
 });
@@ -50,6 +51,11 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
   // Fetch categories for dropdown
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['/api/categories'],
+  });
+  
+  // Fetch users for "Purchased By" dropdown
+  const { data: users, isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/users'],
   });
 
   // Initialize form with default values
@@ -181,19 +187,9 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Asset Tag</FormLabel>
-                <div className="flex space-x-2">
-                  <FormControl>
-                    <Input placeholder="Asset Tag" {...field} />
-                  </FormControl>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleGenerateAssetTag}
-                    className="shrink-0"
-                  >
-                    Generate
-                  </Button>
-                </div>
+                <FormControl>
+                  <Input placeholder="Asset Tag" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -354,9 +350,40 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Purchased By</FormLabel>
-              <FormControl>
-                <Input placeholder="Name or department" {...field} />
-              </FormControl>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a purchaser" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {usersLoading ? (
+                    <SelectItem value="loading" disabled>
+                      Loading users...
+                    </SelectItem>
+                  ) : users && users.length > 0 ? (
+                    users.map((user: any) => (
+                      <SelectItem key={user.id} value={`${user.firstName} ${user.lastName}`}>
+                        {`${user.firstName} ${user.lastName}`} {user.department ? `(${user.department})` : ""}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      No users available
+                    </SelectItem>
+                  )}
+                  <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="it">IT Department</SelectItem>
+                  <SelectItem value="finance">Finance Department</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Select who purchased this device
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
