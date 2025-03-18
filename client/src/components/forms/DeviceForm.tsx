@@ -114,11 +114,14 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
 
   // Form submission handler
   const onSubmit = (data: DeviceFormValues) => {
-    // Convert cost to cents before sending to API
+    // Convert cost to cents and handle dates
     const formattedData = {
       ...data,
       purchaseCost: data.purchaseCost ? parseInt(data.purchaseCost.toString()) : null,
       categoryId: data.categoryId ? parseInt(data.categoryId.toString()) : null,
+      // Ensure dates are properly parsed to ISO strings
+      purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
+      warrantyEOL: data.warrantyEOL ? new Date(data.warrantyEOL) : null,
     };
 
     // Show form data for debugging
