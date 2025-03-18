@@ -5,7 +5,11 @@ import multer from "multer";
 import { parse } from "csv-parse";
 import { stringify } from "csv-stringify";
 import { z } from "zod";
-import { insertUserSchema, insertDeviceSchema, insertCategorySchema } from "@shared/schema";
+import { 
+  insertUserSchema, insertDeviceSchema, insertCategorySchema,
+  insertSoftwareSchema, insertSoftwareAssignmentSchema, insertMaintenanceRecordSchema,
+  insertQrCodeSchema, insertNotificationSchema, insertBrandingSettingsSchema
+} from "@shared/schema";
 
 // Setup multer for file uploads
 const upload = multer({ 

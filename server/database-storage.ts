@@ -1,7 +1,11 @@
 import { 
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
+  type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
+  type Notification, type BrandingSettings,
   type InsertCategory, type InsertDevice, type InsertUser, 
-  type InsertAssignmentHistory, type InsertActivityLog 
+  type InsertAssignmentHistory, type InsertActivityLog,
+  type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
+  type InsertQrCode, type InsertNotification, type InsertBrandingSettings
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
@@ -979,5 +983,1391 @@ export class DatabaseStorage implements IStorage {
     ]);
     
     return newLog;
+  }
+
+  // Software operations
+  async getSoftware(): Promise<Software[]> {
+    const software = await db.any(`
+      SELECT 
+        id, 
+        name, 
+        vendor, 
+        license_type as "licenseType", 
+        purchase_cost as "purchaseCost", 
+        purchase_date as "purchaseDate", 
+        expiry_date as "expiryDate", 
+        license_key as "licenseKey", 
+        seats, 
+        notes, 
+        status, 
+        created_at as "createdAt"
+      FROM software
+      ORDER BY name
+    `);
+    return software;
+  }
+
+  async getSoftwareById(id: number): Promise<Software | undefined> {
+    try {
+      const software = await db.one(`
+        SELECT 
+          id, 
+          name, 
+          vendor, 
+          license_type as "licenseType", 
+          purchase_cost as "purchaseCost", 
+          purchase_date as "purchaseDate", 
+          expiry_date as "expiryDate", 
+          license_key as "licenseKey", 
+          seats, 
+          notes, 
+          status, 
+          created_at as "createdAt"
+        FROM software
+        WHERE id = $1
+      `, [id]);
+      return software;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async createSoftware(software: InsertSoftware): Promise<Software> {
+    const newSoftware = await db.one(`
+      INSERT INTO software (
+        name, 
+        vendor, 
+        license_type, 
+        purchase_cost, 
+        purchase_date, 
+        expiry_date, 
+        license_key, 
+        seats, 
+        notes, 
+        status
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+      ) RETURNING 
+        id, 
+        name, 
+        vendor, 
+        license_type as "licenseType", 
+        purchase_cost as "purchaseCost", 
+        purchase_date as "purchaseDate", 
+        expiry_date as "expiryDate", 
+        license_key as "licenseKey", 
+        seats, 
+        notes, 
+        status, 
+        created_at as "createdAt"
+    `, [
+      software.name, 
+      software.vendor, 
+      software.licenseType, 
+      software.purchaseCost || null, 
+      software.purchaseDate || null, 
+      software.expiryDate || null, 
+      software.licenseKey || null, 
+      software.seats || null, 
+      software.notes || null, 
+      software.status || 'active'
+    ]);
+    
+    // Log activity
+    await this.createActivityLog({
+      userId: 1, // Admin user ID
+      actionType: 'software_added',
+      details: `Software added: ${software.name} (${software.vendor})`
+    });
+    
+    return newSoftware;
+  }
+
+  async updateSoftware(id: number, software: Partial<InsertSoftware>): Promise<Software | undefined> {
+    try {
+      // Build dynamic update query
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+      
+      if (software.name !== undefined) {
+        updates.push(`name = $${paramCount++}`);
+        values.push(software.name);
+      }
+      
+      if (software.vendor !== undefined) {
+        updates.push(`vendor = $${paramCount++}`);
+        values.push(software.vendor);
+      }
+      
+      if (software.licenseType !== undefined) {
+        updates.push(`license_type = $${paramCount++}`);
+        values.push(software.licenseType);
+      }
+      
+      if (software.purchaseCost !== undefined) {
+        updates.push(`purchase_cost = $${paramCount++}`);
+        values.push(software.purchaseCost);
+      }
+      
+      if (software.purchaseDate !== undefined) {
+        updates.push(`purchase_date = $${paramCount++}`);
+        values.push(software.purchaseDate);
+      }
+      
+      if (software.expiryDate !== undefined) {
+        updates.push(`expiry_date = $${paramCount++}`);
+        values.push(software.expiryDate);
+      }
+      
+      if (software.licenseKey !== undefined) {
+        updates.push(`license_key = $${paramCount++}`);
+        values.push(software.licenseKey);
+      }
+      
+      if (software.seats !== undefined) {
+        updates.push(`seats = $${paramCount++}`);
+        values.push(software.seats);
+      }
+      
+      if (software.notes !== undefined) {
+        updates.push(`notes = $${paramCount++}`);
+        values.push(software.notes);
+      }
+      
+      if (software.status !== undefined) {
+        updates.push(`status = $${paramCount++}`);
+        values.push(software.status);
+      }
+      
+      // If no updates, return the software
+      if (updates.length === 0) {
+        return this.getSoftwareById(id);
+      }
+      
+      values.push(id); // Add id as the last parameter
+      
+      const updatedSoftware = await db.one(`
+        UPDATE software SET
+          ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING 
+          id, 
+          name, 
+          vendor, 
+          license_type as "licenseType", 
+          purchase_cost as "purchaseCost", 
+          purchase_date as "purchaseDate", 
+          expiry_date as "expiryDate", 
+          license_key as "licenseKey", 
+          seats, 
+          notes, 
+          status, 
+          created_at as "createdAt"
+      `, values);
+      
+      // Log activity
+      await this.createActivityLog({
+        userId: 1, // Admin user ID
+        actionType: 'software_updated',
+        details: `Software updated: ${updatedSoftware.name} (${updatedSoftware.vendor})`
+      });
+      
+      return updatedSoftware;
+    } catch (error) {
+      console.error('Error updating software:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSoftware(id: number): Promise<boolean> {
+    try {
+      // First, check if any assignments exist for this software
+      const assignmentCount = await db.one(`
+        SELECT COUNT(*) FROM software_assignments
+        WHERE software_id = $1
+      `, [id]);
+      
+      if (parseInt(assignmentCount.count) > 0) {
+        // Can't delete software with active assignments
+        return false;
+      }
+      
+      // Get software for logging
+      const software = await this.getSoftwareById(id);
+      if (!software) return false;
+      
+      // Delete software
+      const result = await db.result(`
+        DELETE FROM software
+        WHERE id = $1
+      `, [id]);
+      
+      if (result.rowCount > 0) {
+        // Log activity
+        await this.createActivityLog({
+          userId: 1, // Admin user ID
+          actionType: 'software_deleted',
+          details: `Software deleted: ${software.name} (${software.vendor})`
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error deleting software:', error);
+      return false;
+    }
+  }
+
+  async getSoftwareByStatus(status: string): Promise<Software[]> {
+    const software = await db.any(`
+      SELECT 
+        id, 
+        name, 
+        vendor, 
+        license_type as "licenseType", 
+        purchase_cost as "purchaseCost", 
+        purchase_date as "purchaseDate", 
+        expiry_date as "expiryDate", 
+        license_key as "licenseKey", 
+        seats, 
+        notes, 
+        status, 
+        created_at as "createdAt"
+      FROM software
+      WHERE status = $1
+      ORDER BY name
+    `, [status]);
+    
+    return software;
+  }
+
+  async getSoftwareExpiringSoon(days: number): Promise<Software[]> {
+    const now = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(now.getDate() + days);
+    
+    const software = await db.any(`
+      SELECT 
+        id, 
+        name, 
+        vendor, 
+        license_type as "licenseType", 
+        purchase_cost as "purchaseCost", 
+        purchase_date as "purchaseDate", 
+        expiry_date as "expiryDate", 
+        license_key as "licenseKey", 
+        seats, 
+        notes, 
+        status, 
+        created_at as "createdAt"
+      FROM software
+      WHERE expiry_date IS NOT NULL
+        AND expiry_date <= $1
+        AND expiry_date >= $2
+      ORDER BY expiry_date
+    `, [futureDate, now]);
+    
+    return software;
+  }
+
+  // Software assignment operations
+  async getSoftwareAssignments(softwareId: number): Promise<SoftwareAssignment[]> {
+    const assignments = await db.any(`
+      SELECT 
+        sa.id, 
+        sa.software_id as "softwareId", 
+        sa.user_id as "userId", 
+        sa.device_id as "deviceId", 
+        sa.assigned_at as "assignedAt", 
+        sa.assigned_by as "assignedBy", 
+        sa.notes,
+        u.first_name || ' ' || u.last_name as "userName",
+        d.asset_tag as "deviceAssetTag",
+        s.name as "softwareName"
+      FROM software_assignments sa
+      LEFT JOIN users u ON sa.user_id = u.id
+      LEFT JOIN devices d ON sa.device_id = d.id
+      LEFT JOIN software s ON sa.software_id = s.id
+      WHERE sa.software_id = $1
+      ORDER BY sa.assigned_at DESC
+    `, [softwareId]);
+    
+    return assignments;
+  }
+
+  async getSoftwareAssignmentsByUser(userId: number): Promise<SoftwareAssignment[]> {
+    const assignments = await db.any(`
+      SELECT 
+        sa.id, 
+        sa.software_id as "softwareId", 
+        sa.user_id as "userId", 
+        sa.device_id as "deviceId", 
+        sa.assigned_at as "assignedAt", 
+        sa.assigned_by as "assignedBy", 
+        sa.notes,
+        u.first_name || ' ' || u.last_name as "userName",
+        d.asset_tag as "deviceAssetTag",
+        s.name as "softwareName"
+      FROM software_assignments sa
+      LEFT JOIN users u ON sa.user_id = u.id
+      LEFT JOIN devices d ON sa.device_id = d.id
+      LEFT JOIN software s ON sa.software_id = s.id
+      WHERE sa.user_id = $1
+      ORDER BY sa.assigned_at DESC
+    `, [userId]);
+    
+    return assignments;
+  }
+
+  async getSoftwareAssignmentsByDevice(deviceId: number): Promise<SoftwareAssignment[]> {
+    const assignments = await db.any(`
+      SELECT 
+        sa.id, 
+        sa.software_id as "softwareId", 
+        sa.user_id as "userId", 
+        sa.device_id as "deviceId", 
+        sa.assigned_at as "assignedAt", 
+        sa.assigned_by as "assignedBy", 
+        sa.notes,
+        u.first_name || ' ' || u.last_name as "userName",
+        d.asset_tag as "deviceAssetTag",
+        s.name as "softwareName"
+      FROM software_assignments sa
+      LEFT JOIN users u ON sa.user_id = u.id
+      LEFT JOIN devices d ON sa.device_id = d.id
+      LEFT JOIN software s ON sa.software_id = s.id
+      WHERE sa.device_id = $1
+      ORDER BY sa.assigned_at DESC
+    `, [deviceId]);
+    
+    return assignments;
+  }
+
+  async createSoftwareAssignment(assignment: InsertSoftwareAssignment): Promise<SoftwareAssignment> {
+    const newAssignment = await db.one(`
+      INSERT INTO software_assignments (
+        software_id, 
+        user_id, 
+        device_id, 
+        assigned_at, 
+        assigned_by, 
+        notes
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6
+      ) RETURNING 
+        id, 
+        software_id as "softwareId", 
+        user_id as "userId", 
+        device_id as "deviceId", 
+        assigned_at as "assignedAt", 
+        assigned_by as "assignedBy", 
+        notes
+    `, [
+      assignment.softwareId,
+      assignment.userId || null,
+      assignment.deviceId || null,
+      assignment.assignedAt || new Date(),
+      assignment.assignedBy || 1, // Default to admin
+      assignment.notes || null
+    ]);
+    
+    // Get software, user, and device information for better logs
+    const software = await this.getSoftwareById(assignment.softwareId);
+    let userName = 'N/A';
+    let deviceAssetTag = 'N/A';
+    
+    if (assignment.userId) {
+      const user = await this.getUserById(assignment.userId);
+      if (user) {
+        userName = `${user.firstName} ${user.lastName}`;
+      }
+    }
+    
+    if (assignment.deviceId) {
+      const device = await this.getDeviceById(assignment.deviceId);
+      if (device) {
+        deviceAssetTag = device.assetTag;
+      }
+    }
+    
+    // For the return value, add these fields
+    (newAssignment as any).userName = userName;
+    (newAssignment as any).deviceAssetTag = deviceAssetTag;
+    (newAssignment as any).softwareName = software ? software.name : 'Unknown';
+    
+    // Log activity
+    await this.createActivityLog({
+      userId: assignment.assignedBy || 1,
+      actionType: 'software_assigned',
+      details: `Software "${software?.name}" assigned to ${assignment.userId ? 'user ' + userName : ''}${assignment.userId && assignment.deviceId ? ' and ' : ''}${assignment.deviceId ? 'device ' + deviceAssetTag : ''}`
+    });
+    
+    return newAssignment;
+  }
+
+  async updateSoftwareAssignment(id: number, assignment: Partial<InsertSoftwareAssignment>): Promise<SoftwareAssignment | undefined> {
+    try {
+      // Build dynamic update query
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+      
+      if (assignment.softwareId !== undefined) {
+        updates.push(`software_id = $${paramCount++}`);
+        values.push(assignment.softwareId);
+      }
+      
+      if (assignment.userId !== undefined) {
+        updates.push(`user_id = $${paramCount++}`);
+        values.push(assignment.userId);
+      }
+      
+      if (assignment.deviceId !== undefined) {
+        updates.push(`device_id = $${paramCount++}`);
+        values.push(assignment.deviceId);
+      }
+      
+      if (assignment.assignedAt !== undefined) {
+        updates.push(`assigned_at = $${paramCount++}`);
+        values.push(assignment.assignedAt);
+      }
+      
+      if (assignment.assignedBy !== undefined) {
+        updates.push(`assigned_by = $${paramCount++}`);
+        values.push(assignment.assignedBy);
+      }
+      
+      if (assignment.notes !== undefined) {
+        updates.push(`notes = $${paramCount++}`);
+        values.push(assignment.notes);
+      }
+      
+      // If no updates, return nothing
+      if (updates.length === 0) {
+        return undefined;
+      }
+      
+      values.push(id); // Add id as the last parameter
+      
+      const updatedAssignment = await db.one(`
+        UPDATE software_assignments SET
+          ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING 
+          id, 
+          software_id as "softwareId", 
+          user_id as "userId", 
+          device_id as "deviceId", 
+          assigned_at as "assignedAt", 
+          assigned_by as "assignedBy", 
+          notes
+      `, values);
+      
+      // Log activity
+      await this.createActivityLog({
+        userId: 1, // Admin user ID
+        actionType: 'software_assignment_updated',
+        details: `Software assignment updated: ID ${id}`
+      });
+      
+      // Get additional information for the updated assignment
+      if (updatedAssignment.softwareId) {
+        const software = await this.getSoftwareById(updatedAssignment.softwareId);
+        if (software) {
+          (updatedAssignment as any).softwareName = software.name;
+        }
+      }
+      
+      if (updatedAssignment.userId) {
+        const user = await this.getUserById(updatedAssignment.userId);
+        if (user) {
+          (updatedAssignment as any).userName = `${user.firstName} ${user.lastName}`;
+        }
+      }
+      
+      if (updatedAssignment.deviceId) {
+        const device = await this.getDeviceById(updatedAssignment.deviceId);
+        if (device) {
+          (updatedAssignment as any).deviceAssetTag = device.assetTag;
+        }
+      }
+      
+      return updatedAssignment;
+    } catch (error) {
+      console.error('Error updating software assignment:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSoftwareAssignment(id: number): Promise<boolean> {
+    try {
+      // Get the assignment for logging purposes
+      const assignment = await db.oneOrNone(`
+        SELECT 
+          sa.id, 
+          sa.software_id as "softwareId", 
+          sa.user_id as "userId", 
+          s.name as "softwareName",
+          u.first_name || ' ' || u.last_name as "userName"
+        FROM software_assignments sa
+        LEFT JOIN software s ON sa.software_id = s.id
+        LEFT JOIN users u ON sa.user_id = u.id
+        WHERE sa.id = $1
+      `, [id]);
+      
+      if (!assignment) return false;
+      
+      // Delete the assignment
+      const result = await db.result(`
+        DELETE FROM software_assignments
+        WHERE id = $1
+      `, [id]);
+      
+      if (result.rowCount > 0) {
+        // Log activity
+        await this.createActivityLog({
+          userId: 1, // Admin user ID
+          actionType: 'software_assignment_deleted',
+          details: `Software assignment deleted: ${assignment.softwareName} from ${assignment.userName || 'device'}`
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error deleting software assignment:', error);
+      return false;
+    }
+  }
+
+  // Maintenance operations
+  async getMaintenanceRecords(): Promise<MaintenanceRecord[]> {
+    const records = await db.any(`
+      SELECT 
+        mr.id, 
+        mr.device_id as "deviceId", 
+        mr.maintenance_type as "maintenanceType", 
+        mr.description, 
+        mr.scheduled_date as "scheduledDate", 
+        mr.completed_date as "completedDate", 
+        mr.cost, 
+        mr.performed_by as "performedBy", 
+        mr.status, 
+        mr.notes, 
+        mr.created_at as "createdAt",
+        d.brand as "deviceBrand",
+        d.model as "deviceModel",
+        d.asset_tag as "deviceAssetTag"
+      FROM maintenance_records mr
+      LEFT JOIN devices d ON mr.device_id = d.id
+      ORDER BY 
+        CASE 
+          WHEN mr.status = 'scheduled' THEN 1
+          WHEN mr.status = 'in_progress' THEN 2
+          WHEN mr.status = 'completed' THEN 3
+          WHEN mr.status = 'cancelled' THEN 4
+        END,
+        mr.scheduled_date ASC
+    `);
+    
+    return records;
+  }
+
+  async getMaintenanceRecordById(id: number): Promise<MaintenanceRecord | undefined> {
+    try {
+      const record = await db.one(`
+        SELECT 
+          mr.id, 
+          mr.device_id as "deviceId", 
+          mr.maintenance_type as "maintenanceType", 
+          mr.description, 
+          mr.scheduled_date as "scheduledDate", 
+          mr.completed_date as "completedDate", 
+          mr.cost, 
+          mr.performed_by as "performedBy", 
+          mr.status, 
+          mr.notes, 
+          mr.created_at as "createdAt",
+          d.brand as "deviceBrand",
+          d.model as "deviceModel",
+          d.asset_tag as "deviceAssetTag"
+        FROM maintenance_records mr
+        LEFT JOIN devices d ON mr.device_id = d.id
+        WHERE mr.id = $1
+      `, [id]);
+      
+      return record;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async getMaintenanceRecordsByDevice(deviceId: number): Promise<MaintenanceRecord[]> {
+    const records = await db.any(`
+      SELECT 
+        mr.id, 
+        mr.device_id as "deviceId", 
+        mr.maintenance_type as "maintenanceType", 
+        mr.description, 
+        mr.scheduled_date as "scheduledDate", 
+        mr.completed_date as "completedDate", 
+        mr.cost, 
+        mr.performed_by as "performedBy", 
+        mr.status, 
+        mr.notes, 
+        mr.created_at as "createdAt",
+        d.brand as "deviceBrand",
+        d.model as "deviceModel",
+        d.asset_tag as "deviceAssetTag"
+      FROM maintenance_records mr
+      LEFT JOIN devices d ON mr.device_id = d.id
+      WHERE mr.device_id = $1
+      ORDER BY 
+        CASE 
+          WHEN mr.status = 'scheduled' THEN 1
+          WHEN mr.status = 'in_progress' THEN 2
+          WHEN mr.status = 'completed' THEN 3
+          WHEN mr.status = 'cancelled' THEN 4
+        END,
+        mr.scheduled_date ASC
+    `, [deviceId]);
+    
+    return records;
+  }
+
+  async createMaintenanceRecord(record: InsertMaintenanceRecord): Promise<MaintenanceRecord> {
+    const newRecord = await db.one(`
+      INSERT INTO maintenance_records (
+        device_id, 
+        maintenance_type, 
+        description, 
+        scheduled_date, 
+        completed_date, 
+        cost, 
+        performed_by, 
+        status, 
+        notes
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9
+      ) RETURNING 
+        id, 
+        device_id as "deviceId", 
+        maintenance_type as "maintenanceType", 
+        description, 
+        scheduled_date as "scheduledDate", 
+        completed_date as "completedDate", 
+        cost, 
+        performed_by as "performedBy", 
+        status, 
+        notes, 
+        created_at as "createdAt"
+    `, [
+      record.deviceId,
+      record.maintenanceType,
+      record.description,
+      record.scheduledDate || null,
+      record.completedDate || null,
+      record.cost || null,
+      record.performedBy || null,
+      record.status || 'scheduled',
+      record.notes || null
+    ]);
+    
+    // Get device information
+    const device = await this.getDeviceById(record.deviceId);
+    if (device) {
+      (newRecord as any).deviceBrand = device.brand;
+      (newRecord as any).deviceModel = device.model;
+      (newRecord as any).deviceAssetTag = device.assetTag;
+    }
+    
+    // Log activity
+    await this.createActivityLog({
+      userId: 1, // Admin user ID
+      actionType: 'maintenance_scheduled',
+      details: `Maintenance ${record.maintenanceType} scheduled for device ${device ? device.assetTag : record.deviceId}`
+    });
+    
+    return newRecord;
+  }
+
+  async updateMaintenanceRecord(id: number, record: Partial<InsertMaintenanceRecord>): Promise<MaintenanceRecord | undefined> {
+    try {
+      // Get the current record for status change detection
+      const currentRecord = await this.getMaintenanceRecordById(id);
+      if (!currentRecord) return undefined;
+      
+      // Build dynamic update query
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+      
+      if (record.deviceId !== undefined) {
+        updates.push(`device_id = $${paramCount++}`);
+        values.push(record.deviceId);
+      }
+      
+      if (record.maintenanceType !== undefined) {
+        updates.push(`maintenance_type = $${paramCount++}`);
+        values.push(record.maintenanceType);
+      }
+      
+      if (record.description !== undefined) {
+        updates.push(`description = $${paramCount++}`);
+        values.push(record.description);
+      }
+      
+      if (record.scheduledDate !== undefined) {
+        updates.push(`scheduled_date = $${paramCount++}`);
+        values.push(record.scheduledDate);
+      }
+      
+      if (record.completedDate !== undefined) {
+        updates.push(`completed_date = $${paramCount++}`);
+        values.push(record.completedDate);
+      }
+      
+      if (record.cost !== undefined) {
+        updates.push(`cost = $${paramCount++}`);
+        values.push(record.cost);
+      }
+      
+      if (record.performedBy !== undefined) {
+        updates.push(`performed_by = $${paramCount++}`);
+        values.push(record.performedBy);
+      }
+      
+      if (record.status !== undefined) {
+        updates.push(`status = $${paramCount++}`);
+        values.push(record.status);
+      }
+      
+      if (record.notes !== undefined) {
+        updates.push(`notes = $${paramCount++}`);
+        values.push(record.notes);
+      }
+      
+      // If no updates, return the record
+      if (updates.length === 0) {
+        return currentRecord;
+      }
+      
+      values.push(id); // Add id as the last parameter
+      
+      const updatedRecord = await db.one(`
+        UPDATE maintenance_records SET
+          ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING 
+          id, 
+          device_id as "deviceId", 
+          maintenance_type as "maintenanceType", 
+          description, 
+          scheduled_date as "scheduledDate", 
+          completed_date as "completedDate", 
+          cost, 
+          performed_by as "performedBy", 
+          status, 
+          notes, 
+          created_at as "createdAt"
+      `, values);
+      
+      // Get device information
+      const device = await this.getDeviceById(updatedRecord.deviceId);
+      if (device) {
+        (updatedRecord as any).deviceBrand = device.brand;
+        (updatedRecord as any).deviceModel = device.model;
+        (updatedRecord as any).deviceAssetTag = device.assetTag;
+      }
+      
+      // Log activity, especially for status changes
+      let actionType = 'maintenance_updated';
+      let details = `Maintenance record updated for device ${device ? device.assetTag : updatedRecord.deviceId}`;
+      
+      if (record.status && record.status !== currentRecord.status) {
+        if (record.status === 'completed') {
+          actionType = 'maintenance_completed';
+          details = `Maintenance ${updatedRecord.maintenanceType} marked as completed for device ${device ? device.assetTag : updatedRecord.deviceId}`;
+        } else if (record.status === 'in_progress') {
+          actionType = 'maintenance_started';
+          details = `Maintenance ${updatedRecord.maintenanceType} started for device ${device ? device.assetTag : updatedRecord.deviceId}`;
+        } else if (record.status === 'cancelled') {
+          actionType = 'maintenance_cancelled';
+          details = `Maintenance ${updatedRecord.maintenanceType} cancelled for device ${device ? device.assetTag : updatedRecord.deviceId}`;
+        }
+      }
+      
+      await this.createActivityLog({
+        userId: 1, // Admin user ID
+        actionType,
+        details
+      });
+      
+      return updatedRecord;
+    } catch (error) {
+      console.error('Error updating maintenance record:', error);
+      return undefined;
+    }
+  }
+
+  async deleteMaintenanceRecord(id: number): Promise<boolean> {
+    try {
+      // Get the record for logging
+      const record = await this.getMaintenanceRecordById(id);
+      if (!record) return false;
+      
+      // Delete the record
+      const result = await db.result(`
+        DELETE FROM maintenance_records
+        WHERE id = $1
+      `, [id]);
+      
+      if (result.rowCount > 0) {
+        // Log activity
+        await this.createActivityLog({
+          userId: 1, // Admin user ID
+          actionType: 'maintenance_deleted',
+          details: `Maintenance record deleted: ${record.maintenanceType} for device ${record.deviceAssetTag || record.deviceId}`
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error deleting maintenance record:', error);
+      return false;
+    }
+  }
+
+  async getScheduledMaintenance(): Promise<MaintenanceRecord[]> {
+    const records = await db.any(`
+      SELECT 
+        mr.id, 
+        mr.device_id as "deviceId", 
+        mr.maintenance_type as "maintenanceType", 
+        mr.description, 
+        mr.scheduled_date as "scheduledDate", 
+        mr.completed_date as "completedDate", 
+        mr.cost, 
+        mr.performed_by as "performedBy", 
+        mr.status, 
+        mr.notes, 
+        mr.created_at as "createdAt",
+        d.brand as "deviceBrand",
+        d.model as "deviceModel",
+        d.asset_tag as "deviceAssetTag"
+      FROM maintenance_records mr
+      LEFT JOIN devices d ON mr.device_id = d.id
+      WHERE mr.status IN ('scheduled', 'in_progress')
+      ORDER BY mr.scheduled_date ASC
+    `);
+    
+    return records;
+  }
+
+  // QR/Barcode operations
+  async getQrCodes(): Promise<QrCode[]> {
+    const qrCodes = await db.any(`
+      SELECT 
+        qr.id, 
+        qr.code, 
+        qr.device_id as "deviceId", 
+        qr.generated_at as "generatedAt", 
+        qr.last_scanned as "lastScanned", 
+        qr.scan_count as "scanCount",
+        d.brand as "deviceBrand",
+        d.model as "deviceModel",
+        d.asset_tag as "deviceAssetTag"
+      FROM qr_codes qr
+      LEFT JOIN devices d ON qr.device_id = d.id
+      ORDER BY qr.generated_at DESC
+    `);
+    
+    return qrCodes;
+  }
+
+  async getQrCodeById(id: number): Promise<QrCode | undefined> {
+    try {
+      const qrCode = await db.one(`
+        SELECT 
+          qr.id, 
+          qr.code, 
+          qr.device_id as "deviceId", 
+          qr.generated_at as "generatedAt", 
+          qr.last_scanned as "lastScanned", 
+          qr.scan_count as "scanCount",
+          d.brand as "deviceBrand",
+          d.model as "deviceModel",
+          d.asset_tag as "deviceAssetTag"
+        FROM qr_codes qr
+        LEFT JOIN devices d ON qr.device_id = d.id
+        WHERE qr.id = $1
+      `, [id]);
+      
+      return qrCode;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async getQrCodeByDeviceId(deviceId: number): Promise<QrCode | undefined> {
+    try {
+      const qrCode = await db.one(`
+        SELECT 
+          qr.id, 
+          qr.code, 
+          qr.device_id as "deviceId", 
+          qr.generated_at as "generatedAt", 
+          qr.last_scanned as "lastScanned", 
+          qr.scan_count as "scanCount",
+          d.brand as "deviceBrand",
+          d.model as "deviceModel",
+          d.asset_tag as "deviceAssetTag"
+        FROM qr_codes qr
+        LEFT JOIN devices d ON qr.device_id = d.id
+        WHERE qr.device_id = $1
+      `, [deviceId]);
+      
+      return qrCode;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async getQrCodeByCode(code: string): Promise<QrCode | undefined> {
+    try {
+      const qrCode = await db.one(`
+        SELECT 
+          qr.id, 
+          qr.code, 
+          qr.device_id as "deviceId", 
+          qr.generated_at as "generatedAt", 
+          qr.last_scanned as "lastScanned", 
+          qr.scan_count as "scanCount",
+          d.brand as "deviceBrand",
+          d.model as "deviceModel",
+          d.asset_tag as "deviceAssetTag"
+        FROM qr_codes qr
+        LEFT JOIN devices d ON qr.device_id = d.id
+        WHERE qr.code = $1
+      `, [code]);
+      
+      return qrCode;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async createQrCode(qrCode: InsertQrCode): Promise<QrCode> {
+    const newQrCode = await db.one(`
+      INSERT INTO qr_codes (
+        code, 
+        device_id
+      ) VALUES (
+        $1, $2
+      ) RETURNING 
+        id, 
+        code, 
+        device_id as "deviceId", 
+        generated_at as "generatedAt", 
+        last_scanned as "lastScanned", 
+        scan_count as "scanCount"
+    `, [
+      qrCode.code,
+      qrCode.deviceId || null
+    ]);
+    
+    // Get device information if available
+    if (newQrCode.deviceId) {
+      const device = await this.getDeviceById(newQrCode.deviceId);
+      if (device) {
+        (newQrCode as any).deviceBrand = device.brand;
+        (newQrCode as any).deviceModel = device.model;
+        (newQrCode as any).deviceAssetTag = device.assetTag;
+      }
+    }
+    
+    // Log activity
+    await this.createActivityLog({
+      userId: 1, // Admin user ID
+      actionType: 'qr_code_generated',
+      details: newQrCode.deviceId 
+        ? `QR code generated for device ${(newQrCode as any).deviceAssetTag || newQrCode.deviceId}`
+        : `QR code generated: ${qrCode.code}`
+    });
+    
+    return newQrCode;
+  }
+
+  async updateQrCode(id: number, qrCode: Partial<InsertQrCode>): Promise<QrCode | undefined> {
+    try {
+      // Build dynamic update query
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+      
+      if (qrCode.code !== undefined) {
+        updates.push(`code = $${paramCount++}`);
+        values.push(qrCode.code);
+      }
+      
+      if (qrCode.deviceId !== undefined) {
+        updates.push(`device_id = $${paramCount++}`);
+        values.push(qrCode.deviceId);
+      }
+      
+      // If no updates, return the QR code
+      if (updates.length === 0) {
+        return this.getQrCodeById(id);
+      }
+      
+      values.push(id); // Add id as the last parameter
+      
+      const updatedQrCode = await db.one(`
+        UPDATE qr_codes SET
+          ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING 
+          id, 
+          code, 
+          device_id as "deviceId", 
+          generated_at as "generatedAt", 
+          last_scanned as "lastScanned", 
+          scan_count as "scanCount"
+      `, values);
+      
+      // Get device information if available
+      if (updatedQrCode.deviceId) {
+        const device = await this.getDeviceById(updatedQrCode.deviceId);
+        if (device) {
+          (updatedQrCode as any).deviceBrand = device.brand;
+          (updatedQrCode as any).deviceModel = device.model;
+          (updatedQrCode as any).deviceAssetTag = device.assetTag;
+        }
+      }
+      
+      // Log activity
+      await this.createActivityLog({
+        userId: 1, // Admin user ID
+        actionType: 'qr_code_updated',
+        details: `QR code updated: ${updatedQrCode.code}`
+      });
+      
+      return updatedQrCode;
+    } catch (error) {
+      console.error('Error updating QR code:', error);
+      return undefined;
+    }
+  }
+
+  async deleteQrCode(id: number): Promise<boolean> {
+    try {
+      // Get the QR code for logging
+      const qrCode = await this.getQrCodeById(id);
+      if (!qrCode) return false;
+      
+      // Delete the QR code
+      const result = await db.result(`
+        DELETE FROM qr_codes
+        WHERE id = $1
+      `, [id]);
+      
+      if (result.rowCount > 0) {
+        // Log activity
+        await this.createActivityLog({
+          userId: 1, // Admin user ID
+          actionType: 'qr_code_deleted',
+          details: qrCode.deviceId 
+            ? `QR code deleted for device ${(qrCode as any).deviceAssetTag || qrCode.deviceId}`
+            : `QR code deleted: ${qrCode.code}`
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error deleting QR code:', error);
+      return false;
+    }
+  }
+
+  async recordQrCodeScan(id: number): Promise<QrCode | undefined> {
+    try {
+      // Update the scan count and last scanned time
+      const updatedQrCode = await db.one(`
+        UPDATE qr_codes SET
+          scan_count = scan_count + 1,
+          last_scanned = NOW()
+        WHERE id = $1
+        RETURNING 
+          id, 
+          code, 
+          device_id as "deviceId", 
+          generated_at as "generatedAt", 
+          last_scanned as "lastScanned", 
+          scan_count as "scanCount"
+      `, [id]);
+      
+      // Get device information if available
+      if (updatedQrCode.deviceId) {
+        const device = await this.getDeviceById(updatedQrCode.deviceId);
+        if (device) {
+          (updatedQrCode as any).deviceBrand = device.brand;
+          (updatedQrCode as any).deviceModel = device.model;
+          (updatedQrCode as any).deviceAssetTag = device.assetTag;
+        }
+      }
+      
+      // Log activity
+      await this.createActivityLog({
+        userId: 1, // Admin user ID
+        actionType: 'qr_code_scanned',
+        details: updatedQrCode.deviceId 
+          ? `QR code scanned for device ${(updatedQrCode as any).deviceAssetTag || updatedQrCode.deviceId}`
+          : `QR code scanned: ${updatedQrCode.code}`
+      });
+      
+      return updatedQrCode;
+    } catch (error) {
+      console.error('Error recording QR code scan:', error);
+      return undefined;
+    }
+  }
+
+  // Notification operations
+  async getNotifications(userId: number, limit?: number): Promise<Notification[]> {
+    const limitClause = limit ? `LIMIT ${limit}` : '';
+    
+    const notifications = await db.any(`
+      SELECT 
+        id, 
+        user_id as "userId", 
+        type, 
+        title, 
+        message, 
+        is_read as "isRead", 
+        related_id as "relatedId", 
+        related_type as "relatedType", 
+        created_at as "createdAt"
+      FROM notifications
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      ${limitClause}
+    `, [userId]);
+    
+    return notifications;
+  }
+
+  async getUnreadNotifications(userId: number): Promise<Notification[]> {
+    const notifications = await db.any(`
+      SELECT 
+        id, 
+        user_id as "userId", 
+        type, 
+        title, 
+        message, 
+        is_read as "isRead", 
+        related_id as "relatedId", 
+        related_type as "relatedType", 
+        created_at as "createdAt"
+      FROM notifications
+      WHERE user_id = $1 AND is_read = FALSE
+      ORDER BY created_at DESC
+    `, [userId]);
+    
+    return notifications;
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const newNotification = await db.one(`
+      INSERT INTO notifications (
+        user_id, 
+        type, 
+        title, 
+        message, 
+        is_read, 
+        related_id, 
+        related_type
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7
+      ) RETURNING 
+        id, 
+        user_id as "userId", 
+        type, 
+        title, 
+        message, 
+        is_read as "isRead", 
+        related_id as "relatedId", 
+        related_type as "relatedType", 
+        created_at as "createdAt"
+    `, [
+      notification.userId,
+      notification.type,
+      notification.title,
+      notification.message,
+      notification.isRead || false,
+      notification.relatedId || null,
+      notification.relatedType || null
+    ]);
+    
+    return newNotification;
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    try {
+      const updatedNotification = await db.one(`
+        UPDATE notifications SET
+          is_read = TRUE
+        WHERE id = $1
+        RETURNING 
+          id, 
+          user_id as "userId", 
+          type, 
+          title, 
+          message, 
+          is_read as "isRead", 
+          related_id as "relatedId", 
+          related_type as "relatedType", 
+          created_at as "createdAt"
+      `, [id]);
+      
+      return updatedNotification;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return undefined;
+    }
+  }
+
+  async deleteNotification(id: number): Promise<boolean> {
+    try {
+      const result = await db.result(`
+        DELETE FROM notifications
+        WHERE id = $1
+      `, [id]);
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return false;
+    }
+  }
+
+  // Branding operations
+  async getBrandingSettings(): Promise<BrandingSettings | undefined> {
+    try {
+      const branding = await db.one(`
+        SELECT 
+          id, 
+          company_name as "companyName", 
+          logo, 
+          primary_color as "primaryColor", 
+          accent_color as "accentColor", 
+          updated_at as "updatedAt"
+        FROM branding_settings
+        ORDER BY id ASC
+        LIMIT 1
+      `);
+      
+      return branding;
+    } catch (error) {
+      // If no branding settings exist, create default ones
+      try {
+        return await this.updateBrandingSettings({
+          companyName: 'IT Asset Management',
+          logo: '',
+          primaryColor: '#1E40AF',
+          accentColor: '#3B82F6'
+        });
+      } catch (createError) {
+        console.error('Error creating default branding settings:', createError);
+        return undefined;
+      }
+    }
+  }
+
+  async updateBrandingSettings(settings: Partial<InsertBrandingSettings>): Promise<BrandingSettings> {
+    try {
+      // Check if branding settings already exist
+      const existingSettings = await db.oneOrNone(`
+        SELECT id FROM branding_settings LIMIT 1
+      `);
+      
+      if (existingSettings) {
+        // Build dynamic update query
+        const updates: string[] = [];
+        const values: any[] = [];
+        let paramCount = 1;
+        
+        if (settings.companyName !== undefined) {
+          updates.push(`company_name = $${paramCount++}`);
+          values.push(settings.companyName);
+        }
+        
+        if (settings.logo !== undefined) {
+          updates.push(`logo = $${paramCount++}`);
+          values.push(settings.logo);
+        }
+        
+        if (settings.primaryColor !== undefined) {
+          updates.push(`primary_color = $${paramCount++}`);
+          values.push(settings.primaryColor);
+        }
+        
+        if (settings.accentColor !== undefined) {
+          updates.push(`accent_color = $${paramCount++}`);
+          values.push(settings.accentColor);
+        }
+        
+        updates.push(`updated_at = NOW()`);
+        
+        // Update existing settings
+        values.push(existingSettings.id);
+        
+        const updatedSettings = await db.one(`
+          UPDATE branding_settings SET
+            ${updates.join(', ')}
+          WHERE id = $${paramCount}
+          RETURNING 
+            id, 
+            company_name as "companyName", 
+            logo, 
+            primary_color as "primaryColor", 
+            accent_color as "accentColor", 
+            updated_at as "updatedAt"
+        `, values);
+        
+        return updatedSettings;
+      } else {
+        // Create new settings
+        const newSettings = await db.one(`
+          INSERT INTO branding_settings (
+            company_name, 
+            logo, 
+            primary_color, 
+            accent_color
+          ) VALUES (
+            $1, $2, $3, $4
+          ) RETURNING 
+            id, 
+            company_name as "companyName", 
+            logo, 
+            primary_color as "primaryColor", 
+            accent_color as "accentColor", 
+            updated_at as "updatedAt"
+        `, [
+          settings.companyName || 'IT Asset Management',
+          settings.logo || '',
+          settings.primaryColor || '#1E40AF',
+          settings.accentColor || '#3B82F6'
+        ]);
+        
+        return newSettings;
+      }
+    } catch (error) {
+      console.error('Error updating branding settings:', error);
+      throw error;
+    }
   }
 }
