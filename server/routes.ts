@@ -286,13 +286,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/devices', async (req: Request, res: Response) => {
     try {
-      const validatedData = insertDeviceSchema.parse(req.body);
+      // Preprocess data to handle date objects
+      const requestData = { ...req.body };
+      
+      // Convert date strings to Date objects if they exist
+      if (requestData.purchaseDate && typeof requestData.purchaseDate === 'string') {
+        requestData.purchaseDate = new Date(requestData.purchaseDate);
+      }
+      
+      if (requestData.warrantyEOL && typeof requestData.warrantyEOL === 'string') {
+        requestData.warrantyEOL = new Date(requestData.warrantyEOL);
+      }
+      
+      const validatedData = insertDeviceSchema.parse(requestData);
       const device = await storage.createDevice(validatedData);
       res.status(201).json(device);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid device data", errors: error.errors });
       }
+      console.error("Error creating device:", error);
       res.status(500).json({ message: "Error creating device" });
     }
   });
@@ -300,7 +313,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/devices/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertDeviceSchema.partial().parse(req.body);
+      
+      // Preprocess data to handle date objects
+      const requestData = { ...req.body };
+      
+      // Convert date strings to Date objects if they exist
+      if (requestData.purchaseDate && typeof requestData.purchaseDate === 'string') {
+        requestData.purchaseDate = new Date(requestData.purchaseDate);
+      }
+      
+      if (requestData.warrantyEOL && typeof requestData.warrantyEOL === 'string') {
+        requestData.warrantyEOL = new Date(requestData.warrantyEOL);
+      }
+      
+      const validatedData = insertDeviceSchema.partial().parse(requestData);
       
       const device = await storage.updateDevice(id, validatedData);
       if (!device) {
@@ -312,6 +338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid device data", errors: error.errors });
       }
+      console.error("Error updating device:", error);
       res.status(500).json({ message: "Error updating device" });
     }
   });
