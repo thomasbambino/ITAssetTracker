@@ -13,7 +13,7 @@ export function ChartCard({ title, children, className }: ChartCardProps) {
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium text-gray-900">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pl-1 pr-3">
         <div className="h-[300px]">
           {children}
         </div>

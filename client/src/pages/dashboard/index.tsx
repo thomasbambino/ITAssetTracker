@@ -245,7 +245,7 @@ export default function Dashboard() {
                 margin={{
                   top: 10,
                   right: 60, // More space on right for labels
-                  left: 110, // Match the YAxis width to position bars right after the labels
+                  left: 10,  // Very small left margin
                   bottom: 10,
                 }}
                 barSize={16} // Smaller bar height
@@ -260,7 +260,7 @@ export default function Dashboard() {
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={100} 
+                  width={80} 
                   axisLine={false}
                   tickLine={false}
                   tick={{ 
@@ -270,7 +270,7 @@ export default function Dashboard() {
                   // Ensure all categories have names
                   tickFormatter={(value) => value || 'Other'}
                   // Add left padding to move text closer to bars
-                  tickMargin={-5}
+                  tickMargin={0}
                 />
                 <Tooltip 
                   formatter={(value: any, name: any, props: any) => [
