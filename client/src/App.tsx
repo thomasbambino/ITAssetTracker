@@ -10,6 +10,10 @@ import UserDetails from "@/pages/users/[id]";
 import Devices from "@/pages/devices";
 import DeviceDetails from "@/pages/devices/[id]";
 import Categories from "@/pages/categories";
+import Software from "@/pages/software";
+import History from "@/pages/history";
+import Reports from "@/pages/reports";
+import Settings from "@/pages/settings";
 
 function Router() {
   return (
@@ -20,6 +24,10 @@ function Router() {
       <Route path="/devices" component={Devices} />
       <Route path="/devices/:id" component={DeviceDetails} />
       <Route path="/categories" component={Categories} />
+      <Route path="/software" component={Software} />
+      <Route path="/history" component={History} />
+      <Route path="/reports" component={Reports} />
+      <Route path="/settings" component={Settings} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
