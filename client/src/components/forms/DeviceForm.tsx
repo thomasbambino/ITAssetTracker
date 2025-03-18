@@ -118,8 +118,11 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
     const formattedData = {
       ...data,
       purchaseCost: data.purchaseCost ? parseInt(data.purchaseCost.toString()) : null,
-      categoryId: data.categoryId ? parseInt(data.categoryId) : null,
+      categoryId: data.categoryId ? parseInt(data.categoryId.toString()) : null,
     };
+
+    // Show form data for debugging
+    console.log("Submitting device data:", formattedData);
 
     if (isUpdateMode) {
       updateMutation.mutate(formattedData);
