@@ -2,16 +2,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, PieChart, TrendingUp, Download } from "lucide-react";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 export default function Reports() {
+  const pageActions = (
+    <Button variant="outline">
+      <Download className="mr-2 h-4 w-4" /> Export
+    </Button>
+  );
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Reports</h1>
-        <Button variant="outline">
-          <Download className="mr-2 h-4 w-4" /> Export
-        </Button>
-      </div>
+    <PageContainer
+      title="Reports"
+      description="Generate and view asset management reports"
+      actions={pageActions}
+    >
       
       <Tabs defaultValue="summary" className="w-full">
         <TabsList className="mb-4">
@@ -133,6 +138,6 @@ export default function Reports() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 }

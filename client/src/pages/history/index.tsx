@@ -1,10 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 export default function History() {
   return (
-    <div className="container mx-auto py-6">
-      <h1 className="text-3xl font-bold mb-6">Activity History</h1>
+    <PageContainer 
+      title="Activity History"
+      description="View all system activity and changes over time"
+    >
       
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="mb-4">
@@ -94,6 +97,6 @@ export default function History() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 }

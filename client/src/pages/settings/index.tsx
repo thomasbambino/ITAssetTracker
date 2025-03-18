@@ -5,11 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 export default function Settings() {
   return (
-    <div className="container mx-auto py-6">
-      <h1 className="text-3xl font-bold mb-6">Settings</h1>
+    <PageContainer
+      title="Settings"
+      description="Configure system and user preferences"
+    >
       
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="mb-4">
@@ -169,6 +172,6 @@ export default function Settings() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 }

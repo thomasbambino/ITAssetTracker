@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandingForm } from "@/components/forms/BrandingForm";
 import { apiRequest } from "@/lib/queryClient";
 import { Eye, PaintBucket, Image, Building, Check } from "lucide-react";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 // Example theme options
 const THEME_CHOICES = [
