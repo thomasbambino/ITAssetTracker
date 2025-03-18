@@ -60,10 +60,10 @@ export function Sidebar() {
   return (
     <div className="hidden md:flex md:flex-shrink-0">
       <div className="flex flex-col w-64">
-        <div className="flex flex-col h-0 flex-1 bg-primary-800 text-white">
+        <div className="flex flex-col h-0 flex-1 bg-primary text-primary-foreground">
           {/* Logo */}
-          <div className="flex items-center h-16 flex-shrink-0 px-4 bg-primary-900">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-auto text-primary-400">
+          <div className="flex items-center h-16 flex-shrink-0 px-4 bg-primary/90">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-auto">
               <rect width="18" height="18" x="3" y="3" rx="2" />
               <path d="M7 7h10" />
               <path d="M7 12h10" />
@@ -85,8 +85,8 @@ export function Sidebar() {
                     href={route.href}
                     className={cn(
                       isActive
-                        ? "bg-primary-700 text-white"
-                        : "text-primary-100 hover:bg-primary-700",
+                        ? "bg-primary/80 text-primary-foreground"
+                        : "text-primary-foreground/80 hover:bg-primary/60 hover:text-primary-foreground",
                       "group flex items-center px-2 py-2 text-sm font-medium rounded-md"
                     )}
                   >
@@ -99,16 +99,16 @@ export function Sidebar() {
           </div>
           
           {/* User Info */}
-          <div className="flex-shrink-0 flex border-t border-primary-700 p-4">
+          <div className="flex-shrink-0 flex border-t border-primary/50 p-4">
             <div className="flex items-center">
               <div>
-                <div className="h-9 w-9 rounded-full bg-primary-700 flex items-center justify-center text-sm font-medium text-white">
+                <div className="h-9 w-9 rounded-full bg-primary/70 flex items-center justify-center text-sm font-medium text-primary-foreground">
                   AU
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-white">Admin User</p>
-                <p className="text-xs font-medium text-primary-200">Administrator</p>
+                <p className="text-sm font-medium text-primary-foreground">Admin User</p>
+                <p className="text-xs font-medium text-primary-foreground/70">Administrator</p>
               </div>
             </div>
           </div>

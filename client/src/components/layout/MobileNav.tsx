@@ -72,9 +72,9 @@ export function MobileNav() {
 
   return (
     <>
-      <div className="md:hidden bg-primary-800 text-white w-full flex items-center justify-between p-4">
+      <div className="md:hidden bg-primary text-primary-foreground w-full flex items-center justify-between p-4">
         <div className="flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-auto text-primary-400">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-auto">
             <rect width="18" height="18" x="3" y="3" rx="2" />
             <path d="M7 7h10" />
             <path d="M7 12h10" />
@@ -85,7 +85,7 @@ export function MobileNav() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-white" 
+          className="text-primary-foreground hover:bg-primary/80" 
           onClick={toggleMenu}
         >
           {isOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
@@ -93,16 +93,16 @@ export function MobileNav() {
       </div>
 
       {isOpen && (
-        <div className="md:hidden fixed inset-0 bg-gray-600 bg-opacity-75 z-40" onClick={closeMenu} />
+        <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={closeMenu} />
       )}
 
       <div className={cn(
-        "md:hidden fixed inset-y-0 left-0 transform bg-primary-800 text-white w-64 z-50 transition-transform duration-300 ease-in-out",
+        "md:hidden fixed inset-y-0 left-0 transform bg-primary text-primary-foreground w-64 z-50 transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex items-center justify-between h-16 px-4 border-b border-primary-700">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-primary/50">
           <div className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-auto text-primary-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-auto">
               <rect width="18" height="18" x="3" y="3" rx="2" />
               <path d="M7 7h10" />
               <path d="M7 12h10" />
@@ -113,7 +113,7 @@ export function MobileNav() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-white" 
+            className="text-primary-foreground hover:bg-primary/80" 
             onClick={closeMenu}
           >
             <XIcon className="h-6 w-6" />
@@ -131,8 +131,8 @@ export function MobileNav() {
                 href={route.href}
                 className={cn(
                   isActive
-                    ? "bg-primary-700 text-white"
-                    : "text-primary-100 hover:bg-primary-700",
+                    ? "bg-primary/80 text-primary-foreground"
+                    : "text-primary-foreground/80 hover:bg-primary/60 hover:text-primary-foreground",
                   "group flex items-center px-2 py-2 text-base font-medium rounded-md"
                 )}
                 onClick={closeMenu}
@@ -145,16 +145,16 @@ export function MobileNav() {
         </nav>
         
         <div className="absolute bottom-0 w-full">
-          <div className="flex-shrink-0 flex border-t border-primary-700 p-4">
+          <div className="flex-shrink-0 flex border-t border-primary/50 p-4">
             <div className="flex items-center">
               <div>
-                <div className="h-10 w-10 rounded-full bg-primary-700 flex items-center justify-center text-sm font-medium text-white">
+                <div className="h-10 w-10 rounded-full bg-primary/70 flex items-center justify-center text-sm font-medium text-primary-foreground">
                   AU
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-white">Admin User</p>
-                <p className="text-xs font-medium text-primary-200">Administrator</p>
+                <p className="text-sm font-medium text-primary-foreground">Admin User</p>
+                <p className="text-xs font-medium text-primary-foreground/70">Administrator</p>
               </div>
             </div>
           </div>
