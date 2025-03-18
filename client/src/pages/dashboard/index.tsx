@@ -244,38 +244,65 @@ export default function Dashboard() {
                 layout="vertical"
                 margin={{
                   top: 10,
-                  right: 30,
-                  left: 100,
+                  right: 60, // More space on right for labels
+                  left: 40,  // Less space on left to align bars closer
                   bottom: 10,
                 }}
+                barSize={16} // Smaller bar height
               >
-                <XAxis type="number" hide />
+                <XAxis 
+                  type="number" 
+                  domain={[0, 'dataMax']} 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={false}
+                />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={100} 
+                  width={120} 
                   axisLine={false}
                   tickLine={false}
+                  tick={{ 
+                    fill: '#64748B', 
+                    fontSize: 13 
+                  }}
+                  // Ensure all categories have names
+                  tickFormatter={(value) => value || 'Other'}
                 />
                 <Tooltip 
                   formatter={(value: any, name: any, props: any) => [
                     `${value} devices (${props.payload.percentage}%)`,
-                    name
+                    name || 'Other'
                   ]}
                   cursor={{ fill: '#f5f5f5' }}
                 />
-                <Bar dataKey="value" radius={[4, 4, 4, 4]}>
-                  {sortedCategoryData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={CATEGORY_COLORS[entry.name] || '#64748B'} 
-                    />
-                  ))}
+                <Bar 
+                  dataKey="value" 
+                  radius={[3, 3, 3, 3]}
+                  // Use 80% of available width to leave room for labels
+                  maxBarSize={120}
+                >
+                  {sortedCategoryData.map((entry, index) => {
+                    // Safely get the color based on the category name
+                    const categoryName = entry.name || 'Other';
+                    const color = Object.prototype.hasOwnProperty.call(CATEGORY_COLORS, categoryName) 
+                      ? CATEGORY_COLORS[categoryName as keyof typeof CATEGORY_COLORS]
+                      : '#64748B';
+                      
+                    return (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={color} 
+                      />
+                    );
+                  })}
                   <LabelList 
                     dataKey="percentage" 
                     position="right" 
                     formatter={(value: number) => `${value}%`}
                     style={{ fontWeight: "500", fill: "#64748B" }}
+                    offset={10} // Padding between bar end and label
                   />
                 </Bar>
               </BarChart>
@@ -293,36 +320,26 @@ export default function Dashboard() {
               <p>Loading chart data...</p>
             </div>
           ) : sortedDepartmentData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={sortedDepartmentData}
-                layout="vertical"
-                margin={{
-                  top: 10,
-                  right: 30,
-                  left: 100,
-                  bottom: 10,
-                }}
-              >
-                <XAxis type="number" hide />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  width={90}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip formatter={(value) => [`${value} devices`]} cursor={{ fill: '#f5f5f5' }} />
-                <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 4, 4]}>
-                  <LabelList 
-                    dataKey="value" 
-                    position="right" 
-                    formatter={(value: number) => formatNumber(value)}
-                    style={{ fontWeight: "500", fill: "#64748B" }}
-                  />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="p-5 h-[300px] overflow-y-auto">
+              <table className="w-full">
+                <thead className="border-b">
+                  <tr>
+                    <th className="text-left text-sm font-medium text-gray-500 pb-3">Department</th>
+                    <th className="text-right text-sm font-medium text-gray-500 pb-3">Count</th>
+                    <th className="text-right text-sm font-medium text-gray-500 pb-3">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedDepartmentData.map((dept, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-3 text-sm font-medium">{dept.name || 'Unassigned'}</td>
+                      <td className="py-3 text-sm text-right font-medium">{formatNumber(dept.value)}</td>
+                      <td className="py-3 text-sm text-right font-medium">{dept.percentage}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="flex items-center justify-center h-full">
               <p>No department data available</p>
