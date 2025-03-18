@@ -151,6 +151,9 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="text-sm text-gray-500 pb-2 border-b border-gray-200">
+          Fields marked with <span className="text-red-500">*</span> are required
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -188,7 +191,9 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between">
-                  <FormLabel>Serial Number</FormLabel>
+                  <FormLabel>
+                    Serial Number <span className="text-red-500">*</span>
+                  </FormLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -200,9 +205,12 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                   </Button>
                 </div>
                 <FormControl>
-                  <Input placeholder="Serial Number" {...field} />
+                  <Input placeholder="Serial Number" {...field} required />
                 </FormControl>
                 <FormMessage />
+                <FormDescription className="text-xs">
+                  A unique identifier for this device
+                </FormDescription>
               </FormItem>
             )}
           />
@@ -213,7 +221,9 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between">
-                  <FormLabel>Asset Tag</FormLabel>
+                  <FormLabel>
+                    Asset Tag <span className="text-red-500">*</span>
+                  </FormLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -225,9 +235,12 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                   </Button>
                 </div>
                 <FormControl>
-                  <Input placeholder="Asset Tag" {...field} />
+                  <Input placeholder="Asset Tag" {...field} required />
                 </FormControl>
                 <FormMessage />
+                <FormDescription className="text-xs">
+                  A unique tracking identifier for the device
+                </FormDescription>
               </FormItem>
             )}
           />
@@ -434,6 +447,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
           )}
           <Button 
             type="submit"
+            className="bg-primary hover:bg-primary/90"
             disabled={createMutation.isPending || updateMutation.isPending}
           >
             {createMutation.isPending || updateMutation.isPending
