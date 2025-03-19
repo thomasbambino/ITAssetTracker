@@ -119,6 +119,34 @@ export default function SoftwareDetails() {
         }
         return 'Unassigned';
       },
+      cell: (assignment: SoftwareAssignment) => {
+        if (assignment.user) {
+          return (
+            <button 
+              className="text-primary hover:underline focus:outline-none"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering the row click
+                setLocation(`/users/${assignment.user!.id}`);
+              }}
+            >
+              {assignment.user.firstName} {assignment.user.lastName}
+            </button>
+          );
+        } else if (assignment.device) {
+          return (
+            <button
+              className="text-primary hover:underline focus:outline-none"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering the row click
+                setLocation(`/devices/${assignment.device!.id}`);
+              }}
+            >
+              {assignment.device.brand} {assignment.device.model} ({assignment.device.assetTag})
+            </button>
+          );
+        }
+        return 'Unassigned';
+      },
     },
     {
       header: "Type",
@@ -326,6 +354,7 @@ export default function SoftwareDetails() {
             keyField="id"
             loading={isAssignmentsLoading}
             searchable
+            // Remove onRowClick functionality to prevent navigation conflicts with the buttons
             emptyState={
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No assignments found for this software.</p>
