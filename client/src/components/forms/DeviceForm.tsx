@@ -296,12 +296,23 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
               <FormLabel>Purchase Cost</FormLabel>
               <FormControl>
                 <Input 
-                  type="number" 
+                  type="text" 
                   placeholder="0.00" 
                   {...field} 
                   onChange={(e) => {
-                    const value = e.target.value === "" ? null : parseInt((parseFloat(e.target.value) * 100).toString());
-                    field.onChange(value);
+                    // Allow empty value or valid numbers with decimals
+                    const value = e.target.value;
+                    if (value === "" || value === null) {
+                      field.onChange(null);
+                    } else {
+                      // Remove any non-numeric characters except decimal point
+                      const numericValue = value.replace(/[^0-9.]/g, '');
+                      // Convert to cents for storage
+                      const centsValue = Math.round(parseFloat(numericValue) * 100);
+                      if (!isNaN(centsValue)) {
+                        field.onChange(centsValue);
+                      }
+                    }
                   }}
                   value={field.value ? (field.value / 100).toFixed(2) : ""}
                 />
