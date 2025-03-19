@@ -147,12 +147,15 @@ export default function Dashboard() {
     'Other': '#64748B'        // Dark Gray
   };
 
-  // Sort data by percentage (highest to lowest)
   // Get the top 5 categories and group the rest as "Other"
-  const processedCategoryData = [...(categoryChartData || [])].sort((a, b) => b.percentage - a.percentage);
+  const processedCategoryData = [...(categoryChartData || [])];
   
   // Show only top 5 categories, combine the rest into "Other"
   let sortedCategoryData = processedCategoryData;
+  
+  // First, sort by percentage in descending order
+  sortedCategoryData = sortedCategoryData.sort((a, b) => b.percentage - a.percentage);
+  
   if (processedCategoryData.length > 5) {
     const top5 = processedCategoryData.slice(0, 5);
     const otherCategories = processedCategoryData.slice(5);
@@ -179,6 +182,9 @@ export default function Dashboard() {
     
     sortedCategoryData = top5;
   }
+  
+  // Ensure data is sorted by percentage before rendering (highest to lowest)
+  sortedCategoryData = sortedCategoryData.sort((a, b) => b.percentage - a.percentage);
   
   const sortedDepartmentData = [...(departmentChartData || [])].sort((a, b) => b.value - a.value);
 
