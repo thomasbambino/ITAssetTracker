@@ -52,16 +52,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const count = categoryDevices.length;
         
         // Calculate total value (purchase cost) for the category
-        const totalValue = categoryDevices.reduce((sum, device) => {
-          return sum + (device.purchaseCost || 0);
-        }, 0);
+        let totalValueSum = 0;
+        for (const device of categoryDevices) {
+          // Explicitly handle the purchase cost, ensuring it's a number
+          if (device.purchaseCost) {
+            // This handles the purchaseCost whether it's a string or number
+            const costValue = parseInt(String(device.purchaseCost), 10);
+            if (!isNaN(costValue)) {
+              totalValueSum += costValue;
+            }
+          }
+        }
         
         return {
           id: category.id,
           name: category.name,
           count,
           percentage: devices.length > 0 ? Math.round((count / devices.length) * 100) : 0,
-          totalValue // Include total value in cents
+          totalValue: totalValueSum // Include total value in cents
         };
       });
       

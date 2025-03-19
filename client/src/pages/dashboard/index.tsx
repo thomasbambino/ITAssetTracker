@@ -137,8 +137,12 @@ export default function Dashboard() {
     const totalCount = processedCategoryData.reduce((sum, cat) => sum + cat.value, 0);
     const otherPercentage = totalCount > 0 ? Math.round((otherCount / totalCount) * 100) : 0;
     
-    // Also calculate total value for "Others"
-    const otherTotalValue = otherCategories.reduce((sum, cat) => sum + (cat.totalValue || 0), 0);
+    // Also calculate total value for "Others" - ensure we're using numbers
+    const otherTotalValue = otherCategories.reduce((sum, cat) => {
+      // Make sure cat.totalValue is treated as a number
+      const value = typeof cat.totalValue === 'number' ? cat.totalValue : 0;
+      return sum + value;
+    }, 0);
     
     if (otherCount > 0) {
       top5.push({
