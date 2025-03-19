@@ -322,25 +322,35 @@ export default function Dashboard() {
               <p>Loading chart data...</p>
             </div>
           ) : sortedDepartmentData.length > 0 ? (
-            <div className="p-5 h-[300px] overflow-y-auto">
-              <table className="w-full">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-left text-sm font-medium text-gray-500 pb-3">Department</th>
-                    <th className="text-right text-sm font-medium text-gray-500 pb-3">Count</th>
-                    <th className="text-right text-sm font-medium text-gray-500 pb-3">Percentage</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedDepartmentData.map((dept, index) => (
-                    <tr key={index} className="border-b border-gray-100">
-                      <td className="py-3 text-sm font-medium">{dept.name || 'Unassigned'}</td>
-                      <td className="py-3 text-sm text-right font-medium">{formatNumber(dept.value)}</td>
-                      <td className="py-3 text-sm text-right font-medium">{dept.percentage}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="p-4 h-[300px] overflow-y-auto">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                {sortedDepartmentData.map((dept, index) => {
+                  // Department-specific colors
+                  const colors = {
+                    "IT": "#4664f6", // Blue
+                    "Marketing": "#4ade80", // Green
+                    "Sales": "#eab308", // Yellow
+                    "Finance": "#ef4444", // Red
+                    "HR": "#a855f7", // Purple
+                    "Unassigned": "#94a3b8" // Gray
+                  };
+                  
+                  const deptName = dept.name || 'Unassigned';
+                  const color = colors[deptName as keyof typeof colors] || '#94a3b8';
+                  
+                  return (
+                    <div key={index} className="flex flex-col items-center">
+                      <div 
+                        className="text-4xl font-semibold mb-1" 
+                        style={{ color }}
+                      >
+                        {formatNumber(dept.value)}
+                      </div>
+                      <div className="text-sm text-gray-500">{deptName}</div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">
