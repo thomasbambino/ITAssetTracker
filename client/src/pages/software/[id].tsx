@@ -62,7 +62,7 @@ export default function SoftwareDetails() {
 
   // Query to fetch software details
   const { data: software, isLoading: isSoftwareLoading } = useQuery<Software>({
-    queryKey: ['/api/software', softwareId],
+    queryKey: [`/api/software/${softwareId}`],
     enabled: !!softwareId && !isNaN(softwareId),
   });
 
@@ -81,7 +81,7 @@ export default function SoftwareDetails() {
 
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['/api/software', softwareId] });
+    queryClient.invalidateQueries({ queryKey: [`/api/software/${softwareId}`] });
   };
 
   const handleAssignSuccess = () => {

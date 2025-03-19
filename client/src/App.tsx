@@ -11,6 +11,7 @@ import Devices from "@/pages/devices";
 import DeviceDetails from "@/pages/devices/[id]";
 import Categories from "@/pages/categories";
 import Software from "@/pages/software";
+import SoftwareDetails from "@/pages/software/[id]";
 import History from "@/pages/history";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/devices/:id" component={DeviceDetails} />
       <Route path="/categories" component={Categories} />
       <Route path="/software" component={Software} />
+      <Route path="/software/:id" component={SoftwareDetails} />
       <Route path="/maintenance" component={Maintenance} />
       <Route path="/notifications" component={Notifications} />
       <Route path="/qrcodes" component={QrCodes} />
