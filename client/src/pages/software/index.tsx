@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle, Clock, Plus, AlertTriangle } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Plus, AlertTriangle, Edit as EditIcon } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { SoftwareForm } from "@/components/forms/SoftwareForm";
 import { SoftwareAssignmentForm } from "@/components/forms/SoftwareAssignmentForm";
@@ -42,6 +42,7 @@ interface SoftwareAssignment {
 
 export default function Software() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedSoftware, setSelectedSoftware] = useState<Software | null>(null);
   
@@ -116,12 +117,20 @@ export default function Software() {
 
   const handleSoftwareFormSuccess = () => {
     setIsAddDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setSelectedSoftware(null);
+    
     // Invalidate queries to refresh the list
     queryClient.invalidateQueries({ queryKey: ['/api/software'] });
     queryClient.invalidateQueries({ queryKey: ['/api/software/status/active'] });
     queryClient.invalidateQueries({ queryKey: ['/api/software/status/expired'] });
     queryClient.invalidateQueries({ queryKey: ['/api/software/status/pending'] });
     queryClient.invalidateQueries({ queryKey: ['/api/software/expiring/30'] });
+  };
+  
+  const handleEditClick = (software: Software) => {
+    setSelectedSoftware(software);
+    setIsEditDialogOpen(true);
   };
 
   const handleAssignmentSuccess = () => {
