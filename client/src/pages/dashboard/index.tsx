@@ -348,13 +348,14 @@ export default function Dashboard() {
                     
                     return [
                       `${deviceCount} device${deviceCount !== 1 ? 's' : ''} - ${formattedValue}`,
-                      name || 'Other'
+                      '' // Remove category name from tooltip label to avoid showing "value"
                     ];
                   }}
                   cursor={{ fill: '#f5f5f5' }}
                 />
                 <Bar 
                   dataKey="value" 
+                  name=""  // Empty name to prevent "value" from displaying
                   radius={[3, 3, 3, 3]}
                   // Use 80% of available width to leave room for labels
                   maxBarSize={120}
