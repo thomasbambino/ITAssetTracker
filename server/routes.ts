@@ -48,12 +48,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categories = await storage.getCategories();
       
       const distribution = categories.map(category => {
-        const count = devices.filter(device => device.categoryId === category.id).length;
+        const categoryDevices = devices.filter(device => device.categoryId === category.id);
+        const count = categoryDevices.length;
+        
+        // Calculate total value (purchase cost) for the category
+        const totalValue = categoryDevices.reduce((sum, device) => {
+          return sum + (device.purchaseCost || 0);
+        }, 0);
+        
         return {
           id: category.id,
           name: category.name,
           count,
-          percentage: devices.length > 0 ? Math.round((count / devices.length) * 100) : 0
+          percentage: devices.length > 0 ? Math.round((count / devices.length) * 100) : 0,
+          totalValue // Include total value in cents
         };
       });
       

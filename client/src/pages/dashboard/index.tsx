@@ -101,6 +101,7 @@ export default function Dashboard() {
     name: category.name,
     value: category.count,
     percentage: category.percentage,
+    totalValue: category.totalValue || 0,
   })) || [];
 
   const departmentChartData = departmentDistribution?.map((dept: any) => ({
@@ -136,11 +137,15 @@ export default function Dashboard() {
     const totalCount = processedCategoryData.reduce((sum, cat) => sum + cat.value, 0);
     const otherPercentage = totalCount > 0 ? Math.round((otherCount / totalCount) * 100) : 0;
     
+    // Also calculate total value for "Others"
+    const otherTotalValue = otherCategories.reduce((sum, cat) => sum + (cat.totalValue || 0), 0);
+    
     if (otherCount > 0) {
       top5.push({
         name: 'Other',
         value: otherCount,
-        percentage: otherPercentage
+        percentage: otherPercentage,
+        totalValue: otherTotalValue
       });
     }
     
@@ -296,10 +301,21 @@ export default function Dashboard() {
                   tickMargin={0}
                 />
                 <Tooltip 
-                  formatter={(value: any, name: any, props: any) => [
-                    `${value} devices (${props.payload.percentage}%)`,
-                    name || 'Other'
-                  ]}
+                  formatter={(value: any, name: any, props: any) => {
+                    // Format the total value as currency
+                    const totalValue = props.payload.totalValue || 0;
+                    const formattedValue = new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    }).format(totalValue / 100); // Convert cents to dollars for display
+                    
+                    return [
+                      `${formattedValue} (${props.payload.percentage}%)`,
+                      name || 'Other'
+                    ];
+                  }}
                   cursor={{ fill: '#f5f5f5' }}
                 />
                 <Bar 
