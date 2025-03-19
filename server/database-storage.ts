@@ -557,23 +557,50 @@ export class DatabaseStorage implements IStorage {
       const device = await this.getDeviceById(id);
       if (!device) return false;
       
-      // Delete device
-      const result = await db.result(`
-        DELETE FROM devices
-        WHERE id = $1
-      `, [id]);
-      
-      if (result.rowCount > 0) {
-        // Log activity
-        await this.createActivityLog({
-          userId: 1, // Admin user ID
-          actionType: 'device_deleted',
-          details: `Device deleted: ${device.brand} ${device.model} (${device.assetTag})`
-        });
-        return true;
-      }
-      
-      return false;
+      // Use a transaction to ensure data integrity
+      return await db.tx(async t => {
+        // 1. Delete related records in assignment_history
+        await t.none(`
+          DELETE FROM assignment_history
+          WHERE device_id = $1
+        `, [id]);
+        
+        // 2. Delete related records in software_assignments
+        await t.none(`
+          DELETE FROM software_assignments
+          WHERE device_id = $1
+        `, [id]);
+        
+        // 3. Delete related records in maintenance_records
+        await t.none(`
+          DELETE FROM maintenance_records
+          WHERE device_id = $1
+        `, [id]);
+        
+        // 4. Delete related records in qr_codes
+        await t.none(`
+          DELETE FROM qr_codes
+          WHERE device_id = $1
+        `, [id]);
+        
+        // 5. Finally delete the device
+        const result = await t.result(`
+          DELETE FROM devices
+          WHERE id = $1
+        `, [id]);
+        
+        if (result.rowCount > 0) {
+          // Log activity
+          await this.createActivityLog({
+            userId: 1, // Admin user ID
+            actionType: 'device_deleted',
+            details: `Device deleted: ${device.brand} ${device.model} (${device.assetTag})`
+          });
+          return true;
+        }
+        
+        return false;
+      });
     } catch (error) {
       console.error('Error deleting device:', error);
       return false;
