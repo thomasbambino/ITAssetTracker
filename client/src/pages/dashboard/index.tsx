@@ -123,7 +123,30 @@ export default function Dashboard() {
   };
 
   // Sort data for better visualization
-  const sortedCategoryData = [...(categoryChartData || [])].sort((a, b) => b.value - a.value);
+  // Get the top 5 categories and group the rest as "Other"
+  const processedCategoryData = [...(categoryChartData || [])].sort((a, b) => b.value - a.value);
+  
+  // Show only top 5 categories, combine the rest into "Other"
+  let sortedCategoryData = processedCategoryData;
+  if (processedCategoryData.length > 5) {
+    const top5 = processedCategoryData.slice(0, 5);
+    const otherCategories = processedCategoryData.slice(5);
+    
+    const otherCount = otherCategories.reduce((sum, cat) => sum + cat.value, 0);
+    const totalCount = processedCategoryData.reduce((sum, cat) => sum + cat.value, 0);
+    const otherPercentage = totalCount > 0 ? Math.round((otherCount / totalCount) * 100) : 0;
+    
+    if (otherCount > 0) {
+      top5.push({
+        name: 'Other',
+        value: otherCount,
+        percentage: otherPercentage
+      });
+    }
+    
+    sortedCategoryData = top5;
+  }
+  
   const sortedDepartmentData = [...(departmentChartData || [])].sort((a, b) => b.value - a.value);
 
   return (
