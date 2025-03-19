@@ -622,6 +622,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Create the device
             const device = await storage.createDevice(validatedData);
+            
+            // If there's a userId, manually create the assignment history record
+            if (userId) {
+              await storage.createAssignmentHistory({
+                deviceId: device.id,
+                userId: userId,
+                assignedBy: 1, // Admin user
+                assignedAt: new Date(),
+                unassignedAt: null,
+                notes: 'Assigned during import'
+              });
+            }
+            
             importedDevices.push(device);
           } catch (error) {
             // Skip invalid records
