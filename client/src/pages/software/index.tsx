@@ -12,6 +12,7 @@ import { SoftwareForm } from "@/components/forms/SoftwareForm";
 import { SoftwareAssignmentForm } from "@/components/forms/SoftwareAssignmentForm";
 import { queryClient } from "@/lib/queryClient";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { useLocation } from "wouter";
 
 // Define the software type based on our schema
 interface Software {
@@ -45,6 +46,7 @@ export default function Software() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedSoftware, setSelectedSoftware] = useState<Software | null>(null);
+  const [, setLocation] = useLocation();
   
   // Query for fetching all software
   const { data: softwareList = [], isLoading: isSoftwareLoading } = useQuery<Software[]>({
@@ -87,14 +89,26 @@ export default function Software() {
       accessor: (software: Software) => software.status,
       cell: (software: Software) => {
         const statusMap = {
-          active: { label: "Active", icon: <CheckCircle className="h-4 w-4 mr-1" />, class: "bg-green-100 text-green-800" },
-          expired: { label: "Expired", icon: <AlertCircle className="h-4 w-4 mr-1" />, class: "bg-red-100 text-red-800" },
-          pending: { label: "Pending", icon: <Clock className="h-4 w-4 mr-1" />, class: "bg-yellow-100 text-yellow-800" },
+          active: { 
+            label: "Active", 
+            icon: <CheckCircle className="h-4 w-4 mr-1" />, 
+            variant: "success" 
+          },
+          expired: { 
+            label: "Expired", 
+            icon: <AlertCircle className="h-4 w-4 mr-1" />, 
+            variant: "destructive" 
+          },
+          pending: { 
+            label: "Pending", 
+            icon: <Clock className="h-4 w-4 mr-1" />, 
+            variant: "warning" 
+          },
         };
         const status = statusMap[software.status];
         
         return (
-          <Badge variant="outline" className={`flex items-center ${status.class}`}>
+          <Badge variant={status.variant as any} className="flex items-center">
             {status.icon}
             {status.label}
           </Badge>
@@ -145,6 +159,11 @@ export default function Software() {
   const handleAssignClick = (software: Software) => {
     setSelectedSoftware(software);
     setIsAssignDialogOpen(true);
+  };
+  
+  // Handle row click to navigate to software details
+  const handleRowClick = (software: Software) => {
+    setLocation(`/software/${software.id}`);
   };
 
   const pageActions = (
@@ -216,6 +235,7 @@ export default function Software() {
                 keyField="id"
                 loading={isSoftwareLoading}
                 searchable
+                onRowClick={handleRowClick}
                 actions={[
                   {
                     label: "Edit",
@@ -253,6 +273,7 @@ export default function Software() {
                 keyField="id"
                 loading={isActiveLoading}
                 searchable
+                onRowClick={handleRowClick}
                 actions={[
                   {
                     label: "Edit",
@@ -285,6 +306,7 @@ export default function Software() {
                 keyField="id"
                 loading={isExpiredLoading}
                 searchable
+                onRowClick={handleRowClick}
                 actions={[
                   {
                     label: "Edit",
@@ -317,6 +339,7 @@ export default function Software() {
                 keyField="id"
                 loading={isPendingLoading}
                 searchable
+                onRowClick={handleRowClick}
                 actions={[
                   {
                     label: "Edit",
