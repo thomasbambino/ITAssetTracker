@@ -56,8 +56,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const device of categoryDevices) {
           // Explicitly handle the purchase cost, ensuring it's a number
           if (device.purchaseCost) {
-            // This handles the purchaseCost whether it's a string or number
-            const costValue = parseInt(String(device.purchaseCost), 10);
+            // Force conversion to number by first converting to string then to number
+            // Use Number() instead of parseInt to avoid any unexpected behavior
+            const costString = String(device.purchaseCost).replace(/^0+/, ''); // Remove leading zeros
+            const costValue = Number(costString);
+            
             if (!isNaN(costValue)) {
               totalValueSum += costValue;
             }
