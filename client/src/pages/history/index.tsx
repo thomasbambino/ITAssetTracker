@@ -9,12 +9,11 @@ import { Input } from "@/components/ui/input";
 import { RefreshCcwIcon, SearchIcon } from 'lucide-react';
 
 export default function History() {
-  const [activityLimit] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Fetch all activity logs with limit
+  // Fetch all activity logs with no limit (unlimited)
   const { data: activities, isLoading: activitiesLoading, refetch } = useQuery<ActivityLog[]>({
-    queryKey: ['/api/activity', { limit: activityLimit }],
+    queryKey: ['/api/activity', { limit: 0 }],
   });
   
   // Filter activities by search term
@@ -94,7 +93,7 @@ export default function History() {
               <ActivityTable 
                 activities={filteredActivities} 
                 loading={activitiesLoading}
-                itemsPerPage={10}
+                itemsPerPage={50}
                 showPagination={true}
                 showFirstLast={true}
               />
@@ -115,7 +114,7 @@ export default function History() {
                 <ActivityTable 
                   activities={deviceActivities} 
                   loading={activitiesLoading}
-                  itemsPerPage={10}
+                  itemsPerPage={50}
                   showPagination={true}
                   showFirstLast={true}
                 />
@@ -145,7 +144,7 @@ export default function History() {
                 <ActivityTable 
                   activities={assignmentActivities} 
                   loading={activitiesLoading}
-                  itemsPerPage={10}
+                  itemsPerPage={50}
                   showPagination={true}
                   showFirstLast={true}
                 />
@@ -175,7 +174,7 @@ export default function History() {
                 <ActivityTable 
                   activities={userActivities}
                   loading={activitiesLoading}
-                  itemsPerPage={10}
+                  itemsPerPage={50}
                   showPagination={true}
                   showFirstLast={true}
                 />

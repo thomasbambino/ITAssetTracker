@@ -112,11 +112,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Recent activity logs
+  // All activity logs
   app.get('/api/activity', async (req: Request, res: Response) => {
     try {
-      // Increase default limit to 50, but still allow custom limits via query param
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      // If no limit is specified or limit=0, get all logs (0 means unlimited)
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 0;
       const activityLogs = await storage.getActivityLogs(limit);
       
       // Enhance logs with user information
