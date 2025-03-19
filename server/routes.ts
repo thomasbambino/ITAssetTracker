@@ -161,8 +161,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get devices assigned to this user
       const devices = await storage.getDevicesByUser(id);
       
-      res.json({ ...user, devices });
+      // Enrich devices with category information
+      const enrichedDevices = await Promise.all(devices.map(async (device) => {
+        const category = device.categoryId 
+          ? await storage.getCategoryById(device.categoryId) 
+          : null;
+          
+        return {
+          ...device,
+          category: category ? { id: category.id, name: category.name } : null
+        };
+      }));
+      
+      res.json({ ...user, devices: enrichedDevices });
     } catch (error) {
+      console.error("Error fetching user details:", error);
       res.status(500).json({ message: "Error fetching user" });
     }
   });
@@ -396,8 +409,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/categories', async (req: Request, res: Response) => {
     try {
       const categories = await storage.getCategories();
-      res.json(categories);
+      const devices = await storage.getDevices();
+      
+      // Add device counts to each category
+      const enrichedCategories = await Promise.all(categories.map(async (category) => {
+        // Find devices in this category
+        const categoryDevices = devices.filter(device => device.categoryId === category.id);
+        
+        return {
+          ...category,
+          devices: categoryDevices
+        };
+      }));
+      
+      res.json(enrichedCategories);
     } catch (error) {
+      console.error("Error fetching categories:", error);
       res.status(500).json({ message: "Error fetching categories" });
     }
   });
