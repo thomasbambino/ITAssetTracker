@@ -44,7 +44,7 @@ const formatActionType = (actionType: string): string => {
     .join(' ');
 };
 
-interface ActivityLog {
+export interface ActivityLog {
   id: number;
   actionType: string;
   details: string;

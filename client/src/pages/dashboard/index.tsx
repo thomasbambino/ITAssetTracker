@@ -4,7 +4,7 @@ import { GlobalSearch } from '@/components/shared/GlobalSearch';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { ActionButton } from '@/components/dashboard/ActionButton';
 import { ChartCard } from '@/components/dashboard/ChartCard';
-import { ActivityTable } from '@/components/dashboard/ActivityTable';
+import { ActivityTable, ActivityLog } from '@/components/dashboard/ActivityTable';
 import { 
   LaptopIcon, 
   UserPlusIcon, 
@@ -74,19 +74,7 @@ export default function Dashboard() {
     queryKey: ['/api/stats/departments'],
   });
 
-  // Define ActivityLog interface
-  interface ActivityLog {
-    id: number;
-    actionType: string;
-    details: string;
-    timestamp: Date | string;
-    userId: number | null;
-    user?: {
-      id: number;
-      name: string;
-      department?: string;
-    } | null;
-  }
+  // Using ActivityLog imported at the top
 
   // Fetch recent activity
   const { data: activities, isLoading: activitiesLoading } = useQuery<ActivityLog[]>({
@@ -159,9 +147,9 @@ export default function Dashboard() {
     'Other': '#64748B'        // Dark Gray
   };
 
-  // Sort data for better visualization
+  // Sort data by percentage (highest to lowest)
   // Get the top 5 categories and group the rest as "Other"
-  const processedCategoryData = [...(categoryChartData || [])].sort((a, b) => b.value - a.value);
+  const processedCategoryData = [...(categoryChartData || [])].sort((a, b) => b.percentage - a.percentage);
   
   // Show only top 5 categories, combine the rest into "Other"
   let sortedCategoryData = processedCategoryData;
