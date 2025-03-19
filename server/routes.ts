@@ -592,6 +592,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (isNaN(warrantyEOL.getTime())) warrantyEOL = null;
             }
             
+            // Try to find the user by email for assignment
+            let userId = null;
+            if (record.assignedTo || record['Assigned To']) {
+              const email = record.assignedTo || record['Assigned To'];
+              // Find all users to search by email
+              const users = await storage.getUsers();
+              const user = users.find(u => u.email === email);
+              if (user) {
+                userId = user.id;
+              }
+            }
+            
             const deviceData = {
               brand: record.brand || record['Brand'] || '',
               model: record.model || record['Model'] || '',
@@ -601,7 +613,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               purchaseCost,
               purchaseDate,
               purchasedBy: record.purchasedBy || record['Purchased By'] || '',
-              warrantyEOL
+              warrantyEOL,
+              userId
             };
             
             // Validate the data
@@ -676,12 +689,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categoryMap = new Map(categories.map(c => [c.id, c.name]));
       const userMap = new Map(users.map(u => [u.id, `${u.firstName} ${u.lastName}`]));
       
+      // Get email map for users
+      const userEmailMap = new Map(users.map(u => [u.id, u.email]));
+      
       // Prepare enhanced device data for export
       const enhancedDevices = devices.map(device => {
         return {
           ...device,
           categoryName: device.categoryId ? categoryMap.get(device.categoryId) : '',
-          assignedTo: device.userId ? userMap.get(device.userId) : '',
+          assignedTo: device.userId ? userEmailMap.get(device.userId) : '',
           // Convert cents to dollars for the export
           purchaseCostFormatted: device.purchaseCost ? `$${(device.purchaseCost / 100).toFixed(2)}` : '',
           // Format dates
@@ -696,13 +712,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { key: 'id', header: 'ID' },
           { key: 'brand', header: 'Brand' },
           { key: 'model', header: 'Model' },
+          { key: 'assetTag', header: 'Asset Tag' },          
           { key: 'serialNumber', header: 'Serial Number' },
-          { key: 'assetTag', header: 'Asset Tag' },
           { key: 'categoryName', header: 'Category' },
-          { key: 'purchaseCostFormatted', header: 'Purchase Cost' },
           { key: 'purchaseDateFormatted', header: 'Purchase Date' },
           { key: 'purchasedBy', header: 'Purchased By' },
           { key: 'warrantyEOLFormatted', header: 'Warranty End Date' },
+          { key: 'purchaseCostFormatted', header: 'Purchase Cost' },
           { key: 'assignedTo', header: 'Assigned To' }
         ]
       });
