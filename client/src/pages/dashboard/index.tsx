@@ -347,11 +347,34 @@ export default function Dashboard() {
                     }).format(totalValue / 100); // Convert cents to dollars for display
                     
                     return [
+                      // No tooltip name (empty string as second parameter)
                       `${deviceCount} device${deviceCount !== 1 ? 's' : ''} - ${formattedValue}`,
-                      '' // Remove category name from tooltip label to avoid showing "value"
+                      ''
                     ];
                   }}
                   cursor={{ fill: '#f5f5f5' }}
+                  // Custom content to fully control the tooltip display
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      const deviceCount = data.value || 0;
+                      const totalValue = data.totalValue || 0;
+                      const formattedValue = new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      }).format(totalValue / 100);
+                      
+                      return (
+                        <div className="p-2 bg-white shadow border rounded">
+                          <p className="text-sm font-medium">{data.name}</p>
+                          <p className="text-sm">{deviceCount} device{deviceCount !== 1 ? 's' : ''} - {formattedValue}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 <Bar 
                   dataKey="value" 
