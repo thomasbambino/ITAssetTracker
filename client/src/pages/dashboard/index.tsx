@@ -37,23 +37,59 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
+  // Define types for API responses
+  interface DashboardStats {
+    totalDevices: number;
+    assignedDevices: number;
+    unassignedDevices: number;
+    expiringWarranties: number;
+  }
+
+  interface CategoryStats {
+    id: number;
+    name: string;
+    count: number;
+    percentage: number;
+    totalValue: number;
+  }
+
+  interface DepartmentStats {
+    department: string;
+    count: number;
+    percentage: number;
+  }
+
   // Fetch dashboard stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['/api/stats'],
   });
 
   // Fetch category distribution
-  const { data: categoryDistribution, isLoading: categoriesLoading } = useQuery({
+  const { data: categoryDistribution, isLoading: categoriesLoading } = useQuery<CategoryStats[]>({
     queryKey: ['/api/stats/categories'],
   });
 
   // Fetch department distribution
-  const { data: departmentDistribution, isLoading: departmentsLoading } = useQuery({
+  const { data: departmentDistribution, isLoading: departmentsLoading } = useQuery<DepartmentStats[]>({
     queryKey: ['/api/stats/departments'],
   });
 
+  // Define ActivityLog interface
+  interface ActivityLog {
+    id: number;
+    actionType: string;
+    details: string;
+    timestamp: Date | string;
+    userId: number | null;
+    user?: {
+      id: number;
+      name: string;
+      department?: string;
+    } | null;
+  }
+
   // Fetch recent activity
-  const { data: activities, isLoading: activitiesLoading } = useQuery({
+  const { data: activities, isLoading: activitiesLoading } = useQuery<ActivityLog[]>({
     queryKey: ['/api/activity'],
   });
 
@@ -97,14 +133,14 @@ export default function Dashboard() {
   };
 
   // Prepare chart data
-  const categoryChartData = categoryDistribution?.map((category: any) => ({
+  const categoryChartData = categoryDistribution?.map((category) => ({
     name: category.name,
     value: category.count,
     percentage: category.percentage,
     totalValue: category.totalValue || 0,
   })) || [];
 
-  const departmentChartData = departmentDistribution?.map((dept: any) => ({
+  const departmentChartData = departmentDistribution?.map((dept) => ({
     name: dept.department || 'Unassigned',
     value: dept.count,
   })) || [];
@@ -308,6 +344,7 @@ export default function Dashboard() {
                   formatter={(value: any, name: any, props: any) => {
                     // Format the total value as currency
                     const totalValue = props.payload.totalValue || 0;
+                    const deviceCount = props.payload.value || 0;
                     const formattedValue = new Intl.NumberFormat('en-US', {
                       style: 'currency',
                       currency: 'USD',
@@ -316,7 +353,7 @@ export default function Dashboard() {
                     }).format(totalValue / 100); // Convert cents to dollars for display
                     
                     return [
-                      `${formattedValue} (${props.payload.percentage}%)`,
+                      `${deviceCount} device${deviceCount !== 1 ? 's' : ''} - ${formattedValue}`,
                       name || 'Other'
                     ];
                   }}
