@@ -379,7 +379,7 @@ export class DatabaseStorage implements IStorage {
           c.name as "categoryName"
         FROM devices d
         LEFT JOIN categories c ON d.category_id = c.id
-        WHERE d.id = $1
+        WHERE d.id = $1 AND (d.deleted = FALSE OR d.deleted IS NULL)
       `, [id]);
       return device;
     } catch (error) {
@@ -601,7 +601,7 @@ export class DatabaseStorage implements IStorage {
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
-      WHERE d.category_id = $1
+      WHERE d.category_id = $1 AND (d.deleted = FALSE OR d.deleted IS NULL)
     `, [categoryId]);
     
     return devices;
@@ -625,7 +625,7 @@ export class DatabaseStorage implements IStorage {
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
-      WHERE d.user_id = $1
+      WHERE d.user_id = $1 AND (d.deleted = FALSE OR d.deleted IS NULL)
     `, [userId]);
     
     return devices;
@@ -649,7 +649,7 @@ export class DatabaseStorage implements IStorage {
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
-      WHERE d.user_id IS NULL
+      WHERE d.user_id IS NULL AND (d.deleted = FALSE OR d.deleted IS NULL)
     `);
     
     return devices;
@@ -818,6 +818,7 @@ export class DatabaseStorage implements IStorage {
       WHERE d.warranty_eol IS NOT NULL
         AND d.warranty_eol <= $1
         AND d.warranty_eol >= $2
+        AND (d.deleted = FALSE OR d.deleted IS NULL)
     `, [futureDate, now]);
     
     return devices;
