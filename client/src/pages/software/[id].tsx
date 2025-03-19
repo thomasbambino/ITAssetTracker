@@ -68,7 +68,7 @@ export default function SoftwareDetails() {
 
   // Query to fetch software assignments
   const { data: assignments = [], isLoading: isAssignmentsLoading } = useQuery<SoftwareAssignment[]>({
-    queryKey: ['/api/software-assignments/software', softwareId],
+    queryKey: [`/api/software-assignments/software/${softwareId}`],
     enabled: !!softwareId && !isNaN(softwareId),
   });
 
@@ -86,7 +86,7 @@ export default function SoftwareDetails() {
 
   const handleAssignSuccess = () => {
     setIsAssignDialogOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['/api/software-assignments/software', softwareId] });
+    queryClient.invalidateQueries({ queryKey: [`/api/software-assignments/software/${softwareId}`] });
   };
 
   // Generate status badge
