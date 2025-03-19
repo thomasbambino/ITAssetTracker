@@ -823,10 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Software not found" });
       }
       
-      // Get assignments for this software
-      const assignments = await storage.getSoftwareAssignments(id);
-      
-      res.json({ ...softwareItem, assignments });
+      res.json(softwareItem);
     } catch (error) {
       res.status(500).json({ message: "Error fetching software details" });
     }
@@ -914,8 +911,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const softwareId = parseInt(req.params.softwareId);
       const assignments = await storage.getSoftwareAssignments(softwareId);
-      res.json(assignments);
+      
+      // Enrich assignments with user and device details
+      const enrichedAssignments = await Promise.all(
+        assignments.map(async (assignment) => {
+          const user = assignment.userId 
+            ? await storage.getUserById(assignment.userId) 
+            : null;
+            
+          const device = assignment.deviceId 
+            ? await storage.getDeviceById(assignment.deviceId) 
+            : null;
+            
+          return {
+            ...assignment,
+            user: user || null,
+            device: device || null
+          };
+        })
+      );
+      
+      res.json(enrichedAssignments);
     } catch (error) {
+      console.error("Error fetching software assignments:", error);
       res.status(500).json({ message: "Error fetching software assignments" });
     }
   });
