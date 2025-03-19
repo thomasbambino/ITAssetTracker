@@ -35,7 +35,7 @@ interface SoftwareAssignment {
   softwareId: number;
   userId?: number | null;
   deviceId?: number | null;
-  assignmentDate: Date;
+  assignedAt: Date; // This is the actual field name from the API
   expiryDate?: Date | null;
   notes?: string | null;
   user?: {
@@ -159,7 +159,7 @@ export default function SoftwareDetails() {
     },
     {
       header: "Assignment Date",
-      accessor: (assignment: SoftwareAssignment) => formatDate(assignment.assignmentDate),
+      accessor: (assignment: SoftwareAssignment) => formatDate(assignment.assignedAt),
     },
     {
       header: "Expiry Date",
