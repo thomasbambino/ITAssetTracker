@@ -57,30 +57,30 @@ export default function Software() {
   });
 
   // Queries for different status filters
-  const { data: activeSoftware = [], isLoading: isActiveLoading } = useQuery({
+  const { data: activeSoftware = [], isLoading: isActiveLoading } = useQuery<Software[]>({
     queryKey: ['/api/software/status/active'],
   });
   
-  const { data: expiredSoftware = [], isLoading: isExpiredLoading } = useQuery({
+  const { data: expiredSoftware = [], isLoading: isExpiredLoading } = useQuery<Software[]>({
     queryKey: ['/api/software/status/expired'],
   });
   
-  const { data: pendingSoftware = [], isLoading: isPendingLoading } = useQuery({
+  const { data: pendingSoftware = [], isLoading: isPendingLoading } = useQuery<Software[]>({
     queryKey: ['/api/software/status/pending'],
   });
 
   const columns = [
     {
       header: "Name",
-      accessor: "name",
+      accessor: "name" as keyof Software,
     },
     {
       header: "Vendor",
-      accessor: "vendor",
+      accessor: "vendor" as keyof Software,
     },
     {
       header: "License Type",
-      accessor: "licenseType",
+      accessor: "licenseType" as keyof Software,
     },
     {
       header: "Status",
@@ -218,6 +218,11 @@ export default function Software() {
                 searchable
                 actions={[
                   {
+                    label: "Edit",
+                    onClick: handleEditClick,
+                    icon: <EditIcon className="h-4 w-4" />
+                  },
+                  {
                     label: "Assign",
                     onClick: handleAssignClick,
                     icon: <Plus className="h-4 w-4" />
@@ -250,6 +255,11 @@ export default function Software() {
                 searchable
                 actions={[
                   {
+                    label: "Edit",
+                    onClick: handleEditClick,
+                    icon: <EditIcon className="h-4 w-4" />
+                  },
+                  {
                     label: "Assign",
                     onClick: handleAssignClick,
                     icon: <Plus className="h-4 w-4" />
@@ -276,6 +286,11 @@ export default function Software() {
                 loading={isExpiredLoading}
                 searchable
                 actions={[
+                  {
+                    label: "Edit",
+                    onClick: handleEditClick,
+                    icon: <EditIcon className="h-4 w-4" />
+                  },
                   {
                     label: "Assign",
                     onClick: handleAssignClick,
@@ -304,6 +319,11 @@ export default function Software() {
                 searchable
                 actions={[
                   {
+                    label: "Edit",
+                    onClick: handleEditClick,
+                    icon: <EditIcon className="h-4 w-4" />
+                  },
+                  {
                     label: "Assign",
                     onClick: handleAssignClick,
                     icon: <Plus className="h-4 w-4" />
@@ -328,6 +348,24 @@ export default function Software() {
             <SoftwareAssignmentForm 
               softwareId={selectedSoftware.id} 
               onSuccess={handleAssignmentSuccess} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Software Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Software</DialogTitle>
+            <DialogDescription>
+              {selectedSoftware && `Update details for ${selectedSoftware.name}.`}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedSoftware && (
+            <SoftwareForm 
+              software={selectedSoftware} 
+              onSuccess={handleSoftwareFormSuccess} 
             />
           )}
         </DialogContent>
