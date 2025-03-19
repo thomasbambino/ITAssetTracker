@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate, formatCurrency, mapErrorMessage } from "@/lib/utils";
 import { SoftwareForm } from "@/components/forms/SoftwareForm";
 import { SoftwareAssignmentForm } from "@/components/forms/SoftwareAssignmentForm";
-import { queryClient } from "@/lib/queryClient";
-import { AlertCircle, Calendar, CheckCircle, Clock, CreditCard, Edit as EditIcon, Plus, Tag, Users } from "lucide-react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { AlertCircle, Calendar, CheckCircle, Clock, CreditCard, Edit as EditIcon, Plus, Tag, Trash2, Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { DataTable } from "@/components/ui/data-table";
 
 // Define the software type
@@ -59,6 +60,7 @@ export default function SoftwareDetails() {
   const softwareId = Number(params.id);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   // Query to fetch software details
   const { data: software, isLoading: isSoftwareLoading } = useQuery<Software>({
@@ -67,9 +69,33 @@ export default function SoftwareDetails() {
   });
 
   // Query to fetch software assignments
-  const { data: assignments = [], isLoading: isAssignmentsLoading } = useQuery<SoftwareAssignment[]>({
+  const { data: assignments = [], isLoading: isAssignmentsLoading, refetch: refetchAssignments } = useQuery<SoftwareAssignment[]>({
     queryKey: [`/api/software-assignments/software/${softwareId}`],
     enabled: !!softwareId && !isNaN(softwareId),
+  });
+  
+  // Mutation to delete a software assignment
+  const deleteMutation = useMutation({
+    mutationFn: async (assignmentId: number) => {
+      return apiRequest(`/api/software-assignments/${assignmentId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Assignment removed",
+        description: "The software assignment has been removed successfully.",
+      });
+      // Refetch assignments after deletion
+      refetchAssignments();
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: mapErrorMessage(error) || "Failed to remove assignment. Please try again.",
+      });
+    }
   });
 
   // Redirect to software list if ID is invalid
@@ -355,6 +381,17 @@ export default function SoftwareDetails() {
             loading={isAssignmentsLoading}
             searchable
             // Remove onRowClick functionality to prevent navigation conflicts with the buttons
+            actions={[
+              {
+                label: "Remove",
+                icon: <Trash2 className="h-4 w-4" />,
+                onClick: (assignment: SoftwareAssignment) => {
+                  if (confirm(`Are you sure you want to remove this assignment?`)) {
+                    deleteMutation.mutate(assignment.id);
+                  }
+                }
+              }
+            ]}
             emptyState={
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No assignments found for this software.</p>
