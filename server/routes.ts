@@ -924,8 +924,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const assignments = await storage.getSoftwareAssignmentsByUser(userId);
-      res.json(assignments);
+      
+      // Enrich assignments with software details
+      const enrichedAssignments = await Promise.all(
+        assignments.map(async (assignment) => {
+          const software = assignment.softwareId 
+            ? await storage.getSoftwareById(assignment.softwareId) 
+            : null;
+            
+          return {
+            ...assignment,
+            software: software || null
+          };
+        })
+      );
+      
+      res.json(enrichedAssignments);
     } catch (error) {
+      console.error("Error fetching user software assignments:", error);
       res.status(500).json({ message: "Error fetching user software assignments" });
     }
   });
@@ -934,8 +950,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deviceId = parseInt(req.params.deviceId);
       const assignments = await storage.getSoftwareAssignmentsByDevice(deviceId);
-      res.json(assignments);
+      
+      // Enrich assignments with software details
+      const enrichedAssignments = await Promise.all(
+        assignments.map(async (assignment) => {
+          const software = assignment.softwareId 
+            ? await storage.getSoftwareById(assignment.softwareId) 
+            : null;
+            
+          return {
+            ...assignment,
+            software: software || null
+          };
+        })
+      );
+      
+      res.json(enrichedAssignments);
     } catch (error) {
+      console.error("Error fetching device software assignments:", error);
       res.status(500).json({ message: "Error fetching device software assignments" });
     }
   });

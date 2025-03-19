@@ -20,7 +20,8 @@ import {
   BuildingIcon,
   EditIcon,
   Trash2Icon,
-  LaptopIcon
+  LaptopIcon,
+  PackageIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -51,6 +52,12 @@ export default function UserDetails() {
   // Fetch user details and devices assigned to user
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: [`/api/users/${id}`],
+    enabled: !isNewUser && !!id,
+  });
+  
+  // Fetch software assignments for this user
+  const { data: softwareAssignments = [], isLoading: assignmentsLoading } = useQuery({
+    queryKey: [`/api/software-assignments/user/${id}`],
     enabled: !isNewUser && !!id,
   });
 
@@ -104,6 +111,32 @@ export default function UserDetails() {
     {
       header: "Serial Number",
       accessor: "serialNumber",
+    },
+  ];
+  
+  // Table columns for software assignments
+  const softwareColumns = [
+    {
+      header: "Software",
+      accessor: (assignment: any) => assignment.software?.name || 'Unknown Software',
+    },
+    {
+      header: "Vendor",
+      accessor: (assignment: any) => assignment.software?.vendor || '-',
+    },
+    {
+      header: "License Type",
+      accessor: (assignment: any) => assignment.software?.licenseType || '-',
+    },
+    {
+      header: "Assignment Date",
+      accessor: (assignment: any) => assignment.assignmentDate ? 
+        new Date(assignment.assignmentDate).toLocaleDateString() : '-',
+    },
+    {
+      header: "Expiry Date",
+      accessor: (assignment: any) => assignment.expiryDate ? 
+        new Date(assignment.expiryDate).toLocaleDateString() : 'No expiry',
     },
   ];
 
@@ -170,121 +203,188 @@ export default function UserDetails() {
               <p>Loading user details...</p>
             </div>
           ) : user ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* User Info Card */}
-              <Card className="md:col-span-1">
-                <CardHeader className="pb-3">
-                  <CardTitle>User Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center mb-6">
-                    <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mb-3">
-                      <UserIcon className="h-12 w-12 text-primary-600" />
+            <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* User Info Card */}
+                <Card className="md:col-span-1">
+                  <CardHeader className="pb-3">
+                    <CardTitle>User Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col items-center mb-6">
+                      <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mb-3">
+                        <UserIcon className="h-12 w-12 text-primary-600" />
+                      </div>
+                      <h2 className="text-xl font-semibold">{`${user.firstName} ${user.lastName}`}</h2>
+                      {user.department && (
+                        <Badge variant="outline" className="mt-1">
+                          {user.department}
+                        </Badge>
+                      )}
                     </div>
-                    <h2 className="text-xl font-semibold">{`${user.firstName} ${user.lastName}`}</h2>
-                    {user.department && (
-                      <Badge variant="outline" className="mt-1">
-                        {user.department}
-                      </Badge>
-                    )}
-                  </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center">
-                      <MailIcon className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-700">{user.email}</span>
-                    </div>
-                    
-                    {user.phoneNumber && (
+                    <div className="space-y-3">
                       <div className="flex items-center">
-                        <PhoneIcon className="h-5 w-5 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-700">
-                          {formatPhoneNumber(user.phoneNumber)}
-                        </span>
+                        <MailIcon className="h-5 w-5 text-gray-400 mr-2" />
+                        <span className="text-sm text-gray-700">{user.email}</span>
+                      </div>
+                      
+                      {user.phoneNumber && (
+                        <div className="flex items-center">
+                          <PhoneIcon className="h-5 w-5 text-gray-400 mr-2" />
+                          <span className="text-sm text-gray-700">
+                            {formatPhoneNumber(user.phoneNumber)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {user.department && (
+                        <div className="flex items-center">
+                          <BuildingIcon className="h-5 w-5 text-gray-400 mr-2" />
+                          <span className="text-sm text-gray-700">{user.department}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="border-t pt-4 flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <EditIcon className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => setShowDeleteAlert(true)}
+                    >
+                      <Trash2Icon className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </CardFooter>
+                </Card>
+
+                {/* Assigned Devices Card */}
+                <Card className="md:col-span-2">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-center">
+                      <CardTitle>Assigned Devices</CardTitle>
+                      <Link href="/devices">
+                        <Button variant="outline" size="sm">
+                          <LaptopIcon className="h-4 w-4 mr-2" />
+                          Manage Devices
+                        </Button>
+                      </Link>
+                    </div>
+                    <CardDescription>
+                      Devices currently assigned to this user
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {user.devices && user.devices.length > 0 ? (
+                      <DataTable 
+                        data={user.devices}
+                        columns={deviceColumns}
+                        keyField="id"
+                        onRowClick={(device) => navigate(`/devices/${device.id}`)}
+                        emptyState={
+                          <div className="text-center py-6">
+                            <LaptopIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                            <h3 className="text-sm font-medium text-gray-900">No devices assigned</h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                              This user doesn't have any devices assigned yet.
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="mt-3"
+                              onClick={() => navigate('/devices')}
+                            >
+                              Assign Device
+                            </Button>
+                          </div>
+                        }
+                      />
+                    ) : (
+                      <div className="text-center py-6">
+                        <LaptopIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <h3 className="text-sm font-medium text-gray-900">No devices assigned</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          This user doesn't have any devices assigned yet.
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-3"
+                          onClick={() => navigate('/devices')}
+                        >
+                          Assign Device
+                        </Button>
                       </div>
                     )}
-                    
-                    {user.department && (
-                      <div className="flex items-center">
-                        <BuildingIcon className="h-5 w-5 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-700">{user.department}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter className="border-t pt-4 flex justify-between">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <EditIcon className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => setShowDeleteAlert(true)}
-                  >
-                    <Trash2Icon className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              {/* Assigned Devices Card */}
-              <Card className="md:col-span-2">
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Software Assignments Card */}
+              <Card>
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-center">
-                    <CardTitle>Assigned Devices</CardTitle>
-                    <Link href="/devices">
+                    <CardTitle>Assigned Software</CardTitle>
+                    <Link href="/software">
                       <Button variant="outline" size="sm">
-                        <LaptopIcon className="h-4 w-4 mr-2" />
-                        Manage Devices
+                        <PackageIcon className="h-4 w-4 mr-2" />
+                        Manage Software
                       </Button>
                     </Link>
                   </div>
                   <CardDescription>
-                    Devices currently assigned to this user
+                    Software licenses assigned to this user
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {user.devices && user.devices.length > 0 ? (
+                  {assignmentsLoading ? (
+                    <div className="flex items-center justify-center h-32">
+                      <p>Loading software assignments...</p>
+                    </div>
+                  ) : softwareAssignments && softwareAssignments.length > 0 ? (
                     <DataTable 
-                      data={user.devices}
-                      columns={deviceColumns}
+                      data={softwareAssignments}
+                      columns={softwareColumns}
                       keyField="id"
-                      onRowClick={(device) => navigate(`/devices/${device.id}`)}
+                      onRowClick={(assignment) => navigate(`/software/${assignment.softwareId}`)}
                       emptyState={
                         <div className="text-center py-6">
-                          <LaptopIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                          <h3 className="text-sm font-medium text-gray-900">No devices assigned</h3>
+                          <PackageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <h3 className="text-sm font-medium text-gray-900">No software assigned</h3>
                           <p className="text-sm text-gray-500 mt-1">
-                            This user doesn't have any devices assigned yet.
+                            This user doesn't have any software licenses assigned yet.
                           </p>
                           <Button 
                             variant="outline" 
                             size="sm" 
                             className="mt-3"
-                            onClick={() => navigate('/devices')}
+                            onClick={() => navigate('/software')}
                           >
-                            Assign Device
+                            Assign Software
                           </Button>
                         </div>
                       }
                     />
                   ) : (
                     <div className="text-center py-6">
-                      <LaptopIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <h3 className="text-sm font-medium text-gray-900">No devices assigned</h3>
+                      <PackageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-sm font-medium text-gray-900">No software assigned</h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        This user doesn't have any devices assigned yet.
+                        This user doesn't have any software licenses assigned yet.
                       </p>
                       <Button 
                         variant="outline" 
                         size="sm" 
                         className="mt-3"
-                        onClick={() => navigate('/devices')}
+                        onClick={() => navigate('/software')}
                       >
-                        Assign Device
+                        Assign Software
                       </Button>
                     </div>
                   )}
