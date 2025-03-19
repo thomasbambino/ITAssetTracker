@@ -70,9 +70,9 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
     z.date(),
     z.null()
   ]).optional(),
-  // Make these fields required
-  serialNumber: z.string().min(1, "Serial number is required"),
-  assetTag: z.string().min(1, "Asset tag is required")
+  // Make these fields optional for CSV import
+  serialNumber: z.string().default(() => `SN-${Math.floor(Math.random() * 1000000)}`),
+  assetTag: z.string().default(() => `AT-${Math.floor(Math.random() * 1000000)}`)
 });
 
 export type InsertDevice = z.infer<typeof insertDeviceSchema>;
