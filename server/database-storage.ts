@@ -398,9 +398,10 @@ export class DatabaseStorage implements IStorage {
         purchase_cost, 
         purchase_date, 
         purchased_by, 
-        warranty_eol
+        warranty_eol,
+        user_id
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
       ) RETURNING 
         id, 
         brand, 
@@ -423,7 +424,8 @@ export class DatabaseStorage implements IStorage {
       device.purchaseCost || null, 
       device.purchaseDate || null, 
       device.purchasedBy || null, 
-      device.warrantyEOL || null
+      device.warrantyEOL || null,
+      device.userId || null
     ]);
     
     // Get category name for the device
