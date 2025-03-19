@@ -5,34 +5,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ActivityTable, ActivityLog } from "@/components/dashboard/ActivityTable";
 import { Button } from "@/components/ui/button";
-import { RefreshCcwIcon } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { RefreshCcwIcon, SearchIcon } from 'lucide-react';
 
 export default function History() {
-  const [activityLimit, setActivityLimit] = useState(50);
+  const [activityLimit] = useState(50);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Fetch all activity logs with limit
   const { data: activities, isLoading: activitiesLoading, refetch } = useQuery<ActivityLog[]>({
     queryKey: ['/api/activity', { limit: activityLimit }],
   });
   
-  // Filter activities by type
-  const deviceActivities = activities?.filter(activity => 
+  // Filter activities by search term
+  const filterBySearch = (activities: ActivityLog[] | undefined) => {
+    if (!activities) return [];
+    if (!searchTerm.trim()) return activities;
+    
+    const search = searchTerm.toLowerCase();
+    return activities.filter(activity => 
+      activity.actionType.toLowerCase().includes(search) ||
+      activity.details.toLowerCase().includes(search) ||
+      (activity.user?.name && activity.user.name.toLowerCase().includes(search)) ||
+      (activity.user?.department && activity.user.department.toLowerCase().includes(search))
+    );
+  };
+  
+  // Filter activities by type and search term
+  const filteredActivities = filterBySearch(activities);
+  
+  const deviceActivities = filterBySearch(activities)?.filter(activity => 
     activity.actionType.includes('device') || 
     activity.actionType.includes('assign')
   ) || [];
   
-  const assignmentActivities = activities?.filter(activity => 
+  const assignmentActivities = filterBySearch(activities)?.filter(activity => 
     activity.actionType.includes('assign')
   ) || [];
   
-  const userActivities = activities?.filter(activity => 
+  const userActivities = filterBySearch(activities)?.filter(activity => 
     activity.actionType.includes('user')
   ) || [];
-  
-  const handleLoadMore = () => {
-    setActivityLimit(prev => prev + 50);
-    refetch();
-  };
   
   return (
     <PageContainer 
@@ -49,6 +62,18 @@ export default function History() {
         </Button>
       }
     >
+      <div className="w-full mb-4">
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search activities, users, or departments..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+      
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="all">All Activities</TabsTrigger>
@@ -67,17 +92,12 @@ export default function History() {
             </CardHeader>
             <CardContent>
               <ActivityTable 
-                activities={activities || []} 
+                activities={filteredActivities} 
                 loading={activitiesLoading}
                 itemsPerPage={10}
+                showPagination={true}
+                showFirstLast={true}
               />
-              {activities && activities.length >= activityLimit && (
-                <div className="flex justify-center mt-4">
-                  <Button variant="outline" onClick={handleLoadMore}>
-                    Load More
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -96,6 +116,8 @@ export default function History() {
                   activities={deviceActivities} 
                   loading={activitiesLoading}
                   itemsPerPage={10}
+                  showPagination={true}
+                  showFirstLast={true}
                 />
               ) : (
                 <div className="h-48 flex items-center justify-center border rounded-md">
@@ -124,6 +146,8 @@ export default function History() {
                   activities={assignmentActivities} 
                   loading={activitiesLoading}
                   itemsPerPage={10}
+                  showPagination={true}
+                  showFirstLast={true}
                 />
               ) : (
                 <div className="h-48 flex items-center justify-center border rounded-md">
@@ -149,9 +173,11 @@ export default function History() {
             <CardContent>
               {userActivities.length > 0 ? (
                 <ActivityTable 
-                  activities={userActivities} 
+                  activities={userActivities}
                   loading={activitiesLoading}
                   itemsPerPage={10}
+                  showPagination={true}
+                  showFirstLast={true}
                 />
               ) : (
                 <div className="h-48 flex items-center justify-center border rounded-md">

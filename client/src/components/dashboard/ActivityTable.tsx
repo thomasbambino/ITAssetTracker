@@ -60,12 +60,16 @@ interface ActivityTableProps {
   activities: ActivityLog[];
   loading: boolean;
   itemsPerPage?: number;
+  showPagination?: boolean;
+  showFirstLast?: boolean;
 }
 
 export function ActivityTable({ 
   activities, 
   loading,
-  itemsPerPage = 5
+  itemsPerPage = 5,
+  showPagination = true,
+  showFirstLast = false
 }: ActivityTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   
@@ -78,13 +82,39 @@ export function ActivityTable({
   const currentActivities = activities.slice(indexOfFirstActivity, indexOfLastActivity);
   
   // Change page
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const paginate = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
   
-  // Generate page numbers
-  const pageNumbers = [];
-  for (let i = 1; i <= totalPages; i++) {
-    pageNumbers.push(i);
-  }
+  // Go to first or last page
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToLastPage = () => setCurrentPage(totalPages);
+  
+  // Generate visible page numbers (only show 5 pages at a time)
+  const getVisiblePageNumbers = () => {
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      // If we have less pages than the max, show all
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    } else {
+      // Calculate the range of pages to show
+      let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+      let endPage = startPage + maxPagesToShow - 1;
+      
+      // Adjust if we're at the end
+      if (endPage > totalPages) {
+        endPage = totalPages;
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+      
+      return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+    }
+  };
+  
+  const pageNumbers = getVisiblePageNumbers();
 
   return (
     <Card>
@@ -156,7 +186,7 @@ export function ActivityTable({
           </TableBody>
         </Table>
       </div>
-      {totalPages > 1 && (
+      {showPagination && totalPages > 1 && (
         <CardContent className="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
@@ -170,6 +200,21 @@ export function ActivityTable({
             </div>
             <Pagination>
               <PaginationContent>
+                {showFirstLast && (
+                  <PaginationItem>
+                    <PaginationLink 
+                      href="#" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        goToFirstPage();
+                      }}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                    >
+                      First
+                    </PaginationLink>
+                  </PaginationItem>
+                )}
+                
                 <PaginationItem>
                   <PaginationPrevious 
                     href="#" 
@@ -206,6 +251,21 @@ export function ActivityTable({
                     className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
                   />
                 </PaginationItem>
+
+                {showFirstLast && (
+                  <PaginationItem>
+                    <PaginationLink 
+                      href="#" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        goToLastPage();
+                      }}
+                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                    >
+                      Last
+                    </PaginationLink>
+                  </PaginationItem>
+                )}
               </PaginationContent>
             </Pagination>
           </div>
