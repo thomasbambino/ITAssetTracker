@@ -69,16 +69,16 @@ export default function Devices() {
   // Table columns
   const columns = [
     {
-      header: "Asset Tag",
-      accessor: "assetTag",
-    },
-    {
       header: "Brand",
       accessor: "brand",
     },
     {
       header: "Model",
       accessor: "model",
+    },
+    {
+      header: "Asset Tag",
+      accessor: "assetTag",
     },
     {
       header: "Category",

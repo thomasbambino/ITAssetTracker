@@ -596,18 +596,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let userId = null;
             if (record.assignedTo || record['Assigned To']) {
               const email = record.assignedTo || record['Assigned To'];
-              console.log('Looking for user with email:', email);
               
               // Find all users to search by email
               const users = await storage.getUsers();
-              console.log('All users:', users.map(u => u.email));
-              
               const user = users.find(u => u.email === email);
-              console.log('Found user:', user);
               
               if (user) {
                 userId = user.id;
-                console.log('Setting userId to:', userId);
               }
             }
             
