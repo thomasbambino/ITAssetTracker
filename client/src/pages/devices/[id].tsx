@@ -430,8 +430,8 @@ export default function DeviceDetails() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the device
-              and its assignment history from our servers.
+              This will hide the device from the active inventory but preserve its history.
+              The device will no longer appear in lists or reports but assignment history will be retained.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
