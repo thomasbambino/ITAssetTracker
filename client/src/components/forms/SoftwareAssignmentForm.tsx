@@ -196,7 +196,7 @@ export function SoftwareAssignmentForm({
                 <FormLabel>Select User</FormLabel>
                 <Select 
                   onValueChange={(value) => field.onChange(parseInt(value))} 
-                  defaultValue={field.value?.toString() || ""}
+                  defaultValue={field.value?.toString() || undefined}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -205,7 +205,7 @@ export function SoftwareAssignmentForm({
                   </FormControl>
                   <SelectContent>
                     {users.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="no-users" disabled>
                         No users available
                       </SelectItem>
                     ) : (
@@ -230,7 +230,7 @@ export function SoftwareAssignmentForm({
                 <FormLabel>Select Device</FormLabel>
                 <Select 
                   onValueChange={(value) => field.onChange(parseInt(value))} 
-                  defaultValue={field.value?.toString() || ""}
+                  defaultValue={field.value?.toString() || undefined}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -239,7 +239,7 @@ export function SoftwareAssignmentForm({
                   </FormControl>
                   <SelectContent>
                     {devices.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="no-devices" disabled>
                         No devices available
                       </SelectItem>
                     ) : (
