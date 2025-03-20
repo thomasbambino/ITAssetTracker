@@ -4,7 +4,7 @@ import { storage } from './storage';
 import { LoginCredentials } from '@shared/schema';
 import { User } from '@shared/schema';
 import emailService from './email-service';
-import mailgunEmailService from './email-service-mailgun';
+import mailgunEmailService, { updateMailgunEmailService } from './email-service-mailgun';
 
 // Password hashing
 export async function hashPassword(password: string): Promise<{ hash: string, salt: string }> {
