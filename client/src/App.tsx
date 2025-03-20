@@ -20,6 +20,7 @@ import Maintenance from "@/pages/maintenance";
 import Notifications from "@/pages/notifications";
 import QrCodes from "@/pages/qrcodes";
 import Branding from "@/pages/branding";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 function Router() {
   return (
