@@ -6,13 +6,112 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { ArrowRight, Mail, Palette } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Settings() {
+  const { data: emailSettings } = useQuery({
+    queryKey: ['/api/settings/email'],
+    queryFn: async () => {
+      try {
+        return await apiRequest({
+          url: '/api/settings/email',
+          method: 'GET'
+        });
+      } catch (error) {
+        return null;
+      }
+    }
+  });
+
+  const { data: brandingSettings } = useQuery({
+    queryKey: ['/api/branding'],
+    queryFn: async () => {
+      try {
+        return await apiRequest({
+          url: '/api/branding',
+          method: 'GET'
+        });
+      } catch (error) {
+        return null;
+      }
+    }
+  });
+
   return (
     <PageContainer
       title="Settings"
       description="Configure system and user preferences"
     >
+      <div className="grid gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link href="/settings/email">
+            <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center">
+                    <Mail className="mr-2 h-5 w-5" />
+                    Email Settings
+                  </CardTitle>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <CardDescription>
+                  Configure email service for notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm">
+                  {emailSettings ? (
+                    <div className="flex items-center">
+                      <div className={`h-2 w-2 rounded-full mr-2 ${emailSettings.isEnabled ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                      <span>{emailSettings.isEnabled ? 'Enabled' : 'Disabled'}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <div className="h-2 w-2 rounded-full mr-2 bg-red-500"></div>
+                      <span>Not configured</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/branding">
+            <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center">
+                    <Palette className="mr-2 h-5 w-5" /> 
+                    Branding Settings
+                  </CardTitle>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <CardDescription>
+                  Customize company branding and theme
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm">
+                  {brandingSettings ? (
+                    <div className="flex items-center">
+                      <div className="h-4 w-4 rounded-full mr-2" style={{ backgroundColor: brandingSettings.primaryColor }}></div>
+                      <span>{brandingSettings.companyName}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <div className="h-2 w-2 rounded-full mr-2 bg-blue-500"></div>
+                      <span>Default branding</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      </div>
       
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="mb-4">

@@ -12,7 +12,6 @@ import { IStorage } from "./storage";
 import { db } from "./db";
 
 export class DatabaseStorage implements IStorage {
-  // Import EmailSettings, InsertEmailSettings from schema.ts
   // User operations
   async getUsers(): Promise<User[]> {
     const users = await db.any(`
@@ -2596,6 +2595,122 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error updating branding settings:', error);
+      throw error;
+    }
+  }
+  
+  // Email settings operations
+  async getEmailSettings(): Promise<EmailSettings | undefined> {
+    try {
+      const settings = await db.one(`
+        SELECT 
+          id,
+          api_key as "apiKey",
+          domain,
+          from_email as "fromEmail",
+          from_name as "fromName",
+          is_enabled as "isEnabled",
+          updated_at as "updatedAt"
+        FROM email_settings
+        ORDER BY id
+        LIMIT 1
+      `);
+      return settings;
+    } catch (error) {
+      // If no records found, return undefined
+      return undefined;
+    }
+  }
+
+  async updateEmailSettings(settings: Partial<InsertEmailSettings>): Promise<EmailSettings> {
+    try {
+      // Check if email settings already exist
+      const existingSettings = await db.oneOrNone(`
+        SELECT id FROM email_settings LIMIT 1
+      `);
+      
+      if (existingSettings) {
+        // Build dynamic update query
+        const updates: string[] = [];
+        const values: any[] = [];
+        let paramCount = 1;
+        
+        if (settings.apiKey !== undefined) {
+          updates.push(`api_key = $${paramCount++}`);
+          values.push(settings.apiKey);
+        }
+        
+        if (settings.domain !== undefined) {
+          updates.push(`domain = $${paramCount++}`);
+          values.push(settings.domain);
+        }
+        
+        if (settings.fromEmail !== undefined) {
+          updates.push(`from_email = $${paramCount++}`);
+          values.push(settings.fromEmail);
+        }
+        
+        if (settings.fromName !== undefined) {
+          updates.push(`from_name = $${paramCount++}`);
+          values.push(settings.fromName);
+        }
+        
+        if (settings.isEnabled !== undefined) {
+          updates.push(`is_enabled = $${paramCount++}`);
+          values.push(settings.isEnabled);
+        }
+        
+        updates.push(`updated_at = NOW()`);
+        
+        // Update existing settings
+        values.push(existingSettings.id);
+        
+        const updatedSettings = await db.one(`
+          UPDATE email_settings SET
+            ${updates.join(', ')}
+          WHERE id = $${paramCount}
+          RETURNING 
+            id,
+            api_key as "apiKey",
+            domain,
+            from_email as "fromEmail",
+            from_name as "fromName",
+            is_enabled as "isEnabled",
+            updated_at as "updatedAt"
+        `, values);
+        
+        return updatedSettings;
+      } else {
+        // Create new settings
+        const newSettings = await db.one(`
+          INSERT INTO email_settings (
+            api_key,
+            domain,
+            from_email,
+            from_name,
+            is_enabled
+          ) VALUES (
+            $1, $2, $3, $4, $5
+          ) RETURNING 
+            id,
+            api_key as "apiKey",
+            domain,
+            from_email as "fromEmail",
+            from_name as "fromName",
+            is_enabled as "isEnabled",
+            updated_at as "updatedAt"
+        `, [
+          settings.apiKey || null,
+          settings.domain || null,
+          settings.fromEmail || null,
+          settings.fromName || null,
+          settings.isEnabled !== undefined ? settings.isEnabled : false
+        ]);
+        
+        return newSettings;
+      }
+    } catch (error) {
+      console.error('Error updating email settings:', error);
       throw error;
     }
   }
