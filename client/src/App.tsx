@@ -46,27 +46,16 @@ function Router() {
   );
 }
 
-// Component to prefetch critical data
-function DataPrefetcher({ children }: { children: React.ReactNode }) {
-  // Prefetch branding data to prevent flash of default branding
-  useQuery({
-    queryKey: ['/api/branding'],
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000 // 10 minutes
-  });
-  
-  return <>{children}</>;
-}
+// We no longer need the DataPrefetcher component as that logic
+// has been moved to the AppLayout component
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <DataPrefetcher>
-        <AppLayout>
-          <Router />
-        </AppLayout>
-        <Toaster />
-      </DataPrefetcher>
+      <AppLayout>
+        <Router />
+      </AppLayout>
+      <Toaster />
     </QueryClientProvider>
   );
 }
