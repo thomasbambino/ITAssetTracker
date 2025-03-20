@@ -29,6 +29,9 @@ const formSchema = z.object({
   logo: z.string().optional().nullable(),
   primaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code"),
   accentColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code").optional().nullable(),
+  siteNameColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code").optional().nullable(),
+  siteNameColorSecondary: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code").optional().nullable(),
+  siteNameGradient: z.boolean().optional().nullable(),
   companyTagline: z.string().optional().nullable(),
   supportEmail: z.preprocess(
     (val) => (val === "" ? null : val),
@@ -60,6 +63,9 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
       logo: initialData?.logo || "",
       primaryColor: initialData?.primaryColor || "#1E40AF",
       accentColor: initialData?.accentColor || "#1E293B",
+      siteNameColor: initialData?.siteNameColor || "#1E40AF",
+      siteNameColorSecondary: initialData?.siteNameColorSecondary || "#3B82F6",
+      siteNameGradient: initialData?.siteNameGradient !== undefined ? initialData.siteNameGradient : true,
       companyTagline: initialData?.companyTagline || "",
       supportEmail: initialData?.supportEmail || "",
       supportPhone: initialData?.supportPhone || "",
@@ -143,18 +149,18 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
     try {
       // If we have initial data, this is an update
       if (initialData?.id) {
-        await apiRequest(
-          "PUT",
-          `/api/branding`,
+        await apiRequest({
+          method: "PUT",
+          url: `/api/branding`,
           data
-        );
+        });
       } else {
         // Otherwise, it's a create
-        await apiRequest(
-          "PUT",
-          `/api/branding`,
+        await apiRequest({
+          method: "PUT",
+          url: `/api/branding`,
           data
-        );
+        });
       }
       
       // Show success message
@@ -408,6 +414,139 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                 </FormItem>
               )}
             />
+            
+            {/* Site Name Colors Section */}
+            <div className="border rounded-md p-4 space-y-4 mt-2">
+              <h3 className="text-sm font-medium">Site Name Appearance</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                Customize how your company name appears throughout the application
+              </p>
+              
+              <FormField
+                control={form.control}
+                name="siteNameColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Site Name Color</FormLabel>
+                    <div className="flex space-x-2">
+                      <FormControl>
+                        <Input {...field} value={field.value || "#1E40AF"} />
+                      </FormControl>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <div
+                            className="h-10 w-10 rounded border cursor-pointer hover:shadow-md transition-shadow"
+                            style={{ backgroundColor: field.value || "#1E40AF" }}
+                          />
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <HexColorPicker 
+                            color={field.value || "#1E40AF"} 
+                            onChange={(color) => field.onChange(color)}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <FormDescription>
+                      Primary color for your company name
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="siteNameGradient"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-md border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Use Gradient Effect</FormLabel>
+                      <FormDescription>
+                        Apply a gradient effect to your company name
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <div>
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          id="site-name-gradient"
+                          checked={field.value || false}
+                          onChange={(e) => {
+                            field.onChange(e.target.checked);
+                          }}
+                        />
+                        <label
+                          htmlFor="site-name-gradient"
+                          className={`block h-6 w-10 rounded-full ${
+                            field.value ? 'bg-primary' : 'bg-muted'
+                          } transition-colors relative cursor-pointer`}
+                        >
+                          <span
+                            className={`block h-5 w-5 rounded-full bg-white transition-transform ${
+                              field.value ? 'translate-x-4' : 'translate-x-0.5'
+                            } absolute top-0.5 left-0`}
+                          />
+                        </label>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              {form.watch('siteNameGradient') && (
+                <FormField
+                  control={form.control}
+                  name="siteNameColorSecondary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Gradient Secondary Color</FormLabel>
+                      <div className="flex space-x-2">
+                        <FormControl>
+                          <Input {...field} value={field.value || "#3B82F6"} />
+                        </FormControl>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <div
+                              className="h-10 w-10 rounded border cursor-pointer hover:shadow-md transition-shadow"
+                              style={{ backgroundColor: field.value || "#3B82F6" }}
+                            />
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <HexColorPicker 
+                              color={field.value || "#3B82F6"} 
+                              onChange={(color) => field.onChange(color)}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <FormDescription>
+                        Secondary color for gradient effect
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              <div className="flex flex-col p-4 bg-muted/20 rounded-md border mt-4">
+                <span className="text-xs text-muted-foreground mb-2">Preview:</span>
+                <h3 
+                  className="text-xl font-bold" 
+                  style={{
+                    color: form.watch('siteNameGradient') ? 'transparent' : (form.watch('siteNameColor') || '#1E40AF'),
+                    backgroundImage: form.watch('siteNameGradient') && form.watch('siteNameColorSecondary')
+                      ? `linear-gradient(to right, ${form.watch('siteNameColor') || '#1E40AF'}, ${form.watch('siteNameColorSecondary') || '#3B82F6'})`
+                      : 'none',
+                    backgroundClip: form.watch('siteNameGradient') ? 'text' : 'border-box',
+                    WebkitBackgroundClip: form.watch('siteNameGradient') ? 'text' : 'border-box'
+                  }}
+                >
+                  {form.watch('companyName') || "Company Name"}
+                </h3>
+              </div>
+            </div>
             
             <FormField
               control={form.control}

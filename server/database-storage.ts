@@ -2491,7 +2491,13 @@ export class DatabaseStorage implements IStorage {
           company_name as "companyName", 
           logo, 
           primary_color as "primaryColor", 
-          accent_color as "accentColor", 
+          accent_color as "accentColor",
+          site_name_color as "siteNameColor",
+          site_name_color_secondary as "siteNameColorSecondary",
+          site_name_gradient as "siteNameGradient",
+          company_tagline as "companyTagline",
+          support_email as "supportEmail",
+          support_phone as "supportPhone",
           updated_at as "updatedAt"
         FROM branding_settings
         ORDER BY id ASC
@@ -2506,7 +2512,10 @@ export class DatabaseStorage implements IStorage {
           companyName: 'IT Asset Management',
           logo: '',
           primaryColor: '#1E40AF',
-          accentColor: '#3B82F6'
+          accentColor: '#3B82F6',
+          siteNameColor: '#1E40AF',
+          siteNameColorSecondary: '#3B82F6',
+          siteNameGradient: true
         });
       } catch (createError) {
         console.error('Error creating default branding settings:', createError);
