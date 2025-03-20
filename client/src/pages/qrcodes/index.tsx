@@ -38,7 +38,7 @@ export default function QrCodesPage() {
   const { toast } = useToast();
   
   // Query for fetching all QR codes
-  const { data: qrCodes = [], isLoading: isQrCodesLoading } = useQuery({
+  const { data: qrCodes = [], isLoading: isQrCodesLoading } = useQuery<QrCode[]>({
     queryKey: ['/api/qrcodes'],
   });
   

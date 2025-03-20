@@ -1880,18 +1880,39 @@ export class DatabaseStorage implements IStorage {
         qr.id, 
         qr.code, 
         qr.device_id as "deviceId", 
-        qr.generated_at as "generatedAt", 
+        qr.generated_at as "createdAt", 
         qr.last_scanned as "lastScanned", 
         qr.scan_count as "scanCount",
-        d.brand as "deviceBrand",
-        d.model as "deviceModel",
-        d.asset_tag as "deviceAssetTag"
+        d.id as "deviceId",
+        d.brand,
+        d.model,
+        d.asset_tag as "assetTag"
       FROM qr_codes qr
       LEFT JOIN devices d ON qr.device_id = d.id
       ORDER BY qr.generated_at DESC
     `);
     
-    return qrCodes;
+    // Transform the result to include nested device object
+    return qrCodes.map(qr => {
+      // Only include device data if we have the basic device information
+      const device = qr.brand || qr.model || qr.assetTag ? {
+        id: qr.deviceId,
+        brand: qr.brand || '',
+        model: qr.model || '',
+        assetTag: qr.assetTag || ''
+      } : undefined;
+      
+      // Remove the flattened device properties and add device object
+      return {
+        id: qr.id,
+        code: qr.code,
+        deviceId: qr.deviceId,
+        createdAt: qr.createdAt,
+        lastScanned: qr.lastScanned,
+        scanCount: qr.scanCount,
+        device
+      };
+    });
   }
 
   async getQrCodeById(id: number): Promise<QrCode | undefined> {
@@ -1901,18 +1922,35 @@ export class DatabaseStorage implements IStorage {
           qr.id, 
           qr.code, 
           qr.device_id as "deviceId", 
-          qr.generated_at as "generatedAt", 
+          qr.generated_at as "createdAt", 
           qr.last_scanned as "lastScanned", 
           qr.scan_count as "scanCount",
-          d.brand as "deviceBrand",
-          d.model as "deviceModel",
-          d.asset_tag as "deviceAssetTag"
+          d.id as "deviceId",
+          d.brand,
+          d.model,
+          d.asset_tag as "assetTag"
         FROM qr_codes qr
         LEFT JOIN devices d ON qr.device_id = d.id
         WHERE qr.id = $1
       `, [id]);
       
-      return qrCode;
+      // Transform to include device object
+      const device = qrCode.brand || qrCode.model || qrCode.assetTag ? {
+        id: qrCode.deviceId,
+        brand: qrCode.brand || '',
+        model: qrCode.model || '',
+        assetTag: qrCode.assetTag || ''
+      } : undefined;
+      
+      return {
+        id: qrCode.id,
+        code: qrCode.code,
+        deviceId: qrCode.deviceId,
+        createdAt: qrCode.createdAt,
+        lastScanned: qrCode.lastScanned,
+        scanCount: qrCode.scanCount,
+        device
+      };
     } catch (error) {
       return undefined;
     }
@@ -1925,18 +1963,35 @@ export class DatabaseStorage implements IStorage {
           qr.id, 
           qr.code, 
           qr.device_id as "deviceId", 
-          qr.generated_at as "generatedAt", 
+          qr.generated_at as "createdAt", 
           qr.last_scanned as "lastScanned", 
           qr.scan_count as "scanCount",
-          d.brand as "deviceBrand",
-          d.model as "deviceModel",
-          d.asset_tag as "deviceAssetTag"
+          d.id as "deviceId",
+          d.brand,
+          d.model,
+          d.asset_tag as "assetTag"
         FROM qr_codes qr
         LEFT JOIN devices d ON qr.device_id = d.id
         WHERE qr.device_id = $1
       `, [deviceId]);
       
-      return qrCode;
+      // Transform to include device object
+      const device = qrCode.brand || qrCode.model || qrCode.assetTag ? {
+        id: qrCode.deviceId,
+        brand: qrCode.brand || '',
+        model: qrCode.model || '',
+        assetTag: qrCode.assetTag || ''
+      } : undefined;
+      
+      return {
+        id: qrCode.id,
+        code: qrCode.code,
+        deviceId: qrCode.deviceId,
+        createdAt: qrCode.createdAt,
+        lastScanned: qrCode.lastScanned,
+        scanCount: qrCode.scanCount,
+        device
+      };
     } catch (error) {
       return undefined;
     }
@@ -1949,18 +2004,35 @@ export class DatabaseStorage implements IStorage {
           qr.id, 
           qr.code, 
           qr.device_id as "deviceId", 
-          qr.generated_at as "generatedAt", 
+          qr.generated_at as "createdAt", 
           qr.last_scanned as "lastScanned", 
           qr.scan_count as "scanCount",
-          d.brand as "deviceBrand",
-          d.model as "deviceModel",
-          d.asset_tag as "deviceAssetTag"
+          d.id as "deviceId",
+          d.brand,
+          d.model,
+          d.asset_tag as "assetTag"
         FROM qr_codes qr
         LEFT JOIN devices d ON qr.device_id = d.id
         WHERE qr.code = $1
       `, [code]);
       
-      return qrCode;
+      // Transform to include device object
+      const device = qrCode.brand || qrCode.model || qrCode.assetTag ? {
+        id: qrCode.deviceId,
+        brand: qrCode.brand || '',
+        model: qrCode.model || '',
+        assetTag: qrCode.assetTag || ''
+      } : undefined;
+      
+      return {
+        id: qrCode.id,
+        code: qrCode.code,
+        deviceId: qrCode.deviceId,
+        createdAt: qrCode.createdAt,
+        lastScanned: qrCode.lastScanned,
+        scanCount: qrCode.scanCount,
+        device
+      };
     } catch (error) {
       return undefined;
     }
@@ -1977,7 +2049,7 @@ export class DatabaseStorage implements IStorage {
         id, 
         code, 
         device_id as "deviceId", 
-        generated_at as "generatedAt", 
+        generated_at as "createdAt", 
         last_scanned as "lastScanned", 
         scan_count as "scanCount"
     `, [
@@ -1986,12 +2058,16 @@ export class DatabaseStorage implements IStorage {
     ]);
     
     // Get device information if available
+    let device;
     if (newQrCode.deviceId) {
-      const device = await this.getDeviceById(newQrCode.deviceId);
-      if (device) {
-        (newQrCode as any).deviceBrand = device.brand;
-        (newQrCode as any).deviceModel = device.model;
-        (newQrCode as any).deviceAssetTag = device.assetTag;
+      const deviceData = await this.getDeviceById(newQrCode.deviceId);
+      if (deviceData) {
+        device = {
+          id: deviceData.id,
+          brand: deviceData.brand,
+          model: deviceData.model,
+          assetTag: deviceData.assetTag
+        };
       }
     }
     
@@ -1999,12 +2075,23 @@ export class DatabaseStorage implements IStorage {
     await this.createActivityLog({
       userId: 1, // Admin user ID
       actionType: 'qr_code_generated',
-      details: newQrCode.deviceId 
-        ? `QR code generated for device ${(newQrCode as any).deviceAssetTag || newQrCode.deviceId}`
+      details: newQrCode.deviceId && device
+        ? `QR code generated for device ${device.assetTag || newQrCode.deviceId}`
         : `QR code generated: ${qrCode.code}`
     });
     
-    return newQrCode;
+    // Return with device data
+    const result = {
+      id: newQrCode.id,
+      code: newQrCode.code,
+      deviceId: newQrCode.deviceId,
+      createdAt: newQrCode.createdAt,
+      lastScanned: newQrCode.lastScanned,
+      scanCount: newQrCode.scanCount,
+      device
+    };
+    
+    return result;
   }
 
   async updateQrCode(id: number, qrCode: Partial<InsertQrCode>): Promise<QrCode | undefined> {
@@ -2039,18 +2126,22 @@ export class DatabaseStorage implements IStorage {
           id, 
           code, 
           device_id as "deviceId", 
-          generated_at as "generatedAt", 
+          generated_at as "createdAt", 
           last_scanned as "lastScanned", 
           scan_count as "scanCount"
       `, values);
       
       // Get device information if available
+      let device;
       if (updatedQrCode.deviceId) {
-        const device = await this.getDeviceById(updatedQrCode.deviceId);
-        if (device) {
-          (updatedQrCode as any).deviceBrand = device.brand;
-          (updatedQrCode as any).deviceModel = device.model;
-          (updatedQrCode as any).deviceAssetTag = device.assetTag;
+        const deviceData = await this.getDeviceById(updatedQrCode.deviceId);
+        if (deviceData) {
+          device = {
+            id: deviceData.id,
+            brand: deviceData.brand,
+            model: deviceData.model,
+            assetTag: deviceData.assetTag
+          };
         }
       }
       
@@ -2061,7 +2152,18 @@ export class DatabaseStorage implements IStorage {
         details: `QR code updated: ${updatedQrCode.code}`
       });
       
-      return updatedQrCode;
+      // Return with device data
+      const result = {
+        id: updatedQrCode.id,
+        code: updatedQrCode.code,
+        deviceId: updatedQrCode.deviceId,
+        createdAt: updatedQrCode.createdAt,
+        lastScanned: updatedQrCode.lastScanned,
+        scanCount: updatedQrCode.scanCount,
+        device
+      };
+      
+      return result;
     } catch (error) {
       console.error('Error updating QR code:', error);
       return undefined;
@@ -2085,8 +2187,8 @@ export class DatabaseStorage implements IStorage {
         await this.createActivityLog({
           userId: 1, // Admin user ID
           actionType: 'qr_code_deleted',
-          details: qrCode.deviceId 
-            ? `QR code deleted for device ${(qrCode as any).deviceAssetTag || qrCode.deviceId}`
+          details: qrCode.deviceId && qrCode.device
+            ? `QR code deleted for device ${qrCode.device.assetTag || qrCode.deviceId}`
             : `QR code deleted: ${qrCode.code}`
         });
         return true;
@@ -2111,18 +2213,22 @@ export class DatabaseStorage implements IStorage {
           id, 
           code, 
           device_id as "deviceId", 
-          generated_at as "generatedAt", 
+          generated_at as "createdAt", 
           last_scanned as "lastScanned", 
           scan_count as "scanCount"
       `, [id]);
       
       // Get device information if available
+      let device;
       if (updatedQrCode.deviceId) {
-        const device = await this.getDeviceById(updatedQrCode.deviceId);
-        if (device) {
-          (updatedQrCode as any).deviceBrand = device.brand;
-          (updatedQrCode as any).deviceModel = device.model;
-          (updatedQrCode as any).deviceAssetTag = device.assetTag;
+        const deviceData = await this.getDeviceById(updatedQrCode.deviceId);
+        if (deviceData) {
+          device = {
+            id: deviceData.id,
+            brand: deviceData.brand,
+            model: deviceData.model,
+            assetTag: deviceData.assetTag
+          };
         }
       }
       
@@ -2130,12 +2236,23 @@ export class DatabaseStorage implements IStorage {
       await this.createActivityLog({
         userId: 1, // Admin user ID
         actionType: 'qr_code_scanned',
-        details: updatedQrCode.deviceId 
-          ? `QR code scanned for device ${(updatedQrCode as any).deviceAssetTag || updatedQrCode.deviceId}`
+        details: updatedQrCode.deviceId && device
+          ? `QR code scanned for device ${device.assetTag || updatedQrCode.deviceId}`
           : `QR code scanned: ${updatedQrCode.code}`
       });
       
-      return updatedQrCode;
+      // Return with device data
+      const result = {
+        id: updatedQrCode.id,
+        code: updatedQrCode.code,
+        deviceId: updatedQrCode.deviceId,
+        createdAt: updatedQrCode.createdAt,
+        lastScanned: updatedQrCode.lastScanned,
+        scanCount: updatedQrCode.scanCount,
+        device
+      };
+      
+      return result;
     } catch (error) {
       console.error('Error recording QR code scan:', error);
       return undefined;
