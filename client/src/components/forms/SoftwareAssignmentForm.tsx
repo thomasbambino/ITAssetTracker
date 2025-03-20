@@ -95,12 +95,12 @@ export function SoftwareAssignmentForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       softwareId,
-      assignmentType: assignment?.userId ? "user" : "device",
-      userId: assignment?.userId || null,
-      deviceId: assignment?.deviceId || null,
-      assignmentDate: assignment?.assignmentDate ? new Date(assignment.assignmentDate) : new Date(),
-      expiryDate: assignment?.expiryDate ? new Date(assignment.expiryDate) : null,
-      notes: assignment?.notes || "",
+      assignmentType: assignment && assignment.userId ? "user" : "device",
+      userId: assignment && assignment.userId ? assignment.userId : null,
+      deviceId: assignment && assignment.deviceId ? assignment.deviceId : null,
+      assignmentDate: assignment && assignment.assignmentDate ? new Date(assignment.assignmentDate) : new Date(),
+      expiryDate: assignment && assignment.expiryDate ? new Date(assignment.expiryDate) : null,
+      notes: assignment && assignment.notes ? assignment.notes : "",
     },
   });
   
@@ -150,11 +150,14 @@ export function SoftwareAssignmentForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {software && (
+        {software && typeof software === 'object' && (
           <div className="border rounded-md p-3 mb-4 bg-muted/30">
             <h3 className="font-medium">Assigning Software:</h3>
-            <p className="text-sm">{software.name} - {software.licenseType}</p>
-            {software.seats && (
+            <p className="text-sm">
+              {software && 'name' in software ? software.name : 'Unknown'} - 
+              {software && 'licenseType' in software ? software.licenseType : 'Unknown'}
+            </p>
+            {software && 'seats' in software && software.seats && (
               <p className="text-xs text-muted-foreground mt-1">{software.seats} seats available</p>
             )}
           </div>
@@ -204,8 +207,8 @@ export function SoftwareAssignmentForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {users.length === 0 ? (
-                      <SelectItem value="0" disabled>
+                    {!Array.isArray(users) || users.length === 0 ? (
+                      <SelectItem value="no_users" disabled>
                         No users available
                       </SelectItem>
                     ) : (
@@ -238,8 +241,8 @@ export function SoftwareAssignmentForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {devices.length === 0 ? (
-                      <SelectItem value="0" disabled>
+                    {!Array.isArray(devices) || devices.length === 0 ? (
+                      <SelectItem value="no_devices" disabled>
                         No devices available
                       </SelectItem>
                     ) : (

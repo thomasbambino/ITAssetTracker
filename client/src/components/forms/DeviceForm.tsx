@@ -264,17 +264,17 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                 </FormControl>
                 <SelectContent>
                   {categoriesLoading ? (
-                    <SelectItem value="0" disabled>
+                    <SelectItem value="loading_categories" disabled>
                       Loading categories...
                     </SelectItem>
-                  ) : categories && categories.length > 0 ? (
+                  ) : categories && Array.isArray(categories) && categories.length > 0 ? (
                     categories.map((category: any) => (
                       <SelectItem key={category.id} value={category.id.toString()}>
                         {category.name}
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="0" disabled>
+                    <SelectItem value="no_categories" disabled>
                       No categories available
                     </SelectItem>
                   )}
@@ -426,7 +426,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                     <SelectItem value="loading_users" disabled>
                       Loading users...
                     </SelectItem>
-                  ) : users && users.length > 0 ? (
+                  ) : users && Array.isArray(users) && users.length > 0 ? (
                     users.map((user: any) => (
                       <SelectItem key={user.id} value={`${user.firstName} ${user.lastName}`}>
                         {`${user.firstName} ${user.lastName}`} {user.department ? `(${user.department})` : ""}

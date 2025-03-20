@@ -163,7 +163,7 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
                     <SelectItem value="loading_devices" disabled>
                       Loading devices...
                     </SelectItem>
-                  ) : devices.length === 0 ? (
+                  ) : !Array.isArray(devices) || devices.length === 0 ? (
                     <SelectItem value="no_devices" disabled>
                       No devices available
                     </SelectItem>
