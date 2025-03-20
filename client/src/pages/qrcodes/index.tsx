@@ -6,9 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { QrCode as QrCodeIcon, Download, Plus, Printer, Smartphone, Clock, CheckCircle, Info } from "lucide-react";
+import { QrCode as QrCodeIcon, Download, Plus, Printer, Smartphone, Clock, CheckCircle, Info, Trash } from "lucide-react";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { QrCodeForm } from "@/components/forms/QrCodeForm";
 import { QrCodeScanner } from "@/components/qrcodes/QrCodeScanner";
 import { QrCodeDisplay } from "@/components/qrcodes/QrCodeDisplay";
@@ -34,6 +35,7 @@ export default function QrCodesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isScannerDialogOpen, setIsScannerDialogOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState<QrCode | null>(null);
+  const { toast } = useToast();
   
   // Query for fetching all QR codes
   const { data: qrCodes = [], isLoading: isQrCodesLoading } = useQuery({
@@ -122,6 +124,13 @@ export default function QrCodesPage() {
         // Close scanner dialog
         setIsScannerDialogOpen(false);
         
+        // Show success toast
+        toast({
+          title: "QR Code Scanned",
+          description: "The QR code scan has been successfully recorded.",
+          variant: "default",
+        });
+        
         // Navigate to the device details page
         if (qrCode && qrCode.deviceId) {
           window.location.href = `/devices/${qrCode.deviceId}`;
@@ -129,6 +138,11 @@ export default function QrCodesPage() {
       })
       .catch(error => {
         console.error("Error recording QR code scan:", error);
+        toast({
+          title: "Error",
+          description: "Failed to record QR code scan. Please try again.",
+          variant: "destructive",
+        });
       });
   };
 
@@ -151,6 +165,33 @@ export default function QrCodesPage() {
   const handleDownloadClick = (qrCode: QrCode) => {
     // First view details, then user can download from there
     handleViewDetails(qrCode);
+  };
+  
+  const handleDeleteClick = (qrCode: QrCode) => {
+    if (window.confirm(`Are you sure you want to delete the QR code for ${qrCode.device ? `${qrCode.device.brand} ${qrCode.device.model} (${qrCode.device.assetTag})` : `device #${qrCode.deviceId}`}?`)) {
+      fetch(`/api/qrcodes/${qrCode.id}`, { method: 'DELETE' })
+        .then(response => {
+          if (response.ok) {
+            toast({
+              title: "QR Code Deleted",
+              description: "The QR code has been successfully deleted.",
+              variant: "default",
+            });
+            // Refresh the list
+            queryClient.invalidateQueries({ queryKey: ['/api/qrcodes'] });
+          } else {
+            throw new Error('Failed to delete QR code');
+          }
+        })
+        .catch(error => {
+          console.error("Error deleting QR code:", error);
+          toast({
+            title: "Error",
+            description: "Failed to delete QR code. Please try again.",
+            variant: "destructive",
+          });
+        });
+    }
   };
   
   // Function to download the QR code as an image
@@ -287,6 +328,11 @@ export default function QrCodesPage() {
                 label: "Download",
                 onClick: handleDownloadClick,
                 icon: <Download className="h-4 w-4" />
+              },
+              {
+                label: "Delete",
+                onClick: handleDeleteClick,
+                icon: <Trash className="h-4 w-4" />
               }
             ]}
             emptyState={
