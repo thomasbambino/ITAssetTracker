@@ -10,12 +10,20 @@ import { z } from "zod";
 import { loginSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, ServerIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [_, navigate] = useLocation();
+  
+  // Fetch branding settings
+  const { data: branding } = useQuery({
+    queryKey: ['/api/branding'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),

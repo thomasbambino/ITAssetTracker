@@ -263,6 +263,12 @@ export const brandingSettings = pgTable("branding_settings", {
   logo: text("logo"), // URL to logo image
   primaryColor: text("primary_color").default('#1E40AF'),
   accentColor: text("accent_color").default('#3B82F6'),
+  siteNameColor: text("site_name_color").default('#1E40AF'),
+  siteNameColorSecondary: text("site_name_color_secondary").default('#3B82F6'),
+  siteNameGradient: boolean("site_name_gradient").default(true),
+  companyTagline: text("company_tagline"),
+  supportEmail: text("support_email"),
+  supportPhone: text("support_phone"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
