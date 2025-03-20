@@ -3,6 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { GlobalSearch } from '@/components/shared/GlobalSearch';
 import {
   MenuIcon,
   XIcon,
@@ -21,6 +22,8 @@ import {
   ChevronRightIcon,
   ServerIcon,
   CircleUserIcon,
+  SearchIcon,
+  BellDotIcon,
 } from 'lucide-react';
 
 const categoryGroups = {
@@ -32,6 +35,7 @@ const categoryGroups = {
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [location] = useLocation();
+  const [showSearch, setShowSearch] = useState(false);
 
   const routes = [
     {
@@ -117,6 +121,10 @@ export function MobileNav() {
     setIsOpen(false);
   };
 
+  const toggleSearch = () => {
+    setShowSearch(!showSearch);
+  };
+
   const renderNavItem = (route: typeof routes[0]) => {
     const isActive = location === route.href;
     const Icon = route.icon;
@@ -148,31 +156,71 @@ export function MobileNav() {
     );
   };
 
+  const getCurrentPageTitle = () => {
+    const route = routes.find(r => r.href === location);
+    return route ? route.label : 'Home';
+  };
+
   return (
     <>
-      <div className="md:hidden bg-white border-b border-gray-200 w-full flex items-center justify-between p-4 shadow-sm">
+      {/* Mobile Header */}
+      <div className="md:hidden bg-white border-b border-gray-200 w-full flex items-center justify-between p-3 shadow-sm">
         <div className="flex items-center">
-          <div className="bg-primary p-1.5 rounded-md">
-            <ServerIcon className="h-6 w-6 text-white" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-gray-700 hover:bg-gray-100 mr-2" 
+            onClick={toggleMenu}
+          >
+            <MenuIcon className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center">
+            <div className="bg-primary p-1 rounded-md">
+              <ServerIcon className="h-5 w-5 text-white" />
+            </div>
+            <span className="ml-2 text-base font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              AssetTrack
+            </span>
           </div>
-          <span className="ml-2 text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            AssetTrack
-          </span>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-gray-700 hover:bg-gray-100" 
-          onClick={toggleMenu}
-        >
-          {isOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
-        </Button>
+        <div className="text-base font-medium text-gray-700 flex-grow text-center">
+          {!showSearch && getCurrentPageTitle()}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-gray-700 hover:bg-gray-100"
+            onClick={toggleSearch}
+          >
+            <SearchIcon className="h-5 w-5" />
+          </Button>
+          <Link href="/notifications">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-700 hover:bg-gray-100 relative"
+            >
+              <BellIcon className="h-5 w-5" />
+              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+            </Button>
+          </Link>
+        </div>
       </div>
 
+      {/* Mobile Search Bar */}
+      {showSearch && (
+        <div className="md:hidden bg-white border-b border-gray-200 w-full p-2 shadow-sm">
+          <GlobalSearch />
+        </div>
+      )}
+
+      {/* Mobile Menu Overlay */}
       {isOpen && (
         <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={closeMenu} />
       )}
 
+      {/* Mobile Sidebar */}
       <div className={cn(
         "md:hidden fixed inset-y-0 left-0 transform bg-white w-72 z-50 transition-transform duration-300 ease-in-out overflow-y-auto",
         isOpen ? "translate-x-0" : "-translate-x-full"
