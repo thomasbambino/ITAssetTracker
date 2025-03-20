@@ -30,8 +30,20 @@ const categoryGroups = {
 export function Sidebar() {
   const [location] = useLocation();
   
+  // Define the BrandingSettings interface
+  interface BrandingSettings {
+    id?: number;
+    companyName: string;
+    logo?: string | null;
+    primaryColor: string;
+    accentColor?: string | null;
+    companyTagline?: string | null;
+    supportEmail?: string | null;
+    supportPhone?: string | null;
+  }
+  
   // Fetch branding settings
-  const { data: branding } = useQuery({
+  const { data: branding = {} as BrandingSettings } = useQuery<BrandingSettings>({
     queryKey: ['/api/branding'],
   });
 
@@ -83,7 +95,6 @@ export function Sidebar() {
       label: 'Notifications',
       icon: BellIcon,
       category: 'system',
-      badge: 2,
     },
     {
       href: '/history',
