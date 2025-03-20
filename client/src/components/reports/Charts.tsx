@@ -88,11 +88,11 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <PieChart margin={{ top: 10, right: 30, bottom: 30, left: 30 }}>
+      <PieChart margin={{ top: 30, right: 30, bottom: 30, left: 30 }}>
         <Pie
           data={filteredData}
           cx="50%"
-          cy="50%"
+          cy="55%" // Moved down slightly
           labelLine={false} // Set to false since we're drawing our own lines
           innerRadius={0} // Solid pie (can be adjusted for donut chart)
           outerRadius={height > 300 ? 120 : 90} // Larger pie size
@@ -116,17 +116,7 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
             fontSize: '12px'
           }}
         />
-        <Legend 
-          layout="horizontal" 
-          verticalAlign="bottom" 
-          align="center"
-          iconSize={10}
-          iconType="circle"
-          wrapperStyle={{ 
-            fontSize: '12px', 
-            paddingTop: '10px' 
-          }}
-        />
+        {/* Legend removed as requested */}
       </PieChart>
     </ResponsiveContainer>
   );
