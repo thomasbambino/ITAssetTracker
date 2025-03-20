@@ -16,6 +16,11 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   
+  // Store scanner instance in a ref for access across renders
+  const scannerRef = useRef<any>(null);
+  const mountedRef = useRef<boolean>(true);
+  const scannerInitializedRef = useRef<boolean>(false);
+  
   // Start actual scanning
   const startCamera = async () => {
     setIsLoading(true);
@@ -46,88 +51,149 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     setScannedCode(manualCode);
     onScanSuccess(manualCode);
   };
+  
+  // Cleanup scanner resources
+  const cleanupScanner = () => {
+    try {
+      if (scannerRef.current) {
+        // Only try to stop if it's scanning
+        if (scannerRef.current.isScanning) {
+          scannerRef.current.stop().catch((err: any) => {
+            console.log("Error stopping scanner:", err);
+          });
+        }
+        scannerRef.current = null;
+      }
+      scannerInitializedRef.current = false;
+    } catch (err) {
+      console.log("Error during scanner cleanup:", err);
+    }
+  };
 
-  // This effect will be called when the camera is shown
+  // Set mounted flag to false on unmount
   useEffect(() => {
-    // Skip if camera is not active or there's already a successful scan
-    if (!showCamera || scannedCode) return;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      cleanupScanner();
+    };
+  }, []);
+  
+  // This effect will be called when the camera is shown/hidden
+  useEffect(() => {
+    if (!showCamera || scannedCode) {
+      cleanupScanner();
+      return;
+    }
     
-    // Try to dynamically import html5-qrcode only when needed
-    let scanner: any = null;
-    let mounted = true;
+    // Don't re-initialize if already done
+    if (scannerInitializedRef.current) {
+      return;
+    }
     
     const initCamera = async () => {
       try {
         // Dynamically import the HTML5QrCode library
-        const { Html5Qrcode } = await import('html5-qrcode');
+        const Html5QrcodeModule = await import('html5-qrcode');
+        const Html5Qrcode = Html5QrcodeModule.Html5Qrcode;
         
         // Skip if component was unmounted during the import
-        if (!mounted) return;
+        if (!mountedRef.current) return;
         
         // Create necessary container
-        const scannerDivId = "qrcode-scanner";
-        let scannerDiv = document.getElementById(scannerDivId);
+        const scannerDivId = "qrcode-scanner-" + Date.now(); // Unique ID each time
         
-        // Create div if it doesn't exist
-        if (!scannerDiv) {
-          const cameraContainer = document.querySelector('.camera-container');
-          if (!cameraContainer) {
-            setError("Camera container not found");
-            return;
-          }
-          
-          // Clear any existing content
-          cameraContainer.innerHTML = '';
-          
-          // Create new div for scanner
-          scannerDiv = document.createElement('div');
-          scannerDiv.id = scannerDivId;
-          scannerDiv.style.width = '100%';
-          scannerDiv.style.height = '100%';
-          cameraContainer.appendChild(scannerDiv);
-        }
-
-        // Initialize scanner
-        scanner = new Html5Qrcode(scannerDivId);
-
-        // Get available cameras
-        const devices = await Html5Qrcode.getCameras();
-        if (!devices || devices.length === 0) {
-          setError("No cameras detected on your device");
+        // Get container and prepare it
+        const cameraContainer = document.querySelector('.camera-container');
+        if (!cameraContainer) {
+          setError("Camera container not found");
+          setShowCamera(false);
           return;
         }
         
-        // Start scanner with first camera
-        await scanner.start(
-          devices[0].id,
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-          },
-          (decodedText: string) => {
-            console.log(`QR Code detected: ${decodedText}`);
-            if (mounted) {
-              setScannedCode(decodedText);
-              setShowCamera(false);
-              onScanSuccess(decodedText);
-            }
-            
-            // Stop scanner
-            if (scanner) {
-              scanner.stop().catch(console.error);
-            }
-          },
-          (errorMessage: string) => {
-            // Don't show errors for normal scanning
-            if (!errorMessage.includes('No QR code found')) {
-              console.error(`QR Scan error: ${errorMessage}`);
-            }
+        // Clear any existing content
+        cameraContainer.innerHTML = '';
+        
+        // Create new div for scanner
+        const scannerDiv = document.createElement('div');
+        scannerDiv.id = scannerDivId;
+        scannerDiv.style.width = '100%';
+        scannerDiv.style.height = '100%';
+        cameraContainer.appendChild(scannerDiv);
+        
+        // Short delay to ensure DOM is updated
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Check again if mounted
+        if (!mountedRef.current) return;
+        
+        // Initialize scanner
+        try {
+          scannerRef.current = new Html5Qrcode(scannerDivId);
+          scannerInitializedRef.current = true;
+        } catch (initErr) {
+          console.error("Failed to initialize scanner:", initErr);
+          setError(`Scanner initialization failed: ${initErr instanceof Error ? initErr.message : String(initErr)}`);
+          setShowCamera(false);
+          return;
+        }
+        
+        // Get available cameras
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (!devices || devices.length === 0) {
+            setError("No cameras detected on your device");
+            setShowCamera(false);
+            return;
           }
-        );
+          
+          // Skip if component was unmounted
+          if (!mountedRef.current) return;
+          
+          // Start scanner with first camera
+          await scannerRef.current.start(
+            devices[0].id,
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+            },
+            (decodedText: string) => {
+              console.log(`QR Code detected: ${decodedText}`);
+              
+              // Ensure scanner is stopped before navigation
+              try {
+                if (scannerRef.current && scannerRef.current.isScanning) {
+                  scannerRef.current.stop().catch(console.error);
+                }
+              } catch (stopErr) {
+                console.error("Error stopping scanner after scan:", stopErr);
+              }
+              
+              // Only update state if still mounted
+              if (mountedRef.current) {
+                setScannedCode(decodedText);
+                setShowCamera(false);
+                onScanSuccess(decodedText);
+              }
+            },
+            (errorMessage: string) => {
+              // Don't show errors for normal scanning
+              if (!errorMessage.includes('No QR code found')) {
+                console.error(`QR Scan error: ${errorMessage}`);
+              }
+            }
+          );
+        } catch (err) {
+          console.error("Camera access error:", err);
+          if (mountedRef.current) {
+            setError(`Camera error: ${err instanceof Error ? err.message : String(err)}`);
+            setShowCamera(false);
+          }
+        }
       } catch (err) {
-        console.error("Failed to start QR scanner:", err);
-        if (mounted) {
-          setError(`Camera error: ${err instanceof Error ? err.message : String(err)}`);
+        console.error("Failed to import or initialize QR scanner:", err);
+        if (mountedRef.current) {
+          setError(`Scanner error: ${err instanceof Error ? err.message : String(err)}`);
           setShowCamera(false);
         }
       }
@@ -136,14 +202,18 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     // Initialize camera
     initCamera();
     
-    // Cleanup function
+    // Always clean up on effect cleanup
     return () => {
-      mounted = false;
-      if (scanner) {
-        scanner.stop().catch(console.error);
-      }
+      cleanupScanner();
     };
   }, [showCamera, scannedCode, onScanSuccess]);
+  
+  // Cleanup on navigation
+  useEffect(() => {
+    return () => {
+      cleanupScanner();
+    };
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -168,7 +238,7 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       ) : (
         <div className="border rounded-md overflow-hidden">
           {showCamera ? (
-            <div className="aspect-video relative bg-gray-900 camera-container">
+            <div className="aspect-video relative bg-black camera-container">
               {/* Scanner will be attached to this div by the useEffect hook */}
             </div>
           ) : (
