@@ -52,7 +52,7 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
   const onSubmit = async (data: FormValues) => {
     setIsSaving(true);
     try {
-      await apiRequest({
+      const result = await apiRequest({
         url: `/api/settings/email`,
         method: "PUT",
         data,

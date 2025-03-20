@@ -22,10 +22,11 @@ export default function Settings() {
     queryKey: ['/api/settings/email'],
     queryFn: async () => {
       try {
-        return await apiRequest({
+        const result = await apiRequest({
           url: '/api/settings/email',
           method: 'GET'
         });
+        return result;
       } catch (error) {
         return null;
       }

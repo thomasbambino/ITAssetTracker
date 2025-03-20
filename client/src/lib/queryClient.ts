@@ -7,11 +7,15 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: any,
-): Promise<Response> {
+export async function apiRequest({
+  url,
+  method,
+  data,
+}: {
+  url: string;
+  method: string;
+  data?: any;
+}): Promise<any> {
   try {
     const headers: HeadersInit = {
       'Content-Type': 'application/json'
@@ -31,7 +35,13 @@ export async function apiRequest(
     
     const res = await fetch(url, options);
     await throwIfResNotOk(res);
-    return res;
+    
+    // Parse JSON response if it's not a 204 No Content
+    if (res.status !== 204) {
+      return await res.json();
+    }
+    
+    return { success: true };
   } catch (error) {
     console.error(`API Request error (${method} ${url}):`, error);
     throw error;
