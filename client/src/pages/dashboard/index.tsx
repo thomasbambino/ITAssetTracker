@@ -143,6 +143,18 @@ export default function Dashboard() {
     'Monitor': '#F87171',     // Red
     'Printer': '#FBBF24',     // Yellow
     'Network': '#60A5FA',     // Light Blue
+    'Networking': '#60A5FA',  // Light Blue
+    'Workstations': '#F43F5E', // Rose
+    'Peripheral': '#D946EF',  // Fuchsia
+    'Desk Phone': '#EC4899',  // Pink
+    'Phone': '#EC4899',       // Pink
+    'Apple': '#EA580C',       // Orange
+    'Camera': '#8B5CF6',      // Violet
+    'Mic': '#06B6D4',         // Cyan
+    'AV': '#0EA5E9',          // Sky
+    'Firewall': '#EF4444',    // Red
+    'Router': '#F59E0B',      // Amber
+    'Switch': '#10B981',      // Emerald
     'Accessories': '#94A3B8', // Gray
     'Other': '#64748B'        // Dark Gray
   };
