@@ -614,6 +614,55 @@ export default function DeviceDetails() {
           onAssignmentComplete={handleAssignmentComplete}
         />
       )}
+
+      {/* QR Code Dialog */}
+      {device && qrCodeData && (
+        <Dialog open={showQrCodeDialog} onOpenChange={setShowQrCodeDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Device QR Code</DialogTitle>
+              <DialogDescription>
+                Scan this code to view device details
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center justify-center py-4">
+              <QrCodeDisplay 
+                value={qrCodeData.code}
+                label={device.assetTag || qrCodeData.code}
+                size={200}
+                includeLabel={true}
+                id="device-qrcode"
+              />
+              <div className="mt-4 text-center">
+                <p className="font-medium text-gray-700">{`${device.brand} ${device.model}`}</p>
+                <p className="text-sm text-gray-500">Asset Tag: {device.assetTag}</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Last scanned: {qrCodeData.lastScanned ? formatDate(qrCodeData.lastScanned) : 'Never'}<br />
+                  Scan count: {qrCodeData.scanCount || 0}
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="flex justify-between sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleQrCodeDownload}
+              >
+                <DownloadIcon className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleQrCodePrint}
+              >
+                <PrinterIcon className="h-4 w-4 mr-2" />
+                Print
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
