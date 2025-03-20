@@ -210,7 +210,7 @@ export default function Dashboard() {
         </div>
         
         {/* Global Search */}
-        <div className="mt-4 md:mt-0 w-full md:w-auto">
+        <div className="mt-4 md:mt-0 w-full md:w-80">
           <GlobalSearch />
         </div>
       </div>
