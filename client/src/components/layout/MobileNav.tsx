@@ -375,11 +375,49 @@ export function MobileNav() {
                   {currentUser ? (currentUser.role === 'admin' ? 'Administrator' : 'User') : ''}
                 </p>
               </div>
-              <div className="ml-auto flex items-center space-x-1">
+              <div className="ml-auto flex items-center space-x-2">
                 <NotificationBell />
                 <Link href="/settings" className="text-gray-500 hover:text-primary">
                   <SettingsIcon className="h-5 w-5" />
                 </Link>
+                <button
+                  onClick={async () => {
+                    try {
+                      await apiRequest({
+                        url: '/api/auth/logout',
+                        method: 'POST'
+                      });
+                      
+                      // Clear all queries from cache
+                      queryClient.clear();
+                      
+                      // Show success message
+                      toast({
+                        title: "Logged out",
+                        description: "You have been successfully logged out."
+                      });
+                      
+                      // Redirect to login page
+                      navigate('/');
+                      
+                      // Reload the page to ensure clean state
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 300);
+                    } catch (error) {
+                      console.error('Logout error:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to log out. Please try again.",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  className="text-gray-500 hover:text-red-500 transition-colors"
+                  title="Logout"
+                >
+                  <LogOutIcon className="h-5 w-5" />
+                </button>
               </div>
             </div>
           </div>
