@@ -72,6 +72,18 @@ export default function DeviceDetails() {
   // Add reference to QR code image for download
   const qrCodeRef = useRef<HTMLImageElement | null>(null);
   
+  // Effect to update the hidden image element when QR code data is available
+  useEffect(() => {
+    if (qrCodeData && qrCodeRef.current) {
+      // Find the QR code image in the DOM
+      const displayedQrCode = document.getElementById('device-qrcode') as HTMLImageElement;
+      if (displayedQrCode) {
+        // Update our hidden image reference with the displayed QR code's source
+        qrCodeRef.current.src = displayedQrCode.src;
+      }
+    }
+  }, [qrCodeData]);
+  
   // Function to handle downloading the QR code
   const handleQrCodeDownload = () => {
     if (!qrCodeData || !qrCodeRef.current) return;
@@ -447,8 +459,84 @@ export default function DeviceDetails() {
                 </CardFooter>
               </Card>
 
+              {/* QR Code Card */}
+              <Card className="md:col-span-1">
+                <CardHeader className="pb-3">
+                  <CardTitle>Device QR Code</CardTitle>
+                  <CardDescription>
+                    Scan to view device details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center justify-center">
+                  {qrCodeLoading ? (
+                    <div className="py-6 flex flex-col items-center">
+                      <div className="w-48 h-48 bg-gray-100 rounded-md animate-pulse"></div>
+                      <div className="mt-4 w-32 h-8 bg-gray-100 rounded-md animate-pulse"></div>
+                    </div>
+                  ) : qrCodeData ? (
+                    <>
+                      <QrCodeDisplay 
+                        value={qrCodeData.code} 
+                        label={`${device.brand} ${device.model}`}
+                        assetTag={device.assetTag}
+                        size={180}
+                        id="device-qrcode"
+                      />
+                      <div 
+                        className="hidden" 
+                        aria-hidden="true"
+                      >
+                        <img 
+                          ref={qrCodeRef} 
+                          src="" 
+                          alt="QR Code for download" 
+                        />
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleQrCodeDownload}
+                        >
+                          <DownloadIcon className="h-4 w-4 mr-2" />
+                          Download
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleQrCodePrint}
+                        >
+                          <PrinterIcon className="h-4 w-4 mr-2" />
+                          Print
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-3 text-center">
+                        Last scanned: {qrCodeData.lastScanned ? formatDate(qrCodeData.lastScanned) : 'Never'}<br />
+                        Scan count: {qrCodeData.scanCount || 0}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="py-6 text-center">
+                      <QrCodeIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-sm font-medium text-gray-900">No QR code found</h3>
+                      <p className="text-sm text-gray-500 mt-1 mb-4">
+                        There is no QR code associated with this device yet.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/qrcodes?deviceId=${id}`)}
+                      >
+                        <QrCodeIcon className="h-4 w-4 mr-2" />
+                        Generate QR Code
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Assignment History Card */}
-              <Card className="md:col-span-2">
+              <Card className="md:col-span-1">
                 <CardHeader className="pb-3">
                   <CardTitle>Assignment History</CardTitle>
                   <CardDescription>
