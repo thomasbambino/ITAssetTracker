@@ -12,7 +12,8 @@ export interface EmailSettings {
   domain: string | null;
   fromEmail: string | null;
   fromName: string | null;
-  isEnabled: boolean;
+  isEnabled: boolean | null;
+  updatedAt?: Date | null;
 }
 
 export interface EmailData {
@@ -32,7 +33,7 @@ export class MailgunEmailService {
   private domain: string | null;
   private fromEmail: string | null;
   private fromName: string | null;
-  private isEnabled: boolean;
+  private isEnabled: boolean | null;
 
   constructor(settings: EmailSettings | null) {
     // Initialize with default values
@@ -52,14 +53,17 @@ export class MailgunEmailService {
       this.domain = settings.domain;
       this.fromEmail = settings.fromEmail;
       this.fromName = settings.fromName;
-      this.isEnabled = settings.isEnabled;
+      
+      // Handle null isEnabled by defaulting to false
+      this.isEnabled = settings.isEnabled === true ? true : false;
     } else {
       this.client = null;
     }
   }
 
   public isConfigured(): boolean {
-    return this.isEnabled && !!this.client && !!this.domain && !!this.fromEmail;
+    // Check explicitly that isEnabled is true (not just truthy)
+    return this.isEnabled === true && !!this.client && !!this.domain && !!this.fromEmail;
   }
 
   // Send an email

@@ -65,9 +65,21 @@ router.put('/settings/email', isAuthenticated, isAdmin, async (req: Request, res
     // Update the settings in the database
     const updatedSettings = await storage.updateEmailSettings(emailSettings);
     
+    // Debug the settings before updating
+    console.log('Email settings before update:', {
+      apiKey: updatedSettings.apiKey ? '[MASKED]' : null,
+      domain: updatedSettings.domain,
+      fromEmail: updatedSettings.fromEmail,
+      fromName: updatedSettings.fromName,
+      isEnabled: updatedSettings.isEnabled,
+    });
+    
     // Update both email services with the new settings
     updateEmailService(updatedSettings);
-    updateMailgunEmailService(updatedSettings);
+    const mailgunService = updateMailgunEmailService(updatedSettings);
+    
+    // Debug mailgun configuration after update
+    console.log('Mailgun configured?', mailgunService.isConfigured());
     
     // Return the updated settings with masked API key
     const maskedSettings = {
@@ -110,8 +122,20 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
     
     console.log(`Sending email test to: ${targetEmail} using domain: ${emailSettings.domain}`);
     
+    // Debug the email settings
+    console.log('Email settings from test endpoint:', {
+      apiKey: emailSettings.apiKey ? '[MASKED]' : null,
+      domain: emailSettings.domain,
+      fromEmail: emailSettings.fromEmail,
+      fromName: emailSettings.fromName,
+      isEnabled: emailSettings.isEnabled,
+    });
+    
     // Try to send email using Mailgun
-    if (mailgunEmailService.isConfigured()) {
+    const isMailgunConfigured = mailgunEmailService.isConfigured();
+    console.log('Is Mailgun configured?', isMailgunConfigured);
+    
+    if (isMailgunConfigured) {
       console.log('Using Mailgun service for email test');
       const result = await mailgunEmailService.sendTestEmail(targetEmail);
       return res.json(result);
