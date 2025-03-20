@@ -4,6 +4,7 @@ import { storage } from './storage';
 import { LoginCredentials } from '@shared/schema';
 import { User } from '@shared/schema';
 import emailService from './email-service';
+import mailgunEmailService from './email-service-mailgun';
 
 // Password hashing
 export async function hashPassword(password: string): Promise<{ hash: string, salt: string }> {
@@ -164,7 +165,7 @@ export async function resetUserPassword(userId: number): Promise<{
       passwordResetRequired: true
     });
     
-    // For development, bypass the actual email sending to avoid encoding issues
+    // Try to send email notification with the temporary password
     let emailSent = false;
     let emailError = undefined;
     
@@ -174,17 +175,35 @@ export async function resetUserPassword(userId: number): Promise<{
         const emailSettings = await storage.getEmailSettings();
         
         if (emailSettings && emailSettings.isEnabled) {
-          // Simulate email sending for development purposes
-          console.log(`[EMAIL SIMULATION] Would send password reset email to: ${user.email}`);
-          console.log(`[EMAIL SIMULATION] User: ${user.firstName} ${user.lastName}`);
-          console.log(`[EMAIL SIMULATION] Temp password: ${tempPassword}`);
-          
-          // Mark as successfully sent (simulated)
-          emailSent = true;
+          // First try using the new Mailgun service
+          if (mailgunEmailService.isConfigured()) {
+            console.log(`Sending password reset email via Mailgun to: ${user.email}`);
+            const fullName = `${user.firstName} ${user.lastName}`;
+            
+            const result = await mailgunEmailService.sendPasswordResetEmail(
+              user.email, 
+              tempPassword, 
+              fullName
+            );
+            
+            emailSent = result.success;
+            if (!result.success) {
+              emailError = result.message;
+              console.error('Mailgun email error:', result.message);
+            }
+          } else {
+            // Fallback to simulation mode
+            console.log(`[EMAIL SIMULATION] Would send password reset email to: ${user.email}`);
+            console.log(`[EMAIL SIMULATION] User: ${user.firstName} ${user.lastName}`);
+            console.log(`[EMAIL SIMULATION] Temp password: ${tempPassword}`);
+            
+            // Mark as successfully sent (simulated)
+            emailSent = true;
+          }
         }
       } catch (emailErr) {
-        console.error('Error in email simulation:', emailErr);
-        emailError = 'Email simulation failed';
+        console.error('Error sending email:', emailErr);
+        emailError = `Email sending failed: ${emailErr instanceof Error ? emailErr.message : 'Unknown error'}`;
       }
     }
     

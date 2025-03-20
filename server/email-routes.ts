@@ -98,9 +98,6 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
       });
     }
     
-    // For now, we'll bypass the actual email sending due to encoding issues
-    // and just simulate a successful test
-    
     // Get the target email from request or use the fromEmail from settings
     const targetEmail = req.body.email || emailSettings.fromEmail;
     
@@ -111,20 +108,27 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
       });
     }
     
-    // Log that we would send an email (for debugging)
-    console.log(`[Email Test] Would send test email to: ${targetEmail}`);
-    console.log(`[Email Test] Using domain: ${emailSettings.domain}`);
+    console.log(`Sending email test to: ${targetEmail} using domain: ${emailSettings.domain}`);
     
-    // Simulate successful email sending
-    return res.json({
-      success: true,
-      message: `Email test successful (simulated). In a production environment, an email would be sent to ${targetEmail}.`
-    });
+    // Try to send email using Mailgun
+    if (mailgunEmailService.isConfigured()) {
+      console.log('Using Mailgun service for email test');
+      const result = await mailgunEmailService.sendTestEmail(targetEmail);
+      return res.json(result);
+    } else {
+      console.log('Mailgun service is not configured properly. Using simulation mode.');
+      
+      // If Mailgun isn't configured or fails, fallback to simulation
+      return res.json({
+        success: true,
+        message: `Email test successful (simulated). Email settings found but service not enabled. Check your configuration.`
+      });
+    }
   } catch (error) {
     console.error('Error with email test:', error);
     return res.status(500).json({ 
       success: false, 
-      message: 'Failed to test email configuration'
+      message: `Failed to test email configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
     });
   }
 });
