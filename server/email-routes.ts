@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { storage } from './storage';
 import { isAdmin, isAuthenticated } from './auth';
-import directMailgun, { updateMailgunService } from './direct-mailgun';  // Use our direct implementation
+import directMailgun, { updateMailgunService, DirectMailgunService } from './direct-mailgun';  // Use our direct implementation
 import { z } from 'zod';
 
 const router = Router();
@@ -154,6 +154,76 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
     return res.status(500).json({ 
       success: false, 
       message: `Failed to test email configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
+    });
+  }
+});
+
+// Special test route that directly uses environment variables (admin only)
+router.post('/settings/email/env-test', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+  try {
+    // Get the target email from request
+    const targetEmail = req.body.email;
+    
+    if (!targetEmail) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Target email is required' 
+      });
+    }
+    
+    console.log(`Sending direct env test email to: ${targetEmail}`);
+    
+    // Check for environment variables
+    const apiKey = process.env.MAILGUN_API_KEY;
+    const domain = process.env.MAILGUN_DOMAIN;
+    
+    if (!apiKey || !domain) {
+      return res.status(400).json({
+        success: false,
+        message: 'Environment variables MAILGUN_API_KEY and/or MAILGUN_DOMAIN are not set'
+      });
+    }
+    
+    // Construct a test email settings object using environment variables
+    const envEmailSettings = {
+      apiKey,
+      domain,
+      fromEmail: `test@${domain}`,
+      fromName: 'AssetTrack Test',
+      isEnabled: true
+    };
+    
+    console.log('Using direct environment variables for email test:', {
+      domain: envEmailSettings.domain,
+      fromEmail: envEmailSettings.fromEmail,
+      fromName: envEmailSettings.fromName,
+      hasApiKey: !!envEmailSettings.apiKey
+    });
+    
+    // Create a temporary service instance with these settings
+    const tempMailgunService = new DirectMailgunService(envEmailSettings);
+    
+    // Check if this service is properly configured
+    const isConfigured = tempMailgunService.isConfigured();
+    console.log('Is env-based mailgun service configured?', isConfigured);
+    
+    if (!isConfigured) {
+      return res.status(400).json({
+        success: false,
+        message: 'Environment variable based email service is not fully configured'
+      });
+    }
+    
+    // Send the test email
+    console.log('Sending test email using environment variables directly');
+    const result = await tempMailgunService.sendTestEmail(targetEmail);
+    return res.json(result);
+    
+  } catch (error) {
+    console.error('Error with direct env email test:', error);
+    return res.status(500).json({
+      success: false,
+      message: `Failed to test email with environment variables: ${error instanceof Error ? error.message : 'Unknown error'}`
     });
   }
 });

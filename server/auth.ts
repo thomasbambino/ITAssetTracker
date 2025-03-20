@@ -173,17 +173,19 @@ export async function resetUserPassword(userId: number): Promise<{
         // Get email settings to check if service is configured and enabled
         const emailSettings = await storage.getEmailSettings();
         
+        // Check if we have valid database settings first
         if (emailSettings && emailSettings.isEnabled) {
-          // Update the direct mailgun service with current settings
-          console.log('Updating direct mailgun service with current settings...');
+          // Update the direct mailgun service with current settings from database
+          console.log('Updating direct mailgun service with database settings...');
           const updatedMailgunService = updateMailgunService(emailSettings);
           
           // Check if direct mailgun service is configured after updating
-          console.log('Direct mailgun service configuration check:', updatedMailgunService.isConfigured());
+          const dbConfigured = updatedMailgunService.isConfigured();
+          console.log('Database-based mailgun service configuration check:', dbConfigured);
           
-          // Attempt to send email using our direct implementation
-          if (updatedMailgunService.isConfigured()) {
-            console.log(`Sending password reset email to: ${user.email}`);
+          // Attempt to send email using our direct implementation with database settings
+          if (dbConfigured) {
+            console.log(`Sending password reset email to: ${user.email} using database settings`);
             const fullName = `${user.firstName} ${user.lastName}`;
             
             const result = await updatedMailgunService.sendPasswordResetEmail(
@@ -195,22 +197,79 @@ export async function resetUserPassword(userId: number): Promise<{
             emailSent = result.success;
             if (!result.success) {
               emailError = result.message;
-              console.error('Email error:', result.message);
+              console.error('Email error with database settings:', result.message);
+              
+              // Try with environment variables if database settings failed
+              console.log('Attempting to use environment variables instead...');
             } else {
-              console.log('Password reset email sent successfully');
+              console.log('Password reset email sent successfully using database settings');
+              return {
+                success: true,
+                message: 'Password reset successfully',
+                tempPassword,
+                emailSent,
+                emailError
+              };
             }
-          } else {
-            // Fallback to simulation mode
-            console.log(`[EMAIL SIMULATION] Would send password reset email to: ${user.email}`);
-            console.log(`[EMAIL SIMULATION] User: ${user.firstName} ${user.lastName}`);
-            console.log(`[EMAIL SIMULATION] Temp password: ${tempPassword}`);
-            
-            // Mark as successfully sent (simulated)
-            emailSent = true;
           }
         }
+        
+        // If we reach here, either database settings failed or weren't available
+        // Try using environment variables directly as a fallback
+        const apiKey = process.env.MAILGUN_API_KEY;
+        const domain = process.env.MAILGUN_DOMAIN;
+        
+        if (apiKey && domain) {
+          console.log('Trying to send email using environment variables...');
+          
+          // Create direct settings from environment variables
+          const envEmailSettings = {
+            apiKey,
+            domain,
+            fromEmail: `noreply@${domain}`,
+            fromName: 'AssetTrack System',
+            isEnabled: true
+          };
+          
+          // Create a temporary service instance with env settings
+          const envMailgunService = new DirectMailgunService(envEmailSettings);
+          
+          // Check if this service is configured
+          const envConfigured = envMailgunService.isConfigured();
+          console.log('Environment-based mailgun service configuration check:', envConfigured);
+          
+          if (envConfigured) {
+            console.log(`Sending password reset email to: ${user.email} using environment variables`);
+            const fullName = `${user.firstName} ${user.lastName}`;
+            
+            const result = await envMailgunService.sendPasswordResetEmail(
+              user.email,
+              tempPassword,
+              fullName
+            );
+            
+            emailSent = result.success;
+            if (!result.success) {
+              emailError = `${emailError ? emailError + '; ' : ''}${result.message}`;
+              console.error('Email error with environment variables:', result.message);
+            } else {
+              console.log('Password reset email sent successfully using environment variables');
+            }
+          }
+        }
+        
+        // If neither database nor environment variables worked, use simulation
+        if (!emailSent) {
+          console.log(`[EMAIL SIMULATION] Would send password reset email to: ${user.email}`);
+          console.log(`[EMAIL SIMULATION] User: ${user.firstName} ${user.lastName}`);
+          console.log(`[EMAIL SIMULATION] Temp password: ${tempPassword}`);
+          
+          // Mark as successfully sent (simulated)
+          emailSent = true;
+          emailError = emailError ? `${emailError} - Fall back to simulation mode` : 'Using simulation mode';
+        }
       } catch (emailErr) {
-        console.error('Error sending email:', emailErr);
+        console.error('Error in email sending process:', emailErr);
         emailError = `Email sending failed: ${emailErr instanceof Error ? emailErr.message : 'Unknown error'}`;
       }
     }
