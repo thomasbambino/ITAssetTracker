@@ -2,9 +2,6 @@ import { pgTable, text, serial, integer, boolean, timestamp, unique, pgEnum, dat
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User role enum
-export const userRoles = pgEnum('user_role', ['admin', 'user']);
-
 // User schema
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -18,8 +15,8 @@ export const users = pgTable("users", {
   tempPassword: text("temp_password"),
   tempPasswordExpiry: timestamp("temp_password_expiry"),
   passwordResetRequired: boolean("password_reset_required").default(true),
-  role: userRoles("role").default('user'),
-  active: boolean("active").default(false),
+  role: text("role").default('user'),
+  active: boolean("active").default(true),
   lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -153,8 +150,6 @@ export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLog.$inferSelect;
 
 // Software management schemas
-export const softwareStatus = pgEnum('software_status', ['active', 'expired', 'pending']);
-
 export const software = pgTable("software", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -166,7 +161,7 @@ export const software = pgTable("software", {
   licenseKey: text("license_key"),
   seats: integer("seats"), // Number of allowed users
   notes: text("notes"),
-  status: softwareStatus("status").default('active'),
+  status: text("status").default('active'),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -197,8 +192,6 @@ export type InsertSoftwareAssignment = z.infer<typeof insertSoftwareAssignmentSc
 export type SoftwareAssignment = typeof softwareAssignments.$inferSelect;
 
 // Maintenance tracking
-export const maintenanceStatus = pgEnum('maintenance_status', ['scheduled', 'in_progress', 'completed', 'cancelled']);
-
 export const maintenanceRecords = pgTable("maintenance_records", {
   id: serial("id").primaryKey(),
   deviceId: integer("device_id").notNull().references(() => devices.id),
@@ -208,7 +201,7 @@ export const maintenanceRecords = pgTable("maintenance_records", {
   completedDate: timestamp("completed_date"),
   cost: integer("cost"), // Store in cents
   performedBy: text("performed_by"),
-  status: maintenanceStatus("status").default('scheduled'),
+  status: text("status").default('scheduled'),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -241,12 +234,10 @@ export type InsertQrCode = z.infer<typeof insertQrCodeSchema>;
 export type QrCode = typeof qrCodes.$inferSelect;
 
 // Notifications
-export const notificationTypes = pgEnum('notification_type', ['warranty_expiry', 'maintenance_due', 'license_expiry', 'device_assigned']);
-
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
-  type: notificationTypes("type").notNull(),
+  type: text("type").notNull(),
   title: text("title").notNull(),
   message: text("message").notNull(),
   isRead: boolean("is_read").default(false),

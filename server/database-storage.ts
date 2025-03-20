@@ -37,11 +37,48 @@ export class DatabaseStorage implements IStorage {
           last_name as "lastName", 
           email, 
           phone_number as "phoneNumber", 
-          department, 
+          department,
+          password_hash as "passwordHash",
+          password_salt as "passwordSalt",
+          temp_password as "tempPassword",
+          temp_password_expiry as "tempPasswordExpiry",
+          password_reset_required as "passwordResetRequired",
+          role,
+          active,
+          last_login as "lastLogin",
           created_at as "createdAt" 
         FROM users 
         WHERE id = $1
       `, [id]);
+      return user;
+    } catch (error) {
+      // If no rows found, return undefined
+      return undefined;
+    }
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    try {
+      const user = await db.one(`
+        SELECT 
+          id, 
+          first_name as "firstName", 
+          last_name as "lastName", 
+          email, 
+          phone_number as "phoneNumber", 
+          department,
+          password_hash as "passwordHash",
+          password_salt as "passwordSalt",
+          temp_password as "tempPassword",
+          temp_password_expiry as "tempPasswordExpiry",
+          password_reset_required as "passwordResetRequired",
+          role,
+          active,
+          last_login as "lastLogin",
+          created_at as "createdAt" 
+        FROM users 
+        WHERE email ILIKE $1
+      `, [email]);
       return user;
     } catch (error) {
       // If no rows found, return undefined
@@ -85,7 +122,7 @@ export class DatabaseStorage implements IStorage {
     return newUser;
   }
 
-  async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
+  async updateUser(id: number, user: any): Promise<User | undefined> {
     try {
       // Build dynamic update query
       const updates: string[] = [];
@@ -117,6 +154,47 @@ export class DatabaseStorage implements IStorage {
         values.push(user.department);
       }
       
+      // Password-related fields
+      if (user.passwordHash !== undefined) {
+        updates.push(`password_hash = $${paramCount++}`);
+        values.push(user.passwordHash);
+      }
+      
+      if (user.passwordSalt !== undefined) {
+        updates.push(`password_salt = $${paramCount++}`);
+        values.push(user.passwordSalt);
+      }
+      
+      if (user.tempPassword !== undefined) {
+        updates.push(`temp_password = $${paramCount++}`);
+        values.push(user.tempPassword);
+      }
+      
+      if (user.tempPasswordExpiry !== undefined) {
+        updates.push(`temp_password_expiry = $${paramCount++}`);
+        values.push(user.tempPasswordExpiry);
+      }
+      
+      if (user.passwordResetRequired !== undefined) {
+        updates.push(`password_reset_required = $${paramCount++}`);
+        values.push(user.passwordResetRequired);
+      }
+      
+      if (user.role !== undefined) {
+        updates.push(`role = $${paramCount++}`);
+        values.push(user.role);
+      }
+      
+      if (user.active !== undefined) {
+        updates.push(`active = $${paramCount++}`);
+        values.push(user.active);
+      }
+      
+      if (user.lastLogin !== undefined) {
+        updates.push(`last_login = $${paramCount++}`);
+        values.push(user.lastLogin);
+      }
+      
       // If no updates, return the user
       if (updates.length === 0) {
         return this.getUserById(id);
@@ -134,7 +212,15 @@ export class DatabaseStorage implements IStorage {
           last_name as "lastName", 
           email, 
           phone_number as "phoneNumber", 
-          department, 
+          department,
+          password_hash as "passwordHash",
+          password_salt as "passwordSalt",
+          temp_password as "tempPassword",
+          temp_password_expiry as "tempPasswordExpiry",
+          password_reset_required as "passwordResetRequired",
+          role,
+          active,
+          last_login as "lastLogin",
           created_at as "createdAt"
       `, values);
       
@@ -200,6 +286,24 @@ export class DatabaseStorage implements IStorage {
       FROM users
       WHERE department = $1
     `, [department]);
+    
+    return users;
+  }
+  
+  async getUsersByRole(role: string): Promise<User[]> {
+    const users = await db.any(`
+      SELECT 
+        id, 
+        first_name as "firstName", 
+        last_name as "lastName", 
+        email, 
+        phone_number as "phoneNumber", 
+        department,
+        role,
+        created_at as "createdAt" 
+      FROM users
+      WHERE role = $1
+    `, [role]);
     
     return users;
   }

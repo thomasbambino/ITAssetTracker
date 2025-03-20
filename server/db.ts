@@ -1,9 +1,18 @@
 import pgPromise from 'pg-promise';
 import * as schema from '../shared/schema';
+import bcrypt from 'bcrypt';
 
 // Create a PostgreSQL client
 const pgp = pgPromise();
 export const db = pgp(process.env.DATABASE_URL!);
+
+// Helper function to hash a password
+async function hashPassword(password: string): Promise<{ hash: string, salt: string }> {
+  const saltRounds = 10;
+  const salt = await bcrypt.genSalt(saltRounds);
+  const hash = await bcrypt.hash(password, salt);
+  return { hash, salt };
+}
 
 // Helper function to initialize the database
 export async function initializeDatabase() {
@@ -19,6 +28,14 @@ export async function initializeDatabase() {
         email TEXT UNIQUE NOT NULL,
         phone_number TEXT,
         department TEXT,
+        password_hash TEXT,
+        password_salt TEXT,
+        temp_password TEXT,
+        temp_password_expiry TIMESTAMP WITH TIME ZONE,
+        password_reset_required BOOLEAN DEFAULT TRUE,
+        role TEXT DEFAULT 'user',
+        active BOOLEAN DEFAULT TRUE,
+        last_login TIMESTAMP WITH TIME ZONE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -89,6 +106,65 @@ export async function initializeDatabase() {
       console.log('Default categories created.');
     } else {
       console.log(`Found ${categoriesCount.count} existing categories.`);
+    }
+    
+    // Check if users table has records - create default admin users if none exist
+    const usersCount = await db.one(`SELECT COUNT(*) FROM users`);
+    
+    if (parseInt(usersCount.count) === 0) {
+      console.log('Initializing default admin users...');
+      
+      // Hash the default password "Welcome1"
+      const tommyPassword = await hashPassword('Welcome1');
+      const olafPassword = await hashPassword('Welcome1');
+      
+      // Insert default admin users (Tommy and Olaf)
+      const insertAdmins = `
+        INSERT INTO users (
+          first_name, 
+          last_name, 
+          email, 
+          role, 
+          password_hash, 
+          password_salt, 
+          password_reset_required,
+          active,
+          department
+        ) VALUES 
+        (
+          'Tommy', 
+          'Admin', 
+          'tommy@example.com', 
+          'admin', 
+          $1, 
+          $2, 
+          true,
+          true,
+          'IT'
+        ),
+        (
+          'Olaf', 
+          'Admin', 
+          'olaf@example.com', 
+          'admin', 
+          $3, 
+          $4, 
+          true,
+          true,
+          'IT'
+        )
+      `;
+      
+      await db.none(insertAdmins, [
+        tommyPassword.hash,
+        tommyPassword.salt,
+        olafPassword.hash,
+        olafPassword.salt
+      ]);
+      
+      console.log('Default admin users created.');
+    } else {
+      console.log(`Found ${usersCount.count} existing users.`);
     }
     
     console.log('Database initialization complete.');
