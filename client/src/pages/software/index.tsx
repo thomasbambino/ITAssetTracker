@@ -92,24 +92,24 @@ export default function Software() {
           active: { 
             label: "Active", 
             icon: <CheckCircle className="h-4 w-4 mr-1" />, 
-            variant: "success" 
+            className: "bg-green-100 text-green-800 border-green-200" 
           },
           expired: { 
             label: "Expired", 
             icon: <AlertCircle className="h-4 w-4 mr-1" />, 
-            variant: "destructive" 
+            className: "bg-red-100 text-red-800 border-red-200" 
           },
           pending: { 
             label: "Pending", 
             icon: <Clock className="h-4 w-4 mr-1" />, 
-            variant: "warning" 
+            className: "bg-yellow-100 text-yellow-800 border-yellow-200" 
           },
         };
         const status = statusMap[software.status];
         
         return (
           <div className="flex">
-            <Badge variant={status.variant as any} className="flex items-center w-fit">
+            <Badge variant="outline" className={`flex items-center w-fit ${status.className}`}>
               {status.icon}
               {status.label}
             </Badge>

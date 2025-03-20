@@ -10,7 +10,7 @@ import { formatDate, formatCurrency, mapErrorMessage } from "@/lib/utils";
 import { SoftwareForm } from "@/components/forms/SoftwareForm";
 import { SoftwareAssignmentForm } from "@/components/forms/SoftwareAssignmentForm";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { AlertCircle, Calendar, CheckCircle, Clock, CreditCard, Edit as EditIcon, Plus, Tag, Trash2, Users } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle, Clock, CreditCard, Edit as EditIcon, Monitor, Plus, Tag, Trash2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DataTable } from "@/components/ui/data-table";
 
@@ -117,16 +117,28 @@ export default function SoftwareDetails() {
 
   // Generate status badge
   const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; icon: React.ReactNode; class: string }> = {
-      active: { label: "Active", icon: <CheckCircle className="h-4 w-4 mr-1" />, class: "bg-green-100 text-green-800" },
-      expired: { label: "Expired", icon: <AlertCircle className="h-4 w-4 mr-1" />, class: "bg-red-100 text-red-800" },
-      pending: { label: "Pending", icon: <Clock className="h-4 w-4 mr-1" />, class: "bg-yellow-100 text-yellow-800" },
+    const statusMap: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
+      active: { 
+        label: "Active", 
+        icon: <CheckCircle className="h-4 w-4 mr-1" />, 
+        className: "bg-green-100 text-green-800 border-green-200" 
+      },
+      expired: { 
+        label: "Expired", 
+        icon: <AlertCircle className="h-4 w-4 mr-1" />, 
+        className: "bg-red-100 text-red-800 border-red-200" 
+      },
+      pending: { 
+        label: "Pending", 
+        icon: <Clock className="h-4 w-4 mr-1" />, 
+        className: "bg-yellow-100 text-yellow-800 border-yellow-200" 
+      },
     };
     
     const statusInfo = statusMap[status] || statusMap.pending;
     
     return (
-      <Badge variant="outline" className={`flex items-center w-fit ${statusInfo.class}`}>
+      <Badge variant="outline" className={`flex items-center w-fit ${statusInfo.className}`}>
         {statusInfo.icon}
         {statusInfo.label}
       </Badge>
@@ -177,13 +189,21 @@ export default function SoftwareDetails() {
     {
       header: "Type",
       accessor: (assignment: SoftwareAssignment) => assignment.user ? 'User' : 'Device',
-      cell: (assignment: SoftwareAssignment) => (
-        <div className="flex">
-          <Badge variant="secondary" className="w-fit">
-            {assignment.user ? 'User' : 'Device'}
-          </Badge>
-        </div>
-      ),
+      cell: (assignment: SoftwareAssignment) => {
+        const isUser = assignment.user !== null && assignment.user !== undefined;
+        const className = isUser 
+          ? "bg-blue-100 text-blue-800 border-blue-200" 
+          : "bg-purple-100 text-purple-800 border-purple-200";
+        
+        return (
+          <div className="flex">
+            <Badge variant="outline" className={`flex items-center w-fit ${className}`}>
+              {isUser ? <Users className="h-4 w-4 mr-1" /> : <Monitor className="h-4 w-4 mr-1" />}
+              {isUser ? 'User' : 'Device'}
+            </Badge>
+          </div>
+        );
+      },
     },
     {
       header: "Assignment Date",
