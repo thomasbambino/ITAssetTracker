@@ -42,9 +42,13 @@ export function Sidebar() {
     supportPhone?: string | null;
   }
   
-  // Fetch branding settings
-  const { data: branding = {} as BrandingSettings } = useQuery<BrandingSettings>({
+  // Prefetch branding settings with high priority and staleTime
+  const { data: branding, isLoading: brandingLoading } = useQuery<BrandingSettings>({
     queryKey: ['/api/branding'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime in v4)
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   type RouteType = {
