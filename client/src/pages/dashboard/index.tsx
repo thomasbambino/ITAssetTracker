@@ -455,18 +455,8 @@ export default function Dashboard() {
             <div className="p-4 h-[300px] overflow-y-auto">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 {sortedDepartmentData.map((dept, index) => {
-                  // Department-specific colors
-                  const colors = {
-                    "IT": "#4664f6", // Blue
-                    "Marketing": "#4ade80", // Green
-                    "Sales": "#eab308", // Yellow
-                    "Finance": "#ef4444", // Red
-                    "HR": "#a855f7", // Purple
-                    "Unassigned": "#94a3b8" // Gray
-                  };
-                  
+                  // Set all department colors to black
                   const deptName = dept.name || 'Unassigned';
-                  const color = colors[deptName as keyof typeof colors] || '#94a3b8';
                   
                   return (
                     <div 
@@ -476,8 +466,7 @@ export default function Dashboard() {
                       title={`View devices in ${deptName} department`}
                     >
                       <div 
-                        className="text-4xl font-semibold mb-1" 
-                        style={{ color }}
+                        className="text-4xl font-semibold mb-1 text-black" 
                       >
                         {formatNumber(dept.value)}
                       </div>
