@@ -7,7 +7,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { QrCode as QrCodeIcon, Download, Plus, Printer, Smartphone, Clock, CheckCircle, Info } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { QrCodeForm } from "@/components/forms/QrCodeForm";
 import { QrCodeScanner } from "@/components/qrcodes/QrCodeScanner";
@@ -42,8 +42,16 @@ export default function QrCodesPage() {
   
   // Query for fetching scan history for a specific QR code
   const { data: scanHistory = [], isLoading: isHistoryLoading, refetch: refetchHistory } = useQuery({
-    queryKey: ['/api/qrcodes/history', selectedQrCode?.id],
+    queryKey: [`/api/qrcodes/${selectedQrCode?.id}/history`],
     enabled: !!selectedQrCode, // Only fetch when a QR code is selected
+    queryFn: async () => {
+      if (!selectedQrCode) return [];
+      const response = await fetch(`/api/qrcodes/${selectedQrCode.id}/history`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch scan history');
+      }
+      return response.json();
+    }
   });
 
   const columns = [
@@ -103,9 +111,23 @@ export default function QrCodesPage() {
     fetch(`/api/qrcodes/code/${code}/scan`, { method: 'POST' })
       .then(response => {
         if (response.ok) {
-          // Invalidate queries to refresh the list
-          queryClient.invalidateQueries({ queryKey: ['/api/qrcodes'] });
-          setIsScannerDialogOpen(false);
+          return response.json();
+        }
+        throw new Error('Failed to record scan');
+      })
+      .then(qrCode => {
+        // Invalidate queries to refresh the list
+        queryClient.invalidateQueries({ queryKey: ['/api/qrcodes'] });
+        
+        // Close scanner dialog
+        setIsScannerDialogOpen(false);
+        
+        // If we have a selected QR code open, and it matches the one we just scanned,
+        // invalidate the history query to refresh it
+        if (selectedQrCode && selectedQrCode.id === qrCode.id) {
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/qrcodes/${selectedQrCode.id}/history`] 
+          });
         }
       })
       .catch(error => {
@@ -428,7 +450,7 @@ export default function QrCodesPage() {
                                   )}
                                 </div>
                                 <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                  {formatDate(scan.timestamp)}
+                                  {formatDateTime(scan.timestamp)}
                                 </p>
                               </div>
                               {scan.location && (
