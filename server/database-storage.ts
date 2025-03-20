@@ -1,16 +1,18 @@
 import { 
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
   type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
-  type Notification, type BrandingSettings,
+  type Notification, type BrandingSettings, type EmailSettings,
   type InsertCategory, type InsertDevice, type InsertUser, 
   type InsertAssignmentHistory, type InsertActivityLog,
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
-  type InsertQrCode, type InsertNotification, type InsertBrandingSettings
+  type InsertQrCode, type InsertNotification, type InsertBrandingSettings, 
+  type InsertEmailSettings
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
 
 export class DatabaseStorage implements IStorage {
+  // Import EmailSettings, InsertEmailSettings from schema.ts
   // User operations
   async getUsers(): Promise<User[]> {
     const users = await db.any(`
