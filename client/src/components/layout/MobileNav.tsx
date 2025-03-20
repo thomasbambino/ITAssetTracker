@@ -375,11 +375,7 @@ export function MobileNav() {
                   {currentUser ? (currentUser.role === 'admin' ? 'Administrator' : 'User') : ''}
                 </p>
               </div>
-              <div className="ml-auto flex items-center space-x-2">
-                <NotificationBell />
-                <Link href="/settings" className="text-gray-500 hover:text-primary">
-                  <SettingsIcon className="h-5 w-5" />
-                </Link>
+              <div className="ml-auto">
                 <button
                   onClick={async () => {
                     try {
