@@ -21,7 +21,10 @@ import {
   EditIcon,
   Trash2Icon,
   LaptopIcon,
-  PackageIcon
+  PackageIcon,
+  KeyIcon,
+  CheckCircleIcon,
+  AlertCircleIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -37,6 +40,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { UserForm } from '@/components/forms/UserForm';
 
 export default function UserDetails() {
@@ -45,6 +56,12 @@ export default function UserDetails() {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  const [resetPasswordResult, setResetPasswordResult] = useState<{
+    tempPassword?: string;
+    emailSent?: boolean;
+    emailError?: string;
+  } | null>(null);
 
   // Determine if we're in "new user" mode
   const isNewUser = id === 'new';
@@ -87,6 +104,46 @@ export default function UserDetails() {
   const handleDelete = () => {
     if (id) {
       deleteUserMutation.mutate(id);
+    }
+  };
+  
+  // Reset password mutation
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest('POST', `/api/auth/reset-password/${userId}`);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setResetPasswordResult({
+        tempPassword: data.tempPassword,
+        emailSent: data.emailSent,
+        emailError: data.emailError
+      });
+      toast({
+        title: "Success",
+        description: "Password has been reset",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to reset password",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Handle password reset
+  const handleResetPassword = () => {
+    if (id) {
+      setShowResetPasswordDialog(true);
+    }
+  };
+  
+  // Handle reset password confirmation
+  const confirmResetPassword = () => {
+    if (id) {
+      resetPasswordMutation.mutate(id);
     }
   };
 
@@ -216,11 +273,16 @@ export default function UserDetails() {
                         <UserIcon className="h-12 w-12 text-primary-600" />
                       </div>
                       <h2 className="text-xl font-semibold">{`${user.firstName} ${user.lastName}`}</h2>
-                      {user.department && (
-                        <Badge variant="outline" className="mt-1">
-                          {user.department}
+                      <div className="flex items-center mt-1 space-x-2">
+                        {user.department && (
+                          <Badge variant="outline">
+                            {user.department}
+                          </Badge>
+                        )}
+                        <Badge variant={user.role === 'admin' ? 'secondary' : 'outline'}>
+                          {user.role === 'admin' ? 'Admin' : 'User'}
                         </Badge>
-                      )}
+                      </div>
                     </div>
 
                     <div className="space-y-3">
@@ -244,6 +306,19 @@ export default function UserDetails() {
                           <span className="text-sm text-gray-700">{user.department}</span>
                         </div>
                       )}
+                      
+                      <div className="pt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="w-full"
+                          onClick={handleResetPassword}
+                          disabled={resetPasswordMutation.isPending}
+                        >
+                          <KeyIcon className="h-4 w-4 mr-2" />
+                          {resetPasswordMutation.isPending ? 'Resetting...' : 'Reset Password'}
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                   <CardFooter className="border-t pt-4 flex justify-between">
@@ -432,6 +507,80 @@ export default function UserDetails() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Password Confirmation Dialog */}
+      <AlertDialog open={showResetPasswordDialog} onOpenChange={setShowResetPasswordDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset User Password</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will generate a temporary password for the user. If email settings are configured,
+              an email with the temporary password will be sent to the user.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmResetPassword}
+              className="bg-primary"
+            >
+              Reset Password
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Password Result Dialog */}
+      <Dialog open={!!resetPasswordResult} onOpenChange={() => setResetPasswordResult(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Password Reset Complete</DialogTitle>
+            <DialogDescription>
+              {resetPasswordResult?.emailSent ? 
+                "An email with the temporary password has been sent to the user." : 
+                "A temporary password has been generated."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {resetPasswordResult?.tempPassword && !resetPasswordResult.emailSent && (
+            <div className="py-4">
+              <div className="bg-muted p-3 rounded-md font-mono text-sm">
+                {resetPasswordResult.tempPassword}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Please provide this temporary password to the user. They will be prompted to change it on first login.
+              </p>
+            </div>
+          )}
+
+          {resetPasswordResult?.emailSent && (
+            <div className="py-4 flex items-center space-x-2 text-green-600">
+              <CheckCircleIcon className="h-5 w-5" />
+              <span>Email sent successfully</span>
+            </div>
+          )}
+
+          {resetPasswordResult?.emailError && (
+            <div className="py-4">
+              <div className="flex items-center space-x-2 text-red-600 mb-2">
+                <AlertCircleIcon className="h-5 w-5" />
+                <span>Failed to send email</span>
+              </div>
+              <div className="bg-muted p-3 rounded-md font-mono text-sm">
+                {resetPasswordResult.tempPassword}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                There was an error sending the email: {resetPasswordResult.emailError}.
+                Please provide this temporary password to the user manually.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button onClick={() => setResetPasswordResult(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
