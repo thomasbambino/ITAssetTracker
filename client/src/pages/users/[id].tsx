@@ -81,7 +81,10 @@ export default function UserDetails() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      await apiRequest('DELETE', `/api/users/${userId}`);
+      await apiRequest({
+        method: 'DELETE', 
+        url: `/api/users/${userId}`
+      });
       return userId;
     },
     onSuccess: () => {
@@ -111,15 +114,10 @@ export default function UserDetails() {
   const resetPasswordMutation = useMutation({
     mutationFn: async (userId: string) => {
       try {
-        const response = await apiRequest('POST', `/api/auth/reset-password/${userId}`);
-        
-        // Check if the response is JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('Server returned non-JSON response. Please check the API endpoint.');
-        }
-        
-        return await response.json();
+        return await apiRequest({
+          method: 'POST', 
+          url: `/api/auth/reset-password/${userId}`
+        });
       } catch (error) {
         console.error('Password reset error:', error);
         throw new Error(error instanceof Error ? error.message : 'Failed to reset password');
