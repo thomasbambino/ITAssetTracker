@@ -5,6 +5,8 @@ import { initializeDatabase } from "./db";
 import session from "express-session";
 import path from "path";
 import fs from "fs";
+import { storage } from "./storage";
+import { updateEmailService } from "./email-service-improved";
 
 const app = express();
 app.use(express.json());
@@ -68,6 +70,20 @@ app.use((req, res, next) => {
     log('Initializing database...');
     await initializeDatabase();
     log('Database initialization completed.');
+    
+    // Initialize email service with settings from the database
+    try {
+      log('Initializing email service...');
+      const emailSettings = await storage.getEmailSettings();
+      if (emailSettings) {
+        updateEmailService(emailSettings);
+        log('Email service initialized with settings from database.');
+      } else {
+        log('No email settings found in database. Email service will use default configuration.');
+      }
+    } catch (emailError) {
+      log(`Email service initialization failed: ${emailError}`);
+    }
   } catch (error) {
     log(`Database initialization failed: ${error}`);
   }

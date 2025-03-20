@@ -1,9 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { storage } from './storage';
 import { isAdmin, isAuthenticated } from './auth';
-import { EmailService, updateEmailService } from './email-service';
-import { updateMailgunEmailService } from './email-service-mailgun';
-import mailgunEmailService from './email-service-mailgun';
+import improvedEmailService, { updateEmailService } from './email-service-improved';
 import { z } from 'zod';
 
 const router = Router();
@@ -74,12 +72,11 @@ router.put('/settings/email', isAuthenticated, isAdmin, async (req: Request, res
       isEnabled: updatedSettings.isEnabled,
     });
     
-    // Update both email services with the new settings
-    updateEmailService(updatedSettings);
-    const mailgunService = updateMailgunEmailService(updatedSettings);
+    // Update the improved email service with the new settings
+    const emailService = updateEmailService(updatedSettings);
     
-    // Debug mailgun configuration after update
-    console.log('Mailgun configured?', mailgunService.isConfigured());
+    // Debug email service configuration after update
+    console.log('Email service configured?', emailService.isConfigured());
     
     // Return the updated settings with masked API key
     const maskedSettings = {
@@ -131,22 +128,22 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
       isEnabled: emailSettings.isEnabled,
     });
     
-    // Always update the mailgun service with the latest settings before checking
-    console.log('Updating Mailgun service with current settings...');
-    const updatedMailgunService = updateMailgunEmailService(emailSettings);
+    // Always update the email service with the latest settings before checking
+    console.log('Updating email service with current settings...');
+    const updatedEmailService = updateEmailService(emailSettings);
     
-    // Try to send email using Mailgun
-    const isMailgunConfigured = updatedMailgunService.isConfigured();
-    console.log('Is Mailgun configured?', isMailgunConfigured);
+    // Try to send email using the improved email service
+    const isEmailServiceConfigured = updatedEmailService.isConfigured();
+    console.log('Is email service configured?', isEmailServiceConfigured);
     
-    if (isMailgunConfigured) {
-      console.log('Using Mailgun service for email test');
-      const result = await updatedMailgunService.sendTestEmail(targetEmail);
+    if (isEmailServiceConfigured) {
+      console.log('Using email service for test');
+      const result = await updatedEmailService.sendTestEmail(targetEmail);
       return res.json(result);
     } else {
-      console.log('Mailgun service is not configured properly. Using simulation mode.');
+      console.log('Email service is not configured properly. Using simulation mode.');
       
-      // If Mailgun isn't configured or fails, fallback to simulation
+      // If email service isn't configured or fails, fallback to simulation
       return res.json({
         success: true,
         message: `Email test successful (simulated). Email settings found but service not enabled. Check your configuration.`
