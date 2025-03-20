@@ -40,7 +40,7 @@ export function MobileNav() {
   const [location] = useLocation();
   const [showSearch, setShowSearch] = useState(false);
   
-  // Define the BrandingSettings interface
+  // Define interfaces
   interface BrandingSettings {
     id?: number;
     companyName: string;
@@ -51,6 +51,15 @@ export function MobileNav() {
     supportEmail?: string | null;
     supportPhone?: string | null;
   }
+  
+  interface User {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: 'user' | 'admin';
+    department?: string | null;
+  }
 
   // Prefetch branding settings with high priority and staleTime
   const { data: branding, isLoading: brandingLoading } = useQuery<BrandingSettings>({
@@ -59,6 +68,15 @@ export function MobileNav() {
     gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime in v4)
     refetchOnWindowFocus: false,
     refetchOnMount: false
+  });
+  
+  // Fetch current user data
+  const { data: currentUser, isLoading: userLoading } = useQuery<User | null>({
+    queryKey: ['/api/users/me'],
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime in v4)
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
   });
 
   // Define the route type with badge being optional
@@ -338,12 +356,20 @@ export function MobileNav() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium shadow-sm">
-                  <CircleUserIcon className="h-6 w-6" />
+                  {currentUser ? (
+                    <span>{currentUser.firstName[0]}{currentUser.lastName[0]}</span>
+                  ) : (
+                    <CircleUserIcon className="h-6 w-6" />
+                  )}
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-800">Admin User</p>
-                <p className="text-xs font-medium text-gray-500 mt-0.5">Administrator</p>
+                <p className="text-sm font-medium text-gray-800">
+                  {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Loading...'}
+                </p>
+                <p className="text-xs font-medium text-gray-500 mt-0.5">
+                  {currentUser ? (currentUser.role === 'admin' ? 'Administrator' : 'User') : ''}
+                </p>
               </div>
               <div className="ml-auto flex items-center space-x-1">
                 <NotificationBell />
