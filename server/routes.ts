@@ -190,6 +190,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User routes
+  // Get current authenticated user
+  app.get('/api/users/me', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUserById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Don't send password-related fields to the client
+      const { 
+        passwordHash, 
+        passwordSalt, 
+        tempPassword, 
+        tempPasswordExpiry, 
+        ...safeUserData 
+      } = user;
+      
+      // Add password reset status from session
+      const userData = {
+        ...safeUserData,
+        passwordResetRequired: req.session.passwordResetRequired
+      };
+      
+      return res.status(200).json(userData);
+    } catch (error) {
+      console.error('Get user error:', error);
+      return res.status(500).json({ message: 'An error occurred while retrieving user data' });
+    }
+  });
+
+  // Get all users
   app.get('/api/users', async (req: Request, res: Response) => {
     try {
       const users = await storage.getUsers();
