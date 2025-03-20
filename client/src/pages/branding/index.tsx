@@ -67,7 +67,7 @@ const THEME_CHOICES = [
 interface BrandingSettings {
   id?: number;
   companyName: string;
-  companyLogo?: string | null;
+  logo?: string | null;
   primaryColor: string;
   accentColor?: string | null;
   companyTagline?: string | null;
