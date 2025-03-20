@@ -6,7 +6,7 @@ import session from "express-session";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
-import { updateEmailService } from "./email-service-fixed";
+import { updateEmailService } from "./email-service-fixed"; // Import from the new fixed service
 
 const app = express();
 app.use(express.json());
@@ -76,16 +76,28 @@ app.use((req, res, next) => {
       log('Initializing email service...');
       const emailSettings = await storage.getEmailSettings();
       if (emailSettings) {
-        updateEmailService(emailSettings);
-        log('Email service initialized with settings from database.');
+        // Log the settings we retrieved (without exposing API key)
+        log(`Email settings found: domain=${emailSettings.domain}, fromEmail=${emailSettings.fromEmail}, isEnabled=${emailSettings.isEnabled}, hasApiKey=${!!emailSettings.apiKey}`);
+        
+        // Update email service with retrieved settings
+        const updatedService = updateEmailService(emailSettings);
+        
+        // Check if email service is properly configured
+        const isConfigured = updatedService.isConfigured();
+        log(`Email service initialized and ${isConfigured ? 'properly configured' : 'not fully configured'}.`);
+        
+        if (!isConfigured) {
+          log('Warning: Email service is not fully configured, emails will not be sent.');
+        }
       } else {
         log('No email settings found in database. Email service will use default configuration.');
       }
     } catch (emailError) {
-      log(`Email service initialization failed: ${emailError}`);
+      log(`Email service initialization failed: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`);
+      // Continue application startup even if email service fails
     }
   } catch (error) {
-    log(`Database initialization failed: ${error}`);
+    log(`Database initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
   const server = await registerRoutes(app);

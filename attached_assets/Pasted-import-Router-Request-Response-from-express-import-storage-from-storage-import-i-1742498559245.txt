@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { storage } from './storage';
 import { isAdmin, isAuthenticated } from './auth';
-import improvedEmailService, { updateEmailService } from './email-service-fixed';
+import improvedEmailService, { updateEmailService } from './email-service-fixed'; // Use the fixed service
 import { z } from 'zod';
 
 const router = Router();
@@ -63,20 +63,21 @@ router.put('/settings/email', isAuthenticated, isAdmin, async (req: Request, res
     // Update the settings in the database
     const updatedSettings = await storage.updateEmailSettings(emailSettings);
     
-    // Debug the settings before updating
-    console.log('Email settings before update:', {
-      apiKey: updatedSettings.apiKey ? '[MASKED]' : null,
+    // Log detailed information about the settings update
+    console.log('Email settings updated:', {
       domain: updatedSettings.domain,
       fromEmail: updatedSettings.fromEmail,
       fromName: updatedSettings.fromName,
       isEnabled: updatedSettings.isEnabled,
+      hasApiKey: !!updatedSettings.apiKey
     });
     
     // Update the improved email service with the new settings
     const emailService = updateEmailService(updatedSettings);
     
-    // Debug email service configuration after update
-    console.log('Email service configured?', emailService.isConfigured());
+    // Log whether the service is now configured properly
+    const isConfigured = emailService.isConfigured();
+    console.log('Email service configuration after update:', isConfigured);
     
     // Return the updated settings with masked API key
     const maskedSettings = {
@@ -119,34 +120,45 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
     
     console.log(`Sending email test to: ${targetEmail} using domain: ${emailSettings.domain}`);
     
-    // Debug the email settings
+    // Log the email settings
     console.log('Email settings from test endpoint:', {
-      apiKey: emailSettings.apiKey ? '[MASKED]' : null,
       domain: emailSettings.domain,
       fromEmail: emailSettings.fromEmail,
       fromName: emailSettings.fromName,
       isEnabled: emailSettings.isEnabled,
+      hasApiKey: !!emailSettings.apiKey
     });
     
-    // Always update the email service with the latest settings before checking
-    console.log('Updating email service with current settings...');
+    // Always update the email service with the latest settings before testing
+    console.log('Updating email service with current settings for test...');
     const updatedEmailService = updateEmailService(emailSettings);
     
-    // Try to send email using the improved email service
+    // Check if the service is properly configured
     const isEmailServiceConfigured = updatedEmailService.isConfigured();
-    console.log('Is email service configured?', isEmailServiceConfigured);
+    console.log('Is email service configured for test?', isEmailServiceConfigured);
     
     if (isEmailServiceConfigured) {
       console.log('Using email service for test');
       const result = await updatedEmailService.sendTestEmail(targetEmail);
+      
+      // Log the detailed result
+      console.log('Email test result:', result);
+      
       return res.json(result);
     } else {
       console.log('Email service is not configured properly. Using simulation mode.');
       
-      // If email service isn't configured or fails, fallback to simulation
+      // If email service isn't configured, provide specific details about what's missing
+      let configurationIssues = [];
+      if (!emailSettings.apiKey) configurationIssues.push('API Key');
+      if (!emailSettings.domain) configurationIssues.push('Domain');
+      if (!emailSettings.fromEmail) configurationIssues.push('From Email');
+      if (!emailSettings.isEnabled) configurationIssues.push('Service not enabled');
+      
+      // Fallback to simulation
       return res.json({
         success: true,
-        message: `Email test successful (simulated). Email settings found but service not enabled. Check your configuration.`
+        message: `Email test successful (simulated). Email service not fully configured. Missing: ${configurationIssues.join(', ')}`
       });
     }
   } catch (error) {

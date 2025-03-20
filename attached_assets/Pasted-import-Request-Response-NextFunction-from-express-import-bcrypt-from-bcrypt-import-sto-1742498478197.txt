@@ -19,6 +19,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 // Generate temporary password for resets
 export function generateTempPassword(length: number = 8): string {
+  // Use only simple ASCII characters to avoid encoding issues
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
@@ -146,7 +147,7 @@ export async function resetUserPassword(userId: number): Promise<{
       };
     }
     
-    // Generate temporary password
+    // Generate temporary password using only simple ASCII characters
     const tempPassword = generateTempPassword();
     
     // Hash the temporary password
