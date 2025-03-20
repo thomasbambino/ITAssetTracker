@@ -164,8 +164,8 @@ export default function Reports() {
         </TabsList>
         
         <TabsContent value="summary" className="mt-0">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="min-h-[320px]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Asset Allocation
@@ -175,44 +175,46 @@ export default function Reports() {
               <CardContent>
                 {statsLoading ? (
                   <div className="space-y-2">
-                    <Skeleton className="h-[120px] w-full" />
+                    <Skeleton className="h-[220px] w-full" />
                   </div>
                 ) : stats ? (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col items-center p-2 border rounded-md">
-                        <span className="text-sm text-muted-foreground">Assigned</span>
-                        <span className="text-2xl font-bold">{stats.assignedDevices}</span>
-                        <span className="text-xs text-muted-foreground">
+                      <div className="flex flex-col items-center p-4 border rounded-md">
+                        <span className="text-sm text-muted-foreground mb-1">Assigned</span>
+                        <span className="text-3xl font-bold">{stats.assignedDevices}</span>
+                        <span className="text-xs text-muted-foreground mt-1">
                           {Math.round((stats.assignedDevices / stats.totalDevices) * 100)}%
                         </span>
                       </div>
-                      <div className="flex flex-col items-center p-2 border rounded-md">
-                        <span className="text-sm text-muted-foreground">Unassigned</span>
-                        <span className="text-2xl font-bold">{stats.unassignedDevices}</span>
-                        <span className="text-xs text-muted-foreground">
+                      <div className="flex flex-col items-center p-4 border rounded-md">
+                        <span className="text-sm text-muted-foreground mb-1">Unassigned</span>
+                        <span className="text-3xl font-bold">{stats.unassignedDevices}</span>
+                        <span className="text-xs text-muted-foreground mt-1">
                           {Math.round((stats.unassignedDevices / stats.totalDevices) * 100)}%
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Total Assets:</span>
-                      <span className="text-sm">{stats.totalDevices}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Warranties Expiring:</span>
-                      <span className="text-sm">{stats.expiringWarranties}</span>
+                    <div className="space-y-3 p-4 border rounded-md">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Total Assets:</span>
+                        <span className="text-lg font-semibold">{stats.totalDevices}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Warranties Expiring:</span>
+                        <span className="text-lg font-semibold">{stats.expiringWarranties}</span>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[120px]">
+                  <div className="flex items-center justify-center h-[220px]">
                     <p className="text-muted-foreground text-sm">No data available</p>
                   </div>
                 )}
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="min-h-[320px]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Distribution by Category
@@ -221,23 +223,24 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 {categoryLoading ? (
-                  <Skeleton className="h-[120px] w-full" />
+                  <Skeleton className="h-[220px] w-full" />
                 ) : categoryStats && categoryStats.length > 0 ? (
                   <PieChartComponent 
                     data={categoryStats}
                     dataKey="count"
                     nameKey="name"
                     tooltipFormatter={(value, name) => [`${value} devices`, `${name}`]}
+                    height={220}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-[120px]">
+                  <div className="flex items-center justify-center h-[220px]">
                     <p className="text-muted-foreground text-sm">No categories found</p>
                   </div>
                 )}
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="min-h-[320px]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Assets by Department
@@ -246,16 +249,17 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 {departmentLoading ? (
-                  <Skeleton className="h-[120px] w-full" />
+                  <Skeleton className="h-[220px] w-full" />
                 ) : departmentStats && departmentStats.length > 0 ? (
                   <BarChartComponent 
                     data={departmentStats}
                     xKey="department"
                     yKey="count"
                     tooltipFormatter={(value) => [`${value} devices`]}
+                    height={220}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-[120px]">
+                  <div className="flex items-center justify-center h-[220px]">
                     <p className="text-muted-foreground text-sm">No department data found</p>
                   </div>
                 )}

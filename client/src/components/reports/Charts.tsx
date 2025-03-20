@@ -11,7 +11,8 @@ import {
   YAxis,
   CartesianGrid,
   Legend,
-  TooltipProps
+  TooltipProps,
+  LabelList
 } from 'recharts';
 
 // Define consistent colors for charts
@@ -33,32 +34,66 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
   dataKey,
   nameKey,
   tooltipFormatter,
-  height = 120
+  height = 180
 }) => {
   // Ensure we have valid data before rendering
   if (!data || data.length === 0) {
-    return <div className="flex justify-center items-center h-[120px]">No data available</div>;
+    return <div className="flex justify-center items-center h-[180px]">No data available</div>;
   }
+
+  // Filter data to only include items with count > 0
+  const filteredData = data.filter(item => item[dataKey] > 0);
+
+  // Function to render custom label
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
+    // Only show labels for segments that are at least 5% of the total
+    if (percent < 0.05) return null;
+
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius * 1.1;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="#333"
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize="10px"
+      >
+        {name}
+      </text>
+    );
+  };
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
         <Pie
-          data={data}
+          data={filteredData}
           cx="50%"
           cy="50%"
-          labelLine={false}
-          outerRadius={50}
+          labelLine={true}
+          outerRadius={70}
           fill="#8884d8"
           dataKey={dataKey}
           nameKey={nameKey}
+          label={renderCustomizedLabel}
         >
-          {data.map((entry, index) => (
+          {filteredData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
         <Tooltip 
           formatter={tooltipFormatter}
+        />
+        <Legend 
+          layout="horizontal" 
+          verticalAlign="bottom" 
+          align="center"
+          wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
         />
       </PieChart>
     </ResponsiveContainer>
@@ -78,23 +113,24 @@ export const BarChartComponent: React.FC<BarChartProps> = ({
   xKey,
   yKey,
   tooltipFormatter,
-  height = 120
+  height = 180
 }) => {
   // Ensure we have valid data before rendering
   if (!data || data.length === 0) {
-    return <div className="flex justify-center items-center h-[120px]">No data available</div>;
+    return <div className="flex justify-center items-center h-[180px]">No data available</div>;
   }
 
   // If we have many data points, we need to adjust the margin
   const dynamicMargin = data.length > 5 
-    ? { top: 5, right: 5, left: 5, bottom: 80 } 
-    : { top: 5, right: 5, left: 5, bottom: 30 };
+    ? { top: 20, right: 10, left: 10, bottom: 60 } 
+    : { top: 20, right: 10, left: 10, bottom: 30 };
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={data}
         margin={dynamicMargin}
+        barSize={data.length > 6 ? 20 : 30}
       >
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis 
@@ -104,10 +140,13 @@ export const BarChartComponent: React.FC<BarChartProps> = ({
           textAnchor="end"
           interval={0}
           height={60}
+          tickMargin={5}
         />
-        <YAxis hide={true} />
+        <YAxis fontSize={10} />
         <Tooltip formatter={tooltipFormatter} />
-        <Bar dataKey={yKey} fill="#8884d8" />
+        <Bar dataKey={yKey} fill="#8884d8">
+          <LabelList dataKey={yKey} position="top" fontSize={10} />
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
@@ -132,6 +171,6 @@ export const LineChartComponent: React.FC<LineChartProps> = ({
 }) => {
   // This component is currently not used but added for future extensions
   return (
-    <div className="flex justify-center items-center h-[120px]">Line chart component added for future use</div>
+    <div className="flex justify-center items-center h-[180px]">Line chart component added for future use</div>
   );
 };
