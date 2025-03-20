@@ -47,7 +47,15 @@ export function Sidebar() {
     queryKey: ['/api/branding'],
   });
 
-  const routes = [
+  type RouteType = {
+    href: string;
+    label: string;
+    icon: React.ElementType;
+    category: string;
+    badge?: number;
+  };
+
+  const routes: RouteType[] = [
     {
       href: '/',
       label: 'Dashboard',
