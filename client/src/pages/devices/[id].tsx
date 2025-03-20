@@ -40,6 +40,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { DeviceAssignmentDialog } from '@/components/devices/DeviceAssignmentDialog';
 import { DeviceForm } from '@/components/forms/DeviceForm';
 import { DataTable } from '@/components/ui/data-table';
@@ -53,6 +63,7 @@ export default function DeviceDetails() {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [showQrCodeDialog, setShowQrCodeDialog] = useState(false);
 
   // Determine if we're in "new device" mode
   const isNewDevice = id === 'new';
@@ -443,78 +454,56 @@ export default function DeviceDetails() {
                   
                   {/* QR Code Section */}
                   <div className="mt-6 pt-4 border-t">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">
-                      <div className="flex items-center">
-                        <QrCodeIcon className="h-4 w-4 text-gray-500 mr-1" />
-                        <span>Device QR Code</span>
-                      </div>
-                    </h3>
-                    
-                    <div className="flex flex-col items-center justify-center">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium text-gray-700">
+                        <div className="flex items-center">
+                          <QrCodeIcon className="h-4 w-4 text-gray-500 mr-1" />
+                          <span>Device QR Code</span>
+                        </div>
+                      </h3>
+                      
                       {qrCodeLoading ? (
-                        <div className="py-3 flex flex-col items-center">
-                          <div className="w-32 h-32 bg-gray-100 rounded-md animate-pulse"></div>
-                          <div className="mt-2 w-24 h-6 bg-gray-100 rounded-md animate-pulse"></div>
-                        </div>
+                        <div className="h-9 w-24 bg-gray-100 rounded-md animate-pulse"></div>
                       ) : qrCodeData ? (
-                        <>
-                          <QrCodeDisplay 
-                            value={qrCodeData.code}
-                            label={device.assetTag || qrCodeData.code}
-                            size={140}
-                            includeLabel={false}
-                            id="device-qrcode"
-                          />
-                          <div 
-                            className="hidden" 
-                            aria-hidden="true"
-                          >
-                            <img 
-                              ref={qrCodeRef} 
-                              src="" 
-                              alt="QR Code for download" 
-                            />
-                          </div>
-                          <div className="flex gap-2 mt-3">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleQrCodeDownload}
-                            >
-                              <DownloadIcon className="h-3 w-3 mr-1" />
-                              Download
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleQrCodePrint}
-                            >
-                              <PrinterIcon className="h-3 w-3 mr-1" />
-                              Print
-                            </Button>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-2 text-center">
-                            Last scanned: {qrCodeData.lastScanned ? formatDate(qrCodeData.lastScanned) : 'Never'}<br />
-                            Scan count: {qrCodeData.scanCount || 0}
-                          </p>
-                        </>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowQrCodeDialog(true)}
+                        >
+                          <QrCodeIcon className="h-4 w-4 mr-1" />
+                          View QR Code
+                        </Button>
                       ) : (
-                        <div className="py-4 text-center">
-                          <QrCodeIcon className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                          <p className="text-sm text-gray-500 mb-3">
-                            No QR code for this device
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/qrcodes?deviceId=${id}`)}
-                          >
-                            <QrCodeIcon className="h-3 w-3 mr-1" />
-                            Generate QR Code
-                          </Button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/qrcodes?deviceId=${id}`)}
+                        >
+                          <QrCodeIcon className="h-4 w-4 mr-1" />
+                          Generate QR Code
+                        </Button>
                       )}
                     </div>
+                    
+                    {/* Just a simple status indicator */}
+                    {!qrCodeLoading && qrCodeData && (
+                      <div className="text-sm text-muted-foreground">
+                        <span className="inline-flex items-center">
+                          <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                          QR code available
+                        </span>
+                        <span className="text-xs block mt-1">
+                          Last scanned: {qrCodeData.lastScanned ? formatDate(qrCodeData.lastScanned) : 'Never'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Hidden reference for QR code download/print */}
+                    {qrCodeData && (
+                      <div className="hidden" aria-hidden="true">
+                        <img ref={qrCodeRef} src="" alt="QR Code for download" />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter className="border-t pt-4 flex justify-between">
