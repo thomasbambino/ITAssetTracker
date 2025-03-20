@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { LoginCredentials, changePasswordSchema } from '@shared/schema';
-import { loginUser, changeUserPassword, resetUserPassword, isAdmin, isAuthenticated } from './auth';
+import { loginUser, changeUserPassword, resetUserPassword, isAdmin, isAuthenticated, hashPassword } from './auth';
 import { storage } from './storage';
 import { z } from 'zod';
 
