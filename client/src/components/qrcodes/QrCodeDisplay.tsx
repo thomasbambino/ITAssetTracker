@@ -11,6 +11,7 @@ interface QrCodeDisplayProps {
   includeLabel?: boolean;
   includeBorder?: boolean;
   className?: string;
+  id?: string;
 }
 
 export function QrCodeDisplay({ 
@@ -20,7 +21,8 @@ export function QrCodeDisplay({
   assetTag,
   includeLabel = true,
   includeBorder = true,
-  className = ''
+  className = '',
+  id
 }: QrCodeDisplayProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +74,7 @@ export function QrCodeDisplay({
           width={size}
           height={size}
           className="rounded-sm"
+          id={id}
         />
       ) : (
         <div 

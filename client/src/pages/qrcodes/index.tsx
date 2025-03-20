@@ -6,11 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Download, Plus, Printer, Smartphone, Clock, CheckCircle } from "lucide-react";
+import { QrCode as QrCodeIcon, Download, Plus, Printer, Smartphone, Clock, CheckCircle, Info } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { QrCodeForm } from "@/components/forms/QrCodeForm";
 import { QrCodeScanner } from "@/components/qrcodes/QrCodeScanner";
+import { QrCodeDisplay } from "@/components/qrcodes/QrCodeDisplay";
 import { PageContainer } from "@/components/layout/PageContainer";
 
 // Define the QR code type based on our schema
@@ -106,20 +107,86 @@ export default function QrCodesPage() {
       });
   };
 
+  const [isQrDetailsOpen, setIsQrDetailsOpen] = useState(false);
+  
+  const handleViewDetails = (qrCode: QrCode) => {
+    setSelectedQrCode(qrCode);
+    setIsQrDetailsOpen(true);
+  };
+  
   const handlePrintClick = (qrCode: QrCode) => {
-    // Generate a printable version (in a real implementation, this would open a print dialog)
-    console.log("Print QR code:", qrCode);
-    
-    // For this demo, we'll just show an alert
-    window.alert("In a production environment, this would generate a printable version of the QR code.");
+    // First view details, then user can print from there
+    handleViewDetails(qrCode);
   };
 
   const handleDownloadClick = (qrCode: QrCode) => {
-    // Generate a downloadable version (in a real implementation, this would trigger a download)
-    console.log("Download QR code:", qrCode);
+    // First view details, then user can download from there
+    handleViewDetails(qrCode);
+  };
+  
+  // Function to download the QR code as an image
+  const downloadQrCode = () => {
+    if (!selectedQrCode) return;
     
-    // For this demo, we'll just show an alert
-    window.alert("In a production environment, this would generate a downloadable version of the QR code.");
+    const qrCodeImg = document.getElementById('qr-code-img') as HTMLImageElement;
+    if (!qrCodeImg || !qrCodeImg.src) return;
+    
+    // Create an anchor element and set the download attributes
+    const link = document.createElement('a');
+    link.href = qrCodeImg.src;
+    link.download = `qrcode-${selectedQrCode.code}.png`;
+    
+    // Programmatically click the link to trigger the download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  // Function to print the QR code
+  const printQrCode = () => {
+    if (!selectedQrCode) return;
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    const deviceInfo = selectedQrCode.device 
+      ? `${selectedQrCode.device.brand} ${selectedQrCode.device.model} (${selectedQrCode.device.assetTag})`
+      : 'Unknown Device';
+    
+    // Generate HTML content for the print window
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code Print - ${selectedQrCode.code}</title>
+          <style>
+            body { font-family: system-ui, sans-serif; text-align: center; padding: 20px; }
+            .qr-container { margin: 20px auto; max-width: 300px; }
+            .qr-code { width: 100%; height: auto; }
+            .device-info { margin-top: 10px; font-weight: bold; }
+            .qr-code-text { font-family: monospace; margin-top: 5px; color: #666; }
+            @media print {
+              body { margin: 0; padding: 0; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="qr-container">
+            <img src="${(document.getElementById('qr-code-img') as HTMLImageElement)?.src}" class="qr-code" />
+            <div class="device-info">${deviceInfo}</div>
+            <div class="qr-code-text">${selectedQrCode.code}</div>
+          </div>
+          <button onclick="window.print(); setTimeout(() => window.close(), 500);">Print</button>
+        </body>
+      </html>
+    `;
+    
+    // Write the HTML to the new window and trigger print
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   const pageActions = (
@@ -196,7 +263,7 @@ export default function QrCodesPage() {
             emptyState={
               <div className="text-center py-10">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                  <QrCode className="h-8 w-8 text-primary" />
+                  <QrCodeIcon className="h-8 w-8 text-primary" />
                 </div>
                 <p className="text-lg font-medium mb-2">No QR Codes Found</p>
                 <p className="text-muted-foreground max-w-md mx-auto mb-4">
@@ -214,11 +281,82 @@ export default function QrCodesPage() {
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <QrCode className="h-4 w-4" />
+            <QrCodeIcon className="h-4 w-4" />
             <p>QR codes can be scanned using the built-in scanner or any standard QR code scanning app</p>
           </div>
         </CardFooter>
       </Card>
+      
+      {/* QR Code Details Dialog */}
+      <Dialog open={isQrDetailsOpen} onOpenChange={setIsQrDetailsOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          {selectedQrCode && (
+            <>
+              <DialogHeader>
+                <DialogTitle>QR Code Details</DialogTitle>
+                <DialogDescription>
+                  {selectedQrCode.device ? (
+                    <>
+                      For {selectedQrCode.device.brand} {selectedQrCode.device.model} 
+                      ({selectedQrCode.device.assetTag})
+                    </>
+                  ) : (
+                    "Details for this QR code"
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex flex-col items-center justify-center py-4">
+                {/* QR Code Display */}
+                <div className="bg-white p-6 rounded-md shadow-sm mb-4">
+                  <QrCodeDisplay 
+                    value={selectedQrCode.code}
+                    size={200}
+                    label={selectedQrCode.device?.assetTag || ''}
+                    assetTag={selectedQrCode.device ? `${selectedQrCode.device.brand} ${selectedQrCode.device.model}` : ''}
+                    id="qr-code-img"
+                  />
+                </div>
+                
+                {/* QR Code Information */}
+                <div className="w-full space-y-3 mb-4">
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <span className="text-sm font-medium">Code:</span>
+                    <span className="font-mono text-sm bg-muted px-2 py-1 rounded">{selectedQrCode.code}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <span className="text-sm font-medium">Created:</span>
+                    <span className="text-sm">{selectedQrCode.createdAt ? formatDate(selectedQrCode.createdAt) : "Unknown"}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <span className="text-sm font-medium">Last Scanned:</span>
+                    <span className="text-sm">{selectedQrCode.lastScanned ? formatDate(selectedQrCode.lastScanned) : "Never"}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <span className="text-sm font-medium">Scan Count:</span>
+                    <Badge variant="outline" className="bg-primary/10">{selectedQrCode.scanCount}</Badge>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={printQrCode}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={downloadQrCode}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }
