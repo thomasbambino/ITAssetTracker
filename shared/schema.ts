@@ -30,6 +30,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
   tempPasswordExpiry: true,
   passwordResetRequired: true,
   lastLogin: true,
+}).extend({
+  role: z.enum(['user', 'admin']).optional().default('user'),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

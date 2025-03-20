@@ -60,13 +60,19 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data: UserFormValues) => {
-      const response = await apiRequest("POST", "/api/users", data);
-      return response.json();
+      try {
+        const response = await apiRequest("POST", "/api/users", data);
+        return await response.json();
+      } catch (error) {
+        console.error("Create user error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
+      console.error("Create mutation error:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to create user",
@@ -78,13 +84,30 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: UserFormValues) => {
-      const response = await apiRequest("PUT", `/api/users/${user.id}`, data);
-      return response.json();
+      try {
+        // Convert role to string to ensure it's sent correctly
+        const payload = {
+          ...data,
+          role: data.role?.toString()
+        };
+        
+        console.log("Updating user with data:", payload);
+        const response = await apiRequest("PUT", `/api/users/${user.id}`, payload);
+        return await response.json();
+      } catch (error) {
+        console.error("Update user error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       if (onSuccess) onSuccess();
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
     },
     onError: (error) => {
+      console.error("Update mutation error:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to update user",
