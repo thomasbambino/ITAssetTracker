@@ -2485,6 +2485,10 @@ export class DatabaseStorage implements IStorage {
   // Branding operations
   async getBrandingSettings(): Promise<BrandingSettings | undefined> {
     try {
+      // First check if we need to alter the table to add new columns
+      await this.ensureBrandingColumns();
+      
+      // Now fetch the settings
       const branding = await db.one(`
         SELECT 
           id, 
@@ -2521,6 +2525,35 @@ export class DatabaseStorage implements IStorage {
         console.error('Error creating default branding settings:', createError);
         return undefined;
       }
+    }
+  }
+  
+  // Helper method to ensure the branding_settings table has the required columns
+  private async ensureBrandingColumns(): Promise<void> {
+    try {
+      // Check if site_name_color column exists
+      const result = await db.oneOrNone(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'branding_settings' AND column_name = 'site_name_color'
+      `);
+      
+      // If it doesn't exist, add all the new columns
+      if (!result) {
+        console.log('Adding new columns to branding_settings table...');
+        await db.none(`
+          ALTER TABLE branding_settings 
+          ADD COLUMN IF NOT EXISTS site_name_color TEXT DEFAULT '#1E40AF',
+          ADD COLUMN IF NOT EXISTS site_name_color_secondary TEXT DEFAULT '#3B82F6',
+          ADD COLUMN IF NOT EXISTS site_name_gradient BOOLEAN DEFAULT true,
+          ADD COLUMN IF NOT EXISTS company_tagline TEXT DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS support_email TEXT DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS support_phone TEXT DEFAULT NULL
+        `);
+        console.log('Added new columns to branding_settings table');
+      }
+    } catch (error) {
+      console.error('Error ensuring branding columns exist:', error);
     }
   }
 

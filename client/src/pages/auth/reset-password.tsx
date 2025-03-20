@@ -100,7 +100,34 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Change Your Password</CardTitle>
+          <div className="flex items-center justify-center mb-2">
+            {branding?.logo ? (
+              <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-2">
+                <img 
+                  src={branding.logo} 
+                  alt="Company logo"
+                  className="h-8 w-8 object-contain" 
+                />
+              </div>
+            ) : (
+              <div className="bg-primary p-1.5 rounded-md mr-2">
+                <ServerIcon className="h-7 w-7 text-white" />
+              </div>
+            )}
+            <h2 
+              className={`text-2xl font-bold ${branding?.siteNameGradient ? 'bg-clip-text text-transparent' : ''}`}
+              style={{
+                color: branding?.siteNameGradient ? 'transparent' : (branding?.siteNameColor || '#1E40AF'),
+                backgroundImage: branding?.siteNameGradient && branding?.siteNameColorSecondary
+                  ? `linear-gradient(to right, ${branding?.siteNameColor || '#1E40AF'}, ${branding?.siteNameColorSecondary || '#3B82F6'})`
+                  : 'none',
+                backgroundClip: branding?.siteNameGradient ? 'text' : 'border-box',
+                WebkitBackgroundClip: branding?.siteNameGradient ? 'text' : 'border-box'
+              }}
+            >
+              Change Your Password
+            </h2>
+          </div>
           <CardDescription>You need to set a new password to continue</CardDescription>
         </CardHeader>
         <CardContent>
