@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboardIcon,
   UsersIcon,
@@ -27,6 +28,11 @@ const categoryGroups = {
 
 export function Sidebar() {
   const [location] = useLocation();
+  
+  // Fetch branding settings
+  const { data: branding } = useQuery({
+    queryKey: ['/api/branding'],
+  });
 
   const routes = [
     {
@@ -145,7 +151,7 @@ export function Sidebar() {
                 <ServerIcon className="h-6 w-6 text-white" />
               </div>
               <span className="ml-2 text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                AssetTrack
+                {branding?.companyName || "AssetTrack"}
               </span>
             </div>
           </div>
