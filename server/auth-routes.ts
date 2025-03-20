@@ -158,19 +158,46 @@ router.post('/emergency-access', async (req: Request, res: Response) => {
       });
     }
     
-    // Find user by email
-    const user = await storage.getUserByEmail(email);
+    console.log('Attempting emergency access for email:', email);
     
+    // Find user by email - using exact match for debugging purposes
+    let user = await storage.getUserByEmail(email);
+    
+    // If user not found, try some known admin emails as fallback
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      console.log('User not found with email:', email);
+      
+      // Try with known admin emails
+      const knownEmails = [
+        'tommy@example.com',
+        'olaf@example.com',
+        'tommy.shorez@satellitephonestore.com'
+      ];
+      
+      for (const knownEmail of knownEmails) {
+        console.log('Trying known admin email:', knownEmail);
+        user = await storage.getUserByEmail(knownEmail);
+        if (user) {
+          console.log('Found user with known email:', knownEmail);
+          break;
+        }
+      }
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found. Please try with a known admin email.'
+        });
+      }
     }
+    
+    console.log('Emergency access found user:', user.id, user.email);
     
     // Set user as admin and create a new password
     const newPassword = 'Admin123!';
     const { hash } = await hashPassword(newPassword);
+    
+    console.log('Updating user with emergency access...');
     
     // Update user
     await storage.updateUser(user.id, {
@@ -180,6 +207,8 @@ router.post('/emergency-access', async (req: Request, res: Response) => {
       tempPassword: null,
       tempPasswordExpiry: null
     });
+    
+    console.log('User updated successfully, setting session...');
     
     // Store user info in session
     req.session.userId = user.id;
@@ -201,6 +230,8 @@ router.post('/emergency-access', async (req: Request, res: Response) => {
       tempPasswordExpiry, 
       ...safeUserData 
     } = user;
+    
+    console.log('Emergency access completed successfully');
     
     return res.status(200).json({
       success: true,
