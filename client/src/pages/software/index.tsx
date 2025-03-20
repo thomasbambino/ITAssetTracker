@@ -92,24 +92,27 @@ export default function Software() {
           active: { 
             label: "Active", 
             icon: <CheckCircle className="h-4 w-4 mr-1" />, 
-            className: "bg-green-100 text-green-800 border-green-200" 
+            className: "bg-green-100 text-green-800 hover:bg-green-200 border-0 min-w-[90px] justify-center" 
           },
           expired: { 
             label: "Expired", 
             icon: <AlertCircle className="h-4 w-4 mr-1" />, 
-            className: "bg-red-100 text-red-800 border-red-200" 
+            className: "bg-red-100 text-red-800 hover:bg-red-200 border-0 min-w-[90px] justify-center"
           },
           pending: { 
             label: "Pending", 
             icon: <Clock className="h-4 w-4 mr-1" />, 
-            className: "bg-yellow-100 text-yellow-800 border-yellow-200" 
+            className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 min-w-[90px] justify-center"
           },
         };
         const status = statusMap[software.status];
         
         return (
           <div className="flex">
-            <Badge variant="outline" className={`flex items-center w-fit ${status.className}`}>
+            <Badge 
+              variant="outline" 
+              className={`flex items-center px-3 py-1 font-medium ${status.className}`}
+            >
               {status.icon}
               {status.label}
             </Badge>

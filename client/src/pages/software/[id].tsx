@@ -138,7 +138,10 @@ export default function SoftwareDetails() {
     const statusInfo = statusMap[status] || statusMap.pending;
     
     return (
-      <Badge variant="outline" className={`flex items-center w-fit ${statusInfo.className}`}>
+      <Badge 
+        variant="outline" 
+        className={`flex items-center px-3 py-1 font-medium border-0 ${statusInfo.className}`}
+      >
         {statusInfo.icon}
         {statusInfo.label}
       </Badge>
@@ -197,7 +200,10 @@ export default function SoftwareDetails() {
         
         return (
           <div className="flex">
-            <Badge variant="outline" className={`flex items-center w-fit ${className}`}>
+            <Badge 
+              variant="outline" 
+              className={`flex items-center px-3 py-1 border-0 min-w-[90px] justify-center font-medium ${className}`}
+            >
               {isUser ? <Users className="h-4 w-4 mr-1" /> : <Monitor className="h-4 w-4 mr-1" />}
               {isUser ? 'User' : 'Device'}
             </Badge>
