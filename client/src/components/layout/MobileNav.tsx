@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { GlobalSearch } from '@/components/shared/GlobalSearch';
+import { useQuery } from '@tanstack/react-query';
 import {
   MenuIcon,
   XIcon,
@@ -36,6 +37,11 @@ export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [location] = useLocation();
   const [showSearch, setShowSearch] = useState(false);
+  
+  // Fetch branding settings
+  const { data: branding } = useQuery({
+    queryKey: ['/api/branding'],
+  });
 
   const routes = [
     {
@@ -179,7 +185,7 @@ export function MobileNav() {
               <ServerIcon className="h-5 w-5 text-white" />
             </div>
             <span className="ml-2 text-base font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              AssetTrack
+              {branding?.companyName || "AssetTrack"}
             </span>
           </div>
         </div>

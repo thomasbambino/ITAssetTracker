@@ -16,9 +16,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { AlertCircle, Building, Check, FileImage, Loader2 } from "lucide-react";
+import { AlertCircle, Building, Check, FileImage, Loader2, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { HexColorPicker } from "react-colorful";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Form schema with validation
 const formSchema = z.object({
@@ -27,7 +29,10 @@ const formSchema = z.object({
   primaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code"),
   accentColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code").optional().nullable(),
   companyTagline: z.string().optional().nullable(),
-  supportEmail: z.string().email("Please enter a valid email address").optional().nullable(),
+  supportEmail: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().email("Please enter a valid email address").optional().nullable()
+  ),
   supportPhone: z.string().optional().nullable(),
 });
 
@@ -114,6 +119,20 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
             <AlertDescription className="text-green-700">{formSuccess}</AlertDescription>
           </Alert>
         )}
+        
+        <Alert variant="default" className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800">Where do branding changes appear?</AlertTitle>
+          <AlertDescription className="text-blue-700">
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>Company name appears in the sidebar, header, and login screen</li>
+              <li>Primary color is used for buttons, navigation items, and highlights throughout the app</li>
+              <li>Accent color is used for text and secondary elements</li>
+              <li>Support information appears in the help section and error pages</li>
+              <li>Company logo (when implemented) will appear in headers, reports, and exports</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-6">
@@ -216,13 +235,23 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
-                    <div
-                      className="h-10 w-10 rounded border"
-                      style={{ backgroundColor: field.value || "#1E40AF" }}
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div
+                          className="h-10 w-10 rounded border cursor-pointer hover:shadow-md transition-shadow"
+                          style={{ backgroundColor: field.value || "#1E40AF" }}
+                        />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <HexColorPicker 
+                          color={field.value || "#1E40AF"} 
+                          onChange={(color) => field.onChange(color)}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <FormDescription>
-                    Main color for buttons, links and highlights (hex code)
+                    Main color for buttons, links and highlights (click color square to open color picker)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -239,13 +268,23 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                     <FormControl>
                       <Input {...field} value={field.value || ""} />
                     </FormControl>
-                    <div
-                      className="h-10 w-10 rounded border"
-                      style={{ backgroundColor: field.value || "#1E293B" }}
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div
+                          className="h-10 w-10 rounded border cursor-pointer hover:shadow-md transition-shadow"
+                          style={{ backgroundColor: field.value || "#1E293B" }}
+                        />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <HexColorPicker 
+                          color={field.value || "#1E293B"} 
+                          onChange={(color) => field.onChange(color)}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <FormDescription>
-                    Secondary color for text and other elements (hex code)
+                    Secondary color for text and other elements (click color square to open color picker)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
