@@ -1,67 +1,11 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandingForm } from "@/components/forms/BrandingForm";
-import { apiRequest } from "@/lib/queryClient";
-import { Eye, PaintBucket, Image, Building, Check } from "lucide-react";
+import { Eye, Building } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
-
-// Example theme options
-const THEME_CHOICES = [
-  { 
-    name: "Corporate Blue", 
-    colors: { 
-      primary: "#1E40AF",
-      background: "#F8FAFC",
-      card: "#FFFFFF",
-      text: "#1E293B",
-      border: "#E2E8F0" 
-    }
-  },
-  { 
-    name: "Forest Green", 
-    colors: { 
-      primary: "#166534",
-      background: "#F7FEE7",
-      card: "#FFFFFF",
-      text: "#1E293B",
-      border: "#D9F99D" 
-    }
-  },
-  { 
-    name: "Royal Purple", 
-    colors: { 
-      primary: "#7E22CE",
-      background: "#FAF5FF",
-      card: "#FFFFFF",
-      text: "#1E293B",
-      border: "#E9D5FF" 
-    }
-  },
-  { 
-    name: "Bold Red", 
-    colors: { 
-      primary: "#BE123C",
-      background: "#FFF1F2",
-      card: "#FFFFFF",
-      text: "#1E293B",
-      border: "#FECDD3" 
-    }
-  },
-  { 
-    name: "Classic Dark", 
-    colors: { 
-      primary: "#4F46E5",
-      background: "#1E293B",
-      card: "#334155",
-      text: "#F8FAFC",
-      border: "#475569" 
-    }
-  },
-];
 
 // Define branding settings type
 interface BrandingSettings {
@@ -73,12 +17,9 @@ interface BrandingSettings {
   companyTagline?: string | null;
   supportEmail?: string | null;
   supportPhone?: string | null;
-  theme?: string | null;
 }
 
 export default function BrandingPage() {
-  const [activeTheme, setActiveTheme] = useState<string | null>(null);
-  const [isApplying, setIsApplying] = useState(false);
   const { toast } = useToast();
   
   // Query for fetching branding settings
@@ -86,126 +27,16 @@ export default function BrandingPage() {
     queryKey: ['/api/branding'],
   });
 
-  // Set active theme when data loads
-  useEffect(() => {
-    if (brandingSettings && brandingSettings.theme) {
-      setActiveTheme(brandingSettings.theme);
-    } else {
-      setActiveTheme(THEME_CHOICES[0].name);
-    }
-  }, [brandingSettings]);
-
-  // Apply theme
-  const applyTheme = async (themeName: string) => {
-    setIsApplying(true);
-    try {
-      const theme = THEME_CHOICES.find(t => t.name === themeName);
-      if (!theme) return;
-      
-      // In a real implementation, this would update the branding settings and apply the theme
-      await apiRequest(
-        "PUT", 
-        '/api/branding',
-        {
-          ...brandingSettings,
-          theme: themeName,
-          primaryColor: theme.colors.primary,
-          accentColor: theme.colors.text,
-        }
-      );
-      
-      setActiveTheme(themeName);
-      refetch();
-      
-      toast({
-        title: "Theme Applied",
-        description: `Successfully applied the ${themeName} theme`,
-      });
-    } catch (error) {
-      console.error("Error applying theme:", error);
-      toast({
-        title: "Error",
-        description: "Failed to apply the theme. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsApplying(false);
-    }
-  };
-
-  // Render theme preview
-  const renderThemePreview = (theme: typeof THEME_CHOICES[0]) => {
-    return (
-      <div 
-        className="p-4 border rounded-md cursor-pointer hover:shadow-md transition-shadow"
-        style={{ 
-          backgroundColor: theme.colors.background,
-          borderColor: activeTheme === theme.name ? theme.colors.primary : theme.colors.border,
-          borderWidth: activeTheme === theme.name ? "2px" : "1px",
-        }}
-        onClick={() => applyTheme(theme.name)}
-      >
-        <div className="flex justify-between items-center mb-3">
-          <div className="font-medium" style={{ color: theme.colors.text }}>{theme.name}</div>
-          {activeTheme === theme.name && (
-            <span 
-              className="flex items-center justify-center rounded-full h-5 w-5"
-              style={{ backgroundColor: theme.colors.primary }}
-            >
-              <Check className="h-3 w-3 text-white" />
-            </span>
-          )}
-        </div>
-        
-        <div className="flex space-x-2 mb-3">
-          {Object.values(theme.colors).map((color, idx) => (
-            <div 
-              key={idx} 
-              className="h-5 w-5 rounded-full border" 
-              style={{ backgroundColor: color, borderColor: "#CBD5E1" }}
-            />
-          ))}
-        </div>
-        
-        <div 
-          className="p-2 rounded-md mb-2" 
-          style={{ backgroundColor: theme.colors.card, color: theme.colors.text }}
-        >
-          <div className="h-2 w-16 rounded mb-1" style={{ backgroundColor: theme.colors.primary }}></div>
-          <div className="h-2 w-24 rounded mb-1" style={{ backgroundColor: theme.colors.border }}></div>
-          <div className="h-2 w-20 rounded" style={{ backgroundColor: theme.colors.border }}></div>
-        </div>
-        
-        <button 
-          className="text-xs py-1 px-2 rounded flex items-center justify-center w-full mt-2" 
-          style={{ 
-            backgroundColor: theme.colors.primary, 
-            color: "white",
-            cursor: "pointer",
-          }}
-          disabled={activeTheme === theme.name || isApplying}
-        >
-          {activeTheme === theme.name ? "Active" : "Apply Theme"}
-        </button>
-      </div>
-    );
-  };
-
   return (
     <PageContainer
       title="Branding & Customization"
       description="Configure your organization's appearance and identity settings"
     >
-      
       <Tabs defaultValue="settings" className="space-y-4">
         <TabsList>
           <TabsTrigger value="settings">
             <Building className="h-4 w-4 mr-2" />
             Company Details
-          </TabsTrigger>
-          <TabsTrigger value="themes">
-            <PaintBucket className="h-4 w-4 mr-2" />
-            Themes
           </TabsTrigger>
           <TabsTrigger value="preview">
             <Eye className="h-4 w-4 mr-2" />
@@ -233,31 +64,6 @@ export default function BrandingPage() {
                 }}
               />
             </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="themes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Theme Selection</CardTitle>
-              <CardDescription>
-                Choose from pre-designed themes to customize the look and feel of your system.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {THEME_CHOICES.map((theme) => (
-                  <div key={theme.name}>
-                    {renderThemePreview(theme)}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between border-t pt-6">
-              <p className="text-sm text-muted-foreground">
-                Theme changes will be visible throughout the application.
-              </p>
-            </CardFooter>
           </Card>
         </TabsContent>
         
