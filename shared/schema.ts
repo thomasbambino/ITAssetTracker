@@ -2,6 +2,9 @@ import { pgTable, text, serial, integer, boolean, timestamp, unique, pgEnum, dat
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// User role enum
+export const userRoles = pgEnum('user_role', ['admin', 'user']);
+
 // User schema
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -10,16 +13,52 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   phoneNumber: text("phone_number"),
   department: text("department"),
+  passwordHash: text("password_hash"),
+  passwordSalt: text("password_salt"),
+  tempPassword: text("temp_password"),
+  tempPasswordExpiry: timestamp("temp_password_expiry"),
+  passwordResetRequired: boolean("password_reset_required").default(true),
+  role: userRoles("role").default('user'),
+  active: boolean("active").default(false),
+  lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  passwordHash: true,
+  passwordSalt: true,
+  tempPassword: true,
+  tempPasswordExpiry: true,
+  passwordResetRequired: true,
+  lastLogin: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Login schema
+export const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export type LoginCredentials = z.infer<typeof loginSchema>;
+
+// Change password schema
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string()
+    .min(6, "Password must be at least 6 characters")
+    .max(100, "Password is too long"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 
 // Category schema for device tags
 export const categories = pgTable("categories", {

@@ -15,10 +15,12 @@ export interface IStorage {
   // User operations
   getUsers(): Promise<User[]>;
   getUserById(id: number): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   getUsersByDepartment(department: string): Promise<User[]>;
+  getUsersByRole(role: string): Promise<User[]>;
   
   // Category operations
   getCategories(): Promise<Category[]>;
@@ -149,6 +151,18 @@ export class MemStorage implements IStorage {
   async getUserById(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      user => user.email.toLowerCase() === email.toLowerCase()
+    );
+  }
+  
+  async getUsersByRole(role: string): Promise<User[]> {
+    return Array.from(this.users.values()).filter(
+      user => user.role === role
+    );
+  }
 
   async createUser(user: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
@@ -169,7 +183,7 @@ export class MemStorage implements IStorage {
     return newUser;
   }
 
-  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
     
