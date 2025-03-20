@@ -1210,6 +1210,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching QR code" });
     }
   });
+  
+  // Record QR code scan by code
+  app.post('/api/qrcodes/code/:code/scan', async (req: Request, res: Response) => {
+    try {
+      const code = req.params.code;
+      const qrCode = await storage.getQrCodeByCode(code);
+      
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+      
+      // Update the QR code scan info
+      const updatedQrCode = await storage.recordQrCodeScan(qrCode.id);
+      
+      // Get the device details to include in the response
+      let deviceDetails = null;
+      if (updatedQrCode && updatedQrCode.deviceId) {
+        deviceDetails = await storage.getDeviceById(updatedQrCode.deviceId);
+      }
+      
+      // Log the activity
+      await storage.createActivityLog({
+        actionType: 'qr_scan',
+        details: `QR code for device ID ${qrCode.deviceId} was scanned`,
+        userId: null
+      });
+      
+      // Return QR code with device details
+      res.json({
+        ...updatedQrCode,
+        device: deviceDetails
+      });
+    } catch (error) {
+      console.error('Error recording QR code scan:', error);
+      res.status(500).json({ message: "Error recording QR code scan" });
+    }
+  });
 
   // Get QR code for device
   app.get('/api/devices/:id/qrcode', async (req: Request, res: Response) => {
