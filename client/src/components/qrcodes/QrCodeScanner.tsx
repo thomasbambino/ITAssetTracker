@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Camera, CheckCircle, QrCode, RefreshCw, Settings } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface QrCodeScannerProps {
@@ -25,31 +25,59 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Function to fetch available cameras
+  const fetchCameras = async () => {
+    setError(null);
+    try {
+      // Request camera permission first
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        console.log("Camera permission granted");
+      } catch (error) {
+        console.error("Camera permission denied:", error);
+        setError("Camera permission denied. Please enable camera access in your browser settings.");
+        return;
+      }
+      
+      // Now get available cameras
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length > 0) {
+        const formattedCameras = devices.map(device => ({
+          id: device.id,
+          label: device.label || `Camera ${devices.indexOf(device) + 1}`
+        }));
+        setCameras(formattedCameras);
+        setSelectedCamera(formattedCameras[0].id);
+        console.log("Cameras detected:", formattedCameras);
+      } else {
+        console.error("No cameras found");
+        setError("No cameras detected on your device. QR scanning requires a camera.");
+      }
+    } catch (err) {
+      console.error("Error getting cameras:", err);
+      setError("Failed to access camera list. Please try again or use a different device.");
+    }
+  };
+
+  // Manual refresh camera list
+  const refreshCameraList = async () => {
+    setCameras([]);
+    setSelectedCamera(null);
+    await fetchCameras();
+  };
+
   // Initialize cameras and clean up the scanner on unmount
   useEffect(() => {
-    // Get available cameras
-    const fetchCameras = async () => {
-      try {
-        const devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length > 0) {
-          const formattedCameras = devices.map(device => ({
-            id: device.id,
-            label: device.label || `Camera ${devices.indexOf(device) + 1}`
-          }));
-          setCameras(formattedCameras);
-          setSelectedCamera(formattedCameras[0].id);
-        }
-      } catch (err) {
-        console.error("Error getting cameras:", err);
-      }
-    };
-
     fetchCameras();
 
     // Clean up on unmount
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(console.error);
+        try {
+          scannerRef.current.stop();
+        } catch (err) {
+          console.error("Error stopping scanner:", err);
+        }
       }
     };
   }, []);
@@ -61,7 +89,22 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     setScanAttempts(0);
     
     try {
-      if (!containerRef.current) return;
+      // Ensure we have access to camera permissions first
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+      } catch (err) {
+        console.error("Camera permission error:", err);
+        setError("Camera access denied. Please check your browser settings and allow camera access.");
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!containerRef.current) {
+        setError("Scanner container not found.");
+        setIsLoading(false);
+        return;
+      }
+      
       if (!selectedCamera && cameras.length === 0) {
         setError("No cameras available. Please ensure your device has a camera and you've granted permission.");
         setIsLoading(false);
@@ -77,8 +120,22 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
         return;
       }
       
-      // Create a scanner instance
-      scannerRef.current = new Html5Qrcode("scanner-container");
+      // If there's an existing scanner instance, ensure it's properly stopped
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.stop();
+        } catch (err) {
+          console.warn("Error stopping existing scanner:", err);
+        }
+      }
+      
+      // Create a fresh scanner instance
+      scannerRef.current = new Html5Qrcode("scanner-container", {
+        verbose: false, // Set to true for debugging
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+      });
+      
+      console.log("Starting camera with ID:", cameraId);
       
       // Start the scanner with the selected camera
       await scannerRef.current.start(
@@ -89,12 +146,15 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
           aspectRatio: 1.0,
         },
         (decodedText) => {
+          console.log("QR Code scanned:", decodedText);
           // QR Code scanned successfully
           setScannedCode(decodedText);
           
           // Stop the scanner after successful scan
           if (scannerRef.current) {
-            scannerRef.current.stop().catch(console.error);
+            scannerRef.current.stop().catch(err => {
+              console.error("Error stopping scanner after scan:", err);
+            });
           }
           
           setIsCameraActive(false);
@@ -110,9 +170,10 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       );
       
       setIsCameraActive(true);
+      console.log("Camera started successfully");
     } catch (err) {
       console.error("QR Scanner error:", err);
-      setError("Could not access camera. Please make sure you have granted camera permissions and your camera is not being used by another application.");
+      setError(`Could not access camera: ${err instanceof Error ? err.message : String(err)}. Please ensure your camera is not being used by another application.`);
     } finally {
       setIsLoading(false);
     }
@@ -234,10 +295,15 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
               {isLoading ? "Starting Camera..." : "Start Camera"}
             </Button>
             
+            <Button variant="outline" onClick={refreshCameraList} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh Cameras
+            </Button>
+            
             {error && (
-              <Button variant="outline" onClick={() => setError(null)} className="ml-2">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry
+              <Button variant="outline" onClick={() => setError(null)}>
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Clear Error
               </Button>
             )}
           </>
@@ -246,29 +312,37 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       
       {/* Help text for permissions */}
       {!isCameraActive && !scannedCode && (
-        <div className="text-center mt-2 text-xs text-muted-foreground">
+        <div className="text-center mt-2 text-xs text-muted-foreground space-y-1">
           <p>
-            If your camera doesn't start, please make sure you've granted camera permissions in your browser settings.
+            If your camera doesn't start, try these steps:
           </p>
+          <ol className="list-decimal list-inside text-left max-w-md mx-auto">
+            <li>Make sure you've granted camera permissions in your browser settings</li>
+            <li>Click "Refresh Cameras" to detect all available cameras</li>
+            <li>Check if your camera is being used by another application</li>
+            <li>Try using a different browser (Chrome works best for camera access)</li>
+          </ol>
         </div>
       )}
       
-      <style jsx global>{`
-        @keyframes scan {
-          0% {
-            top: 0;
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes scan {
+            0% {
+              top: 0;
+            }
+            50% {
+              top: 100%;
+            }
+            100% {
+              top: 0;
+            }
           }
-          50% {
-            top: 100%;
+          .animate-scan {
+            animation: scan 2s linear infinite;
           }
-          100% {
-            top: 0;
-          }
-        }
-        .animate-scan {
-          animation: scan 2s linear infinite;
-        }
-      `}</style>
+        `
+      }} />
     </div>
   );
 }
