@@ -160,11 +160,11 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
                 </FormControl>
                 <SelectContent>
                   {isDevicesLoading ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="loading_devices" disabled>
                       Loading devices...
                     </SelectItem>
                   ) : devices.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="no_devices" disabled>
                       No devices available
                     </SelectItem>
                   ) : (
