@@ -66,12 +66,22 @@ export class EmailService {
     }
 
     try {
+      // Create a simple ASCII-only version for the text field
+      const plainText = emailData.text || 'This is an email from AssetTrack. Please enable HTML viewing to see the complete message.';
+      
+      // Create a simpler HTML version with ASCII only
+      const safeHtml = 
+        '<div style="font-family: Arial, sans-serif; padding: 20px;">' +
+        '<h2>AssetTrack Email</h2>' +
+        '<p>This is a message from AssetTrack.</p>' +
+        '</div>';
+      
       const messageData = {
-        from: `${this.fromName || 'AssetTrack'} <${this.fromEmail}>`,
+        from: this.fromEmail, // Simplify the "from" field to avoid encoding issues
         to: emailData.to,
         subject: emailData.subject,
-        text: emailData.text || '',
-        html: emailData.html || '',
+        text: plainText,
+        html: safeHtml, // Use the simplified HTML as a fallback
       };
 
       // Add attachments if they exist
