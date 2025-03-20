@@ -181,9 +181,19 @@ export function MobileNav() {
             <MenuIcon className="h-5 w-5" />
           </Button>
           <div className="flex items-center">
-            <div className="bg-primary p-1 rounded-md">
-              <ServerIcon className="h-5 w-5 text-white" />
-            </div>
+            {branding?.logo ? (
+              <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center">
+                <img 
+                  src={branding.logo} 
+                  alt="Company logo"
+                  className="h-5 w-5 object-contain" 
+                />
+              </div>
+            ) : (
+              <div className="bg-primary p-1 rounded-md">
+                <ServerIcon className="h-5 w-5 text-white" />
+              </div>
+            )}
             <span className="ml-2 text-base font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               {branding?.companyName || "AssetTrack"}
             </span>
@@ -233,9 +243,19 @@ export function MobileNav() {
       )}>
         <div className="flex items-center justify-between h-16 px-4 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center">
-            <div className="bg-primary p-1.5 rounded-md">
-              <ServerIcon className="h-6 w-6 text-white" />
-            </div>
+            {branding?.logo ? (
+              <div className="w-9 h-9 bg-white rounded-md flex items-center justify-center">
+                <img 
+                  src={branding.logo} 
+                  alt="Company logo"
+                  className="h-7 w-7 object-contain" 
+                />
+              </div>
+            ) : (
+              <div className="bg-primary p-1.5 rounded-md">
+                <ServerIcon className="h-6 w-6 text-white" />
+              </div>
+            )}
             <span className="ml-2 text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               {branding?.companyName || "AssetTrack"}
             </span>

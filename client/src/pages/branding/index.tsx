@@ -280,9 +280,13 @@ export default function BrandingPage() {
                   <div className="border rounded-md overflow-hidden">
                     <div className="p-4 bg-primary flex items-center justify-between" style={{ backgroundColor: brandingSettings?.primaryColor || "#1E40AF" }}>
                       <div className="flex items-center">
-                        {brandingSettings?.companyLogo ? (
+                        {brandingSettings?.logo ? (
                           <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-3">
-                            <Image className="h-6 w-6 text-primary" />
+                            <img 
+                              src={brandingSettings.logo} 
+                              alt="Company logo"
+                              className="h-6 w-6 object-contain" 
+                            />
                           </div>
                         ) : (
                           <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-3">

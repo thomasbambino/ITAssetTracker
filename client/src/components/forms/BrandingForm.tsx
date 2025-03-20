@@ -26,7 +26,7 @@ import { Progress } from "@/components/ui/progress";
 // Form schema with validation
 const formSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
-  companyLogo: z.string().optional().nullable(),
+  logo: z.string().optional().nullable(),
   primaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code"),
   accentColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code").optional().nullable(),
   companyTagline: z.string().optional().nullable(),
@@ -57,7 +57,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       companyName: initialData?.companyName || "",
-      companyLogo: initialData?.companyLogo || "",
+      logo: initialData?.logo || "",
       primaryColor: initialData?.primaryColor || "#1E40AF",
       accentColor: initialData?.accentColor || "#1E293B",
       companyTagline: initialData?.companyTagline || "",
@@ -117,7 +117,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
       setUploadProgress(100);
       
       // Update the form with the new logo URL
-      form.setValue('companyLogo', data.branding.logo);
+      form.setValue('logo', data.branding.logo);
       
       // Invalidate query cache
       queryClient.invalidateQueries({ queryKey: ['/api/branding'] });
@@ -250,7 +250,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
             {/* Logo Upload */}
             <FormField
               control={form.control}
-              name="companyLogo"
+              name="logo"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Company Logo (Optional)</FormLabel>
@@ -284,7 +284,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                             type="button" 
                             size="sm"
                             onClick={() => {
-                              form.setValue('companyLogo', '');
+                              form.setValue('logo', '');
                               queryClient.invalidateQueries({ queryKey: ['/api/branding'] });
                             }}
                           >
