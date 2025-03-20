@@ -19,6 +19,7 @@ import {
   CircleUserIcon,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { NotificationBell } from '@/components/shared/NotificationBell';
 
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories'],
@@ -226,7 +227,8 @@ export function Sidebar() {
                 <p className="text-sm font-medium text-gray-800">Admin User</p>
                 <p className="text-xs font-medium text-gray-500 mt-0.5">Administrator</p>
               </div>
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center space-x-1">
+                <NotificationBell />
                 <Link href="/settings" className="text-gray-500 hover:text-primary">
                   <SettingsIcon className="h-5 w-5" />
                 </Link>

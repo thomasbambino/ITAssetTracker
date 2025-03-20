@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { GlobalSearch } from '@/components/shared/GlobalSearch';
+import { NotificationBell } from '@/components/shared/NotificationBell';
 import { useQuery } from '@tanstack/react-query';
 import {
   MenuIcon,
@@ -211,16 +212,7 @@ export function MobileNav() {
           >
             <SearchIcon className="h-5 w-5" />
           </Button>
-          <Link href="/notifications">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gray-700 hover:bg-gray-100 relative"
-            >
-              <BellIcon className="h-5 w-5" />
-              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
-            </Button>
-          </Link>
+          <NotificationBell />
         </div>
       </div>
 

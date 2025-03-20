@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import {
   Popover,
@@ -25,7 +25,7 @@ interface Notification {
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Placeholder for current user ID (in a real app, this would come from auth context)
   const currentUserId = 1;
@@ -54,20 +54,23 @@ export function NotificationBell() {
   // View all notifications
   const viewAllNotifications = () => {
     setIsOpen(false);
-    navigate("/notifications");
+    setLocation("/notifications");
   };
+
+  // Type casting for unreadNotifications
+  const typedNotifications = unreadNotifications as Notification[];
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          {unreadNotifications.length > 0 && (
+          {typedNotifications.length > 0 && (
             <Badge
               className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center"
               variant="destructive"
             >
-              {unreadNotifications.length}
+              {typedNotifications.length}
             </Badge>
           )}
         </Button>
@@ -78,19 +81,19 @@ export function NotificationBell() {
         </div>
         
         <ScrollArea className="h-[300px]">
-          {unreadNotifications.length === 0 ? (
+          {typedNotifications.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               No new notifications
             </div>
           ) : (
             <div className="divide-y">
-              {unreadNotifications.slice(0, 5).map((notification: Notification) => (
+              {typedNotifications.slice(0, 5).map((notification: Notification) => (
                 <div 
                   key={notification.id}
                   className="p-3 hover:bg-muted/50 cursor-pointer"
                   onClick={() => {
                     setIsOpen(false);
-                    navigate("/notifications");
+                    setLocation("/notifications");
                   }}
                 >
                   <div className="flex items-start gap-2">
