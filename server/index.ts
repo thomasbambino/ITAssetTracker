@@ -6,7 +6,7 @@ import session from "express-session";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
-import { updateEmailService } from "./email-service-fixed";
+import { updateMailgunService } from "./direct-mailgun";
 
 const app = express();
 app.use(express.json());
@@ -71,18 +71,30 @@ app.use((req, res, next) => {
     await initializeDatabase();
     log('Database initialization completed.');
     
-    // Initialize email service with settings from the database
+    // Initialize direct mailgun service with settings from the database
     try {
-      log('Initializing email service...');
+      log('Initializing direct mailgun service...');
       const emailSettings = await storage.getEmailSettings();
       if (emailSettings) {
-        updateEmailService(emailSettings);
-        log('Email service initialized with settings from database.');
+        // Log the settings we retrieved (without exposing API key)
+        log(`Email settings found: domain=${emailSettings.domain}, fromEmail=${emailSettings.fromEmail}, isEnabled=${emailSettings.isEnabled}, hasApiKey=${!!emailSettings.apiKey}`);
+        
+        // Update direct mailgun service with retrieved settings
+        const updatedService = updateMailgunService(emailSettings);
+        
+        // Check if direct mailgun service is properly configured
+        const isConfigured = updatedService.isConfigured();
+        log(`Direct mailgun service initialized and ${isConfigured ? 'properly configured' : 'not fully configured'}.`);
+        
+        if (!isConfigured) {
+          log('Warning: Direct mailgun service is not fully configured, emails will not be sent.');
+        }
       } else {
-        log('No email settings found in database. Email service will use default configuration.');
+        log('No email settings found in database. Direct mailgun service will use default configuration.');
       }
     } catch (emailError) {
-      log(`Email service initialization failed: ${emailError}`);
+      log(`Direct mailgun service initialization failed: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`);
+      // Continue application startup even if email service fails
     }
   } catch (error) {
     log(`Database initialization failed: ${error}`);
