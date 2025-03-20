@@ -358,16 +358,46 @@ export default function Devices() {
           
           {/* Active Filters Summary */}
           {(selectedCategory || selectedDepartment) && (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2 items-center">
               {selectedCategory && categories.find((c: any) => c.id.toString() === selectedCategory) && (
-                <Badge variant="secondary" className="flex items-center gap-1">
+                <Badge 
+                  variant="secondary" 
+                  className="flex items-center gap-1 pl-3 pr-2 py-1.5 h-7 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                >
+                  <FilterIcon className="h-3 w-3 mr-1 text-blue-600" />
                   Category: {categories.find((c: any) => c.id.toString() === selectedCategory)?.name}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-4 w-4 p-0 ml-1 rounded-full hover:bg-blue-200" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCategoryChange('');
+                    }}
+                  >
+                    <XIcon className="h-3 w-3 text-blue-700" />
+                  </Button>
                 </Badge>
               )}
               
               {selectedDepartment && (
-                <Badge variant="secondary" className="flex items-center gap-1">
+                <Badge 
+                  variant="secondary" 
+                  className="flex items-center gap-1 pl-3 pr-2 py-1.5 h-7 bg-purple-50 text-purple-700 hover:bg-purple-100"
+                >
+                  <FilterIcon className="h-3 w-3 mr-1 text-purple-600" />
                   Department: {selectedDepartment}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-4 w-4 p-0 ml-1 rounded-full hover:bg-purple-200" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDepartmentChange('');
+                    }}
+                  >
+                    <XIcon className="h-3 w-3 text-purple-700" />
+                  </Button>
                 </Badge>
               )}
               
