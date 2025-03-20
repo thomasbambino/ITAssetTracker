@@ -61,8 +61,11 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
   const createMutation = useMutation({
     mutationFn: async (data: UserFormValues) => {
       try {
-        const response = await apiRequest("POST", "/api/users", data);
-        return await response.json();
+        return await apiRequest({
+          method: "POST", 
+          url: "/api/users", 
+          data: data
+        });
       } catch (error) {
         console.error("Create user error:", error);
         throw error;
@@ -92,8 +95,11 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
         };
         
         console.log("Updating user with data:", payload);
-        const response = await apiRequest("PUT", `/api/users/${user.id}`, payload);
-        return await response.json();
+        return await apiRequest({
+          method: "PUT",
+          url: `/api/users/${user.id}`,
+          data: payload
+        });
       } catch (error) {
         console.error("Update user error:", error);
         throw error;
