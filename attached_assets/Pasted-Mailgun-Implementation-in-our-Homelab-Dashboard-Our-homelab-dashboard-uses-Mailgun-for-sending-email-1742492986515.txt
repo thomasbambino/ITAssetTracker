@@ -1,0 +1,153 @@
+Mailgun Implementation in our Homelab Dashboard
+Our homelab dashboard uses Mailgun for sending email notifications. Here's how it's implemented, which you can share with another AI for implementation in a different app:
+
+1. Setup and Configuration
+Environment Variables
+The app uses these environment variables:
+
+MAILGUN_API_KEY: Your Mailgun API key
+MAILGUN_DOMAIN: Your verified Mailgun domain
+DEFAULT_FROM_EMAIL: Default sender email address
+Dependencies
+npm install mailgun.js form-data
+2. Main Email Service Integration
+We created a dedicated email service module that handles all email-related functionality:
+
+// server/email.ts
+import formData from 'form-data';
+import Mailgun from 'mailgun.js';
+import { db } from './db';
+import { emailTemplates } from '../shared/schema';
+import { eq } from 'drizzle-orm';
+// Initialize Mailgun client
+const mailgun = new Mailgun(formData);
+const mg = mailgun.client({
+  username: 'api',
+  key: process.env.MAILGUN_API_KEY || ''
+});
+const domain = process.env.MAILGUN_DOMAIN || '';
+const fromEmail = process.env.DEFAULT_FROM_EMAIL || `noreply@${domain}`;
+interface EmailParams {
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  templateId?: number;
+  templateData?: Record<string, any>;
+}
+function getAbsoluteUrl(path: string): string {
+  const baseUrl = process.env.BASE_URL || `https://${domain}`;
+  return `${baseUrl}${path}`;
+}
+export async function sendEmail(params: EmailParams): Promise<boolean> {
+  try {
+    // If using a template, fetch and compile it
+    if (params.templateId && params.templateData) {
+      const compiled = await getCompiledTemplate(params.templateId, params.templateData);
+      if (compiled) {
+        params.subject = compiled.subject;
+        params.html = compiled.html;
+      }
+    }
+    // Ensure we have content
+    if (!params.html && !params.text) {
+      console.error('Email must have either HTML or text content');
+      return false;
+    }
+    // Prepare email data
+    const emailData = {
+      from: fromEmail,
+      to: params.to,
+      subject: params.subject,
+      text: params.text,
+      html: params.html
+    };
+    // Send email via Mailgun
+    const response = await mg.messages.create(domain, emailData);
+    console.log('Email sent:', response);
+    return true;
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    return false;
+  }
+}
+// Template compilation helper
+export function compileTemplate(template: string, data: Record<string, any>): string {
+  return template.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
+    const keys = key.trim().split('.');
+    let value = data;
+    
+    for (const k of keys) {
+      if (value === undefined) break;
+      value = value[k];
+    }
+    
+    return value !== undefined ? value : '';
+  });
+}
+// Get and compile email template from database
+export async function getCompiledTemplate(templateId: number, data: Record<string, any>): Promise<{ subject: string; html: string } | null> {
+  try {
+    const [template] = await db.select().from(emailTemplates).where(eq(emailTemplates.id, templateId));
+    
+    if (!template) {
+      console.error(`Email template with ID ${templateId} not found`);
+      return null;
+    }
+    
+    // Add common data available to all templates
+    const templateData = {
+      ...data,
+      baseUrl: process.env.BASE_URL || `https://${domain}`,
+      currentYear: new Date().getFullYear()
+    };
+    
+    return {
+      subject: compileTemplate(template.subject, templateData),
+      html: compileTemplate(template.html_content, templateData)
+    };
+  } catch (error) {
+    console.error('Failed to compile email template:', error);
+    return null;
+  }
+}
+3. Email Templates in Database
+We store email templates in a database table with this structure:
+
+id: Primary key
+name: Template name (e.g., "Password Reset")
+subject: Email subject line with variables
+html_content: HTML email body with variables using {{variable}} syntax
+default: Boolean indicating if this is a default template
+4. Usage Examples
+Sending a Simple Email
+import { sendEmail } from './email';
+await sendEmail({
+  to: 'user@example.com',
+  subject: 'Hello from Homelab',
+  html: '<h1>Welcome!</h1><p>Your homelab monitoring service is ready.</p>'
+});
+Using a Template from Database
+import { sendEmail } from './email';
+await sendEmail({
+  to: 'user@example.com',
+  templateId: 1, // ID of template in database
+  templateData: {
+    username: 'johndoe',
+    resetLink: 'https://yourdomain.com/reset/token123',
+    serviceName: 'Homelab Monitor'
+  }
+});
+5. Template Variable Replacement
+We use a simple regex-based template engine that replaces {{variable}} placeholders in templates with actual data:
+
+Template example: Hello {{user.name}}, your {{service.name}} is {{status}}.
+With data: { user: { name: 'John' }, service: { name: 'Plex' }, status: 'online' }
+Result: Hello John, your Plex is online.
+6. Error Handling
+Our implementation includes comprehensive error handling:
+
+Failed API calls are logged and return false
+Missing templates are handled gracefully
+Required email parameters are validated before sending
+This should provide another AI with all the key information needed to implement a similar Mailgun integration in another application.

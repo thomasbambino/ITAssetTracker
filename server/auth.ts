@@ -3,8 +3,7 @@ import bcrypt from 'bcrypt';
 import { storage } from './storage';
 import { LoginCredentials } from '@shared/schema';
 import { User } from '@shared/schema';
-import emailService from './email-service';
-import mailgunEmailService, { updateMailgunEmailService } from './email-service-mailgun';
+import improvedEmailService, { updateEmailService as updateImprovedEmailService } from './email-service-improved';
 
 // Password hashing
 export async function hashPassword(password: string): Promise<{ hash: string, salt: string }> {
@@ -175,19 +174,19 @@ export async function resetUserPassword(userId: number): Promise<{
         const emailSettings = await storage.getEmailSettings();
         
         if (emailSettings && emailSettings.isEnabled) {
-          // Update Mailgun service with current settings
-          console.log('Updating Mailgun service with current settings...');
-          const updatedMailgunService = updateMailgunEmailService(emailSettings);
+          // Update the email service with current settings
+          console.log('Updating email service with current settings...');
+          const updatedEmailService = updateImprovedEmailService(emailSettings);
           
-          // Check if Mailgun is configured after updating
-          console.log('Mailgun configuration check:', updatedMailgunService.isConfigured());
+          // Check if email service is configured after updating
+          console.log('Email service configuration check:', updatedEmailService.isConfigured());
           
-          // First try using the updated Mailgun service
-          if (updatedMailgunService.isConfigured()) {
-            console.log(`Sending password reset email via Mailgun to: ${user.email}`);
+          // Attempt to send email
+          if (updatedEmailService.isConfigured()) {
+            console.log(`Sending password reset email to: ${user.email}`);
             const fullName = `${user.firstName} ${user.lastName}`;
             
-            const result = await updatedMailgunService.sendPasswordResetEmail(
+            const result = await updatedEmailService.sendPasswordResetEmail(
               user.email, 
               tempPassword, 
               fullName
@@ -196,7 +195,9 @@ export async function resetUserPassword(userId: number): Promise<{
             emailSent = result.success;
             if (!result.success) {
               emailError = result.message;
-              console.error('Mailgun email error:', result.message);
+              console.error('Email error:', result.message);
+            } else {
+              console.log('Password reset email sent successfully');
             }
           } else {
             // Fallback to simulation mode
