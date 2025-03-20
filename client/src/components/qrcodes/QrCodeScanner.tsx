@@ -17,6 +17,8 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<"granted" | "denied" | "unknown">("unknown");
+  const [videoStarted, setVideoStarted] = useState(false); // Track video playback status
+  const [debugInfo, setDebugInfo] = useState<string>(""); // For debugging
   
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -38,9 +40,11 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     
     if (videoRef.current) {
       videoRef.current.srcObject = null;
+      videoRef.current.load(); // Ensure video element is fully reset
     }
     
     setIsCameraActive(false);
+    setVideoStarted(false);
   };
   
   // Cleanup on unmount
@@ -99,30 +103,56 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     try {
       setIsLoading(true);
       setError(null);
+      setDebugInfo("");
       
       // Request camera permission
       try {
+        setDebugInfo("Requesting camera...");
         const stream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             facingMode: "environment",  // Prefer back camera
             width: { ideal: 1280 },
             height: { ideal: 720 }
-          } 
+          },
+          audio: false
         });
         
+        setDebugInfo("Camera permission granted");
         streamRef.current = stream;
         
         if (videoRef.current) {
+          // Set up video element event listeners
+          videoRef.current.addEventListener('loadedmetadata', () => {
+            setDebugInfo(prev => prev + "\nVideo metadata loaded");
+          });
+          
+          videoRef.current.addEventListener('playing', () => {
+            setDebugInfo(prev => prev + "\nVideo is playing");
+            setVideoStarted(true);
+          });
+          
+          videoRef.current.addEventListener('error', (e) => {
+            setDebugInfo(prev => prev + `\nVideo error: ${(e.target as any)?.error?.message || 'unknown'}`);
+          });
+          
+          setDebugInfo(prev => prev + "\nSetting video source");
           videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          setCameraPermission("granted");
+          videoRef.current.muted = true; // Ensure video is muted
+          videoRef.current.setAttribute('playsinline', 'true'); // For iOS
+          
+          try {
+            setDebugInfo(prev => prev + "\nPlaying video");
+            await videoRef.current.play();
+            setCameraPermission("granted");
+            setIsCameraActive(true);
+            
+            // Start scanning interval
+            scanIntervalRef.current = window.setInterval(scanQRCode, 200); // Scan every 200ms
+          } catch (playError) {
+            setDebugInfo(prev => prev + `\nPlay error: ${playError instanceof Error ? playError.message : String(playError)}`);
+            setError(`Video playback failed: ${playError instanceof Error ? playError.message : 'Autoplay may be blocked'}`);
+          }
         }
-        
-        setIsCameraActive(true);
-        
-        // Start scanning interval
-        scanIntervalRef.current = window.setInterval(scanQRCode, 200); // Scan every 200ms
-        
       } catch (err) {
         console.error("Camera permission error:", err);
         setCameraPermission("denied");
@@ -148,6 +178,7 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     setScannedCode(null);
     setManualCode("");
     setError(null);
+    setDebugInfo("");
   };
   
   // Handle manual code submission
@@ -185,13 +216,15 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
         <div className="border rounded-md overflow-hidden">
           {isCameraActive ? (
             <div className="aspect-video relative bg-black">
-              {/* Video element for camera feed */}
+              {/* Video element for camera feed - using controls for debugging */}
               <video 
                 ref={videoRef} 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
                 playsInline 
                 muted 
                 autoPlay
+                controls={!videoStarted} // Show controls if video hasn't started
+                style={{ objectFit: "cover" }}
               />
               
               {/* Hidden canvas for processing */}
@@ -216,8 +249,20 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
               
               {/* Text instructions */}
               <div className="absolute bottom-2 left-0 right-0 text-center text-white text-sm bg-black/50 py-1">
-                Point your camera at a QR code
+                {videoStarted ? 
+                  "Point your camera at a QR code" : 
+                  "Camera connecting... If you see the camera feed, click the video to start."
+                }
               </div>
+              
+              {/* Debug Info - only in development */}
+              {debugInfo && (
+                <div className="absolute top-2 left-2 right-2 text-xs text-white bg-black/70 p-2 rounded max-h-24 overflow-auto">
+                  {debugInfo.split('\n').map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-4">
@@ -294,22 +339,24 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
         ) : null}
       </div>
       
-      <style jsx>{`
-        @keyframes scan {
-          0% {
-            top: 0;
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes scan {
+            0% {
+              top: 0;
+            }
+            50% {
+              top: 100%;
+            }
+            100% {
+              top: 0;
+            }
           }
-          50% {
-            top: 100%;
+          .animate-scan {
+            animation: scan 2s linear infinite;
           }
-          100% {
-            top: 0;
-          }
-        }
-        .animate-scan {
-          animation: scan 2s linear infinite;
-        }
-      `}</style>
+        `
+      }} />
     </div>
   );
 }
