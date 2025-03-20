@@ -48,6 +48,9 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Create form with default values
   const form = useForm<FormValues>({
@@ -63,6 +66,74 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
     },
   });
 
+  // Handle logo upload
+  const handleLogoUpload = async (file: File) => {
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      setFormError("Invalid file type. Please upload a JPG, PNG, SVG, or GIF image.");
+      return;
+    }
+    
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setFormError("File is too large. Maximum size is 2MB.");
+      return;
+    }
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+    setFormError(null);
+    
+    try {
+      // Create form data
+      const formData = new FormData();
+      formData.append('logo', file);
+      
+      // Simulate progress (since fetch doesn't support progress tracking natively)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          const newProgress = prev + 5;
+          return newProgress > 90 ? 90 : newProgress;
+        });
+      }, 100);
+      
+      // Upload the file
+      const response = await fetch('/api/branding/logo', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      clearInterval(progressInterval);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to upload logo");
+      }
+      
+      const data = await response.json();
+      setUploadProgress(100);
+      
+      // Update the form with the new logo URL
+      form.setValue('companyLogo', data.branding.logo);
+      
+      // Invalidate query cache
+      queryClient.invalidateQueries({ queryKey: ['/api/branding'] });
+      
+      setFormSuccess("Logo uploaded successfully");
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      setFormError("Error uploading logo. Please try again.");
+    } finally {
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(0);
+      }, 500);
+    }
+  };
+  
   // Submit handler
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
@@ -176,7 +247,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
               )}
             />
             
-            {/* Logo Upload - In a real app, this would handle file uploads */}
+            {/* Logo Upload */}
             <FormField
               control={form.control}
               name="companyLogo"
@@ -184,40 +255,86 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                 <FormItem>
                   <FormLabel>Company Logo (Optional)</FormLabel>
                   <Card className="p-4 border-dashed flex flex-col items-center justify-center">
-                    {field.value ? (
-                      <div className="flex flex-col items-center">
-                        <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center mb-3">
-                          <FileImage className="h-10 w-10 text-muted-foreground" />
+                    {isUploading && (
+                      <div className="flex flex-col items-center w-full py-4">
+                        <Loader2 className="h-10 w-10 text-primary mb-2 animate-spin" />
+                        <p className="text-sm text-muted-foreground mb-2">Uploading logo...</p>
+                        <div className="w-full max-w-xs">
+                          <Progress value={uploadProgress} className="h-2" />
                         </div>
-                        <p className="text-sm text-muted-foreground mb-3">logo-filename.png</p>
-                        <Button 
-                          variant="outline" 
-                          type="button" 
-                          size="sm"
-                          onClick={() => form.setValue('companyLogo', null)}
-                        >
-                          Remove Logo
-                        </Button>
                       </div>
-                    ) : (
+                    )}
+                    
+                    {!isUploading && field.value && (
+                      <div className="flex flex-col items-center">
+                        <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center mb-3 relative overflow-hidden">
+                          {field.value.startsWith('data:image') ? (
+                            <img 
+                              src={field.value} 
+                              alt="Company logo" 
+                              className="h-full w-full object-contain p-1"
+                            />
+                          ) : (
+                            <FileImage className="h-10 w-10 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            type="button" 
+                            size="sm"
+                            onClick={() => {
+                              form.setValue('companyLogo', '');
+                              queryClient.invalidateQueries({ queryKey: ['/api/branding'] });
+                            }}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            type="button" 
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Upload className="h-4 w-4 mr-1" />
+                            Change
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!isUploading && !field.value && (
                       <div className="flex flex-col items-center py-4">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          className="hidden"
+                          accept="image/png,image/jpeg,image/gif,image/svg+xml"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              handleLogoUpload(e.target.files[0]);
+                            }
+                          }}
+                        />
                         <Building className="h-10 w-10 text-muted-foreground mb-3" />
                         <p className="text-sm text-muted-foreground mb-3">
-                          Drag and drop or click to upload
+                          Click to upload your company logo
                         </p>
                         <Button 
                           variant="outline" 
                           type="button" 
                           size="sm"
-                          onClick={() => alert("In a real app, this would open a file picker")}
+                          onClick={() => fileInputRef.current?.click()}
                         >
+                          <Upload className="h-4 w-4 mr-1" />
                           Upload Logo
                         </Button>
                       </div>
                     )}
                   </Card>
                   <FormDescription>
-                    Upload your company logo (SVG, PNG or JPG, max 2MB)
+                    Upload your company logo (SVG, PNG, JPG or GIF, max 2MB)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
