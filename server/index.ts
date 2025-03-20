@@ -10,6 +10,16 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Serve the emergency access page
+app.get('/emergency', (req, res) => {
+  const emergencyPath = path.resolve('emergency.html');
+  if (fs.existsSync(emergencyPath)) {
+    res.sendFile(emergencyPath);
+  } else {
+    res.status(404).send('Emergency access page not found');
+  }
+});
+
 // Set up session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'itassetmanagement-secret-key',
