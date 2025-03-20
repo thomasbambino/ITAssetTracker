@@ -88,9 +88,13 @@ export default function DeviceDetails() {
     mutationFn: async () => {
       // Generate a unique code for the QR code
       const code = `DEV-${id}-${Date.now()}`;
-      const response = await apiRequest('POST', '/api/qrcodes', {
-        deviceId: Number(id),
-        code: code
+      const response = await apiRequest({
+        method: 'POST', 
+        url: '/api/qrcodes', 
+        data: {
+          deviceId: Number(id),
+          code: code
+        }
       });
       return response;
     },
@@ -192,7 +196,10 @@ export default function DeviceDetails() {
   // Delete device mutation
   const deleteDeviceMutation = useMutation({
     mutationFn: async (deviceId: string) => {
-      await apiRequest('DELETE', `/api/devices/${deviceId}`);
+      await apiRequest({
+        method: 'DELETE',
+        url: `/api/devices/${deviceId}`
+      });
       return deviceId;
     },
     onSuccess: () => {
