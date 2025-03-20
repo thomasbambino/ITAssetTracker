@@ -548,40 +548,40 @@ export default function UserDetails() {
           <DialogHeader>
             <DialogTitle>Password Reset Complete</DialogTitle>
             <DialogDescription>
-              {resetPasswordResult?.emailSent ? 
-                "An email with the temporary password has been sent to the user." : 
-                "A temporary password has been generated."}
+              A temporary password has been generated for the user.
+              {resetPasswordResult?.emailSent && " An email has also been sent to the user with this information."}
             </DialogDescription>
           </DialogHeader>
           
+          {/* Always show the temporary password prominently */}
+          {resetPasswordResult?.tempPassword && (
+            <div className="py-4">
+              <label className="block text-sm font-medium mb-2">Temporary Password:</label>
+              <div className="bg-muted p-4 rounded-md font-mono text-lg text-center font-bold border">
+                {resetPasswordResult.tempPassword}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Please provide this temporary password to the user. They will be prompted to change it on first login.
+              </p>
+            </div>
+          )}
+          
           {/* Show email status: success or failure */}
           {resetPasswordResult?.emailSent && (
-            <div className="py-4 flex items-center space-x-2 text-green-600">
+            <div className="py-2 flex items-center space-x-2 text-green-600">
               <CheckCircleIcon className="h-5 w-5" />
               <span>Email sent successfully</span>
             </div>
           )}
           
           {resetPasswordResult?.emailError && (
-            <div className="py-4">
+            <div className="py-2">
               <div className="flex items-center space-x-2 text-red-600 mb-2">
                 <AlertCircleIcon className="h-5 w-5" />
                 <span>Failed to send email</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Error: {resetPasswordResult.emailError}
-              </p>
-            </div>
-          )}
-          
-          {/* Show temporary password if available and either email failed or wasn't sent */}
-          {resetPasswordResult?.tempPassword && !resetPasswordResult?.emailSent && (
-            <div className="py-4">
-              <div className="bg-muted p-3 rounded-md font-mono text-sm">
-                {resetPasswordResult.tempPassword}
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Please provide this temporary password to the user. They will be prompted to change it on first login.
               </p>
             </div>
           )}

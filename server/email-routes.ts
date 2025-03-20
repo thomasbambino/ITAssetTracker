@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { storage } from './storage';
 import { isAdmin, isAuthenticated } from './auth';
 import { EmailService, updateEmailService } from './email-service';
+import { updateMailgunEmailService } from './email-service-mailgun';
+import mailgunEmailService from './email-service-mailgun';
 import { z } from 'zod';
 
 const router = Router();
@@ -63,8 +65,9 @@ router.put('/settings/email', isAuthenticated, isAdmin, async (req: Request, res
     // Update the settings in the database
     const updatedSettings = await storage.updateEmailSettings(emailSettings);
     
-    // Update the email service with the new settings
+    // Update both email services with the new settings
     updateEmailService(updatedSettings);
+    updateMailgunEmailService(updatedSettings);
     
     // Return the updated settings with masked API key
     const maskedSettings = {
