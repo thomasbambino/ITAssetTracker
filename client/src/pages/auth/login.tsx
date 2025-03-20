@@ -128,7 +128,6 @@ export default function LoginPage() {
               {branding.companyName}
             </h2>
           </div>
-          <CardDescription>Enter your credentials to access the system</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
