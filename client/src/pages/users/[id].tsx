@@ -110,8 +110,20 @@ export default function UserDetails() {
   // Reset password mutation
   const resetPasswordMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const response = await apiRequest('POST', `/api/auth/reset-password/${userId}`);
-      return await response.json();
+      try {
+        const response = await apiRequest('POST', `/api/auth/reset-password/${userId}`);
+        
+        // Check if the response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Server returned non-JSON response. Please check the API endpoint.');
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Password reset error:', error);
+        throw new Error(error instanceof Error ? error.message : 'Failed to reset password');
+      }
     },
     onSuccess: (data) => {
       setResetPasswordResult({
@@ -119,12 +131,14 @@ export default function UserDetails() {
         emailSent: data.emailSent,
         emailError: data.emailError
       });
+      setShowResetPasswordDialog(false);
       toast({
         title: "Success",
         description: "Password has been reset",
       });
     },
     onError: (error) => {
+      setShowResetPasswordDialog(false);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to reset password",
