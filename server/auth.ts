@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { storage } from './storage';
 import { LoginCredentials } from '@shared/schema';
 import { User } from '@shared/schema';
+import emailService from './email-service';
 
 // Password hashing
 export async function hashPassword(password: string): Promise<{ hash: string, salt: string }> {
@@ -131,6 +132,8 @@ export async function resetUserPassword(userId: number): Promise<{
   success: boolean;
   message?: string;
   tempPassword?: string;
+  emailSent?: boolean;
+  emailError?: string;
 }> {
   try {
     // Get user
@@ -161,10 +164,40 @@ export async function resetUserPassword(userId: number): Promise<{
       passwordResetRequired: true
     });
     
+    // Attempt to send email notification if user has email and email service is configured
+    let emailSent = false;
+    let emailError = undefined;
+    
+    if (user.email) {
+      try {
+        // Get email settings to check if service is configured and enabled
+        const emailSettings = await storage.getEmailSettings();
+        
+        if (emailSettings && emailSettings.isEnabled) {
+          // Send password reset email
+          const emailResult = await emailService.sendPasswordResetEmail(
+            user.email,
+            tempPassword,
+            `${user.firstName} ${user.lastName}`
+          );
+          
+          emailSent = emailResult.success;
+          if (!emailResult.success) {
+            emailError = emailResult.message;
+          }
+        }
+      } catch (emailErr) {
+        console.error('Error sending password reset email:', emailErr);
+        emailError = 'Failed to send email notification';
+      }
+    }
+    
     return {
       success: true,
       message: 'Password reset successfully',
-      tempPassword
+      tempPassword,
+      emailSent,
+      emailError
     };
   } catch (error) {
     console.error('Password reset error:', error);

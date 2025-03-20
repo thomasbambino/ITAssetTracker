@@ -161,11 +161,33 @@ router.post('/reset-password/:userId', isAuthenticated, isAdmin, async (req: Req
     const result = await resetUserPassword(userId);
     
     if (result.success) {
-      return res.status(200).json({
+      // Create a response with the temp password and email status
+      const response: any = {
         success: true,
         message: 'Password reset successfully',
         tempPassword: result.tempPassword
+      };
+      
+      // Add email notification status if available
+      if (result.emailSent !== undefined) {
+        response.emailSent = result.emailSent;
+        response.emailMessage = result.emailSent 
+          ? 'Email notification sent successfully' 
+          : 'Failed to send email notification';
+          
+        if (!result.emailSent && result.emailError) {
+          response.emailError = result.emailError;
+        }
+      }
+      
+      // Add activity log
+      await storage.createActivityLog({
+        actionType: 'PASSWORD_RESET',
+        userId: req.session.userId || null,
+        details: `Password reset for user ID: ${userId}`
       });
+      
+      return res.status(200).json(response);
     } else {
       return res.status(400).json({
         success: false,
