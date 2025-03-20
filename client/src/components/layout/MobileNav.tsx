@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { GlobalSearch } from '@/components/shared/GlobalSearch';
 import { NotificationBell } from '@/components/shared/NotificationBell';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useQuery } from '@tanstack/react-query';
 import {
   MenuIcon,
@@ -236,6 +237,7 @@ export function MobileNav() {
           >
             <SearchIcon className="h-5 w-5" />
           </Button>
+          <ThemeToggle size="sm" />
           <NotificationBell />
         </div>
       </div>

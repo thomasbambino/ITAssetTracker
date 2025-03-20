@@ -53,10 +53,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppLayout>
-        <Router />
-      </AppLayout>
-      <Toaster />
+      <ThemeProvider>
+        <AppLayout>
+          <Router />
+        </AppLayout>
+        <Toaster />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
