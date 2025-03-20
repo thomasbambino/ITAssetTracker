@@ -92,8 +92,8 @@ export default function Reports() {
   const expenseData = categoryStats?.map(category => ({
     category: category.name,
     count: category.count,
-    avgValue: category.count > 0 ? Math.round(category.totalValue / category.count) / 100 : 0,
-    totalValue: category.totalValue / 100
+    avgValue: category.count > 0 ? category.totalValue / category.count : 0,
+    totalValue: category.totalValue
   })) || [];
   
   // Fetch devices for warranty report
