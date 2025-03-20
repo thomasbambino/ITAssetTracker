@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -9,7 +9,9 @@ import {
   UserCheckIcon, 
   Trash2Icon, 
   EditIcon, 
-  FileOutput 
+  FileOutput,
+  FilterIcon,
+  XIcon
 } from 'lucide-react';
 import { ActionButton } from '@/components/dashboard/ActionButton';
 import { CsvImport } from '@/components/ui/csv-import';
@@ -28,20 +30,131 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
 
 export default function Devices() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [deviceToDelete, setDeviceToDelete] = useState<number | null>(null);
   const [assignmentDialogDevice, setAssignmentDialogDevice] = useState<any | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  
+  // Extract query parameters from URL
+  const [location] = useLocation();
+  
+  // Parse URL params on component mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const categoryParam = params.get('category');
+    const departmentParam = params.get('department');
+    
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+    
+    if (departmentParam) {
+      setSelectedDepartment(departmentParam);
+    }
+  }, [location]);
   
   // Fetch devices
-  const { data: devices, isLoading } = useQuery({
+  const { data: devices = [], isLoading } = useQuery<any[]>({
     queryKey: ['/api/devices'],
   });
   
+  // Fetch categories for the filter
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: ['/api/categories'],
+  });
+  
+  // Extract unique departments from devices for filtering
+  const departmentsList = devices
+    .filter(device => device.user && device.user.department)
+    .map(device => device.user.department)
+    .filter((department, index, self) => self.indexOf(department) === index)
+    .sort();
+  
   // Export CSV
   const { exportCsv, isExporting } = useCsvExport('/api/export/devices');
+  
+  // Handle filter changes
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    
+    // Update URL with the new filter
+    const params = new URLSearchParams(window.location.search);
+    if (value) {
+      params.set('category', value);
+    } else {
+      params.delete('category');
+    }
+    
+    // Keep department filter if it exists
+    if (selectedDepartment) {
+      params.set('department', selectedDepartment);
+    }
+    
+    // Update URL without refreshing the page
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    window.history.pushState({}, '', newUrl);
+  };
+  
+  const handleDepartmentChange = (value: string) => {
+    setSelectedDepartment(value);
+    
+    // Update URL with the new filter
+    const params = new URLSearchParams(window.location.search);
+    if (value) {
+      params.set('department', value);
+    } else {
+      params.delete('department');
+    }
+    
+    // Keep category filter if it exists
+    if (selectedCategory) {
+      params.set('category', selectedCategory);
+    }
+    
+    // Update URL without refreshing the page
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    window.history.pushState({}, '', newUrl);
+  };
+  
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedCategory('');
+    setSelectedDepartment('');
+    
+    // Remove filter params from URL
+    window.history.pushState({}, '', window.location.pathname);
+  };
+  
+  // Filter devices based on selected category and department
+  const filteredDevices = devices.filter((device: any) => {
+    let matchesCategory = true;
+    let matchesDepartment = true;
+    
+    if (selectedCategory) {
+      matchesCategory = device.category && device.category.id.toString() === selectedCategory;
+    }
+    
+    if (selectedDepartment) {
+      matchesDepartment = device.user && device.user.department === selectedDepartment;
+    }
+    
+    return matchesCategory && matchesDepartment;
+  });
   
   // Delete device mutation
   const deleteDeviceMutation = useMutation({
