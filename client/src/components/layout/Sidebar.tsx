@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import {
   LayoutDashboardIcon,
   UsersIcon,
@@ -17,10 +18,12 @@ import {
   ChevronRightIcon,
   ServerIcon,
   CircleUserIcon,
+  LogOutIcon,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { useToast } from '@/hooks/use-toast';
 
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories'],
@@ -29,7 +32,8 @@ const categoryGroups = {
 };
 
 export function Sidebar() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const { toast } = useToast();
   
   // Define interfaces
   interface BrandingSettings {
@@ -277,12 +281,50 @@ export function Sidebar() {
                   {currentUser ? (currentUser.role === 'admin' ? 'Administrator' : 'User') : ''}
                 </p>
               </div>
-              <div className="ml-auto flex items-center space-x-1">
+              <div className="ml-auto flex items-center space-x-2">
                 <ThemeToggle size="sm" />
                 <NotificationBell />
                 <Link href="/settings" className="text-gray-500 hover:text-primary">
                   <SettingsIcon className="h-5 w-5" />
                 </Link>
+                <button
+                  onClick={async () => {
+                    try {
+                      await apiRequest({
+                        url: '/api/auth/logout',
+                        method: 'POST'
+                      });
+                      
+                      // Clear all queries from cache
+                      queryClient.clear();
+                      
+                      // Show success message
+                      toast({
+                        title: "Logged out",
+                        description: "You have been successfully logged out."
+                      });
+                      
+                      // Redirect to login page
+                      navigate('/');
+                      
+                      // Reload the page to ensure clean state
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 300);
+                    } catch (error) {
+                      console.error('Logout error:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to log out. Please try again.",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  className="text-gray-500 hover:text-red-500 transition-colors"
+                  title="Logout"
+                >
+                  <LogOutIcon className="h-5 w-5" />
+                </button>
               </div>
             </div>
           </div>

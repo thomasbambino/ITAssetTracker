@@ -6,7 +6,9 @@ import { Separator } from '@/components/ui/separator';
 import { GlobalSearch } from '@/components/shared/GlobalSearch';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import {
   MenuIcon,
   XIcon,
@@ -27,6 +29,7 @@ import {
   CircleUserIcon,
   SearchIcon,
   BellDotIcon,
+  LogOutIcon,
 } from 'lucide-react';
 
 const categoryGroups = {
@@ -37,8 +40,9 @@ const categoryGroups = {
 
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [showSearch, setShowSearch] = useState(false);
+  const { toast } = useToast();
   
   // Define interfaces
   interface BrandingSettings {
