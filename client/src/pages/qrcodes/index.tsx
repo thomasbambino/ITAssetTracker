@@ -122,12 +122,9 @@ export default function QrCodesPage() {
         // Close scanner dialog
         setIsScannerDialogOpen(false);
         
-        // If we have a selected QR code open, and it matches the one we just scanned,
-        // invalidate the history query to refresh it
-        if (selectedQrCode && selectedQrCode.id === qrCode.id) {
-          queryClient.invalidateQueries({ 
-            queryKey: [`/api/qrcodes/${selectedQrCode.id}/history`] 
-          });
+        // Navigate to the device details page
+        if (qrCode && qrCode.deviceId) {
+          window.location.href = `/devices/${qrCode.deviceId}`;
         }
       })
       .catch(error => {

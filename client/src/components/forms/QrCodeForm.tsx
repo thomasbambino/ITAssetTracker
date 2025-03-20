@@ -159,11 +159,11 @@ export function QrCodeForm({ qrCode, onSuccess, onCancel }: QrCodeFormProps) {
                 </FormControl>
                 <SelectContent>
                   {isDevicesLoading ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="loading" disabled>
                       Loading devices...
                     </SelectItem>
                   ) : devices.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="empty" disabled>
                       No devices available
                     </SelectItem>
                   ) : (
