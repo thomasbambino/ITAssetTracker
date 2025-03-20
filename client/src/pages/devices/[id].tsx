@@ -440,6 +440,82 @@ export default function DeviceDetails() {
                       </div>
                     )}
                   </div>
+                  
+                  {/* QR Code Section */}
+                  <div className="mt-6 pt-4 border-t">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      <div className="flex items-center">
+                        <QrCodeIcon className="h-4 w-4 text-gray-500 mr-1" />
+                        <span>Device QR Code</span>
+                      </div>
+                    </h3>
+                    
+                    <div className="flex flex-col items-center justify-center">
+                      {qrCodeLoading ? (
+                        <div className="py-3 flex flex-col items-center">
+                          <div className="w-32 h-32 bg-gray-100 rounded-md animate-pulse"></div>
+                          <div className="mt-2 w-24 h-6 bg-gray-100 rounded-md animate-pulse"></div>
+                        </div>
+                      ) : qrCodeData ? (
+                        <>
+                          <QrCodeDisplay 
+                            value={qrCodeData.code}
+                            label={device.assetTag || qrCodeData.code}
+                            size={140}
+                            includeLabel={false}
+                            id="device-qrcode"
+                          />
+                          <div 
+                            className="hidden" 
+                            aria-hidden="true"
+                          >
+                            <img 
+                              ref={qrCodeRef} 
+                              src="" 
+                              alt="QR Code for download" 
+                            />
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleQrCodeDownload}
+                            >
+                              <DownloadIcon className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleQrCodePrint}
+                            >
+                              <PrinterIcon className="h-3 w-3 mr-1" />
+                              Print
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2 text-center">
+                            Last scanned: {qrCodeData.lastScanned ? formatDate(qrCodeData.lastScanned) : 'Never'}<br />
+                            Scan count: {qrCodeData.scanCount || 0}
+                          </p>
+                        </>
+                      ) : (
+                        <div className="py-4 text-center">
+                          <QrCodeIcon className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500 mb-3">
+                            No QR code for this device
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/qrcodes?deviceId=${id}`)}
+                          >
+                            <QrCodeIcon className="h-3 w-3 mr-1" />
+                            Generate QR Code
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
                 <CardFooter className="border-t pt-4 flex justify-between">
                   <Button 
@@ -459,84 +535,10 @@ export default function DeviceDetails() {
                 </CardFooter>
               </Card>
 
-              {/* QR Code Card */}
-              <Card className="md:col-span-1">
-                <CardHeader className="pb-3">
-                  <CardTitle>Device QR Code</CardTitle>
-                  <CardDescription>
-                    Scan to view device details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center justify-center">
-                  {qrCodeLoading ? (
-                    <div className="py-6 flex flex-col items-center">
-                      <div className="w-48 h-48 bg-gray-100 rounded-md animate-pulse"></div>
-                      <div className="mt-4 w-32 h-8 bg-gray-100 rounded-md animate-pulse"></div>
-                    </div>
-                  ) : qrCodeData ? (
-                    <>
-                      <QrCodeDisplay 
-                        value={qrCodeData.code} 
-                        label={`${device.brand} ${device.model}`}
-                        assetTag={device.assetTag}
-                        size={180}
-                        id="device-qrcode"
-                      />
-                      <div 
-                        className="hidden" 
-                        aria-hidden="true"
-                      >
-                        <img 
-                          ref={qrCodeRef} 
-                          src="" 
-                          alt="QR Code for download" 
-                        />
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleQrCodeDownload}
-                        >
-                          <DownloadIcon className="h-4 w-4 mr-2" />
-                          Download
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleQrCodePrint}
-                        >
-                          <PrinterIcon className="h-4 w-4 mr-2" />
-                          Print
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-3 text-center">
-                        Last scanned: {qrCodeData.lastScanned ? formatDate(qrCodeData.lastScanned) : 'Never'}<br />
-                        Scan count: {qrCodeData.scanCount || 0}
-                      </p>
-                    </>
-                  ) : (
-                    <div className="py-6 text-center">
-                      <QrCodeIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <h3 className="text-sm font-medium text-gray-900">No QR code found</h3>
-                      <p className="text-sm text-gray-500 mt-1 mb-4">
-                        There is no QR code associated with this device yet.
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/qrcodes?deviceId=${id}`)}
-                      >
-                        <QrCodeIcon className="h-4 w-4 mr-2" />
-                        Generate QR Code
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+
 
               {/* Assignment History Card */}
-              <Card className="md:col-span-1">
+              <Card className="md:col-span-2">
                 <CardHeader className="pb-3">
                   <CardTitle>Assignment History</CardTitle>
                   <CardDescription>
