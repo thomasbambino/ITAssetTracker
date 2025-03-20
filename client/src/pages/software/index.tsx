@@ -108,10 +108,12 @@ export default function Software() {
         const status = statusMap[software.status];
         
         return (
-          <Badge variant={status.variant as any} className="flex items-center">
-            {status.icon}
-            {status.label}
-          </Badge>
+          <div className="flex">
+            <Badge variant={status.variant as any} className="flex items-center w-fit">
+              {status.icon}
+              {status.label}
+            </Badge>
+          </div>
         );
       }
     },

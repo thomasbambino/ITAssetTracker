@@ -126,7 +126,7 @@ export default function SoftwareDetails() {
     const statusInfo = statusMap[status] || statusMap.pending;
     
     return (
-      <Badge variant="outline" className={`flex items-center ${statusInfo.class}`}>
+      <Badge variant="outline" className={`flex items-center w-fit ${statusInfo.class}`}>
         {statusInfo.icon}
         {statusInfo.label}
       </Badge>
@@ -178,9 +178,11 @@ export default function SoftwareDetails() {
       header: "Type",
       accessor: (assignment: SoftwareAssignment) => assignment.user ? 'User' : 'Device',
       cell: (assignment: SoftwareAssignment) => (
-        <Badge variant="secondary">
-          {assignment.user ? 'User' : 'Device'}
-        </Badge>
+        <div className="flex">
+          <Badge variant="secondary" className="w-fit">
+            {assignment.user ? 'User' : 'Device'}
+          </Badge>
+        </div>
       ),
     },
     {
