@@ -210,10 +210,7 @@ export function MobileNav() {
     );
   };
 
-  const getCurrentPageTitle = () => {
-    const route = routes.find(r => r.href === location);
-    return route ? route.label : 'Home';
-  };
+
 
   return (
     <>
@@ -247,9 +244,7 @@ export function MobileNav() {
             </span>
           </div>
         </div>
-        <div className="text-base font-medium text-gray-700 flex-grow text-center">
-          {!showSearch && getCurrentPageTitle()}
-        </div>
+        <div className="flex-grow"></div>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
