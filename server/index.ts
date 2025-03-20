@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./db";
 import session from "express-session";
 import path from "path";
+import fs from "fs";
 
 const app = express();
 app.use(express.json());

@@ -146,6 +146,80 @@ router.post('/change-password', isAuthenticated, async (req: Request, res: Respo
   }
 });
 
+// Emergency admin access route
+router.post('/emergency-access', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+    
+    // Find user by email
+    const user = await storage.getUserByEmail(email);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Set user as admin and create a new password
+    const newPassword = 'Admin123!';
+    const { hash } = await hashPassword(newPassword);
+    
+    // Update user
+    await storage.updateUser(user.id, {
+      passwordHash: hash,
+      role: 'admin',
+      passwordResetRequired: false,
+      tempPassword: null,
+      tempPasswordExpiry: null
+    });
+    
+    // Store user info in session
+    req.session.userId = user.id;
+    req.session.userRole = 'admin';
+    req.session.passwordResetRequired = false;
+    
+    // Add activity log
+    await storage.createActivityLog({
+      actionType: 'EMERGENCY_ACCESS',
+      userId: user.id,
+      details: `Emergency access granted for user ${user.email}`
+    });
+    
+    // Don't send password-related fields to the client
+    const { 
+      passwordHash, 
+      passwordSalt, 
+      tempPassword, 
+      tempPasswordExpiry, 
+      ...safeUserData 
+    } = user;
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Emergency access granted',
+      password: newPassword, // Only include this in emergency situation
+      user: {
+        ...safeUserData,
+        role: 'admin'
+      }
+    });
+  } catch (error) {
+    console.error('Emergency access error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred during emergency access'
+    });
+  }
+});
+
 // Reset user's password (admin only)
 router.post('/reset-password/:userId', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
