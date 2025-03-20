@@ -5,6 +5,8 @@ import multer from "multer";
 import { parse } from "csv-parse";
 import { stringify } from "csv-stringify";
 import { z } from "zod";
+import fs from 'fs';
+import path from 'path';
 import { 
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
   insertSoftwareSchema, insertSoftwareAssignmentSchema, insertMaintenanceRecordSchema,
@@ -1377,6 +1379,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertBrandingSettingsSchema.partial().parse(req.body);
       const branding = await storage.updateBrandingSettings(validatedData);
+      
+      // Update theme.json file if primaryColor is provided
+      if (validatedData.primaryColor) {
+        try {
+          // Read the current theme.json
+          const themeFilePath = path.resolve('./theme.json');
+          const themeJson = JSON.parse(fs.readFileSync(themeFilePath, 'utf8'));
+          
+          // Update the primary color
+          themeJson.primary = validatedData.primaryColor;
+          
+          // Write the updated theme back to file
+          fs.writeFileSync(themeFilePath, JSON.stringify(themeJson, null, 2));
+          
+          // Force a restart to apply changes (in production, you'd use a different approach)
+          console.log('Theme updated, application will reload to apply changes');
+        } catch (fsError) {
+          console.error('Error updating theme.json:', fsError);
+          // Continue with the response even if theme update fails
+        }
+      }
+      
       res.json(branding);
     } catch (error) {
       if (error instanceof z.ZodError) {
