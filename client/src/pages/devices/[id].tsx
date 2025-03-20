@@ -83,6 +83,30 @@ export default function DeviceDetails() {
   // Add reference to QR code image for download
   const qrCodeRef = useRef<HTMLImageElement | null>(null);
   
+  // Create QR code mutation
+  const createQrCodeMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/qrcodes', {
+        deviceId: Number(id)
+      });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/devices/${id}/qrcode`] });
+      toast({
+        title: "Success",
+        description: "QR code created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create QR code",
+        variant: "destructive",
+      });
+    }
+  });
+  
   // Effect to update the hidden image element when QR code data is available
   useEffect(() => {
     if (qrCodeData && qrCodeRef.current) {
@@ -477,10 +501,20 @@ export default function DeviceDetails() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate(`/qrcodes?deviceId=${id}`)}
+                          onClick={() => createQrCodeMutation.mutate()}
+                          disabled={createQrCodeMutation.isPending}
                         >
-                          <QrCodeIcon className="h-4 w-4 mr-1" />
-                          Generate QR Code
+                          {createQrCodeMutation.isPending ? (
+                            <>
+                              <div className="h-4 w-4 mr-1 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              Creating...
+                            </>
+                          ) : (
+                            <>
+                              <QrCodeIcon className="h-4 w-4 mr-1" />
+                              Generate QR Code
+                            </>
+                          )}
                         </Button>
                       )}
                     </div>
