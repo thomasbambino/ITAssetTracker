@@ -227,11 +227,25 @@ export class DirectMailgunService {
 
   // Send password reset email - using plain ASCII only
   public async sendPasswordResetEmail(to: string, tempPassword: string, userName: string): Promise<{ success: boolean; message: string }> {
-    return this.sendEmail({
-      to,
-      subject: 'AssetTrack - Your Temporary Password',
-      text: `Hello ${userName}, A password reset has been requested for your account. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`
-    });
+    try {
+      // Try to get company name from branding settings
+      const branding = await storage.getBrandingSettings();
+      const companyName = branding?.companyName || 'AssetTrack';
+      
+      return this.sendEmail({
+        to,
+        subject: `${companyName} - Your Temporary Password`,
+        text: `Hello ${userName}, A password reset has been requested for your account. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`
+      });
+    } catch (error) {
+      console.error('Error getting branding settings:', error);
+      // Fallback to default name if there's an error
+      return this.sendEmail({
+        to,
+        subject: 'AssetTrack - Your Temporary Password',
+        text: `Hello ${userName}, A password reset has been requested for your account. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`
+      });
+    }
   }
 }
 
