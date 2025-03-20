@@ -9,6 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import session from "express-session";
 import authRoutes from "./auth-routes";
+import emailRoutes from "./email-routes";
 import { isAuthenticated, isAdmin } from "./auth";
 import { 
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
@@ -34,6 +35,9 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register authentication routes
   app.use('/api/auth', authRoutes);
+  
+  // Register email routes
+  app.use('/api', emailRoutes);
   
   // Initialize API routes
   const apiRouter = app.route('/api');
