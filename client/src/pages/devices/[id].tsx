@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation, useParams, Link } from 'wouter';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -22,7 +22,10 @@ import {
   Trash2Icon,
   UserCheckIcon,
   UserIcon,
-  InfoIcon
+  InfoIcon,
+  QrCodeIcon,
+  DownloadIcon,
+  PrinterIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -41,6 +44,7 @@ import { DeviceAssignmentDialog } from '@/components/devices/DeviceAssignmentDia
 import { DeviceForm } from '@/components/forms/DeviceForm';
 import { DataTable } from '@/components/ui/data-table';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { QrCodeDisplay } from '@/components/qrcodes/QrCodeDisplay';
 
 export default function DeviceDetails() {
   const { id } = useParams();
@@ -58,6 +62,82 @@ export default function DeviceDetails() {
     queryKey: [`/api/devices/${id}`],
     enabled: !isNewDevice && !!id,
   });
+  
+  // Fetch QR code for device
+  const { data: qrCodeData, isLoading: qrCodeLoading } = useQuery({
+    queryKey: [`/api/devices/${id}/qrcode`],
+    enabled: !isNewDevice && !!id,
+  });
+  
+  // Add reference to QR code image for download
+  const qrCodeRef = useRef<HTMLImageElement | null>(null);
+  
+  // Function to handle downloading the QR code
+  const handleQrCodeDownload = () => {
+    if (!qrCodeData || !qrCodeRef.current) return;
+    
+    const link = document.createElement('a');
+    link.href = qrCodeRef.current.src;
+    link.download = `qrcode-${device.assetTag || device.id}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Success",
+      description: "QR code downloaded successfully",
+    });
+  };
+  
+  // Function to handle printing the QR code
+  const handleQrCodePrint = () => {
+    if (!qrCodeData || !qrCodeRef.current) return;
+    
+    const printWindow = window.open('', '', 'height=500,width=500');
+    if (!printWindow) {
+      toast({
+        title: "Error",
+        description: "Unable to open print window. Please check your popup settings.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    printWindow.document.write('<html><head><title>Print QR Code</title>');
+    printWindow.document.write('<style>');
+    printWindow.document.write(`
+      body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+      .container { max-width: 400px; margin: 0 auto; }
+      img { max-width: 100%; height: auto; }
+      h2 { margin-top: 10px; margin-bottom: 5px; }
+      p { margin-top: 5px; color: #666; }
+    `);
+    printWindow.document.write('</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write('<div class="container">');
+    printWindow.document.write(`<img src="${qrCodeRef.current.src}" alt="QR Code" />`);
+    printWindow.document.write(`<h2>${device.brand} ${device.model}</h2>`);
+    if (device.assetTag) {
+      printWindow.document.write(`<p>Asset Tag: ${device.assetTag}</p>`);
+    }
+    printWindow.document.write(`<p>Code: ${qrCodeData.code}</p>`);
+    printWindow.document.write('</div>');
+    printWindow.document.write('</body></html>');
+    
+    printWindow.document.close();
+    printWindow.focus();
+    
+    // Print after a short delay to ensure content is loaded
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+    
+    toast({
+      title: "Success",
+      description: "QR code sent to printer",
+    });
+  };
 
   // Delete device mutation
   const deleteDeviceMutation = useMutation({
