@@ -14,16 +14,40 @@ import { Loader2, ServerIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
+interface BrandingSettings {
+  id?: number;
+  companyName: string;
+  logo?: string | null;
+  primaryColor: string;
+  accentColor?: string | null;
+  companyTagline?: string | null;
+  supportEmail?: string | null;
+  supportPhone?: string | null;
+  siteNameColor?: string | null;
+  siteNameColorSecondary?: string | null;
+  siteNameGradient?: boolean | null;
+}
+
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [_, navigate] = useLocation();
   
   // Fetch branding settings
-  const { data: branding } = useQuery({
+  const { data: brandingData } = useQuery<BrandingSettings>({
     queryKey: ['/api/branding'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+  
+  // Safely cast the data with reasonable defaults
+  const branding: BrandingSettings = brandingData || {
+    companyName: "IT Asset Management",
+    primaryColor: "#1E40AF",
+    logo: null,
+    siteNameColor: "#1E40AF",
+    siteNameColorSecondary: "#3B82F6", 
+    siteNameGradient: true
+  };
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -76,7 +100,34 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">IT Asset Management</CardTitle>
+          <div className="flex items-center justify-center mb-2">
+            {branding?.logo ? (
+              <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-2">
+                <img 
+                  src={branding.logo} 
+                  alt="Company logo"
+                  className="h-8 w-8 object-contain" 
+                />
+              </div>
+            ) : (
+              <div className="bg-primary p-1.5 rounded-md mr-2">
+                <ServerIcon className="h-7 w-7 text-white" />
+              </div>
+            )}
+            <h2 
+              className="text-2xl font-bold" 
+              style={{
+                color: branding.siteNameGradient ? 'transparent' : (branding.siteNameColor || '#1E40AF'),
+                backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
+                  ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
+                  : 'none',
+                backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
+                WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
+              }}
+            >
+              {branding.companyName}
+            </h2>
+          </div>
           <CardDescription>Enter your credentials to access the system</CardDescription>
         </CardHeader>
         <CardContent>
