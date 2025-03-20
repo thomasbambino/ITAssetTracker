@@ -129,6 +129,14 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
         }
       }
       
+      // Ensure the container element exists
+      if (!document.getElementById('scanner-container')) {
+        console.error("Scanner container element not found in DOM");
+        setError("Scanner initialization failed. Please refresh the page and try again.");
+        setIsLoading(false);
+        return;
+      }
+      
       // Create a fresh scanner instance
       scannerRef.current = new Html5Qrcode("scanner-container", {
         verbose: false, // Set to true for debugging
