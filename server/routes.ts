@@ -297,10 +297,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add activity log for user role change if role was updated
       if (validatedData.role && user.role !== validatedData.role) {
-        const sessionData = req.session as unknown as SessionData;
+        const sessionData = req.session as any;
         await storage.createActivityLog({
           actionType: 'USER_ROLE_CHANGE',
-          userId: sessionData.userId,
+          userId: sessionData.userId || null,
           details: `Changed user ${user.firstName} ${user.lastName}'s role to ${validatedData.role}`
         });
       }
