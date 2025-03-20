@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { NotificationBell } from '@/components/shared/NotificationBell';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories'],
@@ -251,6 +252,7 @@ export function Sidebar() {
                 <p className="text-xs font-medium text-gray-500 mt-0.5">Administrator</p>
               </div>
               <div className="ml-auto flex items-center space-x-1">
+                <ThemeToggle size="sm" />
                 <NotificationBell />
                 <Link href="/settings" className="text-gray-500 hover:text-primary">
                   <SettingsIcon className="h-5 w-5" />
