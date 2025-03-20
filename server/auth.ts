@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import { storage } from './storage';
 import { LoginCredentials } from '@shared/schema';
 import { User } from '@shared/schema';
-import directMailgun, { updateMailgunService } from './direct-mailgun';
+import directMailgun, { updateMailgunService, DirectMailgunService } from './direct-mailgun';
 
 // Password hashing
 export async function hashPassword(password: string): Promise<{ hash: string, salt: string }> {
