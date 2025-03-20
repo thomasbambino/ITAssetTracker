@@ -39,6 +39,12 @@ export default function QrCodesPage() {
   const { data: qrCodes = [], isLoading: isQrCodesLoading } = useQuery({
     queryKey: ['/api/qrcodes'],
   });
+  
+  // Query for fetching scan history for a specific QR code
+  const { data: scanHistory = [], isLoading: isHistoryLoading, refetch: refetchHistory } = useQuery({
+    queryKey: ['/api/qrcodes/history', selectedQrCode?.id],
+    enabled: !!selectedQrCode, // Only fetch when a QR code is selected
+  });
 
   const columns = [
     {
@@ -108,10 +114,14 @@ export default function QrCodesPage() {
   };
 
   const [isQrDetailsOpen, setIsQrDetailsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'history'>('details'); 
   
   const handleViewDetails = (qrCode: QrCode) => {
     setSelectedQrCode(qrCode);
     setIsQrDetailsOpen(true);
+    // Reset to details tab whenever opening the dialog
+    setActiveTab('details');
+    // This will trigger the history fetch due to the useQuery dependency
   };
   
   const handlePrintClick = (qrCode: QrCode) => {
@@ -289,7 +299,7 @@ export default function QrCodesPage() {
       
       {/* QR Code Details Dialog */}
       <Dialog open={isQrDetailsOpen} onOpenChange={setIsQrDetailsOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[550px]">
           {selectedQrCode && (
             <>
               <DialogHeader>
@@ -306,53 +316,134 @@ export default function QrCodesPage() {
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="flex flex-col items-center justify-center py-4">
-                {/* QR Code Display */}
-                <div className="bg-white p-6 rounded-md shadow-sm mb-4">
+              {/* QR Code Display - Always visible in both tabs */}
+              <div className="flex flex-col items-center justify-center pt-2 pb-4">
+                <div className="bg-white p-6 rounded-md shadow-sm mb-2">
                   <QrCodeDisplay 
                     value={selectedQrCode.code}
-                    size={200}
+                    size={180}
                     label={selectedQrCode.device?.assetTag || ''}
                     assetTag={selectedQrCode.device ? `${selectedQrCode.device.brand} ${selectedQrCode.device.model}` : ''}
                     id="qr-code-img"
                   />
                 </div>
-                
-                {/* QR Code Information */}
-                <div className="w-full space-y-3 mb-4">
-                  <div className="flex justify-between items-center border-b pb-2">
-                    <span className="text-sm font-medium">Code:</span>
-                    <span className="font-mono text-sm bg-muted px-2 py-1 rounded">{selectedQrCode.code}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center border-b pb-2">
-                    <span className="text-sm font-medium">Created:</span>
-                    <span className="text-sm">{selectedQrCode.createdAt ? formatDate(selectedQrCode.createdAt) : "Unknown"}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center border-b pb-2">
-                    <span className="text-sm font-medium">Last Scanned:</span>
-                    <span className="text-sm">{selectedQrCode.lastScanned ? formatDate(selectedQrCode.lastScanned) : "Never"}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center border-b pb-2">
-                    <span className="text-sm font-medium">Scan Count:</span>
-                    <Badge variant="outline" className="bg-primary/10">{selectedQrCode.scanCount}</Badge>
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" onClick={printQrCode}>
-                    <Printer className="h-4 w-4 mr-2" />
-                    Print
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={downloadQrCode}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                </div>
               </div>
+              
+              {/* Tabs for Details and History */}
+              <Tabs defaultValue="details" value={activeTab} onValueChange={(value) => setActiveTab(value as 'details' | 'history')}>
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="details" className="flex items-center">
+                    <Info className="h-4 w-4 mr-2" />
+                    Details
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Scan History
+                    {selectedQrCode.scanCount > 0 && (
+                      <Badge variant="outline" className="ml-2 bg-primary/10">{selectedQrCode.scanCount}</Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details" className="m-0">
+                  {/* QR Code Information */}
+                  <div className="w-full space-y-3 mb-4">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-sm font-medium">Code:</span>
+                      <span className="font-mono text-sm bg-muted px-2 py-1 rounded">{selectedQrCode.code}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-sm font-medium">Created:</span>
+                      <span className="text-sm">{selectedQrCode.createdAt ? formatDate(selectedQrCode.createdAt) : "Unknown"}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-sm font-medium">Last Scanned:</span>
+                      <span className="text-sm">{selectedQrCode.lastScanned ? formatDate(selectedQrCode.lastScanned) : "Never"}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-sm font-medium">Scan Count:</span>
+                      <Badge variant="outline" className="bg-primary/10">{selectedQrCode.scanCount}</Badge>
+                    </div>
+                    
+                    {selectedQrCode.device && (
+                      <div className="flex justify-between items-center border-b pb-2">
+                        <span className="text-sm font-medium">Device:</span>
+                        <span className="text-sm">{selectedQrCode.device.brand} {selectedQrCode.device.model}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex space-x-2 justify-center">
+                    <Button variant="outline" size="sm" onClick={printQrCode}>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={downloadQrCode}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="history" className="m-0">
+                  {isHistoryLoading ? (
+                    <div className="py-8 text-center">
+                      <div className="inline-flex items-center justify-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-r-transparent"></div>
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground">Loading scan history...</p>
+                    </div>
+                  ) : scanHistory.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-2">
+                        <Clock className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="font-medium">No Scan History</p>
+                      <p className="text-sm text-muted-foreground mt-1">This QR code has not been scanned yet.</p>
+                    </div>
+                  ) : (
+                    <div className="max-h-[300px] overflow-y-auto">
+                      <div className="space-y-3">
+                        {scanHistory.map((scan: any) => (
+                          <div key={scan.id} className="flex items-start border-b pb-3">
+                            <div className="flex-shrink-0 mr-3 mt-1">
+                              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Smartphone className="h-4 w-4 text-primary" />
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="text-sm font-medium">Scanned</p>
+                                  {scan.scannedBy ? (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      By {scan.scannedBy.name || `User #${scan.scannedBy.id}`}
+                                    </p>
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground mt-1">By anonymous user</p>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {formatDate(scan.timestamp)}
+                                </p>
+                              </div>
+                              {scan.location && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Location: {scan.location}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </DialogContent>

@@ -1287,9 +1287,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "QR code not found" });
       }
       
+      // Log the activity
+      await storage.createActivityLog({
+        actionType: 'qr_scan',
+        details: `QR code for device ID ${qrCode.deviceId} was scanned`,
+        userId: null,
+        timestamp: new Date()
+      });
+      
       res.json(qrCode);
     } catch (error) {
+      console.error('Error recording QR code scan:', error);
       res.status(500).json({ message: "Error recording QR code scan" });
+    }
+  });
+  
+  // Get scan history for a QR code
+  app.get('/api/qrcodes/:id/history', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Get the qrCode to verify it exists
+      const qrCode = await storage.getQrCodeById(id);
+      
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+      
+      // Get relevant activity logs for this QR code
+      const logs = await storage.getActivityLogs();
+      
+      // Filter logs that are related to this QR code
+      const scanHistory = logs
+        .filter(log => 
+          log.actionType === 'qr_scan' && 
+          log.details.includes(`device ID ${qrCode.deviceId}`)
+        )
+        .map(log => ({
+          id: log.id,
+          timestamp: log.timestamp,
+          scannedBy: log.userId ? {
+            id: log.userId,
+            // Include additional user info if needed
+          } : null,
+          location: null // Future enhancement
+        }))
+        .sort((a, b) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+      
+      res.json(scanHistory);
+    } catch (error) {
+      console.error('Error fetching QR code scan history:', error);
+      res.status(500).json({ message: "Error fetching QR code scan history" });
     }
   });
 
