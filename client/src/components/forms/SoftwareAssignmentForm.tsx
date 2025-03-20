@@ -205,7 +205,7 @@ export function SoftwareAssignmentForm({
                   </FormControl>
                   <SelectContent>
                     {users.length === 0 ? (
-                      <SelectItem value="no-users" disabled>
+                      <SelectItem value="0" disabled>
                         No users available
                       </SelectItem>
                     ) : (
@@ -239,7 +239,7 @@ export function SoftwareAssignmentForm({
                   </FormControl>
                   <SelectContent>
                     {devices.length === 0 ? (
-                      <SelectItem value="no-devices" disabled>
+                      <SelectItem value="0" disabled>
                         No devices available
                       </SelectItem>
                     ) : (

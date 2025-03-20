@@ -264,7 +264,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                 </FormControl>
                 <SelectContent>
                   {categoriesLoading ? (
-                    <SelectItem value="loading" disabled>
+                    <SelectItem value="0" disabled>
                       Loading categories...
                     </SelectItem>
                   ) : categories && categories.length > 0 ? (
@@ -274,7 +274,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="none" disabled>
+                    <SelectItem value="0" disabled>
                       No categories available
                     </SelectItem>
                   )}
@@ -423,7 +423,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                 </FormControl>
                 <SelectContent>
                   {usersLoading ? (
-                    <SelectItem value="loading" disabled>
+                    <SelectItem value="loading_users" disabled>
                       Loading users...
                     </SelectItem>
                   ) : users && users.length > 0 ? (
@@ -433,7 +433,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="none" disabled>
+                    <SelectItem value="no_users" disabled>
                       No users available
                     </SelectItem>
                   )}
