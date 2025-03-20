@@ -1,209 +1,232 @@
-import bcrypt from 'bcrypt';
 import { Request, Response, NextFunction } from 'express';
-import { LoginCredentials, User } from '@shared/schema';
+import bcrypt from 'bcrypt';
 import { storage } from './storage';
-import crypto from 'crypto';
+import { LoginCredentials } from '@shared/schema';
+import { User } from '@shared/schema';
 
-const SALT_ROUNDS = 10;
-
-// Function to hash a password
+// Password hashing
 export async function hashPassword(password: string): Promise<{ hash: string, salt: string }> {
-  const salt = await bcrypt.genSalt(SALT_ROUNDS);
+  const salt = await bcrypt.genSalt(10);
   const hash = await bcrypt.hash(password, salt);
   return { hash, salt };
 }
 
-// Function to verify a password against a hash
+// Password verification
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return await bcrypt.compare(password, hash);
 }
 
-// Function to generate a random password
+// Generate temporary password for resets
 export function generateTempPassword(length: number = 8): string {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let password = '';
-  
-  // Generate random bytes
-  const randomBytes = crypto.randomBytes(length);
-  
-  // Convert random bytes to password characters
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
   for (let i = 0; i < length; i++) {
-    const randomIndex = randomBytes[i] % charset.length;
-    password += charset[randomIndex];
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  
-  return password;
+  return result;
 }
 
-// Authentication middleware
+// Middleware: Check if user is authenticated
 export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  // @ts-ignore - session is added by express-session
   if (req.session && req.session.userId) {
     return next();
   }
-  res.status(401).json({ message: 'Unauthorized' });
+  
+  return res.status(401).json({
+    success: false,
+    message: 'Authentication required'
+  });
 }
 
-// Admin role middleware
+// Middleware: Check if user is admin
 export function isAdmin(req: Request, res: Response, next: NextFunction) {
+  // @ts-ignore - session is added by express-session
   if (req.session && req.session.userRole === 'admin') {
     return next();
   }
-  res.status(403).json({ message: 'Forbidden: Admin access required' });
+  
+  return res.status(403).json({
+    success: false,
+    message: 'Admin privileges required'
+  });
 }
 
-// Reset password required middleware
+// Middleware: Check if password reset is required
 export function checkPasswordResetRequired(req: Request, res: Response, next: NextFunction) {
+  // @ts-ignore - session is added by express-session
   if (req.session && req.session.passwordResetRequired) {
-    return res.status(403).json({ 
+    return res.status(403).json({
+      success: false,
       message: 'Password reset required',
-      resetRequired: true 
+      passwordResetRequired: true
     });
   }
-  next();
+  
+  return next();
 }
 
 // Login user
 export async function loginUser(credentials: LoginCredentials): Promise<{ 
-  success: boolean, 
-  user?: User, 
-  message?: string,
-  passwordResetRequired?: boolean 
+  success: boolean;
+  message?: string;
+  user?: User;
+  passwordResetRequired?: boolean;
 }> {
   try {
+    // Find user by email
     const user = await storage.getUserByEmail(credentials.email);
     
     if (!user) {
-      return { success: false, message: 'Invalid email or password' };
+      return { 
+        success: false,
+        message: 'Invalid email or password'
+      };
     }
     
-    if (!user.active) {
-      return { success: false, message: 'Your account is not active. Please contact an administrator.' };
+    // Check if account is active
+    if (user.active === false) {
+      return {
+        success: false,
+        message: 'Your account has been deactivated'
+      };
     }
     
-    // Check for temp password first
-    if (user.tempPassword && user.tempPasswordExpiry) {
-      const tempPasswordExpiry = new Date(user.tempPasswordExpiry);
-      const now = new Date();
-      
-      if (now < tempPasswordExpiry && credentials.password === user.tempPassword) {
-        // Update last login
-        await storage.updateUser(user.id, { lastLogin: new Date() });
-        
-        return { 
-          success: true, 
-          user, 
-          passwordResetRequired: true 
-        };
-      }
-    }
-    
-    // Check regular password
-    if (!user.passwordHash) {
-      return { success: false, message: 'No password set. Please contact an administrator.' };
-    }
-    
-    const isValid = await verifyPassword(credentials.password, user.passwordHash);
+    // Verify password
+    const isValid = user.passwordHash ? 
+      await verifyPassword(credentials.password, user.passwordHash) : 
+      false;
     
     if (!isValid) {
-      return { success: false, message: 'Invalid email or password' };
+      return {
+        success: false,
+        message: 'Invalid email or password'
+      };
     }
     
-    // Update last login
-    await storage.updateUser(user.id, { lastLogin: new Date() });
+    // Update last login time
+    await storage.updateUser(user.id, { 
+      lastLogin: new Date()
+    });
     
-    return { 
-      success: true, 
-      user, 
-      passwordResetRequired: user.passwordResetRequired 
+    // Check if password reset is required
+    const passwordResetRequired = user.passwordResetRequired || false;
+    
+    return {
+      success: true,
+      user,
+      passwordResetRequired
     };
   } catch (error) {
     console.error('Login error:', error);
-    return { success: false, message: 'An error occurred during login' };
+    return {
+      success: false,
+      message: 'An error occurred during login'
+    };
   }
 }
 
-// Reset a user's password and generate a temporary one
+// Reset user password (admin action)
 export async function resetUserPassword(userId: number): Promise<{ 
-  success: boolean, 
-  tempPassword?: string, 
-  message?: string 
+  success: boolean;
+  message?: string;
+  tempPassword?: string;
 }> {
   try {
+    // Get user
     const user = await storage.getUserById(userId);
     
     if (!user) {
-      return { success: false, message: 'User not found' };
+      return {
+        success: false,
+        message: 'User not found'
+      };
     }
     
-    // Generate a temporary password
+    // Generate temporary password
     const tempPassword = generateTempPassword();
     
-    // Set expiry to 24 hours from now
-    const tempPasswordExpiry = new Date();
-    tempPasswordExpiry.setHours(tempPasswordExpiry.getHours() + 24);
+    // Hash the temporary password
+    const { hash } = await hashPassword(tempPassword);
     
-    // Update user with temporary password
+    // Set temporary password expiry (24 hours)
+    const expiry = new Date();
+    expiry.setHours(expiry.getHours() + 24);
+    
+    // Update user record
     await storage.updateUser(userId, {
-      tempPassword,
-      tempPasswordExpiry,
+      passwordHash: hash,
+      tempPassword: tempPassword,  // Storing in plain text for admin to see
+      tempPasswordExpiry: expiry,
       passwordResetRequired: true
     });
     
-    return { success: true, tempPassword };
+    return {
+      success: true,
+      message: 'Password reset successfully',
+      tempPassword
+    };
   } catch (error) {
     console.error('Password reset error:', error);
-    return { success: false, message: 'An error occurred during password reset' };
+    return {
+      success: false,
+      message: 'An error occurred during password reset'
+    };
   }
 }
 
-// Change a user's password
+// Change user password
 export async function changeUserPassword(
-  userId: number, 
-  currentPassword: string, 
+  userId: number,
+  currentPassword: string,
   newPassword: string
-): Promise<{ success: boolean, message?: string }> {
+): Promise<{ 
+  success: boolean;
+  message?: string;
+}> {
   try {
+    // Get user
     const user = await storage.getUserById(userId);
     
     if (!user) {
-      return { success: false, message: 'User not found' };
+      return {
+        success: false,
+        message: 'User not found'
+      };
     }
     
-    let isValid = false;
-    
-    // Check if using a temp password
-    if (user.tempPassword && user.tempPasswordExpiry) {
-      const tempPasswordExpiry = new Date(user.tempPasswordExpiry);
-      const now = new Date();
-      
-      if (now < tempPasswordExpiry && currentPassword === user.tempPassword) {
-        isValid = true;
-      }
-    } 
-    // Check regular password
-    else if (user.passwordHash) {
-      isValid = await verifyPassword(currentPassword, user.passwordHash);
-    }
+    // Verify current password
+    const isValid = user.passwordHash ? 
+      await verifyPassword(currentPassword, user.passwordHash) : 
+      false;
     
     if (!isValid) {
-      return { success: false, message: 'Current password is incorrect' };
+      return {
+        success: false,
+        message: 'Current password is incorrect'
+      };
     }
     
     // Hash the new password
-    const { hash, salt } = await hashPassword(newPassword);
+    const { hash } = await hashPassword(newPassword);
     
-    // Update user with new password
+    // Update user record
     await storage.updateUser(userId, {
       passwordHash: hash,
-      passwordSalt: salt,
       tempPassword: null,
       tempPasswordExpiry: null,
       passwordResetRequired: false
     });
     
-    return { success: true, message: 'Password changed successfully' };
+    return {
+      success: true,
+      message: 'Password changed successfully'
+    };
   } catch (error) {
     console.error('Password change error:', error);
-    return { success: false, message: 'An error occurred while changing password' };
+    return {
+      success: false,
+      message: 'An error occurred during password change'
+    };
   }
 }

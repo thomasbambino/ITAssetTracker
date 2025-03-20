@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -7,11 +7,23 @@ import { stringify } from "csv-stringify";
 import { z } from "zod";
 import fs from 'fs';
 import path from 'path';
+import session from "express-session";
+import authRoutes from "./auth-routes";
+import { isAuthenticated, isAdmin } from "./auth";
 import { 
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
   insertSoftwareSchema, insertSoftwareAssignmentSchema, insertMaintenanceRecordSchema,
   insertQrCodeSchema, insertNotificationSchema, insertBrandingSettingsSchema
 } from "@shared/schema";
+
+// Configure session types
+declare module 'express-session' {
+  interface SessionData {
+    userId: number;
+    userRole: 'admin' | 'user';
+    passwordResetRequired: boolean;
+  }
+}
 
 // Setup multer for file uploads
 const upload = multer({ 
@@ -20,6 +32,9 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register authentication routes
+  app.use('/api/auth', authRoutes);
+  
   // Initialize API routes
   const apiRouter = app.route('/api');
 
