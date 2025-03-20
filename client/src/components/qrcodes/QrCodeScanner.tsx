@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Camera, CheckCircle, QrCode, RefreshCw, FileInput } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import jsQR from "jsqr";
+import { Html5Qrcode } from "html5-qrcode";
 
 interface QrCodeScannerProps {
   onScanSuccess: (code: string) => void;
@@ -16,143 +16,101 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
   const [manualCode, setManualCode] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [cameraPermission, setCameraPermission] = useState<"granted" | "denied" | "unknown">("unknown");
+  const [availableCameras, setAvailableCameras] = useState<string[]>([]);
+
+  // References
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerDivId = "html5qr-code-full-region";
   
-  // Refs
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const scanIntervalRef = useRef<number | null>(null);
-  
-  // Cleanup function for camera resources
-  const cleanupCamera = () => {
-    if (scanIntervalRef.current) {
-      window.clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
-    }
-    
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    
-    setIsCameraActive(false);
-  };
-  
-  // Cleanup on unmount
+  // Clean up scanner on unmount
   useEffect(() => {
     return () => {
-      cleanupCamera();
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch(console.error);
+      }
     };
   }, []);
-  
-  // Handle scan when camera is active
-  const scanQRCode = () => {
-    if (!isCameraActive || !videoRef.current || !canvasRef.current) return;
-    
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    
-    if (!context) return;
-    
-    // Only scan if video is playing and has dimensions
-    if (video.readyState !== video.HAVE_ENOUGH_DATA || video.videoWidth === 0) {
-      return;
-    }
-    
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    // Draw current frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Get image data for QR code scanning
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-    
-    try {
-      // Attempt to decode QR code
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: "dontInvert",
-      });
-      
-      // If found a QR code
-      if (code) {
-        console.log("Found QR code:", code.data);
-        setScannedCode(code.data);
-        cleanupCamera();
-        onScanSuccess(code.data);
-      }
-    } catch (err) {
-      console.error("Error scanning QR code:", err);
-    }
-  };
-  
-  // Start camera
-  const startCamera = async () => {
+
+  const startScanner = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "environment" },
-          audio: false
-        });
-        
-        streamRef.current = stream;
-        
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-            if (videoRef.current) {
-              videoRef.current.play()
-                .then(() => {
-                  setIsCameraActive(true);
-                  scanIntervalRef.current = window.setInterval(scanQRCode, 200);
-                })
-                .catch(err => {
-                  setError(`Video playback failed: ${err.message || 'Autoplay may be blocked'}`);
-                });
-            }
-          };
-        }
-        
-        setCameraPermission("granted");
-        
-      } catch (err) {
-        console.error("Camera error:", err);
-        setCameraPermission("denied");
-        setError(`Camera access denied: ${err instanceof Error ? err.message : 'Please check browser settings'}`);
+      // Create scanner instance if it doesn't exist
+      if (!scannerRef.current) {
+        scannerRef.current = new Html5Qrcode(scannerDivId);
       }
       
+      // List available cameras
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length) {
+        setAvailableCameras(devices.map(device => device.id));
+        
+        // Start scanning with first available camera
+        const cameraId = devices[0].id;
+        
+        try {
+          await scannerRef.current.start(
+            cameraId, 
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0,
+            },
+            (decodedText) => {
+              console.log(`Code detected: ${decodedText}`);
+              setScannedCode(decodedText);
+              
+              // Stop scanning after successful scan
+              if (scannerRef.current) {
+                scannerRef.current.stop().catch(console.error);
+              }
+              
+              setIsCameraActive(false);
+              onScanSuccess(decodedText);
+            },
+            (errorMessage) => {
+              // QR code error callbacks are common during scanning
+              // Only log as errors if not a normal QR scanning error
+              if (!errorMessage.includes("No QR code found")) {
+                console.error(`QR scanning error: ${errorMessage}`);
+              }
+            }
+          );
+          
+          setIsCameraActive(true);
+        } catch (err) {
+          console.error("Failed to start camera:", err);
+          setError(`Failed to start camera: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      } else {
+        setError("No cameras detected on your device");
+      }
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Error setting up scanner:", err);
       setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
   };
   
-  // Stop camera
-  const stopCamera = () => {
-    cleanupCamera();
+  const stopScanner = async () => {
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      try {
+        await scannerRef.current.stop();
+        setIsCameraActive(false);
+      } catch (err) {
+        console.error("Error stopping scanner:", err);
+      }
+    }
   };
   
-  // Reset scanner
   const resetScanner = () => {
-    cleanupCamera();
     setScannedCode(null);
     setManualCode("");
     setError(null);
   };
   
-  // Handle manual code submission
   const handleManualSubmit = () => {
     if (!manualCode || manualCode.trim() === "") {
       setError("Please enter a QR code value");
@@ -186,36 +144,9 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       ) : (
         <div className="border rounded-md overflow-hidden">
           {isCameraActive ? (
-            <div className="aspect-video relative bg-gray-900">
-              {/* Video element for camera feed */}
-              <video 
-                ref={videoRef} 
-                className="w-full h-full"
-                playsInline 
-                muted
-              />
-              
-              {/* Hidden canvas for processing */}
-              <canvas 
-                ref={canvasRef} 
-                className="hidden"
-              />
-              
-              {/* Overlay with corner markers */}
-              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div className="border-2 border-primary/70 w-64 h-64 relative rounded-md">
-                  {/* Corner markers */}
-                  <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-primary rounded-tl-sm"></div>
-                  <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-primary rounded-tr-sm"></div>
-                  <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary rounded-bl-sm"></div>
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-primary rounded-br-sm"></div>
-                </div>
-              </div>
-              
-              {/* Text instructions */}
-              <div className="absolute bottom-2 left-0 right-0 text-center text-white text-sm bg-black/50 py-1">
-                Point your camera at a QR code
-              </div>
+            <div className="aspect-video relative">
+              {/* The Html5QrCode scanner will attach to this div */}
+              <div id={scannerDivId} className="w-full h-full"></div>
             </div>
           ) : (
             <div className="p-4">
@@ -233,18 +164,12 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
                   <h4 className="text-sm font-medium">Scan with Camera</h4>
                   <Button 
                     className="w-full" 
-                    onClick={startCamera} 
+                    onClick={startScanner} 
                     disabled={isLoading}
                   >
                     <Camera className="h-4 w-4 mr-2" />
                     {isLoading ? "Starting Camera..." : "Start Camera"}
                   </Button>
-                  
-                  {cameraPermission === "denied" && (
-                    <p className="text-xs text-destructive mt-1">
-                      Camera access was denied. Please check your browser settings and try again.
-                    </p>
-                  )}
                 </div>
                 
                 {/* Divider */}
@@ -281,7 +206,7 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       
       <div className="flex justify-center space-x-2">
         {isCameraActive ? (
-          <Button onClick={stopCamera} variant="outline">
+          <Button onClick={stopScanner} variant="outline">
             Stop Camera
           </Button>
         ) : scannedCode ? (
