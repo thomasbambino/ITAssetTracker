@@ -20,7 +20,7 @@ interface QrCode {
   id: number;
   deviceId: number;
   code: string;
-  generatedAt: Date | null; // Changed from createdAt to match schema
+  createdAt: Date | null; // Field from the API response
   lastScanned: Date | null;
   scanCount: number;
   device?: {
@@ -72,7 +72,7 @@ export default function QrCodesPage() {
     },
     {
       header: "Created",
-      accessor: (qrCode: QrCode) => qrCode.generatedAt ? formatDate(qrCode.generatedAt) : "Unknown"
+      accessor: (qrCode: QrCode) => qrCode.createdAt ? formatDate(qrCode.createdAt) : "Unknown"
     },
     {
       header: "Last Scanned",
@@ -420,7 +420,7 @@ export default function QrCodesPage() {
                     
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-sm font-medium">Created:</span>
-                      <span className="text-sm">{selectedQrCode.generatedAt ? formatDate(selectedQrCode.generatedAt) : "Unknown"}</span>
+                      <span className="text-sm">{selectedQrCode.createdAt ? formatDate(selectedQrCode.createdAt) : "Unknown"}</span>
                     </div>
                     
                     <div className="flex justify-between items-center border-b pb-2">
