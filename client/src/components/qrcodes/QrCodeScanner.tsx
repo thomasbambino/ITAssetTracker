@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Camera, CheckCircle, QrCode, FileInput } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Html5Qrcode } from "html5-qrcode";
 
 interface QrCodeScannerProps {
   onScanSuccess: (code: string) => void;
@@ -11,124 +10,33 @@ interface QrCodeScannerProps {
 
 export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
   // States
-  const [isCameraActive, setIsCameraActive] = useState(false);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   
-  // References
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Clean up scanner on unmount
-  useEffect(() => {
-    return () => {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(console.error);
-      }
-    };
-  }, []);
-
-  // Create a unique ID for the scanner element
-  const scannerId = "qrcode-scanner-container";
-
-  // Start camera and QR scanning
-  const startScanner = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Check if the container exists
-      if (!document.getElementById(scannerId)) {
-        setError("Scanner container not found");
-        setIsLoading(false);
-        return;
-      }
-      
-      // Create new scanner instance
-      try {
-        if (scannerRef.current) {
-          await scannerRef.current.clear();
-        }
-        
-        scannerRef.current = new Html5Qrcode(scannerId);
-      } catch (err) {
-        console.error("Error creating scanner:", err);
-        setError(`Failed to initialize scanner: ${err instanceof Error ? err.message : String(err)}`);
-        setIsLoading(false);
-        return;
-      }
-      
-      try {
-        // List available cameras
-        const devices = await Html5Qrcode.getCameras();
-        if (!devices || devices.length === 0) {
-          setError("No cameras detected on your device");
-          setIsLoading(false);
-          return;
-        }
-        
-        // Start scanning with first available camera
-        const cameraId = devices[0].id;
-        
-        await scannerRef.current.start(
-          cameraId, 
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-          },
-          (decodedText) => {
-            console.log(`Code detected: ${decodedText}`);
-            setScannedCode(decodedText);
-            
-            // Stop scanning after successful scan
-            if (scannerRef.current) {
-              scannerRef.current.stop().catch(console.error);
-            }
-            
-            setIsCameraActive(false);
-            onScanSuccess(decodedText);
-          },
-          (errorMessage) => {
-            // QR code error callbacks are common during scanning
-            // Only log as errors if not a normal QR scanning error
-            if (!errorMessage.includes("No QR code found")) {
-              console.error(`QR scanning error: ${errorMessage}`);
-            }
-          }
-        );
-        
-        setIsCameraActive(true);
-      } catch (err) {
-        console.error("Camera error:", err);
-        setError(`Camera error: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    } catch (err) {
-      console.error("Error setting up scanner:", err);
-      setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setIsLoading(false);
-    }
+  // Start actual scanning
+  const startCamera = async () => {
+    setIsLoading(true);
+    setError(null);
+    setShowCamera(true);
+    setIsLoading(false);
   };
   
-  const stopScanner = async () => {
-    if (scannerRef.current && scannerRef.current.isScanning) {
-      try {
-        await scannerRef.current.stop();
-        setIsCameraActive(false);
-      } catch (err) {
-        console.error("Error stopping scanner:", err);
-      }
-    }
+  // Stop scanning
+  const stopCamera = () => {
+    setShowCamera(false);
   };
   
+  // Reset scanner
   const resetScanner = () => {
     setScannedCode(null);
     setManualCode("");
     setError(null);
   };
   
+  // Handle manual code submission
   const handleManualSubmit = () => {
     if (!manualCode || manualCode.trim() === "") {
       setError("Please enter a QR code value");
@@ -138,6 +46,104 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     setScannedCode(manualCode);
     onScanSuccess(manualCode);
   };
+
+  // This effect will be called when the camera is shown
+  useEffect(() => {
+    // Skip if camera is not active or there's already a successful scan
+    if (!showCamera || scannedCode) return;
+    
+    // Try to dynamically import html5-qrcode only when needed
+    let scanner: any = null;
+    let mounted = true;
+    
+    const initCamera = async () => {
+      try {
+        // Dynamically import the HTML5QrCode library
+        const { Html5Qrcode } = await import('html5-qrcode');
+        
+        // Skip if component was unmounted during the import
+        if (!mounted) return;
+        
+        // Create necessary container
+        const scannerDivId = "qrcode-scanner";
+        let scannerDiv = document.getElementById(scannerDivId);
+        
+        // Create div if it doesn't exist
+        if (!scannerDiv) {
+          const cameraContainer = document.querySelector('.camera-container');
+          if (!cameraContainer) {
+            setError("Camera container not found");
+            return;
+          }
+          
+          // Clear any existing content
+          cameraContainer.innerHTML = '';
+          
+          // Create new div for scanner
+          scannerDiv = document.createElement('div');
+          scannerDiv.id = scannerDivId;
+          scannerDiv.style.width = '100%';
+          scannerDiv.style.height = '100%';
+          cameraContainer.appendChild(scannerDiv);
+        }
+
+        // Initialize scanner
+        scanner = new Html5Qrcode(scannerDivId);
+
+        // Get available cameras
+        const devices = await Html5Qrcode.getCameras();
+        if (!devices || devices.length === 0) {
+          setError("No cameras detected on your device");
+          return;
+        }
+        
+        // Start scanner with first camera
+        await scanner.start(
+          devices[0].id,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+          },
+          (decodedText: string) => {
+            console.log(`QR Code detected: ${decodedText}`);
+            if (mounted) {
+              setScannedCode(decodedText);
+              setShowCamera(false);
+              onScanSuccess(decodedText);
+            }
+            
+            // Stop scanner
+            if (scanner) {
+              scanner.stop().catch(console.error);
+            }
+          },
+          (errorMessage: string) => {
+            // Don't show errors for normal scanning
+            if (!errorMessage.includes('No QR code found')) {
+              console.error(`QR Scan error: ${errorMessage}`);
+            }
+          }
+        );
+      } catch (err) {
+        console.error("Failed to start QR scanner:", err);
+        if (mounted) {
+          setError(`Camera error: ${err instanceof Error ? err.message : String(err)}`);
+          setShowCamera(false);
+        }
+      }
+    };
+    
+    // Initialize camera
+    initCamera();
+    
+    // Cleanup function
+    return () => {
+      mounted = false;
+      if (scanner) {
+        scanner.stop().catch(console.error);
+      }
+    };
+  }, [showCamera, scannedCode, onScanSuccess]);
 
   return (
     <div className="space-y-4">
@@ -161,9 +167,9 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
         </div>
       ) : (
         <div className="border rounded-md overflow-hidden">
-          {isCameraActive ? (
-            <div className="aspect-video relative bg-gray-900">
-              <div id={scannerId} className="w-full h-full"></div>
+          {showCamera ? (
+            <div className="aspect-video relative bg-gray-900 camera-container">
+              {/* Scanner will be attached to this div by the useEffect hook */}
             </div>
           ) : (
             <div className="p-4">
@@ -181,7 +187,7 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
                   <h4 className="text-sm font-medium">Scan with Camera</h4>
                   <Button 
                     className="w-full" 
-                    onClick={startScanner} 
+                    onClick={startCamera} 
                     disabled={isLoading}
                   >
                     <Camera className="h-4 w-4 mr-2" />
@@ -222,8 +228,8 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       )}
       
       <div className="flex justify-center space-x-2">
-        {isCameraActive ? (
-          <Button onClick={stopScanner} variant="outline">
+        {showCamera ? (
+          <Button onClick={stopCamera} variant="outline">
             Stop Camera
           </Button>
         ) : scannedCode ? (
