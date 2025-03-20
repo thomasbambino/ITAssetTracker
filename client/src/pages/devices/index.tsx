@@ -90,12 +90,14 @@ export default function Devices() {
   
   // Handle filter changes
   const handleCategoryChange = (value: string) => {
-    setSelectedCategory(value);
+    // Convert "all_categories" to empty string for filter logic
+    const filterValue = value === "all_categories" ? "" : value;
+    setSelectedCategory(filterValue);
     
     // Update URL with the new filter
     const params = new URLSearchParams(window.location.search);
-    if (value) {
-      params.set('category', value);
+    if (filterValue) {
+      params.set('category', filterValue);
     } else {
       params.delete('category');
     }
@@ -111,12 +113,14 @@ export default function Devices() {
   };
   
   const handleDepartmentChange = (value: string) => {
-    setSelectedDepartment(value);
+    // Convert "all_departments" to empty string for filter logic
+    const filterValue = value === "all_departments" ? "" : value;
+    setSelectedDepartment(filterValue);
     
     // Update URL with the new filter
     const params = new URLSearchParams(window.location.search);
-    if (value) {
-      params.set('department', value);
+    if (filterValue) {
+      params.set('department', filterValue);
     } else {
       params.delete('department');
     }
@@ -312,7 +316,7 @@ export default function Devices() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all_categories">All Categories</SelectItem>
                   {categories.map((category: any) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
@@ -332,7 +336,7 @@ export default function Devices() {
                   <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Departments</SelectItem>
+                  <SelectItem value="all_departments">All Departments</SelectItem>
                   {departmentsList.map((department: string) => (
                     <SelectItem key={department} value={department}>
                       {department}
@@ -372,7 +376,7 @@ export default function Devices() {
                     className="h-4 w-4 p-0 ml-1 rounded-full hover:bg-blue-200" 
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleCategoryChange('');
+                      handleCategoryChange('all_categories');
                     }}
                   >
                     <XIcon className="h-3 w-3 text-blue-700" />
@@ -393,7 +397,7 @@ export default function Devices() {
                     className="h-4 w-4 p-0 ml-1 rounded-full hover:bg-purple-200" 
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDepartmentChange('');
+                      handleDepartmentChange('all_departments');
                     }}
                   >
                     <XIcon className="h-3 w-3 text-purple-700" />
