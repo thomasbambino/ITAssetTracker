@@ -86,8 +86,11 @@ export default function DeviceDetails() {
   // Create QR code mutation
   const createQrCodeMutation = useMutation({
     mutationFn: async () => {
+      // Generate a unique code for the QR code
+      const code = `DEV-${id}-${Date.now()}`;
       const response = await apiRequest('POST', '/api/qrcodes', {
-        deviceId: Number(id)
+        deviceId: Number(id),
+        code: code
       });
       return response;
     },
