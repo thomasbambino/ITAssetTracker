@@ -97,6 +97,10 @@ export interface IStorage {
   // Branding operations
   getBrandingSettings(): Promise<BrandingSettings | undefined>;
   updateBrandingSettings(settings: Partial<InsertBrandingSettings>): Promise<BrandingSettings>;
+  
+  // Email settings operations
+  getEmailSettings(): Promise<EmailSettings | undefined>;
+  updateEmailSettings(settings: Partial<InsertEmailSettings>): Promise<EmailSettings>;
 }
 
 export class MemStorage implements IStorage {

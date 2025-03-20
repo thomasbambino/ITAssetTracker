@@ -273,3 +273,22 @@ export const insertBrandingSettingsSchema = createInsertSchema(brandingSettings)
 
 export type InsertBrandingSettings = z.infer<typeof insertBrandingSettingsSchema>;
 export type BrandingSettings = typeof brandingSettings.$inferSelect;
+
+// Email Settings Table
+export const emailSettings = pgTable("email_settings", {
+  id: serial("id").primaryKey(),
+  apiKey: text("api_key"),
+  domain: text("domain"),
+  fromEmail: text("from_email"),
+  fromName: text("from_name"),
+  isEnabled: boolean("is_enabled").default(false),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
+export type EmailSettings = typeof emailSettings.$inferSelect;
