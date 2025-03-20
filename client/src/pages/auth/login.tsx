@@ -34,7 +34,7 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(values),
-      } as RequestInit);
+      });
 
       const data = await response.json();
 
