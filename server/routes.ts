@@ -279,15 +279,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/users/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertUserSchema.partial().parse(req.body);
+      
+      console.log('Received user update data:', req.body);
+      
+      // Explicitly handle the role field as an enum
+      const schema = insertUserSchema.partial().extend({
+        role: z.enum(['user', 'admin']).optional()
+      });
+      
+      const validatedData = schema.parse(req.body);
+      console.log('Validated user data:', validatedData);
       
       const user = await storage.updateUser(id, validatedData);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
+      // Add activity log for user role change if role was updated
+      if (validatedData.role && user.role !== validatedData.role) {
+        const sessionData = req.session as unknown as SessionData;
+        await storage.createActivityLog({
+          actionType: 'USER_ROLE_CHANGE',
+          userId: sessionData.userId,
+          details: `Changed user ${user.firstName} ${user.lastName}'s role to ${validatedData.role}`
+        });
+      }
+      
       res.json(user);
     } catch (error) {
+      console.error('Error updating user:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid user data", errors: error.errors });
       }

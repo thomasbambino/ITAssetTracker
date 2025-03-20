@@ -28,14 +28,7 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setLoading(true);
     try {
-      const response = await apiRequest("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-
+      const response = await apiRequest("POST", "/api/auth/login", values);
       const data = await response.json();
 
       if (data.success) {

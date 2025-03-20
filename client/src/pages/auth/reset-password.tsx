@@ -29,14 +29,7 @@ export default function ResetPasswordPage() {
   async function onSubmit(values: z.infer<typeof changePasswordSchema>) {
     setLoading(true);
     try {
-      const response = await apiRequest("/api/auth/change-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-
+      const response = await apiRequest("POST", "/api/auth/change-password", values);
       const data = await response.json();
 
       if (data.success) {
