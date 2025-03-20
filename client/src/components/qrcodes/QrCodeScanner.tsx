@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Camera, CheckCircle, QrCode } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 
 interface QrCodeScannerProps {
   onScanSuccess: (code: string) => void;
@@ -11,38 +12,85 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Function to start the camera
+  // Clean up the scanner on unmount
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(console.error);
+      }
+    };
+  }, []);
+
+  // Function to start the camera and scanner
   const startCamera = async () => {
     setError(null);
+    setIsLoading(true);
     
     try {
-      // In a real implementation, this would use a QR code scanning library
-      // For this demo, we'll simulate a successful scan after a delay
-      setIsCameraActive(true);
+      if (!containerRef.current) return;
       
-      // Simulate finding a QR code after 3 seconds
-      setTimeout(() => {
-        const simulatedCode = "ASSET" + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-        setScannedCode(simulatedCode);
+      // Create a scanner instance
+      scannerRef.current = new Html5Qrcode("scanner-container");
+      
+      // Get available cameras
+      const devices = await Html5Qrcode.getCameras();
+      
+      if (devices && devices.length > 0) {
+        const cameraId = devices[0].id;
         
-        // Call the success callback
-        onScanSuccess(simulatedCode);
-      }, 3000);
-      
+        // Start the scanner with the first camera
+        await scannerRef.current.start(
+          cameraId,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+          },
+          (decodedText) => {
+            // QR Code scanned successfully
+            setScannedCode(decodedText);
+            
+            // Stop the scanner after successful scan
+            if (scannerRef.current) {
+              scannerRef.current.stop().catch(console.error);
+            }
+            
+            // Call the success callback
+            onScanSuccess(decodedText);
+          },
+          (errorMessage) => {
+            // QR Code scanning error (Do nothing here, this is called frequently)
+          }
+        );
+        
+        setIsCameraActive(true);
+      } else {
+        setError("No cameras found on this device.");
+      }
     } catch (err) {
+      console.error("QR Scanner error:", err);
       setError("Could not access camera. Please make sure you have granted camera permissions.");
-      setIsCameraActive(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Function to stop the camera
   const stopCamera = () => {
-    setIsCameraActive(false);
-    setScannedCode(null);
+    if (scannerRef.current) {
+      scannerRef.current.stop().catch(console.error);
+    }
     
-    // In a real implementation, we would also stop the media stream
+    setIsCameraActive(false);
+  };
+  
+  // Function to reset the scanner for another scan
+  const resetScanner = () => {
+    setScannedCode(null);
+    setError(null);
   };
 
   return (
@@ -68,27 +116,21 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       ) : (
         <div className="border rounded-md overflow-hidden">
           {isCameraActive ? (
-            <div className="aspect-video relative bg-black flex items-center justify-center">
-              {/* Video element for camera feed */}
-              <video
-                ref={videoRef}
-                className="absolute inset-0 w-full h-full object-cover"
-                autoPlay
-                playsInline
-                muted
-              />
+            <div className="aspect-video relative bg-black">
+              {/* QR Scanner Container */}
+              <div id="scanner-container" ref={containerRef} className="w-full h-full"></div>
               
-              {/* Overlay with scanning animation */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="border-2 border-primary w-2/3 h-2/3 relative">
+              {/* Overlay with corner markers */}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div className="border-2 border-primary w-64 h-64 relative rounded-md">
                   {/* Scanning animation */}
                   <div className="absolute top-0 left-0 right-0 h-px bg-primary animate-scan"></div>
                   
                   {/* Corner markers */}
-                  <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-primary"></div>
-                  <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-primary"></div>
-                  <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary"></div>
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-primary"></div>
+                  <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-primary rounded-tl-sm"></div>
+                  <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-primary rounded-tr-sm"></div>
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary rounded-bl-sm"></div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-primary rounded-br-sm"></div>
                 </div>
               </div>
               
@@ -114,10 +156,15 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
           <Button onClick={stopCamera} variant="outline">
             Stop Camera
           </Button>
-        ) : (
-          <Button onClick={startCamera} disabled={!!scannedCode}>
+        ) : scannedCode ? (
+          <Button onClick={resetScanner}>
             <Camera className="h-4 w-4 mr-2" />
-            {scannedCode ? "Scan Another Code" : "Start Camera"}
+            Scan Another Code
+          </Button>
+        ) : (
+          <Button onClick={startCamera} disabled={isLoading}>
+            <Camera className="h-4 w-4 mr-2" />
+            {isLoading ? "Starting Camera..." : "Start Camera"}
           </Button>
         )}
       </div>

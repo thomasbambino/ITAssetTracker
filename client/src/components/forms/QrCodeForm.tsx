@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { QrCodeDisplay } from "@/components/qrcodes/QrCodeDisplay";
 
 // Define the form schema
 const formSchema = z.object({
@@ -217,17 +218,21 @@ export function QrCodeForm({ qrCode, onSuccess, onCancel }: QrCodeFormProps) {
         {generatedCode && (
           <div className="border rounded-md p-4 flex flex-col items-center justify-center bg-muted/30">
             <div className="mb-2 text-sm font-medium">Preview:</div>
-            <div className="bg-white p-4 rounded-md shadow">
-              {/* This would be a real QR code in production */}
-              <div className="w-32 h-32 border border-gray-300 flex items-center justify-center">
-                <div className="text-xs text-center">
-                  QR Code Preview
-                  <div className="font-mono mt-2">{generatedCode}</div>
-                </div>
-              </div>
+            <div className="bg-white p-4 rounded-md shadow-sm">
+              {deviceId ? (
+                <QrCodeDisplay 
+                  value={generatedCode} 
+                  size={160}
+                  label={devices.find((d: any) => d.id === deviceId)?.assetTag || 'Asset'}
+                  assetTag={devices.find((d: any) => d.id === deviceId)?.brand + ' ' + devices.find((d: any) => d.id === deviceId)?.model}
+                  includeBorder={false}
+                />
+              ) : (
+                <QrCodeDisplay value={generatedCode} size={160} includeBorder={false} />
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Actual QR code will be generated when you save
+              QR code will be saved to the database when you click Generate
             </p>
           </div>
         )}
