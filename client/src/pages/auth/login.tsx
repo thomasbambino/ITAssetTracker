@@ -28,8 +28,11 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/auth/login", values);
-      const data = await response.json();
+      const data = await apiRequest({
+        method: "POST", 
+        url: "/api/auth/login", 
+        data: values
+      });
 
       if (data.success) {
         toast({
