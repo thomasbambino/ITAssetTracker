@@ -1385,6 +1385,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error updating branding settings" });
     }
   });
+  
+  // Upload company logo
+  app.post('/api/branding/logo', upload.single('logo'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No logo file uploaded" });
+      }
+      
+      // Convert the file to base64
+      const logoBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      
+      // Update the branding settings with the new logo
+      const branding = await storage.updateBrandingSettings({ logo: logoBase64 });
+      
+      res.json({ 
+        message: "Logo uploaded successfully",
+        branding
+      });
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      res.status(500).json({ message: "Error uploading logo" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
