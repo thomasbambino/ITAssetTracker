@@ -164,108 +164,280 @@ export default function Reports() {
         </TabsList>
         
         <TabsContent value="summary" className="mt-0">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="min-h-[320px]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Asset Allocation
-                </CardTitle>
-                <BarChart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {statsLoading ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-[220px] w-full" />
+          {/* Top Stats Card Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <div className="bg-primary/20 p-2 rounded-full">
+                    <Laptop className="h-5 w-5 text-primary" />
                   </div>
-                ) : stats ? (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col items-center p-4 border rounded-md">
-                        <span className="text-sm text-muted-foreground mb-1">Assigned</span>
-                        <span className="text-3xl font-bold">{stats.assignedDevices}</span>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {Math.round((stats.assignedDevices / stats.totalDevices) * 100)}%
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-center p-4 border rounded-md">
-                        <span className="text-sm text-muted-foreground mb-1">Unassigned</span>
-                        <span className="text-3xl font-bold">{stats.unassignedDevices}</span>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {Math.round((stats.unassignedDevices / stats.totalDevices) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-3 p-4 border rounded-md">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Total Assets:</span>
-                        <span className="text-lg font-semibold">{stats.totalDevices}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Warranties Expiring:</span>
-                        <span className="text-lg font-semibold">{stats.expiringWarranties}</span>
-                      </div>
-                    </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Assets</p>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[220px]">
-                    <p className="text-muted-foreground text-sm">No data available</p>
-                  </div>
-                )}
+                </div>
+                <div className="mt-4">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-32" />
+                  ) : (
+                    <div className="text-3xl font-bold">{stats?.totalDevices || 0}</div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">All registered devices</p>
+                </div>
               </CardContent>
             </Card>
-            
-            <Card className="min-h-[320px]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Distribution by Category
-                </CardTitle>
-                <PieChart className="h-4 w-4 text-muted-foreground" />
+
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <div className="bg-green-200 dark:bg-green-800 p-2 rounded-full">
+                    <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Assigned</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-32" />
+                  ) : (
+                    <div className="text-3xl font-bold">{stats?.assignedDevices || 0}</div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats && Math.round((stats.assignedDevices / stats.totalDevices) * 100)}% of total
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <div className="bg-amber-200 dark:bg-amber-800 p-2 rounded-full">
+                    <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Warranties Expiring</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-32" />
+                  ) : (
+                    <div className="text-3xl font-bold">{stats?.expiringWarranties || 0}</div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">Within next 30 days</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <div className="bg-blue-200 dark:bg-blue-800 p-2 rounded-full">
+                    <Laptop className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Unassigned</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-32" />
+                  ) : (
+                    <div className="text-3xl font-bold">{stats?.unassignedDevices || 0}</div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Available for assignment
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Charts Row */}
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <Card className="min-h-[400px]">
+              <CardHeader>
+                <CardTitle>Assets by Category</CardTitle>
+                <CardDescription>
+                  Distribution of assets across different categories
+                </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-2">
                 {categoryLoading ? (
-                  <Skeleton className="h-[220px] w-full" />
+                  <Skeleton className="h-[320px] w-full" />
                 ) : categoryStats && categoryStats.length > 0 ? (
                   <PieChartComponent 
                     data={categoryStats}
                     dataKey="count"
                     nameKey="name"
                     tooltipFormatter={(value, name) => [`${value} devices`, `${name}`]}
-                    height={220}
+                    height={320}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-[220px]">
+                  <div className="flex items-center justify-center h-[320px]">
                     <p className="text-muted-foreground text-sm">No categories found</p>
                   </div>
                 )}
               </CardContent>
             </Card>
             
-            <Card className="min-h-[320px]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Assets by Department
-                </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+            <Card className="min-h-[400px]">
+              <CardHeader>
+                <CardTitle>Department Distribution</CardTitle>
+                <CardDescription>
+                  Number of devices assigned to each department
+                </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-2">
                 {departmentLoading ? (
-                  <Skeleton className="h-[220px] w-full" />
+                  <Skeleton className="h-[320px] w-full" />
                 ) : departmentStats && departmentStats.length > 0 ? (
                   <BarChartComponent 
                     data={departmentStats}
                     xKey="department"
                     yKey="count"
                     tooltipFormatter={(value) => [`${value} devices`]}
-                    height={220}
+                    height={320}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-[220px]">
+                  <div className="flex items-center justify-center h-[320px]">
                     <p className="text-muted-foreground text-sm">No department data found</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
+          
+          {/* Warranty Report Row */}
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="flex justify-between">
+                <div>
+                  <CardTitle>Warranty Expiration Report</CardTitle>
+                  <CardDescription>
+                    Assets with upcoming warranty expirations
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleDownloadDevices}>
+                  <Download className="h-4 w-4 mr-2" /> Export Inventory
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {devicesLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ) : warrantyItems.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Asset</TableHead>
+                        <TableHead>Serial Number</TableHead>
+                        <TableHead>Expires</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {warrantyItems.slice(0, 5).map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <div className="font-medium">{item.brand} {item.model}</div>
+                            <div className="text-xs text-muted-foreground">{item.assetTag}</div>
+                          </TableCell>
+                          <TableCell>{item.serialNumber || 'N/A'}</TableCell>
+                          <TableCell>{item.warrantyEOL ? formatDate(item.warrantyEOL) : 'N/A'}</TableCell>
+                          <TableCell>
+                            {item.daysRemaining <= 0 ? (
+                              <Badge variant="destructive">Expired</Badge>
+                            ) : item.daysRemaining <= 30 ? (
+                              <Badge variant="warning">Expiring Soon</Badge>
+                            ) : (
+                              <Badge variant="outline">{item.daysRemaining} days left</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[120px]">
+                  <p className="text-muted-foreground">No warranty data available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Value Distribution */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between">
+                <div>
+                  <CardTitle>Asset Value by Category</CardTitle>
+                  <CardDescription>
+                    Financial breakdown of assets by category
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {categoryLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Count</TableHead>
+                        <TableHead>Avg Value</TableHead>
+                        <TableHead>Total Value</TableHead>
+                        <TableHead className="text-right">% of Total Value</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {expenseData.filter(item => item.count > 0).map((item, index) => {
+                        // Calculate percentage of total value
+                        const totalValue = expenseData.reduce((sum, current) => sum + current.totalValue, 0);
+                        const percentage = totalValue > 0 ? Math.round((item.totalValue / totalValue) * 100) : 0;
+                        
+                        return (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{item.category}</TableCell>
+                            <TableCell>{item.count}</TableCell>
+                            <TableCell>{formatCurrency(item.avgValue)}</TableCell>
+                            <TableCell>{formatCurrency(item.totalValue)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end">
+                                <span className="mr-2">{percentage}%</span>
+                                <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-primary"
+                                    style={{ width: `${percentage}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="assets" className="mt-0">
