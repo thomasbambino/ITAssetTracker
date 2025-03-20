@@ -30,8 +30,11 @@ export default function LoginPage() {
     try {
       const response = await apiRequest("/api/auth/login", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(values),
-      });
+      } as RequestInit);
 
       const data = await response.json();
 
