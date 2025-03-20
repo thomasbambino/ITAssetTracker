@@ -17,7 +17,6 @@ export default function Settings() {
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="import">Import/Export</TabsTrigger>
         </TabsList>
@@ -31,11 +30,6 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
-                <Input id="company-name" placeholder="Enter your company name" />
-              </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="admin-email">Admin Email</Label>
                 <Input id="admin-email" type="email" placeholder="admin@example.com" />
@@ -54,26 +48,6 @@ export default function Settings() {
               </div>
               
               <Button className="mt-4">Save Changes</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="appearance" className="mt-0">
-          <Card>
-            <CardHeader>
-              <CardTitle>Appearance Settings</CardTitle>
-              <CardDescription>
-                Customize the look and feel of the application
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center border rounded-md">
-                <p className="text-muted-foreground text-center">
-                  Appearance customization will be available in the next update.
-                  <br />
-                  <span className="text-sm">Check back soon!</span>
-                </p>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
