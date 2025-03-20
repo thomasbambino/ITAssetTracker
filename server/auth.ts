@@ -222,12 +222,23 @@ export async function resetUserPassword(userId: number): Promise<{
         if (apiKey && domain) {
           console.log('Trying to send email using environment variables...');
           
+          // Try to get company name from branding settings
+          let companyName = 'AssetTrack';
+          try {
+            const branding = await storage.getBrandingSettings();
+            if (branding && branding.companyName) {
+              companyName = branding.companyName;
+            }
+          } catch (err) {
+            console.error('Error getting branding settings for email fallback:', err);
+          }
+          
           // Create direct settings from environment variables
           const envEmailSettings = {
             apiKey,
             domain,
             fromEmail: `noreply@${domain}`,
-            fromName: 'AssetTrack System',
+            fromName: `${companyName} System`,
             isEnabled: true
           };
           

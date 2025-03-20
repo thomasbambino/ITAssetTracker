@@ -218,11 +218,25 @@ export class DirectMailgunService {
 
   // Send a test email - using bare minimum plain text
   public async sendTestEmail(to: string): Promise<{ success: boolean; message: string }> {
-    return this.sendEmail({
-      to,
-      subject: 'AssetTrack Email Test',
-      text: 'This is a test email from AssetTrack. If you receive this, email sending is configured correctly.'
-    });
+    try {
+      // Try to get company name from branding settings
+      const branding = await storage.getBrandingSettings();
+      const companyName = branding?.companyName || 'AssetTrack';
+      
+      return this.sendEmail({
+        to,
+        subject: `${companyName} - Email Test`,
+        text: `This is a test email from ${companyName}. If you receive this, email sending is configured correctly.`
+      });
+    } catch (error) {
+      console.error('Error getting branding settings:', error);
+      // Fallback to default name if there's an error
+      return this.sendEmail({
+        to,
+        subject: 'AssetTrack Email Test',
+        text: 'This is a test email from AssetTrack. If you receive this, email sending is configured correctly.'
+      });
+    }
   }
 
   // Send password reset email - using plain ASCII only
