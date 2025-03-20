@@ -17,11 +17,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { emailSchema, phoneSchema } from "@/lib/utils";
 import { insertUserSchema } from "@shared/schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Create a schema for user creation/update
 const formSchema = insertUserSchema.extend({
   email: emailSchema,
   phoneNumber: phoneSchema.optional(),
+  role: z.enum(['user', 'admin']).default('user'),
 });
 
 type UserFormValues = z.infer<typeof formSchema>;
@@ -45,6 +53,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
       email: user?.email || "",
       phoneNumber: user?.phoneNumber || "",
       department: user?.department || "",
+      role: user?.role || "user",
     },
   });
 
@@ -169,6 +178,34 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
               <FormControl>
                 <Input placeholder="IT, Marketing, Sales, etc." {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>User Role</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Administrator</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Administrators have full access to manage all aspects of the system
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
