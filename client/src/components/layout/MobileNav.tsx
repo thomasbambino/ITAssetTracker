@@ -51,6 +51,9 @@ export function MobileNav() {
     logo?: string | null;
     primaryColor: string;
     accentColor?: string | null;
+    siteNameColor?: string | null;
+    siteNameColorSecondary?: string | null;
+    siteNameGradient?: boolean | null;
     companyTagline?: string | null;
     supportEmail?: string | null;
     supportPhone?: string | null;
@@ -239,7 +242,17 @@ export function MobileNav() {
                 <ServerIcon className="h-5 w-5 text-white" />
               </div>
             )}
-            <span className="ml-2 text-base font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <span 
+              className={`ml-2 text-base font-bold ${branding?.siteNameGradient ? 'bg-clip-text text-transparent' : ''}`}
+              style={{
+                color: branding?.siteNameGradient ? 'transparent' : (branding?.siteNameColor || '#1E40AF'),
+                backgroundImage: branding?.siteNameGradient && branding?.siteNameColorSecondary
+                  ? `linear-gradient(to right, ${branding?.siteNameColor || '#1E40AF'}, ${branding?.siteNameColorSecondary || '#3B82F6'})`
+                  : 'none',
+                backgroundClip: branding?.siteNameGradient ? 'text' : 'border-box',
+                WebkitBackgroundClip: branding?.siteNameGradient ? 'text' : 'border-box'
+              }}
+            >
               {branding?.companyName || "AssetTrack"}
             </span>
           </div>
@@ -291,7 +304,17 @@ export function MobileNav() {
                 <ServerIcon className="h-6 w-6 text-white" />
               </div>
             )}
-            <span className="ml-2 text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <span 
+              className={`ml-2 text-xl font-bold ${branding?.siteNameGradient ? 'bg-clip-text text-transparent' : ''}`}
+              style={{
+                color: branding?.siteNameGradient ? 'transparent' : (branding?.siteNameColor || '#1E40AF'),
+                backgroundImage: branding?.siteNameGradient && branding?.siteNameColorSecondary
+                  ? `linear-gradient(to right, ${branding?.siteNameColor || '#1E40AF'}, ${branding?.siteNameColorSecondary || '#3B82F6'})`
+                  : 'none',
+                backgroundClip: branding?.siteNameGradient ? 'text' : 'border-box',
+                WebkitBackgroundClip: branding?.siteNameGradient ? 'text' : 'border-box'
+              }}
+            >
               {branding?.companyName || "AssetTrack"}
             </span>
           </div>

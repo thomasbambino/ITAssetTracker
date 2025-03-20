@@ -10,12 +10,44 @@ import { z } from "zod";
 import { changePasswordSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, ServerIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
+
+interface BrandingSettings {
+  id?: number;
+  companyName: string;
+  logo?: string | null;
+  primaryColor: string;
+  accentColor?: string | null;
+  siteNameColor?: string | null;
+  siteNameColorSecondary?: string | null;
+  siteNameGradient?: boolean | null;
+  companyTagline?: string | null;
+  supportEmail?: string | null;
+  supportPhone?: string | null;
+}
 
 export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [_, navigate] = useLocation();
+  
+  // Fetch branding settings
+  const { data: brandingData } = useQuery<BrandingSettings>({
+    queryKey: ['/api/branding'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  // Safely cast the data with reasonable defaults
+  const branding: BrandingSettings = brandingData || {
+    companyName: "IT Asset Management",
+    primaryColor: "#1E40AF",
+    logo: null,
+    siteNameColor: "#1E40AF",
+    siteNameColorSecondary: "#3B82F6", 
+    siteNameGradient: true
+  };
 
   const form = useForm<z.infer<typeof changePasswordSchema>>({
     resolver: zodResolver(changePasswordSchema),

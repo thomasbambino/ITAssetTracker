@@ -2557,6 +2557,36 @@ export class DatabaseStorage implements IStorage {
           values.push(settings.accentColor);
         }
         
+        if (settings.siteNameColor !== undefined) {
+          updates.push(`site_name_color = $${paramCount++}`);
+          values.push(settings.siteNameColor);
+        }
+        
+        if (settings.siteNameColorSecondary !== undefined) {
+          updates.push(`site_name_color_secondary = $${paramCount++}`);
+          values.push(settings.siteNameColorSecondary);
+        }
+        
+        if (settings.siteNameGradient !== undefined) {
+          updates.push(`site_name_gradient = $${paramCount++}`);
+          values.push(settings.siteNameGradient);
+        }
+        
+        if (settings.companyTagline !== undefined) {
+          updates.push(`company_tagline = $${paramCount++}`);
+          values.push(settings.companyTagline);
+        }
+        
+        if (settings.supportEmail !== undefined) {
+          updates.push(`support_email = $${paramCount++}`);
+          values.push(settings.supportEmail);
+        }
+        
+        if (settings.supportPhone !== undefined) {
+          updates.push(`support_phone = $${paramCount++}`);
+          values.push(settings.supportPhone);
+        }
+        
         updates.push(`updated_at = NOW()`);
         
         // Update existing settings
@@ -2571,7 +2601,13 @@ export class DatabaseStorage implements IStorage {
             company_name as "companyName", 
             logo, 
             primary_color as "primaryColor", 
-            accent_color as "accentColor", 
+            accent_color as "accentColor",
+            site_name_color as "siteNameColor",
+            site_name_color_secondary as "siteNameColorSecondary",
+            site_name_gradient as "siteNameGradient", 
+            company_tagline as "companyTagline",
+            support_email as "supportEmail",
+            support_phone as "supportPhone",
             updated_at as "updatedAt"
         `, values);
         
@@ -2583,21 +2619,39 @@ export class DatabaseStorage implements IStorage {
             company_name, 
             logo, 
             primary_color, 
-            accent_color
+            accent_color,
+            site_name_color,
+            site_name_color_secondary,
+            site_name_gradient,
+            company_tagline,
+            support_email,
+            support_phone
           ) VALUES (
-            $1, $2, $3, $4
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
           ) RETURNING 
             id, 
             company_name as "companyName", 
             logo, 
             primary_color as "primaryColor", 
-            accent_color as "accentColor", 
+            accent_color as "accentColor",
+            site_name_color as "siteNameColor",
+            site_name_color_secondary as "siteNameColorSecondary",
+            site_name_gradient as "siteNameGradient", 
+            company_tagline as "companyTagline",
+            support_email as "supportEmail",
+            support_phone as "supportPhone",
             updated_at as "updatedAt"
         `, [
           settings.companyName || 'IT Asset Management',
           settings.logo || '',
           settings.primaryColor || '#1E40AF',
-          settings.accentColor || '#3B82F6'
+          settings.accentColor || '#3B82F6',
+          settings.siteNameColor || '#1E40AF',
+          settings.siteNameColorSecondary || '#3B82F6',
+          settings.siteNameGradient !== undefined ? settings.siteNameGradient : true,
+          settings.companyTagline || '',
+          settings.supportEmail || '',
+          settings.supportPhone || ''
         ]);
         
         return newSettings;
