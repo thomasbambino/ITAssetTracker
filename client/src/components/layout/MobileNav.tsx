@@ -39,12 +39,33 @@ export function MobileNav() {
   const [location] = useLocation();
   const [showSearch, setShowSearch] = useState(false);
   
+  // Define the BrandingSettings interface
+  interface BrandingSettings {
+    id?: number;
+    companyName: string;
+    logo?: string | null;
+    primaryColor: string;
+    accentColor?: string | null;
+    companyTagline?: string | null;
+    supportEmail?: string | null;
+    supportPhone?: string | null;
+  }
+
   // Fetch branding settings
-  const { data: branding } = useQuery({
+  const { data: branding = {} as BrandingSettings } = useQuery<BrandingSettings>({
     queryKey: ['/api/branding'],
   });
 
-  const routes = [
+  // Define the route type with badge being optional
+  type RouteType = {
+    href: string;
+    label: string;
+    icon: React.ElementType;
+    category: string;
+    badge?: number;
+  };
+
+  const routes: RouteType[] = [
     {
       href: '/',
       label: 'Dashboard',
@@ -92,7 +113,6 @@ export function MobileNav() {
       label: 'Notifications',
       icon: BellIcon,
       category: 'system',
-      badge: 2,
     },
     {
       href: '/history',
@@ -132,7 +152,7 @@ export function MobileNav() {
     setShowSearch(!showSearch);
   };
 
-  const renderNavItem = (route: typeof routes[0]) => {
+  const renderNavItem = (route: RouteType) => {
     const isActive = location === route.href;
     const Icon = route.icon;
     
@@ -319,7 +339,8 @@ export function MobileNav() {
                 <p className="text-sm font-medium text-gray-800">Admin User</p>
                 <p className="text-xs font-medium text-gray-500 mt-0.5">Administrator</p>
               </div>
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center space-x-1">
+                <NotificationBell />
                 <Link href="/settings" className="text-gray-500 hover:text-primary">
                   <SettingsIcon className="h-5 w-5" />
                 </Link>
