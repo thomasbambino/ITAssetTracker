@@ -17,8 +17,6 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<"granted" | "denied" | "unknown">("unknown");
-  const [videoStarted, setVideoStarted] = useState(false); // Track video playback status
-  const [debugInfo, setDebugInfo] = useState<string>(""); // For debugging
   
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -40,11 +38,9 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     
     if (videoRef.current) {
       videoRef.current.srcObject = null;
-      videoRef.current.load(); // Ensure video element is fully reset
     }
     
     setIsCameraActive(false);
-    setVideoStarted(false);
   };
   
   // Cleanup on unmount
@@ -94,7 +90,6 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       }
     } catch (err) {
       console.error("Error scanning QR code:", err);
-      // We don't set error here as scan failures are expected until a QR code is found
     }
   };
   
@@ -103,65 +98,42 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     try {
       setIsLoading(true);
       setError(null);
-      setDebugInfo("");
       
-      // Request camera permission
       try {
-        setDebugInfo("Requesting camera...");
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: "environment",  // Prefer back camera
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
+          video: { facingMode: "environment" },
           audio: false
         });
         
-        setDebugInfo("Camera permission granted");
         streamRef.current = stream;
         
         if (videoRef.current) {
-          // Set up video element event listeners
-          videoRef.current.addEventListener('loadedmetadata', () => {
-            setDebugInfo(prev => prev + "\nVideo metadata loaded");
-          });
-          
-          videoRef.current.addEventListener('playing', () => {
-            setDebugInfo(prev => prev + "\nVideo is playing");
-            setVideoStarted(true);
-          });
-          
-          videoRef.current.addEventListener('error', (e) => {
-            setDebugInfo(prev => prev + `\nVideo error: ${(e.target as any)?.error?.message || 'unknown'}`);
-          });
-          
-          setDebugInfo(prev => prev + "\nSetting video source");
           videoRef.current.srcObject = stream;
-          videoRef.current.muted = true; // Ensure video is muted
-          videoRef.current.setAttribute('playsinline', 'true'); // For iOS
-          
-          try {
-            setDebugInfo(prev => prev + "\nPlaying video");
-            await videoRef.current.play();
-            setCameraPermission("granted");
-            setIsCameraActive(true);
-            
-            // Start scanning interval
-            scanIntervalRef.current = window.setInterval(scanQRCode, 200); // Scan every 200ms
-          } catch (playError) {
-            setDebugInfo(prev => prev + `\nPlay error: ${playError instanceof Error ? playError.message : String(playError)}`);
-            setError(`Video playback failed: ${playError instanceof Error ? playError.message : 'Autoplay may be blocked'}`);
-          }
+          videoRef.current.onloadedmetadata = () => {
+            if (videoRef.current) {
+              videoRef.current.play()
+                .then(() => {
+                  setIsCameraActive(true);
+                  scanIntervalRef.current = window.setInterval(scanQRCode, 200);
+                })
+                .catch(err => {
+                  setError(`Video playback failed: ${err.message || 'Autoplay may be blocked'}`);
+                });
+            }
+          };
         }
+        
+        setCameraPermission("granted");
+        
       } catch (err) {
-        console.error("Camera permission error:", err);
+        console.error("Camera error:", err);
         setCameraPermission("denied");
-        setError(`Camera access denied. ${err instanceof Error ? err.message : 'Please check your browser settings.'}`);
+        setError(`Camera access denied: ${err instanceof Error ? err.message : 'Please check browser settings'}`);
       }
       
     } catch (err) {
-      console.error("Error setting up camera:", err);
-      setError(`Failed to start camera: ${err instanceof Error ? err.message : String(err)}`);
+      console.error("Error:", err);
+      setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -178,7 +150,6 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     setScannedCode(null);
     setManualCode("");
     setError(null);
-    setDebugInfo("");
   };
   
   // Handle manual code submission
@@ -215,16 +186,13 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       ) : (
         <div className="border rounded-md overflow-hidden">
           {isCameraActive ? (
-            <div className="aspect-video relative bg-black">
-              {/* Video element for camera feed - using controls for debugging */}
+            <div className="aspect-video relative bg-gray-900">
+              {/* Video element for camera feed */}
               <video 
                 ref={videoRef} 
-                className="w-full h-full object-cover"
+                className="w-full h-full"
                 playsInline 
-                muted 
-                autoPlay
-                controls={!videoStarted} // Show controls if video hasn't started
-                style={{ objectFit: "cover" }}
+                muted
               />
               
               {/* Hidden canvas for processing */}
@@ -236,9 +204,6 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
               {/* Overlay with corner markers */}
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                 <div className="border-2 border-primary/70 w-64 h-64 relative rounded-md">
-                  {/* Scanning animation */}
-                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary animate-scan"></div>
-                  
                   {/* Corner markers */}
                   <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-primary rounded-tl-sm"></div>
                   <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-primary rounded-tr-sm"></div>
@@ -249,20 +214,8 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
               
               {/* Text instructions */}
               <div className="absolute bottom-2 left-0 right-0 text-center text-white text-sm bg-black/50 py-1">
-                {videoStarted ? 
-                  "Point your camera at a QR code" : 
-                  "Camera connecting... If you see the camera feed, click the video to start."
-                }
+                Point your camera at a QR code
               </div>
-              
-              {/* Debug Info - only in development */}
-              {debugInfo && (
-                <div className="absolute top-2 left-2 right-2 text-xs text-white bg-black/70 p-2 rounded max-h-24 overflow-auto">
-                  {debugInfo.split('\n').map((line, i) => (
-                    <div key={i}>{line}</div>
-                  ))}
-                </div>
-              )}
             </div>
           ) : (
             <div className="p-4">
@@ -281,7 +234,7 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
                   <Button 
                     className="w-full" 
                     onClick={startCamera} 
-                    disabled={isLoading || cameraPermission === "denied"}
+                    disabled={isLoading}
                   >
                     <Camera className="h-4 w-4 mr-2" />
                     {isLoading ? "Starting Camera..." : "Start Camera"}
@@ -338,25 +291,6 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
           </Button>
         ) : null}
       </div>
-      
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes scan {
-            0% {
-              top: 0;
-            }
-            50% {
-              top: 100%;
-            }
-            100% {
-              top: 0;
-            }
-          }
-          .animate-scan {
-            animation: scan 2s linear infinite;
-          }
-        `
-      }} />
     </div>
   );
 }
