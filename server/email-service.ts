@@ -11,7 +11,8 @@ export interface EmailSettings {
   domain: string | null;
   fromEmail: string | null;
   fromName: string | null;
-  isEnabled: boolean;
+  isEnabled: boolean | null;
+  updatedAt?: Date | null;
 }
 
 // Interface for email data
@@ -33,10 +34,10 @@ export class EmailService {
   private domain: string | null;
   private fromEmail: string | null;
   private fromName: string | null;
-  private isEnabled: boolean;
+  private isEnabled: boolean | null;
 
   constructor(settings: EmailSettings | null) {
-    this.isEnabled = settings?.isEnabled || false;
+    this.isEnabled = settings?.isEnabled === true ? true : false;
     
     if (settings?.apiKey && settings?.domain) {
       this.client = mailgun.client({ username: 'api', key: settings.apiKey });
@@ -53,7 +54,7 @@ export class EmailService {
 
   // Check if email service is configured and enabled
   public isConfigured(): boolean {
-    return this.isEnabled && !!this.client && !!this.domain && !!this.fromEmail;
+    return this.isEnabled === true && !!this.client && !!this.domain && !!this.fromEmail;
   }
 
   // Send an email
