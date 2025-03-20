@@ -131,13 +131,17 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
       isEnabled: emailSettings.isEnabled,
     });
     
+    // Always update the mailgun service with the latest settings before checking
+    console.log('Updating Mailgun service with current settings...');
+    const updatedMailgunService = updateMailgunEmailService(emailSettings);
+    
     // Try to send email using Mailgun
-    const isMailgunConfigured = mailgunEmailService.isConfigured();
+    const isMailgunConfigured = updatedMailgunService.isConfigured();
     console.log('Is Mailgun configured?', isMailgunConfigured);
     
     if (isMailgunConfigured) {
       console.log('Using Mailgun service for email test');
-      const result = await mailgunEmailService.sendTestEmail(targetEmail);
+      const result = await updatedMailgunService.sendTestEmail(targetEmail);
       return res.json(result);
     } else {
       console.log('Mailgun service is not configured properly. Using simulation mode.');

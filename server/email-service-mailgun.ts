@@ -63,7 +63,18 @@ export class MailgunEmailService {
 
   public isConfigured(): boolean {
     // Check explicitly that isEnabled is true (not just truthy)
-    return this.isEnabled === true && !!this.client && !!this.domain && !!this.fromEmail;
+    const isConfigured = this.isEnabled === true && !!this.client && !!this.domain && !!this.fromEmail;
+    
+    // Debug why configuration might be failing
+    console.log('Mailgun configuration check:', {
+      isEnabled: this.isEnabled === true, 
+      hasClient: !!this.client,
+      hasDomain: !!this.domain,
+      hasFromEmail: !!this.fromEmail,
+      isFullyConfigured: isConfigured
+    });
+    
+    return isConfigured;
   }
 
   // Send an email

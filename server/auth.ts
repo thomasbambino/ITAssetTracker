@@ -175,12 +175,19 @@ export async function resetUserPassword(userId: number): Promise<{
         const emailSettings = await storage.getEmailSettings();
         
         if (emailSettings && emailSettings.isEnabled) {
-          // First try using the new Mailgun service
-          if (mailgunEmailService.isConfigured()) {
+          // Update Mailgun service with current settings
+          console.log('Updating Mailgun service with current settings...');
+          const updatedMailgunService = updateMailgunEmailService(emailSettings);
+          
+          // Check if Mailgun is configured after updating
+          console.log('Mailgun configuration check:', updatedMailgunService.isConfigured());
+          
+          // First try using the updated Mailgun service
+          if (updatedMailgunService.isConfigured()) {
             console.log(`Sending password reset email via Mailgun to: ${user.email}`);
             const fullName = `${user.firstName} ${user.lastName}`;
             
-            const result = await mailgunEmailService.sendPasswordResetEmail(
+            const result = await updatedMailgunService.sendPasswordResetEmail(
               user.email, 
               tempPassword, 
               fullName
