@@ -322,16 +322,48 @@ export default function Dashboard() {
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={80} 
+                  width={120} 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ 
-                    fill: '#64748B', 
-                    fontSize: 13 
+                  tick={(props) => {
+                    const { x, y, payload } = props;
+                    const categoryName = payload.value || 'Other';
+                    
+                    // Find the category ID if available
+                    const categoryId = categoryDistribution?.find(c => c.name === categoryName)?.id;
+                    
+                    return (
+                      <g transform={`translate(${x},${y})`}>
+                        <text 
+                          x={-10} 
+                          y={0} 
+                          dy={4} 
+                          textAnchor="end" 
+                          fill="#64748B" 
+                          fontSize={13}
+                          className="cursor-pointer hover:underline"
+                          onClick={() => {
+                            if (categoryId) {
+                              navigate(`/devices?category=${categoryId}`);
+                            }
+                          }}
+                        >
+                          {categoryName}
+                        </text>
+                        <text 
+                          x={-1} 
+                          y={0} 
+                          dy={4} 
+                          textAnchor="end" 
+                          fill="#94a3b8"
+                          fontSize={10}
+                          className="cursor-pointer"
+                        >
+                          →
+                        </text>
+                      </g>
+                    );
                   }}
-                  // Ensure all categories have names
-                  tickFormatter={(value) => value || 'Other'}
-                  // Add left padding to move text closer to bars
                   tickMargin={0}
                 />
                 <Tooltip 
@@ -437,14 +469,30 @@ export default function Dashboard() {
                   const color = colors[deptName as keyof typeof colors] || '#94a3b8';
                   
                   return (
-                    <div key={index} className="flex flex-col items-center">
+                    <div 
+                      key={index} 
+                      className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => navigate(`/devices?department=${encodeURIComponent(deptName)}`)}
+                      title={`View devices in ${deptName} department`}
+                    >
                       <div 
                         className="text-4xl font-semibold mb-1" 
                         style={{ color }}
                       >
                         {formatNumber(dept.value)}
                       </div>
-                      <div className="text-sm text-gray-500">{deptName}</div>
+                      <div className="text-sm text-gray-500 flex items-center">
+                        {deptName}
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="h-3 w-3 ml-1 text-gray-400" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </div>
                     </div>
                   );
                 })}

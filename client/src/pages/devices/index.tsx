@@ -298,9 +298,92 @@ export default function Devices() {
         </div>
       </div>
       
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="flex flex-col space-y-1 flex-grow">
+              <label htmlFor="category-filter" className="text-sm font-medium">Filter by Category</label>
+              <Select
+                value={selectedCategory}
+                onValueChange={handleCategoryChange}
+              >
+                <SelectTrigger id="category-filter" className="w-full md:w-[220px]">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Categories</SelectItem>
+                  {categories.map((category: any) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex flex-col space-y-1 flex-grow">
+              <label htmlFor="department-filter" className="text-sm font-medium">Filter by Department</label>
+              <Select
+                value={selectedDepartment}
+                onValueChange={handleDepartmentChange}
+              >
+                <SelectTrigger id="department-filter" className="w-full md:w-[220px]">
+                  <SelectValue placeholder="All Departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Departments</SelectItem>
+                  {departmentsList.map((department: string) => (
+                    <SelectItem key={department} value={department}>
+                      {department}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {(selectedCategory || selectedDepartment) && (
+              <div className="flex items-end md:self-end">
+                <Button
+                  variant="ghost"
+                  className="h-10 px-3 text-xs"
+                  onClick={clearFilters}
+                >
+                  <XIcon className="h-4 w-4 mr-1" />
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          {/* Active Filters Summary */}
+          {(selectedCategory || selectedDepartment) && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedCategory && categories.find((c: any) => c.id.toString() === selectedCategory) && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Category: {categories.find((c: any) => c.id.toString() === selectedCategory)?.name}
+                </Badge>
+              )}
+              
+              {selectedDepartment && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Department: {selectedDepartment}
+                </Badge>
+              )}
+              
+              {filteredDevices.length > 0 && (
+                <div className="text-sm text-muted-foreground ml-auto">
+                  Showing {filteredDevices.length} of {devices.length} devices
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
       {/* Devices Table */}
       <DataTable
-        data={devices || []}
+        data={filteredDevices}
         columns={columns}
         keyField="id"
         loading={isLoading}
@@ -308,14 +391,29 @@ export default function Devices() {
         actions={actions}
         emptyState={
           <div className="text-center py-10">
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">No devices</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new device.</p>
-            <div className="mt-6">
-              <Button onClick={() => navigate('/devices/new')}>
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Device
-              </Button>
-            </div>
+            {selectedCategory || selectedDepartment ? (
+              <>
+                <h3 className="mt-2 text-sm font-semibold text-gray-900">No matching devices</h3>
+                <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or clearing them.</p>
+                <div className="mt-6">
+                  <Button onClick={clearFilters} variant="outline">
+                    <XIcon className="h-4 w-4 mr-2" />
+                    Clear Filters
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="mt-2 text-sm font-semibold text-gray-900">No devices</h3>
+                <p className="mt-1 text-sm text-gray-500">Get started by creating a new device.</p>
+                <div className="mt-6">
+                  <Button onClick={() => navigate('/devices/new')}>
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Device
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         }
       />

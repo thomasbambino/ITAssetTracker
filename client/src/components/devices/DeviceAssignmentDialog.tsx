@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -11,15 +11,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { UserCheckIcon, UserXIcon } from 'lucide-react';
+import { Check, ChevronsUpDown, UserCheckIcon, UserXIcon, SearchIcon } from 'lucide-react';
 
 interface DeviceAssignmentDialogProps {
   device: any;
@@ -36,12 +41,32 @@ export function DeviceAssignmentDialog({
 }: DeviceAssignmentDialogProps) {
   const { toast } = useToast();
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const isAssigned = !!device.user;
   
   // Fetch users for the assignment dropdown
-  const { data: users, isLoading: usersLoading } = useQuery({
+  const { data: users = [], isLoading: usersLoading } = useQuery<any[]>({
     queryKey: ['/api/users'],
     enabled: open,
+  });
+  
+  // Sort users alphabetically by firstName + lastName
+  const sortedUsers = [...users].sort((a, b) => {
+    const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
+    const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
+    return aName.localeCompare(bName);
+  });
+  
+  // Filter users based on search query
+  const filteredUsers = sortedUsers.filter(user => {
+    if (!searchQuery) return true;
+    
+    const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+    const department = user.department ? user.department.toLowerCase() : '';
+    const query = searchQuery.toLowerCase();
+    
+    return fullName.includes(query) || department.includes(query);
   });
   
   // Assign device mutation
@@ -150,33 +175,64 @@ export function DeviceAssignmentDialog({
           
           <div className="space-y-2">
             <Label htmlFor="user-select">Assign to</Label>
-            <Select
-              value={selectedUserId}
-              onValueChange={setSelectedUserId}
-              disabled={usersLoading}
-            >
-              <SelectTrigger id="user-select">
-                <SelectValue placeholder="Select a user" />
-              </SelectTrigger>
-              <SelectContent>
-                {usersLoading ? (
-                  <SelectItem value="loading" disabled>
-                    Loading users...
-                  </SelectItem>
-                ) : users && users.length > 0 ? (
-                  users.map((user: any) => (
-                    <SelectItem key={user.id} value={user.id.toString()}>
-                      {user.firstName} {user.lastName}
-                      {user.department && ` (${user.department})`}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-users" disabled>
-                    No users available
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="user-select"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={popoverOpen}
+                  aria-label="Select a user"
+                  className="justify-between w-full"
+                  disabled={usersLoading}
+                >
+                  {selectedUserId ? (
+                    sortedUsers.find(user => user.id.toString() === selectedUserId) ? (
+                      `${sortedUsers.find(user => user.id.toString() === selectedUserId)?.firstName} ${sortedUsers.find(user => user.id.toString() === selectedUserId)?.lastName}`
+                    ) : "Select a user"
+                  ) : (
+                    "Select a user"
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 w-[300px]">
+                <Command>
+                  <div className="relative">
+                    <SearchIcon className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                    <CommandInput 
+                      placeholder="Search users..."
+                      onValueChange={setSearchQuery}
+                      className="h-9 pl-8"
+                    />
+                  </div>
+                  <CommandEmpty>
+                    {usersLoading ? "Loading..." : "No users found"}
+                  </CommandEmpty>
+                  <CommandGroup className="max-h-[200px] overflow-y-auto">
+                    {filteredUsers.map((user) => (
+                      <CommandItem
+                        key={user.id}
+                        value={`${user.firstName} ${user.lastName} ${user.department || ''}`}
+                        onSelect={() => {
+                          setSelectedUserId(user.id.toString());
+                          setPopoverOpen(false);
+                        }}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center">
+                          <span>{user.firstName} {user.lastName}</span>
+                          {user.department && (
+                            <span className="ml-2 text-xs text-gray-500">({user.department})</span>
+                          )}
+                        </div>
+                        {selectedUserId === user.id.toString() && <Check className="h-4 w-4" />}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
         
