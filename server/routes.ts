@@ -280,9 +280,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/users/:id', async (req: Request, res: Response) => {
+  app.put('/api/users/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
       
       console.log('Received user update data:', req.body);
       
@@ -294,17 +298,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = schema.parse(req.body);
       console.log('Validated user data:', validatedData);
       
-      const user = await storage.updateUser(id, validatedData);
+      // Pass the logged-in user's ID to updateUser
+      const user = await storage.updateUser(id, validatedData, loggedInUserId);
+      
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
       // Add activity log for user role change if role was updated
       if (validatedData.role && user.role !== validatedData.role) {
-        const sessionData = req.session as any;
         await storage.createActivityLog({
           actionType: 'USER_ROLE_CHANGE',
-          userId: sessionData.userId || null,
+          userId: loggedInUserId,
           details: `Changed user ${user.firstName} ${user.lastName}'s role to ${validatedData.role}`
         });
       }
@@ -319,10 +324,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/users/:id', async (req: Request, res: Response) => {
+  app.delete('/api/users/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteUser(id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const success = await storage.deleteUser(id, loggedInUserId);
       
       if (!success) {
         return res.status(404).json({ message: "User not found" });
@@ -438,14 +448,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/devices/:id', async (req: Request, res: Response) => {
+  app.put('/api/devices/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
       
       // The insertDeviceSchema now handles date conversion
       const validatedData = insertDeviceSchema.partial().parse(req.body);
       
-      const device = await storage.updateDevice(id, validatedData);
+      const device = await storage.updateDevice(id, validatedData, loggedInUserId);
       if (!device) {
         return res.status(404).json({ message: "Device not found" });
       }
@@ -460,10 +474,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/devices/:id', async (req: Request, res: Response) => {
+  app.delete('/api/devices/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteDevice(id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const success = await storage.deleteDevice(id, loggedInUserId);
       
       if (!success) {
         return res.status(404).json({ message: "Device not found" });
@@ -476,16 +495,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assign device to user
-  app.post('/api/devices/:id/assign', async (req: Request, res: Response) => {
+  app.post('/api/devices/:id/assign', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const deviceId = parseInt(req.params.id);
-      const { userId, assignedBy } = req.body;
       
-      if (!userId || !assignedBy) {
-        return res.status(400).json({ message: "userId and assignedBy are required" });
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "userId is required" });
       }
       
-      const device = await storage.assignDevice(deviceId, userId, assignedBy);
+      // Now we use the logged-in user's ID as the assignedBy parameter
+      const device = await storage.assignDevice(deviceId, userId, loggedInUserId);
       if (!device) {
         return res.status(404).json({ message: "Device or user not found" });
       }
@@ -497,11 +522,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Unassign device
-  app.post('/api/devices/:id/unassign', async (req: Request, res: Response) => {
+  app.post('/api/devices/:id/unassign', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const deviceId = parseInt(req.params.id);
       
-      const device = await storage.unassignDevice(deviceId);
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const device = await storage.unassignDevice(deviceId, loggedInUserId);
       if (!device) {
         return res.status(404).json({ message: "Device not found" });
       }
