@@ -22,7 +22,9 @@ export function Toaster() {
                 <ToastDescription>{description}</ToastDescription>
               )}
             </div>
-            {action}
+            <div className="w-full mt-2">
+              {action}
+            </div>
             <ToastClose />
           </Toast>
         )

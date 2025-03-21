@@ -100,13 +100,14 @@ export default function Dashboard() {
       title: "Export Options",
       description: "Choose what you want to export",
       action: (
-        <div className="flex space-x-2 mt-2">
+        <div className="flex flex-col sm:flex-row gap-2 mt-2 w-full">
           <ActionButton
             icon={<FileOutput className="h-4 w-4" />}
             label="Export Users"
             onClick={exportUsers}
             variant="secondary"
             disabled={isExportingUsers}
+            className="w-full sm:w-auto"
           />
           <ActionButton
             icon={<FileOutput className="h-4 w-4" />}
@@ -114,6 +115,7 @@ export default function Dashboard() {
             onClick={exportDevices}
             variant="secondary"
             disabled={isExportingDevices}
+            className="w-full sm:w-auto"
           />
         </div>
       ),
