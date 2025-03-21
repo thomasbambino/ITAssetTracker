@@ -218,7 +218,7 @@ export function MobileNav() {
   return (
     <>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 w-full flex items-center justify-between p-3 shadow-sm">
+      <div className="md:hidden bg-white border-b border-gray-200 w-full flex items-center justify-between p-3 shadow-sm">
         <div className="flex items-center">
           <Button 
             variant="ghost" 
@@ -274,19 +274,19 @@ export function MobileNav() {
 
       {/* Search Bar */}
       {showSearch && (
-        <div className="bg-white border-b border-gray-200 w-full p-2 shadow-sm">
+        <div className="md:hidden bg-white border-b border-gray-200 w-full p-2 shadow-sm">
           <GlobalSearch />
         </div>
       )}
 
       {/* Menu Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40" onClick={closeMenu} />
+        <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={closeMenu} />
       )}
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 transform bg-white w-72 z-50 transition-transform duration-300 ease-in-out overflow-y-auto",
+        "md:hidden fixed inset-y-0 left-0 transform bg-white w-72 z-50 transition-transform duration-300 ease-in-out overflow-y-auto",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between h-16 px-4 bg-gray-50 border-b border-gray-200">

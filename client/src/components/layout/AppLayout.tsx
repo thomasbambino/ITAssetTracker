@@ -1,7 +1,11 @@
 import { MobileNav } from '@/components/layout/MobileNav';
+import { DesktopSidebar } from '@/components/layout/DesktopSidebar';
 import { ReactNode, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { NotificationBell } from '@/components/shared/NotificationBell';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -20,6 +24,7 @@ interface BrandingSettings {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isReady, setIsReady] = useState(false);
+  const isMobile = useIsMobile();
   
   // Fetch branding data
   const { data: branding, isLoading, isSuccess } = useQuery<BrandingSettings>({
@@ -56,14 +61,30 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }
   
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      {/* Navigation */}
-      <MobileNav />
+    <div className="flex h-screen overflow-hidden">
+      {/* Desktop Sidebar */}
+      <DesktopSidebar />
       
-      {/* Main Content Area */}
-      <main className="flex-1 relative overflow-y-auto focus:outline-none pt-2 pb-6">
-        {children}
-      </main>
+      {/* Mobile and Main Content */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Mobile Navigation */}
+        <div className="md:hidden">
+          <MobileNav />
+        </div>
+        
+        {/* Desktop Header - only shows on medium screens and up */}
+        <div className="hidden md:flex bg-white border-b border-gray-200 w-full items-center justify-end p-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <ThemeToggle size="sm" />
+          </div>
+        </div>
+        
+        {/* Main Content Area */}
+        <main className="flex-1 relative overflow-y-auto focus:outline-none pt-2 pb-6 px-4">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
