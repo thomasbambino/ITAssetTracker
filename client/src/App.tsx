@@ -24,6 +24,8 @@ import LoginPage from "@/pages/auth/login";
 import ResetPasswordPage from "@/pages/auth/reset-password";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { BrandingProvider } from "@/components/branding/BrandingContext";
+import { FaviconManager } from "@/components/branding/FaviconManager";
 
 // Routes that require admin privileges
 const ADMIN_ROUTES = [
@@ -115,10 +117,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <Router />
-        <Toaster />
-      </ThemeProvider>
+      <BrandingProvider>
+        <ThemeProvider>
+          {/* FaviconManager updates favicon and document title based on branding */}
+          <FaviconManager />
+          <Router />
+          <Toaster />
+        </ThemeProvider>
+      </BrandingProvider>
     </QueryClientProvider>
   );
 }
