@@ -1291,7 +1291,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async deleteSoftware(id: number): Promise<boolean> {
+  async deleteSoftware(id: number, loggedInUserId?: number): Promise<boolean> {
     try {
       // First, check if any assignments exist for this software
       const assignmentCount = await db.one(`
@@ -1317,7 +1317,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: 1, // Admin user ID
+          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
           actionType: 'software_deleted',
           details: `Software deleted: ${software.name} (${software.vendor})`
         });
@@ -1518,7 +1518,7 @@ export class DatabaseStorage implements IStorage {
     return newAssignment;
   }
 
-  async updateSoftwareAssignment(id: number, assignment: Partial<InsertSoftwareAssignment>): Promise<SoftwareAssignment | undefined> {
+  async updateSoftwareAssignment(id: number, assignment: Partial<InsertSoftwareAssignment>, loggedInUserId?: number): Promise<SoftwareAssignment | undefined> {
     try {
       // Build dynamic update query
       const updates: string[] = [];
@@ -1578,7 +1578,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: 1, // Admin user ID
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'software_assignment_updated',
         details: `Software assignment updated: ID ${id}`
       });
@@ -1612,7 +1612,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async deleteSoftwareAssignment(id: number): Promise<boolean> {
+  async deleteSoftwareAssignment(id: number, loggedInUserId?: number): Promise<boolean> {
     try {
       // Get the assignment for logging purposes
       const assignment = await db.oneOrNone(`
@@ -1639,7 +1639,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: 1, // Admin user ID
+          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
           actionType: 'software_assignment_deleted',
           details: `Software assignment deleted: ${assignment.softwareName} from ${assignment.userName || 'device'}`
         });
@@ -1748,7 +1748,7 @@ export class DatabaseStorage implements IStorage {
     return records;
   }
 
-  async createMaintenanceRecord(record: InsertMaintenanceRecord): Promise<MaintenanceRecord> {
+  async createMaintenanceRecord(record: InsertMaintenanceRecord, loggedInUserId?: number): Promise<MaintenanceRecord> {
     const newRecord = await db.one(`
       INSERT INTO maintenance_records (
         device_id, 
@@ -1796,7 +1796,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: 1, // Admin user ID
+      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
       actionType: 'maintenance_scheduled',
       details: `Maintenance ${record.maintenanceType} scheduled for device ${device ? device.assetTag : record.deviceId}`
     });
@@ -1804,7 +1804,7 @@ export class DatabaseStorage implements IStorage {
     return newRecord;
   }
 
-  async updateMaintenanceRecord(id: number, record: Partial<InsertMaintenanceRecord>): Promise<MaintenanceRecord | undefined> {
+  async updateMaintenanceRecord(id: number, record: Partial<InsertMaintenanceRecord>, loggedInUserId?: number): Promise<MaintenanceRecord | undefined> {
     try {
       // Get the current record for status change detection
       const currentRecord = await this.getMaintenanceRecordById(id);
@@ -1911,7 +1911,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       await this.createActivityLog({
-        userId: 1, // Admin user ID
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType,
         details
       });
@@ -1923,7 +1923,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async deleteMaintenanceRecord(id: number): Promise<boolean> {
+  async deleteMaintenanceRecord(id: number, loggedInUserId?: number): Promise<boolean> {
     try {
       // Get the record for logging
       const record = await this.getMaintenanceRecordById(id);
@@ -1938,7 +1938,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: 1, // Admin user ID
+          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
           actionType: 'maintenance_deleted',
           details: `Maintenance record deleted: ${record.maintenanceType} for device ${record.deviceAssetTag || record.deviceId}`
         });
@@ -2143,7 +2143,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createQrCode(qrCode: InsertQrCode): Promise<QrCode> {
+  async createQrCode(qrCode: InsertQrCode, loggedInUserId?: number): Promise<QrCode> {
     const newQrCode = await db.one(`
       INSERT INTO qr_codes (
         code, 
@@ -2178,7 +2178,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: 1, // Admin user ID
+      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
       actionType: 'qr_code_generated',
       details: newQrCode.deviceId && device
         ? `QR code generated for device ${device.assetTag || newQrCode.deviceId}`
@@ -2199,7 +2199,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async updateQrCode(id: number, qrCode: Partial<InsertQrCode>): Promise<QrCode | undefined> {
+  async updateQrCode(id: number, qrCode: Partial<InsertQrCode>, loggedInUserId?: number): Promise<QrCode | undefined> {
     try {
       // Build dynamic update query
       const updates: string[] = [];
@@ -2252,7 +2252,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: 1, // Admin user ID
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'qr_code_updated',
         details: `QR code updated: ${updatedQrCode.code}`
       });
@@ -2275,7 +2275,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async deleteQrCode(id: number): Promise<boolean> {
+  async deleteQrCode(id: number, loggedInUserId?: number): Promise<boolean> {
     try {
       // Get the QR code for logging
       const qrCode = await this.getQrCodeById(id);
@@ -2290,7 +2290,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: 1, // Admin user ID
+          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
           actionType: 'qr_code_deleted',
           details: qrCode.deviceId && qrCode.device
             ? `QR code deleted for device ${qrCode.device.assetTag || qrCode.deviceId}`
@@ -2306,7 +2306,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async recordQrCodeScan(id: number): Promise<QrCode | undefined> {
+  async recordQrCodeScan(id: number, loggedInUserId?: number): Promise<QrCode | undefined> {
     try {
       // Update the scan count and last scanned time
       const updatedQrCode = await db.one(`
@@ -2339,7 +2339,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: 1, // Admin user ID
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'qr_code_scanned',
         details: updatedQrCode.deviceId && device
           ? `QR code scanned for device ${device.assetTag || updatedQrCode.deviceId}`
