@@ -10,7 +10,7 @@ import { formatDate, formatCurrency, mapErrorMessage } from "@/lib/utils";
 import { SoftwareForm } from "@/components/forms/SoftwareForm";
 import { SoftwareAssignmentForm } from "@/components/forms/SoftwareAssignmentForm";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { AlertCircle, Calendar, CheckCircle, Clock, CreditCard, Edit as EditIcon, Monitor, Plus, Tag, Trash2, Users } from "lucide-react";
+import { AlertCircle, Bell, Calendar, CheckCircle, Clock, CreditCard, Edit as EditIcon, Mail, Monitor, Plus, Tag, Trash2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DataTable } from "@/components/ui/data-table";
 
@@ -28,6 +28,8 @@ interface Software {
   status: "active" | "expired" | "pending";
   notes?: string | null;
   version?: string | null;
+  sendAccessNotifications?: boolean | null;
+  notificationEmail?: string | null;
 }
 
 // Define the software assignment type
