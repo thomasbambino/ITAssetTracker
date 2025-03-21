@@ -1590,6 +1590,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error uploading logo" });
     }
   });
+  
+  // Upload favicon
+  app.post('/api/branding/favicon', upload.single('favicon'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No favicon file uploaded" });
+      }
+      
+      // Convert the file to base64
+      const faviconBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      
+      // Update the branding settings with the new favicon
+      const branding = await storage.updateBrandingSettings({ favicon: faviconBase64 });
+      
+      res.json({ 
+        message: "Favicon uploaded successfully",
+        branding
+      });
+    } catch (error) {
+      console.error("Error uploading favicon:", error);
+      res.status(500).json({ message: "Error uploading favicon" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

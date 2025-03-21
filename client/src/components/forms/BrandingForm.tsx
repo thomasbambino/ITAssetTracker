@@ -54,7 +54,9 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadType, setUploadType] = useState<'logo' | 'favicon'>('logo');
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
 
   // Create form with default values
   const form = useForm<FormValues>({
@@ -62,6 +64,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
     defaultValues: {
       companyName: initialData?.companyName || "",
       logo: initialData?.logo || "",
+      favicon: initialData?.favicon || "",
       primaryColor: initialData?.primaryColor || "#1E40AF",
       accentColor: initialData?.accentColor || "#1E293B",
       siteNameColor: initialData?.siteNameColor || "#1E40AF",
@@ -73,31 +76,33 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
     },
   });
 
-  // Handle logo upload
-  const handleLogoUpload = async (file: File) => {
+  // Handle file upload for logo or favicon
+  const handleFileUpload = async (file: File, type: 'logo' | 'favicon') => {
     if (!file) return;
     
     // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/gif'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/gif', 'image/x-icon'];
     if (!validTypes.includes(file.type)) {
-      setFormError("Invalid file type. Please upload a JPG, PNG, SVG, or GIF image.");
+      setFormError(`Invalid file type. Please upload a JPG, PNG, SVG, ICO, or GIF image.`);
       return;
     }
     
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setFormError("File is too large. Maximum size is 2MB.");
+    // Validate file size (max 2MB for logo, 1MB for favicon)
+    const maxSize = type === 'logo' ? 2 * 1024 * 1024 : 1 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setFormError(`File is too large. Maximum size is ${type === 'logo' ? '2MB' : '1MB'}.`);
       return;
     }
     
     setIsUploading(true);
     setUploadProgress(0);
     setFormError(null);
+    setUploadType(type);
     
     try {
       // Create form data
       const formData = new FormData();
-      formData.append('logo', file);
+      formData.append(type, file);
       
       // Simulate progress (since fetch doesn't support progress tracking natively)
       const progressInterval = setInterval(() => {
@@ -108,7 +113,8 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
       }, 100);
       
       // Upload the file
-      const response = await fetch('/api/branding/logo', {
+      const endpoint = type === 'logo' ? '/api/branding/logo' : '/api/branding/favicon';
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
@@ -117,22 +123,22 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to upload logo");
+        throw new Error(errorData.message || `Failed to upload ${type}`);
       }
       
       const data = await response.json();
       setUploadProgress(100);
       
-      // Update the form with the new logo URL
-      form.setValue('logo', data.branding.logo);
+      // Update the form with the new file URL
+      form.setValue(type, data.branding[type]);
       
       // Invalidate query cache
       queryClient.invalidateQueries({ queryKey: ['/api/branding'] });
       
-      setFormSuccess("Logo uploaded successfully");
+      setFormSuccess(`${type === 'logo' ? 'Logo' : 'Favicon'} uploaded successfully`);
     } catch (error) {
-      console.error("Error uploading logo:", error);
-      setFormError("Error uploading logo. Please try again.");
+      console.error(`Error uploading ${type}:`, error);
+      setFormError(`Error uploading ${type}. Please try again.`);
     } finally {
       setTimeout(() => {
         setIsUploading(false);
@@ -262,7 +268,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                 <FormItem>
                   <FormLabel>Company Logo (Optional)</FormLabel>
                   <Card className="p-4 border-dashed flex flex-col items-center justify-center">
-                    {isUploading && (
+                    {isUploading && uploadType === 'logo' && (
                       <div className="flex flex-col items-center w-full py-4">
                         <Loader2 className="h-10 w-10 text-primary mb-2 animate-spin" />
                         <p className="text-sm text-muted-foreground mb-2">Uploading logo...</p>
@@ -272,7 +278,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                       </div>
                     )}
                     
-                    {!isUploading && field.value && (
+                    {!(isUploading && uploadType === 'logo') && field.value && (
                       <div className="flex flex-col items-center">
                         <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center mb-3 relative overflow-hidden">
                           {field.value.startsWith('data:image') ? (
@@ -302,7 +308,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                             variant="outline" 
                             type="button" 
                             size="sm"
-                            onClick={() => fileInputRef.current?.click()}
+                            onClick={() => logoInputRef.current?.click()}
                           >
                             <Upload className="h-4 w-4 mr-1" />
                             Change
@@ -311,16 +317,16 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                       </div>
                     )}
                     
-                    {!isUploading && !field.value && (
+                    {!(isUploading && uploadType === 'logo') && !field.value && (
                       <div className="flex flex-col items-center py-4">
                         <input
                           type="file"
-                          ref={fileInputRef}
+                          ref={logoInputRef}
                           className="hidden"
                           accept="image/png,image/jpeg,image/gif,image/svg+xml"
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
-                              handleLogoUpload(e.target.files[0]);
+                              handleFileUpload(e.target.files[0], 'logo');
                             }
                           }}
                         />
@@ -332,7 +338,7 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                           variant="outline" 
                           type="button" 
                           size="sm"
-                          onClick={() => fileInputRef.current?.click()}
+                          onClick={() => logoInputRef.current?.click()}
                         >
                           <Upload className="h-4 w-4 mr-1" />
                           Upload Logo
@@ -342,6 +348,100 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                   </Card>
                   <FormDescription>
                     Upload your company logo (SVG, PNG, JPG or GIF, max 2MB)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Favicon Upload */}
+            <FormField
+              control={form.control}
+              name="favicon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Browser Favicon (Optional)</FormLabel>
+                  <Card className="p-4 border-dashed flex flex-col items-center justify-center">
+                    {isUploading && uploadType === 'favicon' && (
+                      <div className="flex flex-col items-center w-full py-4">
+                        <Loader2 className="h-10 w-10 text-primary mb-2 animate-spin" />
+                        <p className="text-sm text-muted-foreground mb-2">Uploading favicon...</p>
+                        <div className="w-full max-w-xs">
+                          <Progress value={uploadProgress} className="h-2" />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!(isUploading && uploadType === 'favicon') && field.value && (
+                      <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center mb-3 relative overflow-hidden">
+                          {field.value.startsWith('data:image') ? (
+                            <img 
+                              src={field.value} 
+                              alt="Browser favicon" 
+                              className="h-full w-full object-contain p-1"
+                            />
+                          ) : (
+                            <FileImage className="h-8 w-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            type="button" 
+                            size="sm"
+                            onClick={() => {
+                              form.setValue('favicon', '');
+                              queryClient.invalidateQueries({ queryKey: ['/api/branding'] });
+                            }}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            type="button" 
+                            size="sm"
+                            onClick={() => faviconInputRef.current?.click()}
+                          >
+                            <Upload className="h-4 w-4 mr-1" />
+                            Change
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!(isUploading && uploadType === 'favicon') && !field.value && (
+                      <div className="flex flex-col items-center py-4">
+                        <input
+                          type="file"
+                          ref={faviconInputRef}
+                          className="hidden"
+                          accept="image/png,image/jpeg,image/gif,image/svg+xml,image/x-icon"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              handleFileUpload(e.target.files[0], 'favicon');
+                            }
+                          }}
+                        />
+                        <FileImage className="h-10 w-10 text-muted-foreground mb-3" />
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Upload a favicon for your browser tab
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          type="button" 
+                          size="sm"
+                          onClick={() => faviconInputRef.current?.click()}
+                        >
+                          <Upload className="h-4 w-4 mr-1" />
+                          Upload Favicon
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                  <FormDescription>
+                    Upload a favicon to display in browser tabs (PNG, ICO, SVG or GIF, max 1MB)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
