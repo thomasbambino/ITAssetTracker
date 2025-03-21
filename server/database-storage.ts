@@ -2407,6 +2407,30 @@ export class DatabaseStorage implements IStorage {
     
     return notifications;
   }
+  
+  async getNotificationById(id: number): Promise<Notification | undefined> {
+    try {
+      const notification = await db.oneOrNone(`
+        SELECT 
+          id, 
+          user_id as "userId", 
+          type, 
+          title, 
+          message, 
+          is_read as "isRead", 
+          related_id as "relatedId", 
+          related_type as "relatedType", 
+          created_at as "createdAt"
+        FROM notifications
+        WHERE id = $1
+      `, [id]);
+      
+      return notification;
+    } catch (error) {
+      console.error('Error fetching notification by ID:', error);
+      return undefined;
+    }
+  }
 
   async createNotification(notification: InsertNotification): Promise<Notification> {
     const newNotification = await db.one(`

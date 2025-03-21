@@ -1502,9 +1502,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create notification
-  app.post('/api/notifications', async (req: Request, res: Response) => {
+  app.post('/api/notifications', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const session = req.session as SessionData;
+      const userId = session.userId;
+      
       const validatedData = insertNotificationSchema.parse(req.body);
+      
+      // If no userId is specified in the notification, use the current user's ID
+      if (!validatedData.userId) {
+        validatedData.userId = userId;
+      }
+      
+      // Only admins can create notifications for other users
+      if (validatedData.userId !== userId && session.userRole !== 'admin') {
+        return res.status(403).json({ message: "Not authorized to create notifications for other users" });
+      }
+      
       const notification = await storage.createNotification(validatedData);
       res.status(201).json(notification);
     } catch (error) {
@@ -1516,15 +1530,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mark notification as read
-  app.put('/api/notifications/:id/read', async (req: Request, res: Response) => {
+  app.put('/api/notifications/:id/read', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
-      const notification = await storage.markNotificationAsRead(id);
+      const session = req.session as SessionData;
+      const userId = session.userId;
+      const userRole = session.userRole;
       
-      if (!notification) {
+      const id = parseInt(req.params.id);
+      
+      // Retrieve the notification first to check ownership
+      const existingNotification = await storage.getNotificationById(id);
+      
+      if (!existingNotification) {
         return res.status(404).json({ message: "Notification not found" });
       }
       
+      // Check ownership - only allow users to mark their own notifications as read (unless admin)
+      if (existingNotification.userId !== userId && userRole !== 'admin') {
+        return res.status(403).json({ message: "Not authorized to modify this notification" });
+      }
+      
+      const notification = await storage.markNotificationAsRead(id);
       res.json(notification);
     } catch (error) {
       res.status(500).json({ message: "Error marking notification as read" });
@@ -1532,9 +1558,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete notification
-  app.delete('/api/notifications/:id', async (req: Request, res: Response) => {
+  app.delete('/api/notifications/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const session = req.session as SessionData;
+      const userId = session.userId;
+      const userRole = session.userRole;
+      
       const id = parseInt(req.params.id);
+      
+      // Retrieve the notification first to check ownership
+      const existingNotification = await storage.getNotificationById(id);
+      
+      if (!existingNotification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      // Check ownership - only allow users to delete their own notifications (unless admin)
+      if (existingNotification.userId !== userId && userRole !== 'admin') {
+        return res.status(403).json({ message: "Not authorized to delete this notification" });
+      }
+      
       const success = await storage.deleteNotification(id);
       
       if (!success) {
