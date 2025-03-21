@@ -28,6 +28,38 @@ export class DatabaseStorage implements IStorage {
     `);
     return users;
   }
+  
+  // Update user's last login without creating an activity log
+  async updateUserLastLogin(id: number, lastLogin: Date): Promise<User | undefined> {
+    try {
+      const updatedUser = await db.one(`
+        UPDATE users SET
+          last_login = $1
+        WHERE id = $2
+        RETURNING 
+          id, 
+          first_name as "firstName", 
+          last_name as "lastName", 
+          email, 
+          phone_number as "phoneNumber", 
+          department,
+          password_hash as "passwordHash",
+          password_salt as "passwordSalt",
+          temp_password as "tempPassword",
+          temp_password_expiry as "tempPasswordExpiry",
+          password_reset_required as "passwordResetRequired",
+          role,
+          active,
+          last_login as "lastLogin",
+          created_at as "createdAt"
+      `, [lastLogin, id]);
+      
+      return updatedUser;
+    } catch (error) {
+      console.error('Error updating user last login:', error);
+      return undefined;
+    }
+  }
 
   async getUserById(id: number): Promise<User | undefined> {
     try {

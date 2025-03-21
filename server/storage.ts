@@ -18,6 +18,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser, loggedInUserId?: number): Promise<User>;
   updateUser(id: number, user: Partial<User>, loggedInUserId?: number): Promise<User | undefined>;
+  updateUserLastLogin(id: number, lastLogin: Date): Promise<User | undefined>;
   deleteUser(id: number, loggedInUserId?: number): Promise<boolean>;
   getUsersByDepartment(department: string): Promise<User[]>;
   getUsersByRole(role: string): Promise<User[]>;
@@ -201,6 +202,17 @@ export class MemStorage implements IStorage {
       actionType: 'user_updated',
       details: `User updated: ${updatedUser.firstName} ${updatedUser.lastName}`
     });
+    
+    return updatedUser;
+  }
+  
+  // Update user's last login without creating an activity log
+  async updateUserLastLogin(id: number, lastLogin: Date): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, lastLogin };
+    this.users.set(id, updatedUser);
     
     return updatedUser;
   }

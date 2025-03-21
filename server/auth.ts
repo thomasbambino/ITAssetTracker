@@ -105,10 +105,8 @@ export async function loginUser(credentials: LoginCredentials): Promise<{
       };
     }
     
-    // Update last login time
-    await storage.updateUser(user.id, { 
-      lastLogin: new Date()
-    });
+    // Update last login time without creating activity log entry
+    await storage.updateUserLastLogin(user.id, new Date());
     
     // Check if password reset is required
     const passwordResetRequired = user.passwordResetRequired || false;
