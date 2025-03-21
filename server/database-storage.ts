@@ -1143,6 +1143,8 @@ export class DatabaseStorage implements IStorage {
         seats, 
         notes, 
         status, 
+        notification_email as "notificationEmail",
+        send_access_notifications as "sendAccessNotifications",
         created_at as "createdAt"
       FROM software
       ORDER BY name
@@ -1165,6 +1167,8 @@ export class DatabaseStorage implements IStorage {
           seats, 
           notes, 
           status, 
+          notification_email as "notificationEmail",
+          send_access_notifications as "sendAccessNotifications",
           created_at as "createdAt"
         FROM software
         WHERE id = $1
@@ -1187,9 +1191,11 @@ export class DatabaseStorage implements IStorage {
         license_key, 
         seats, 
         notes, 
-        status
+        status,
+        notification_email,
+        send_access_notifications
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
       ) RETURNING 
         id, 
         name, 
@@ -1201,7 +1207,9 @@ export class DatabaseStorage implements IStorage {
         license_key as "licenseKey", 
         seats, 
         notes, 
-        status, 
+        status,
+        notification_email as "notificationEmail",
+        send_access_notifications as "sendAccessNotifications", 
         created_at as "createdAt"
     `, [
       software.name, 
@@ -1213,7 +1221,9 @@ export class DatabaseStorage implements IStorage {
       software.licenseKey || null, 
       software.seats || null, 
       software.notes || null, 
-      software.status || 'active'
+      software.status || 'active',
+      software.notificationEmail || null,
+      software.sendAccessNotifications || false
     ]);
     
     // Log activity
@@ -1283,6 +1293,17 @@ export class DatabaseStorage implements IStorage {
         values.push(software.status);
       }
       
+      // Add the notification fields
+      if (software.notificationEmail !== undefined) {
+        updates.push(`notification_email = $${paramCount++}`);
+        values.push(software.notificationEmail);
+      }
+      
+      if (software.sendAccessNotifications !== undefined) {
+        updates.push(`send_access_notifications = $${paramCount++}`);
+        values.push(software.sendAccessNotifications);
+      }
+      
       // If no updates, return the software
       if (updates.length === 0) {
         return this.getSoftwareById(id);
@@ -1305,7 +1326,9 @@ export class DatabaseStorage implements IStorage {
           license_key as "licenseKey", 
           seats, 
           notes, 
-          status, 
+          status,
+          notification_email as "notificationEmail",
+          send_access_notifications as "sendAccessNotifications",
           created_at as "createdAt"
       `, values);
       
@@ -1377,6 +1400,8 @@ export class DatabaseStorage implements IStorage {
         seats, 
         notes, 
         status, 
+        notification_email as "notificationEmail",
+        send_access_notifications as "sendAccessNotifications",
         created_at as "createdAt"
       FROM software
       WHERE status = $1
@@ -1403,7 +1428,9 @@ export class DatabaseStorage implements IStorage {
         license_key as "licenseKey", 
         seats, 
         notes, 
-        status, 
+        status,
+        notification_email as "notificationEmail",
+        send_access_notifications as "sendAccessNotifications", 
         created_at as "createdAt"
       FROM software
       WHERE expiry_date IS NOT NULL
