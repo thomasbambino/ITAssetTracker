@@ -16,30 +16,30 @@ export interface IStorage {
   getUsers(): Promise<User[]>;
   getUserById(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
-  deleteUser(id: number): Promise<boolean>;
+  createUser(user: InsertUser, loggedInUserId?: number): Promise<User>;
+  updateUser(id: number, user: Partial<User>, loggedInUserId?: number): Promise<User | undefined>;
+  deleteUser(id: number, loggedInUserId?: number): Promise<boolean>;
   getUsersByDepartment(department: string): Promise<User[]>;
   getUsersByRole(role: string): Promise<User[]>;
   
   // Category operations
   getCategories(): Promise<Category[]>;
   getCategoryById(id: number): Promise<Category | undefined>;
-  createCategory(category: InsertCategory): Promise<Category>;
-  updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category | undefined>;
-  deleteCategory(id: number): Promise<boolean>;
+  createCategory(category: InsertCategory, loggedInUserId?: number): Promise<Category>;
+  updateCategory(id: number, category: Partial<InsertCategory>, loggedInUserId?: number): Promise<Category | undefined>;
+  deleteCategory(id: number, loggedInUserId?: number): Promise<boolean>;
   
   // Device operations
   getDevices(): Promise<Device[]>;
   getDeviceById(id: number): Promise<Device | undefined>;
-  createDevice(device: InsertDevice): Promise<Device>;
-  updateDevice(id: number, device: Partial<InsertDevice>): Promise<Device | undefined>;
-  deleteDevice(id: number): Promise<boolean>;
+  createDevice(device: InsertDevice, loggedInUserId?: number): Promise<Device>;
+  updateDevice(id: number, device: Partial<InsertDevice>, loggedInUserId?: number): Promise<Device | undefined>;
+  deleteDevice(id: number, loggedInUserId?: number): Promise<boolean>;
   getDevicesByCategory(categoryId: number): Promise<Device[]>;
   getDevicesByUser(userId: number): Promise<Device[]>;
   getUnassignedDevices(): Promise<Device[]>;
   assignDevice(deviceId: number, userId: number, assignedBy: number): Promise<Device | undefined>;
-  unassignDevice(deviceId: number): Promise<Device | undefined>;
+  unassignDevice(deviceId: number, loggedInUserId?: number): Promise<Device | undefined>;
   getDevicesWithWarrantyExpiring(days: number): Promise<Device[]>;
   
   // Assignment history operations

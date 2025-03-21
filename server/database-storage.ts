@@ -87,7 +87,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createUser(user: InsertUser): Promise<User> {
+  async createUser(user: InsertUser, loggedInUserId?: number): Promise<User> {
     const newUser = await db.one(`
       INSERT INTO users (
         first_name, 
@@ -115,7 +115,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: 1, // Admin user ID
+      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
       actionType: 'user_added',
       details: `User created: ${user.firstName} ${user.lastName}`
     });
@@ -123,7 +123,7 @@ export class DatabaseStorage implements IStorage {
     return newUser;
   }
 
-  async updateUser(id: number, user: any): Promise<User | undefined> {
+  async updateUser(id: number, user: any, loggedInUserId?: number): Promise<User | undefined> {
     try {
       // Build dynamic update query
       const updates: string[] = [];
@@ -227,7 +227,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: 1, // Admin user ID
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'user_updated',
         details: `User updated: ${updatedUser.firstName} ${updatedUser.lastName}`
       });
@@ -239,7 +239,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async deleteUser(id: number): Promise<boolean> {
+  async deleteUser(id: number, loggedInUserId?: number): Promise<boolean> {
     try {
       // First, get user for logging
       const user = await this.getUserById(id);
@@ -260,7 +260,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: 1, // Admin user ID
+          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
           actionType: 'user_deleted',
           details: `User deleted: ${user.firstName} ${user.lastName}`
         });
