@@ -44,6 +44,8 @@ const formSchema = z.object({
   status: z.enum(["active", "expired", "pending"]),
   notes: z.string().optional().nullable(),
   version: z.string().optional().nullable(),
+  notificationEmail: z.string().email("Please enter a valid email").optional().nullable(),
+  sendAccessNotifications: z.boolean().default(false),
 });
 
 // Define the props for the form
