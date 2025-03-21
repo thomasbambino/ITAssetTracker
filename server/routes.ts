@@ -1207,8 +1207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       
       // First, get the assignment to access software, user and device information
-      const assignments = await storage.getSoftwareAssignments(0); // Get all assignments
-      const assignment = assignments.find(a => a.id === id);
+      const assignment = await storage.getSoftwareAssignmentById(id);
       
       if (!assignment) {
         return res.status(404).json({ message: "Software assignment not found" });

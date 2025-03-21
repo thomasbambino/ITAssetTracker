@@ -1439,6 +1439,29 @@ export class DatabaseStorage implements IStorage {
     
     return assignments;
   }
+  
+  async getSoftwareAssignmentById(id: number): Promise<SoftwareAssignment | undefined> {
+    const assignment = await db.oneOrNone(`
+      SELECT 
+        sa.id, 
+        sa.software_id as "softwareId", 
+        sa.user_id as "userId", 
+        sa.device_id as "deviceId", 
+        sa.assigned_at as "assignedAt", 
+        sa.assigned_by as "assignedBy", 
+        sa.notes,
+        u.first_name || ' ' || u.last_name as "userName",
+        d.asset_tag as "deviceAssetTag",
+        s.name as "softwareName"
+      FROM software_assignments sa
+      LEFT JOIN users u ON sa.user_id = u.id
+      LEFT JOIN devices d ON sa.device_id = d.id
+      LEFT JOIN software s ON sa.software_id = s.id
+      WHERE sa.id = $1
+    `, [id]);
+    
+    return assignment || undefined;
+  }
 
   async getSoftwareAssignmentsByUser(userId: number): Promise<SoftwareAssignment[]> {
     const assignments = await db.any(`

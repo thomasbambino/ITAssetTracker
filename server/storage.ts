@@ -63,11 +63,12 @@ export interface IStorage {
   
   // Software assignment operations
   getSoftwareAssignments(softwareId: number): Promise<SoftwareAssignment[]>;
+  getSoftwareAssignmentById(id: number): Promise<SoftwareAssignment | undefined>;
   getSoftwareAssignmentsByUser(userId: number): Promise<SoftwareAssignment[]>;
   getSoftwareAssignmentsByDevice(deviceId: number): Promise<SoftwareAssignment[]>;
   createSoftwareAssignment(assignment: InsertSoftwareAssignment): Promise<SoftwareAssignment>;
-  updateSoftwareAssignment(id: number, assignment: Partial<InsertSoftwareAssignment>): Promise<SoftwareAssignment | undefined>;
-  deleteSoftwareAssignment(id: number): Promise<boolean>;
+  updateSoftwareAssignment(id: number, assignment: Partial<InsertSoftwareAssignment>, loggedInUserId?: number): Promise<SoftwareAssignment | undefined>;
+  deleteSoftwareAssignment(id: number, loggedInUserId?: number): Promise<boolean>;
   
   // Maintenance operations
   getMaintenanceRecords(): Promise<MaintenanceRecord[]>;
