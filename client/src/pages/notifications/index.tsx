@@ -33,17 +33,27 @@ export default function NotificationsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   
-  // Placeholder for current user ID (in a real app, this would come from auth context)
-  const currentUserId = 1;
+  // Fetch the current user's data
+  const { data: currentUser } = useQuery<{ id: number } | null>({
+    queryKey: ['/api/users/me'],
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
+  });
+  
+  const currentUserId = currentUser?.id;
   
   // Query for fetching all notifications
   const { data: notifications = [], isLoading: isNotificationsLoading, refetch } = useQuery({
     queryKey: [`/api/users/${currentUserId}/notifications`],
+    enabled: !!currentUserId, // Only run query if currentUserId is available
   });
   
   // Query for fetching unread notifications
   const { data: unreadNotifications = [], isLoading: isUnreadLoading } = useQuery({
     queryKey: [`/api/users/${currentUserId}/notifications/unread`],
+    enabled: !!currentUserId, // Only run query if currentUserId is available
   });
 
   // Mark notification as read
