@@ -332,7 +332,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createCategory(category: InsertCategory): Promise<Category> {
+  async createCategory(category: InsertCategory, loggedInUserId?: number): Promise<Category> {
     const newCategory = await db.one(`
       INSERT INTO categories (
         name, 
@@ -348,7 +348,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: 1, // Admin user ID
+      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
       actionType: 'category_added',
       details: `Category created: ${category.name}`
     });
@@ -356,7 +356,7 @@ export class DatabaseStorage implements IStorage {
     return newCategory;
   }
 
-  async updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category | undefined> {
+  async updateCategory(id: number, category: Partial<InsertCategory>, loggedInUserId?: number): Promise<Category | undefined> {
     try {
       // Build dynamic update query
       const updates: string[] = [];
@@ -389,7 +389,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: 1, // Admin user ID
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'category_updated',
         details: `Category updated: ${updatedCategory.name}`
       });
@@ -401,7 +401,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async deleteCategory(id: number): Promise<boolean> {
+  async deleteCategory(id: number, loggedInUserId?: number): Promise<boolean> {
     try {
       // Check if any devices use this category
       const deviceCount = await db.one(`
@@ -426,7 +426,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: 1, // Admin user ID
+          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
           actionType: 'category_deleted',
           details: `Category deleted: ${category.name}`
         });
@@ -492,7 +492,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createDevice(device: InsertDevice): Promise<Device> {
+  async createDevice(device: InsertDevice, loggedInUserId?: number): Promise<Device> {
     const newDevice = await db.one(`
       INSERT INTO devices (
         brand, 
@@ -547,7 +547,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: 1, // Admin user ID
+      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
       actionType: 'device_added',
       details: `Device added: ${device.brand} ${device.model} (${device.assetTag})`
     });
@@ -555,7 +555,7 @@ export class DatabaseStorage implements IStorage {
     return newDevice;
   }
 
-  async updateDevice(id: number, device: Partial<InsertDevice>): Promise<Device | undefined> {
+  async updateDevice(id: number, device: Partial<InsertDevice>, loggedInUserId?: number): Promise<Device | undefined> {
     try {
       // Build dynamic update query
       const updates: string[] = [];
@@ -647,7 +647,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: 1, // Admin user ID
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'device_updated',
         details: `Device updated: ${updatedDevice.brand} ${updatedDevice.model} (${updatedDevice.assetTag})`
       });
@@ -659,7 +659,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async deleteDevice(id: number): Promise<boolean> {
+  async deleteDevice(id: number, loggedInUserId?: number): Promise<boolean> {
     try {
       // First, get device for logging
       const device = await this.getDeviceById(id);
@@ -676,7 +676,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: 1, // Admin user ID
+          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
           actionType: 'device_deleted',
           details: `Device deleted: ${device.brand} ${device.model} (${device.assetTag})`
         });
@@ -826,7 +826,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async unassignDevice(deviceId: number): Promise<Device | undefined> {
+  async unassignDevice(deviceId: number, loggedInUserId?: number): Promise<Device | undefined> {
     try {
       // Get the device
       const device = await this.getDeviceById(deviceId);
@@ -886,7 +886,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: 1, // Admin user ID
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'device_unassigned',
         details: previousUser 
           ? `Device ${device.brand} ${device.model} (${device.assetTag}) unassigned from ${previousUser.firstName} ${previousUser.lastName}`
@@ -1143,7 +1143,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createSoftware(software: InsertSoftware): Promise<Software> {
+  async createSoftware(software: InsertSoftware, loggedInUserId?: number): Promise<Software> {
     const newSoftware = await db.one(`
       INSERT INTO software (
         name, 
@@ -1186,7 +1186,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: 1, // Admin user ID
+      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
       actionType: 'software_added',
       details: `Software added: ${software.name} (${software.vendor})`
     });
@@ -1194,7 +1194,7 @@ export class DatabaseStorage implements IStorage {
     return newSoftware;
   }
 
-  async updateSoftware(id: number, software: Partial<InsertSoftware>): Promise<Software | undefined> {
+  async updateSoftware(id: number, software: Partial<InsertSoftware>, loggedInUserId?: number): Promise<Software | undefined> {
     try {
       // Build dynamic update query
       const updates: string[] = [];
@@ -1279,7 +1279,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: 1, // Admin user ID
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'software_updated',
         details: `Software updated: ${updatedSoftware.name} (${updatedSoftware.vendor})`
       });
