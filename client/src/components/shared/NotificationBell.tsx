@@ -27,12 +27,21 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [, setLocation] = useLocation();
 
-  // Placeholder for current user ID (in a real app, this would come from auth context)
-  const currentUserId = 1;
+  // Fetch the current user's data
+  const { data: currentUser } = useQuery<{ id: number } | null>({
+    queryKey: ['/api/users/me'],
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
+  });
+  
+  const currentUserId = currentUser?.id;
   
   // Query for fetching unread notifications
   const { data: unreadNotifications = [] } = useQuery({
     queryKey: [`/api/users/${currentUserId}/notifications/unread`],
+    enabled: !!currentUserId, // Only run query if currentUserId is available
   });
 
   // Get notification icon based on notification type
