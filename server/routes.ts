@@ -11,6 +11,7 @@ import session from "express-session";
 import authRoutes from "./auth-routes";
 import emailRoutes from "./email-routes";
 import { isAuthenticated, isAdmin } from "./auth";
+import mailgunService from "./direct-mailgun";
 import { 
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
   insertSoftwareSchema, insertSoftwareAssignmentSchema, insertMaintenanceRecordSchema,
@@ -1132,6 +1133,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertSoftwareAssignmentSchema.parse(req.body);
       const assignment = await storage.createSoftwareAssignment(validatedData);
+
+      // Send notification email if configured for this software
+      try {
+        // Get the software details
+        const software = await storage.getSoftwareById(validatedData.softwareId);
+        
+        if (software?.sendAccessNotifications && software.notificationEmail) {
+          // Get user or device details
+          let userName = '';
+          let deviceName = '';
+          
+          if (validatedData.userId) {
+            const user = await storage.getUserById(validatedData.userId);
+            if (user) {
+              userName = `${user.firstName} ${user.lastName}`;
+            }
+          }
+          
+          if (validatedData.deviceId) {
+            const device = await storage.getDeviceById(validatedData.deviceId);
+            if (device) {
+              deviceName = `${device.brand} ${device.model} (${device.assetTag})`;
+            }
+          }
+          
+          // Send the notification
+          const emailResult = await mailgunService.sendSoftwareAccessEmail(
+            software.notificationEmail,
+            'assigned',
+            software.name,
+            userName,
+            deviceName || undefined
+          );
+          
+          console.log('Software assignment notification result:', emailResult);
+        }
+      } catch (emailError) {
+        console.error('Error sending software assignment notification:', emailError);
+        // Continue with response even if notification fails
+      }
+      
       res.status(201).json(assignment);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1163,14 +1205,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/software-assignments/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // First, get the assignment to access software, user and device information
+      const assignments = await storage.getSoftwareAssignments(0); // Get all assignments
+      const assignment = assignments.find(a => a.id === id);
+      
+      if (!assignment) {
+        return res.status(404).json({ message: "Software assignment not found" });
+      }
+      
+      // Store necessary data for notification before deletion
+      const softwareId = assignment.softwareId;
+      const userId = assignment.userId;
+      const deviceId = assignment.deviceId;
+      
+      // Delete the assignment
       const success = await storage.deleteSoftwareAssignment(id);
       
       if (!success) {
         return res.status(404).json({ message: "Software assignment not found" });
       }
       
+      // Send notification email if configured
+      try {
+        if (softwareId) {
+          const software = await storage.getSoftwareById(softwareId);
+          
+          if (software?.sendAccessNotifications && software.notificationEmail) {
+            // Get user or device details
+            let userName = '';
+            let deviceName = '';
+            
+            if (userId) {
+              const user = await storage.getUserById(userId);
+              if (user) {
+                userName = `${user.firstName} ${user.lastName}`;
+              }
+            }
+            
+            if (deviceId) {
+              const device = await storage.getDeviceById(deviceId);
+              if (device) {
+                deviceName = `${device.brand} ${device.model} (${device.assetTag})`;
+              }
+            }
+            
+            // Send the notification
+            const emailResult = await mailgunService.sendSoftwareAccessEmail(
+              software.notificationEmail,
+              'unassigned',
+              software.name,
+              userName,
+              deviceName || undefined
+            );
+            
+            console.log('Software unassignment notification result:', emailResult);
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending software unassignment notification:', emailError);
+        // Continue with response even if notification fails
+      }
+      
       res.status(204).send();
     } catch (error) {
+      console.error('Error in software assignment deletion:', error);
       res.status(500).json({ message: "Error deleting software assignment" });
     }
   });
