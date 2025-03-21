@@ -164,6 +164,8 @@ export const software = pgTable("software", {
   seats: integer("seats"), // Number of allowed users
   notes: text("notes"),
   status: text("status").default('active'),
+  notificationEmail: text("notification_email"), // Email address for access request notifications
+  sendAccessNotifications: boolean("send_access_notifications").default(false), // Whether to send notifications
   createdAt: timestamp("created_at").defaultNow(),
 });
 
