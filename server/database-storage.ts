@@ -2493,7 +2493,8 @@ export class DatabaseStorage implements IStorage {
         SELECT 
           id, 
           company_name as "companyName", 
-          logo, 
+          logo,
+          favicon,
           primary_color as "primaryColor", 
           accent_color as "accentColor",
           site_name_color as "siteNameColor",
@@ -2580,6 +2581,11 @@ export class DatabaseStorage implements IStorage {
           values.push(settings.logo);
         }
         
+        if (settings.favicon !== undefined) {
+          updates.push(`favicon = $${paramCount++}`);
+          values.push(settings.favicon);
+        }
+        
         if (settings.primaryColor !== undefined) {
           updates.push(`primary_color = $${paramCount++}`);
           values.push(settings.primaryColor);
@@ -2632,7 +2638,8 @@ export class DatabaseStorage implements IStorage {
           RETURNING 
             id, 
             company_name as "companyName", 
-            logo, 
+            logo,
+            favicon, 
             primary_color as "primaryColor", 
             accent_color as "accentColor",
             site_name_color as "siteNameColor",
