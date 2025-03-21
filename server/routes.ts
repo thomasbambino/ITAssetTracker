@@ -1337,10 +1337,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create QR code
-  app.post('/api/qrcodes', async (req: Request, res: Response) => {
+  app.post('/api/qrcodes', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const session = req.session as SessionData;
+      const userId = session.userId;
+      
       const validatedData = insertQrCodeSchema.parse(req.body);
-      const qrCode = await storage.createQrCode(validatedData);
+      const qrCode = await storage.createQrCode(validatedData, userId);
       res.status(201).json(qrCode);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1351,12 +1354,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update QR code
-  app.put('/api/qrcodes/:id', async (req: Request, res: Response) => {
+  app.put('/api/qrcodes/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const session = req.session as SessionData;
+      const userId = session.userId;
+      
       const id = parseInt(req.params.id);
       const validatedData = insertQrCodeSchema.partial().parse(req.body);
       
-      const qrCode = await storage.updateQrCode(id, validatedData);
+      const qrCode = await storage.updateQrCode(id, validatedData, userId);
       if (!qrCode) {
         return res.status(404).json({ message: "QR code not found" });
       }
@@ -1371,10 +1377,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete QR code
-  app.delete('/api/qrcodes/:id', async (req: Request, res: Response) => {
+  app.delete('/api/qrcodes/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const session = req.session as SessionData;
+      const userId = session.userId;
+      
       const id = parseInt(req.params.id);
-      const success = await storage.deleteQrCode(id);
+      const success = await storage.deleteQrCode(id, userId);
       
       if (!success) {
         return res.status(404).json({ message: "QR code not found" });
@@ -1387,23 +1396,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Record QR code scan
-  app.post('/api/qrcodes/:id/scan', async (req: Request, res: Response) => {
+  app.post('/api/qrcodes/:id/scan', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const session = req.session as SessionData;
+      const userId = session.userId;
+      
       const id = parseInt(req.params.id);
-      const qrCode = await storage.recordQrCodeScan(id);
+      const qrCode = await storage.recordQrCodeScan(id, userId);
       
       if (!qrCode) {
         return res.status(404).json({ message: "QR code not found" });
       }
       
-      // Log the activity
-      await storage.createActivityLog({
-        actionType: 'qr_scan',
-        details: `QR code for device ID ${qrCode.deviceId} was scanned`,
-        userId: null,
-        timestamp: new Date()
-      });
-      
+      // No need to log the activity separately as it's already logged in recordQrCodeScan method
       res.json(qrCode);
     } catch (error) {
       console.error('Error recording QR code scan:', error);
@@ -1412,7 +1417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get scan history for a QR code
-  app.get('/api/qrcodes/:id/history', async (req: Request, res: Response) => {
+  app.get('/api/qrcodes/:id/history', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       // Get the qrCode to verify it exists
@@ -1429,7 +1434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const scanHistory = logs
         .filter(log => 
           log.actionType === 'qr_scan' && 
-          log.details.includes(`device ID ${qrCode.deviceId}`)
+          log.details && log.details.includes(`device ID ${qrCode.deviceId}`)
         )
         .map(log => ({
           id: log.id,
@@ -1440,9 +1445,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } : null,
           location: null // Future enhancement
         }))
-        .sort((a, b) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
+        .sort((a, b) => {
+          // Safely handle null timestamps
+          const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+          const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+          return dateB.getTime() - dateA.getTime();
+        });
       
       res.json(scanHistory);
     } catch (error) {
@@ -1453,9 +1461,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== Notifications =====
   // Get user notifications
-  app.get('/api/users/:id/notifications', async (req: Request, res: Response) => {
+  app.get('/api/users/:id/notifications', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const session = req.session as SessionData;
+      const currentUserId = session.userId;
+      
       const userId = parseInt(req.params.id);
+      
+      // Check if the user is requesting their own notifications or if they are an admin
+      if (currentUserId !== userId && session.userRole !== 'admin') {
+        return res.status(403).json({ message: "Not authorized to access these notifications" });
+      }
+      
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
       const notifications = await storage.getNotifications(userId, limit);
       res.json(notifications);
@@ -1465,9 +1482,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get unread notifications
-  app.get('/api/users/:id/notifications/unread', async (req: Request, res: Response) => {
+  app.get('/api/users/:id/notifications/unread', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const session = req.session as SessionData;
+      const currentUserId = session.userId;
+      
       const userId = parseInt(req.params.id);
+      
+      // Check if the user is requesting their own notifications or if they are an admin
+      if (currentUserId !== userId && session.userRole !== 'admin') {
+        return res.status(403).json({ message: "Not authorized to access these notifications" });
+      }
+      
       const notifications = await storage.getUnreadNotifications(userId);
       res.json(notifications);
     } catch (error) {
