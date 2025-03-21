@@ -351,6 +351,28 @@ export default function SoftwareDetails() {
                 <p className="text-sm">{software.notes}</p>
               </div>
             )}
+            
+            {/* Notification Settings */}
+            <div className="border rounded-md p-4 bg-muted/10">
+              <h3 className="font-medium mb-2 flex items-center">
+                <Bell className="h-4 w-4 mr-2" />
+                Notification Settings
+              </h3>
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <div className={`h-3 w-3 rounded-full mr-2 ${software.sendAccessNotifications ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  <span className="text-sm">
+                    {software.sendAccessNotifications ? 'Email notifications are enabled' : 'Email notifications are disabled'}
+                  </span>
+                </div>
+                {software.sendAccessNotifications && software.notificationEmail && (
+                  <div className="text-sm flex items-center">
+                    <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-muted-foreground">{software.notificationEmail}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
         
