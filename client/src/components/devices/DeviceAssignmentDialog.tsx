@@ -72,11 +72,12 @@ export function DeviceAssignmentDialog({
   // Assign device mutation
   const assignDeviceMutation = useMutation({
     mutationFn: async ({ deviceId, userId }: { deviceId: number, userId: number }) => {
-      const response = await apiRequest('POST', `/api/devices/${deviceId}/assign`, {
-        userId
-        // No need to send assignedBy anymore - it's retrieved from session on the server
+      const response = await apiRequest({
+        method: 'POST', 
+        url: `/api/devices/${deviceId}/assign`, 
+        data: { userId }
       });
-      return response.json();
+      return response;
     },
     onSuccess: () => {
       toast({
@@ -97,8 +98,12 @@ export function DeviceAssignmentDialog({
   // Unassign device mutation
   const unassignDeviceMutation = useMutation({
     mutationFn: async (deviceId: number) => {
-      const response = await apiRequest('POST', `/api/devices/${deviceId}/unassign`, {});
-      return response.json();
+      const response = await apiRequest({
+        method: 'POST',
+        url: `/api/devices/${deviceId}/unassign`,
+        data: {}
+      });
+      return response;
     },
     onSuccess: () => {
       toast({
