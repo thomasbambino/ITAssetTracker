@@ -294,10 +294,25 @@ export default function DeviceDetails() {
     }
   };
 
+  // Fetch assignment history separately to allow real-time updates
+  const { data: assignmentHistory = [], refetch: refetchHistory } = useQuery({
+    queryKey: [`/api/devices/${id}/history`],
+    enabled: !isNewDevice && !!id && !!device,
+  });
+
   const handleAssignmentComplete = () => {
     setShowAssignDialog(false);
+    // Invalidate device data
     queryClient.invalidateQueries({ queryKey: [`/api/devices/${id}`] });
     queryClient.invalidateQueries({ queryKey: ['/api/devices'] });
+    
+    // Explicitly refetch the assignment history
+    refetchHistory();
+    
+    toast({
+      title: "Success",
+      description: "Device assignment updated successfully",
+    });
   };
 
   // Check if warranty is expiring soon (within 30 days)
@@ -579,9 +594,9 @@ export default function DeviceDetails() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {device.history && device.history.length > 0 ? (
+                  {assignmentHistory.length > 0 ? (
                     <DataTable 
-                      data={device.history}
+                      data={assignmentHistory}
                       columns={historyColumns}
                       keyField="id"
                       searchable={false}

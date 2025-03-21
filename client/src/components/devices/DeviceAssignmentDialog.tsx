@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -80,6 +80,9 @@ export function DeviceAssignmentDialog({
       return response;
     },
     onSuccess: () => {
+      // Invalidate the device history query to update the history table
+      queryClient.invalidateQueries({ queryKey: [`/api/devices/${device.id}/history`] });
+      
       toast({
         title: "Success",
         description: "Device assigned successfully",
@@ -106,6 +109,9 @@ export function DeviceAssignmentDialog({
       return response;
     },
     onSuccess: () => {
+      // Invalidate the device history query to update the history table
+      queryClient.invalidateQueries({ queryKey: [`/api/devices/${device.id}/history`] });
+      
       toast({
         title: "Success",
         description: "Device unassigned successfully",
