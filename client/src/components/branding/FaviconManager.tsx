@@ -20,7 +20,13 @@ export function FaviconManager() {
     
     // Set or update favicon attributes
     link.type = 'image/png';
-    link.href = '/generated-icon.png';
+    
+    // Use custom favicon if available, otherwise fallback to default
+    if (brandingSettings.favicon) {
+      link.href = brandingSettings.favicon;
+    } else {
+      link.href = '/generated-icon.png';
+    }
     
     // Set page title based on branding
     document.title = `${brandingSettings.companyName} - IT Asset Manager`;

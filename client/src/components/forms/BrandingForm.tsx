@@ -27,6 +27,7 @@ import { Progress } from "@/components/ui/progress";
 const formSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   logo: z.string().optional().nullable(),
+  favicon: z.string().optional().nullable(),
   primaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code"),
   accentColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code").optional().nullable(),
   siteNameColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Please enter a valid hex color code").optional().nullable(),

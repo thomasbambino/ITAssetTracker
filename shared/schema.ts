@@ -260,7 +260,8 @@ export type Notification = typeof notifications.$inferSelect;
 export const brandingSettings = pgTable("branding_settings", {
   id: serial("id").primaryKey(),
   companyName: text("company_name"),
-  logo: text("logo"), // URL to logo image
+  logo: text("logo"), // URL to logo image or base64 data
+  favicon: text("favicon"), // URL to favicon image or base64 data
   primaryColor: text("primary_color").default('#1E40AF'),
   accentColor: text("accent_color").default('#3B82F6'),
   siteNameColor: text("site_name_color").default('#1E40AF'),

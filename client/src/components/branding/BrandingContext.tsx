@@ -5,6 +5,7 @@ export interface BrandingSettings {
   id?: number;
   companyName: string;
   logo?: string | null;
+  favicon?: string | null;
   primaryColor: string;
   accentColor?: string | null;
   companyTagline?: string | null;
