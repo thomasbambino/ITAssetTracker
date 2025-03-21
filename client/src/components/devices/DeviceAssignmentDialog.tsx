@@ -73,8 +73,8 @@ export function DeviceAssignmentDialog({
   const assignDeviceMutation = useMutation({
     mutationFn: async ({ deviceId, userId }: { deviceId: number, userId: number }) => {
       const response = await apiRequest('POST', `/api/devices/${deviceId}/assign`, {
-        userId,
-        assignedBy: 1, // Admin user ID - in a real app, this would be the logged-in user's ID
+        userId
+        // No need to send assignedBy anymore - it's retrieved from session on the server
       });
       return response.json();
     },

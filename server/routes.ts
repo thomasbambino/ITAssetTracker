@@ -809,10 +809,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // If there's a userId, manually create the assignment history record
             if (userId) {
+              // Get the currently logged in user's ID from the session (if available)
+              const sessionData = req.session as any;
+              const loggedInUserId = sessionData?.userId || 1; // Fallback to admin ID 1 if no session
+              
               await storage.createAssignmentHistory({
                 deviceId: device.id,
                 userId: userId,
-                assignedBy: 1, // Admin user
+                assignedBy: loggedInUserId,
                 assignedAt: new Date(),
                 unassignedAt: null,
                 notes: 'Assigned during import'
