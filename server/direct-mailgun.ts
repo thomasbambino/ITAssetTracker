@@ -261,6 +261,46 @@ export class DirectMailgunService {
       });
     }
   }
+
+  // Send software access notification email
+  public async sendSoftwareAccessEmail(
+    to: string, 
+    action: 'assigned' | 'unassigned', 
+    softwareName: string, 
+    userName: string, 
+    deviceName?: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      // Get company name from branding settings
+      const branding = await storage.getBrandingSettings();
+      const companyName = branding?.companyName || 'AssetTrack';
+      
+      const subject = `${companyName} - Software ${action === 'assigned' ? 'Assignment' : 'Removal'} Notification`;
+      
+      let text = '';
+      if (userName && !deviceName) {
+        // User assignment
+        text = `This is a notification that ${softwareName} software has been ${action} to user ${userName}.`;
+      } else if (deviceName) {
+        // Device assignment
+        text = `This is a notification that ${softwareName} software has been ${action} to device ${deviceName}.`;
+      } else {
+        // Generic notification
+        text = `This is a notification that ${softwareName} software has been ${action}.`;
+      }
+      
+      text += `\n\nThis automated notification was sent from the ${companyName} IT Asset Management System.`;
+      
+      return this.sendEmail({ to, subject, text });
+    } catch (error) {
+      console.error('Error sending software access notification:', error);
+      // Fallback to default message if there's an error
+      return {
+        success: false,
+        message: `Failed to send notification: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
 }
 
 // Create a default instance

@@ -27,9 +27,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Mail, Bell } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
+import { Switch } from "@/components/ui/switch";
 
 // Define the form schema
 const formSchema = z.object({
@@ -94,6 +95,8 @@ export function SoftwareForm({ software, onSuccess, onCancel }: SoftwareFormProp
       status: software?.status || "active",
       notes: software?.notes || "",
       version: software?.version || "",
+      notificationEmail: software?.notificationEmail || "",
+      sendAccessNotifications: software?.sendAccessNotifications || false,
     },
   });
 
@@ -103,18 +106,18 @@ export function SoftwareForm({ software, onSuccess, onCancel }: SoftwareFormProp
     try {
       if (software?.id) {
         // Update existing software
-        await apiRequest(
-          "PUT",
-          `/api/software/${software.id}`,
-          values
-        );
+        await apiRequest({
+          method: "PUT",
+          url: `/api/software/${software.id}`,
+          data: values
+        });
       } else {
         // Create new software
-        await apiRequest(
-          "POST",
-          "/api/software",
-          values
-        );
+        await apiRequest({
+          method: "POST",
+          url: "/api/software",
+          data: values
+        });
       }
 
       if (onSuccess) {
@@ -410,6 +413,60 @@ export function SoftwareForm({ software, onSuccess, onCancel }: SoftwareFormProp
             </FormItem>
           )}
         />
+        
+        <div className="border p-4 rounded-md space-y-4 bg-muted/30">
+          <h3 className="font-medium flex items-center">
+            <Bell className="h-4 w-4 mr-2" />
+            Email Notifications
+          </h3>
+          
+          <FormField
+            control={form.control}
+            name="sendAccessNotifications"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    Access Change Notifications
+                  </FormLabel>
+                  <FormDescription>
+                    Send email notifications when this software is assigned or unassigned
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="notificationEmail"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notification Email</FormLabel>
+                <FormControl>
+                  <div className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <Input
+                      placeholder="email@example.com"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  Email address to receive notifications about access changes
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="flex justify-end space-x-2">
           {onCancel && (
