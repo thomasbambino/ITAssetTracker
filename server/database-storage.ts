@@ -2553,6 +2553,23 @@ export class DatabaseStorage implements IStorage {
         `);
         console.log('Added new columns to branding_settings table');
       }
+      
+      // Check if favicon column exists
+      const faviconResult = await db.oneOrNone(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'branding_settings' AND column_name = 'favicon'
+      `);
+      
+      // If favicon column doesn't exist, add it
+      if (!faviconResult) {
+        console.log('Adding favicon column to branding_settings table...');
+        await db.none(`
+          ALTER TABLE branding_settings 
+          ADD COLUMN IF NOT EXISTS favicon TEXT DEFAULT NULL
+        `);
+        console.log('Added favicon column to branding_settings table');
+      }
     } catch (error) {
       console.error('Error ensuring branding columns exist:', error);
     }
@@ -2657,7 +2674,8 @@ export class DatabaseStorage implements IStorage {
         const newSettings = await db.one(`
           INSERT INTO branding_settings (
             company_name, 
-            logo, 
+            logo,
+            favicon,
             primary_color, 
             accent_color,
             site_name_color,
@@ -2667,11 +2685,12 @@ export class DatabaseStorage implements IStorage {
             support_email,
             support_phone
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
           ) RETURNING 
             id, 
             company_name as "companyName", 
-            logo, 
+            logo,
+            favicon,
             primary_color as "primaryColor", 
             accent_color as "accentColor",
             site_name_color as "siteNameColor",
@@ -2684,6 +2703,7 @@ export class DatabaseStorage implements IStorage {
         `, [
           settings.companyName || 'IT Asset Management',
           settings.logo || '',
+          settings.favicon || '',
           settings.primaryColor || '#1E40AF',
           settings.accentColor || '#3B82F6',
           settings.siteNameColor || '#1E40AF',
