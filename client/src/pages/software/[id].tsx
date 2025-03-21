@@ -79,7 +79,8 @@ export default function SoftwareDetails() {
   // Mutation to delete a software assignment
   const deleteMutation = useMutation({
     mutationFn: async (assignmentId: number) => {
-      return apiRequest(`/api/software-assignments/${assignmentId}`, {
+      return apiRequest({
+        url: `/api/software-assignments/${assignmentId}`,
         method: 'DELETE'
       });
     },
