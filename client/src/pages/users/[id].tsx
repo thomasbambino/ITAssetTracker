@@ -162,10 +162,6 @@ export default function UserDetails() {
   // Table columns for devices
   const deviceColumns = [
     {
-      header: "Asset Tag",
-      accessor: "assetTag",
-    },
-    {
       header: "Brand",
       accessor: "brand",
     },
@@ -180,6 +176,10 @@ export default function UserDetails() {
     {
       header: "Serial Number",
       accessor: "serialNumber",
+    },
+    {
+      header: "Asset Tag",
+      accessor: "assetTag",
     },
   ];
   
