@@ -350,11 +350,9 @@ export default function UserDetails() {
                     </Button>
                   </CardFooter>
                 </Card>
-              </div>
-              
-              {/* Software Assignments Card */}
-              <div className="grid grid-cols-1 gap-6">
-                <Card>
+                
+                {/* Software Assignments Card */}
+                <Card className="md:col-span-2">
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-center">
                       <CardTitle>Assigned Software</CardTitle>
