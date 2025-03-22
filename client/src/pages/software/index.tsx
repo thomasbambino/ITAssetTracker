@@ -145,6 +145,8 @@ export default function Software() {
     queryClient.invalidateQueries({ queryKey: ['/api/software/status/expired'] });
     queryClient.invalidateQueries({ queryKey: ['/api/software/status/pending'] });
     queryClient.invalidateQueries({ queryKey: ['/api/software/expiring/30'] });
+    // Also invalidate activity logs so they update in real-time
+    queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
   };
   
   const handleEditClick = (software: Software) => {
@@ -159,6 +161,8 @@ export default function Software() {
       queryClient.invalidateQueries({ queryKey: ['/api/software', selectedSoftware.id] });
       queryClient.invalidateQueries({ queryKey: ['/api/software-assignments/software', selectedSoftware.id] });
     }
+    // Also invalidate activity logs so they update in real-time
+    queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
   };
 
   const handleAssignClick = (software: Software) => {

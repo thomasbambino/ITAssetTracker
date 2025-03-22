@@ -91,6 +91,8 @@ export default function SoftwareDetails() {
       });
       // Refetch assignments after deletion
       refetchAssignments();
+      // Also invalidate activity logs so they update in real-time
+      queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
     },
     onError: (error) => {
       toast({
