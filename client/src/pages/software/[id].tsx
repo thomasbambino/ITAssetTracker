@@ -72,7 +72,7 @@ export default function SoftwareDetails() {
 
   // Query to fetch software assignments
   const { data: assignments = [], isLoading: isAssignmentsLoading, refetch: refetchAssignments } = useQuery<SoftwareAssignment[]>({
-    queryKey: [`/api/software-assignments/software/${softwareId}`],
+    queryKey: ['/api/software-assignments/software', softwareId],
     enabled: !!softwareId && !isNaN(softwareId),
   });
   
@@ -112,14 +112,14 @@ export default function SoftwareDetails() {
 
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
-    queryClient.invalidateQueries({ queryKey: [`/api/software/${softwareId}`] });
+    queryClient.invalidateQueries({ queryKey: ['/api/software', softwareId] });
     // Also invalidate activity logs so they update in real-time
     queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
   };
 
   const handleAssignSuccess = () => {
     setIsAssignDialogOpen(false);
-    queryClient.invalidateQueries({ queryKey: [`/api/software-assignments/software/${softwareId}`] });
+    queryClient.invalidateQueries({ queryKey: ['/api/software-assignments/software', softwareId] });
     // Also invalidate activity logs so they update in real-time
     queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
   };

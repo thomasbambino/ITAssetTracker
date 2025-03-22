@@ -69,6 +69,7 @@ export function SoftwareAssignmentForm({
   onCancel 
 }: SoftwareAssignmentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   
   // Fetch software details to get the name and other info
   const { data: software } = useQuery({
@@ -129,6 +130,11 @@ export function SoftwareAssignmentForm({
           url: `/api/software-assignments/${assignmentId}`,
           data: dataToSubmit
         });
+        
+        toast({
+          title: "Software assignment updated",
+          description: "The software assignment has been updated successfully.",
+        });
       } else {
         // Create new assignment
         await apiRequest({
@@ -136,13 +142,40 @@ export function SoftwareAssignmentForm({
           url: "/api/software-assignments",
           data: dataToSubmit
         });
+        
+        toast({
+          title: "Software assigned",
+          description: "The software has been assigned successfully.",
+        });
       }
+      
+      // Invalidate relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/software-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/software-assignments/software', softwareId] });
+      
+      if (dataToSubmit.userId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/software-assignments/user', dataToSubmit.userId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/users', dataToSubmit.userId] });
+      }
+      
+      if (dataToSubmit.deviceId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/software-assignments/device', dataToSubmit.deviceId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/devices', dataToSubmit.deviceId] });
+      }
+      
+      // Invalidate activity logs
+      queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
       
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
       console.error("Error submitting software assignment:", error);
+      toast({
+        title: "Error",
+        description: mapErrorMessage(error) || "Failed to save software assignment. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
