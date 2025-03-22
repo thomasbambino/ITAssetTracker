@@ -353,10 +353,8 @@ export default function UserDetails() {
               </div>
               
               {/* Software Assignments Card */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1"></div>
-                
-                <Card className="md:col-span-2">
+              <div className="grid grid-cols-1 gap-6">
+                <Card>
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-center">
                       <CardTitle>Assigned Software</CardTitle>
