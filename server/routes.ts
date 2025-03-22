@@ -968,10 +968,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/software', async (req: Request, res: Response) => {
+  app.post('/api/software', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const validatedData = insertSoftwareSchema.parse(req.body);
-      const softwareItem = await storage.createSoftware(validatedData);
+      // Pass the logged-in user ID for proper activity logging
+      const loggedInUserId = (req.session as any).userId;
+      const softwareItem = await storage.createSoftware(validatedData, loggedInUserId);
       res.status(201).json(softwareItem);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -981,12 +983,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/software/:id', async (req: Request, res: Response) => {
+  app.put('/api/software/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertSoftwareSchema.partial().parse(req.body);
       
-      const softwareItem = await storage.updateSoftware(id, validatedData);
+      // Pass the logged-in user ID for proper activity logging
+      const loggedInUserId = (req.session as any).userId;
+      const softwareItem = await storage.updateSoftware(id, validatedData, loggedInUserId);
+      
       if (!softwareItem) {
         return res.status(404).json({ message: "Software not found" });
       }
