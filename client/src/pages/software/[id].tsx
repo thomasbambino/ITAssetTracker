@@ -113,11 +113,15 @@ export default function SoftwareDetails() {
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: [`/api/software/${softwareId}`] });
+    // Also invalidate activity logs so they update in real-time
+    queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
   };
 
   const handleAssignSuccess = () => {
     setIsAssignDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: [`/api/software-assignments/software/${softwareId}`] });
+    // Also invalidate activity logs so they update in real-time
+    queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
   };
 
   // Generate status badge
