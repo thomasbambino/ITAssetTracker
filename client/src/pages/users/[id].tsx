@@ -414,64 +414,129 @@ export default function UserDetails() {
               </div>
               
               {/* Software Assignments Card */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-1"></div>
+                
+                <Card className="md:col-span-2">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-center">
+                      <CardTitle>Assigned Software</CardTitle>
+                      <Link href="/software">
+                        <Button variant="outline" size="sm">
+                          <PackageIcon className="h-4 w-4 mr-2" />
+                          Manage Software
+                        </Button>
+                      </Link>
+                    </div>
+                    <CardDescription>
+                      Software licenses assigned to this user
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {assignmentsLoading ? (
+                      <div className="flex items-center justify-center h-32">
+                        <p>Loading software assignments...</p>
+                      </div>
+                    ) : softwareAssignments && softwareAssignments.length > 0 ? (
+                      <DataTable 
+                        data={softwareAssignments}
+                        columns={softwareColumns}
+                        keyField="id"
+                        onRowClick={(assignment) => navigate(`/software/${assignment.softwareId}`)}
+                        emptyState={
+                          <div className="text-center py-6">
+                            <PackageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                            <h3 className="text-sm font-medium text-gray-900">No software assigned</h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                              This user doesn't have any software licenses assigned yet.
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="mt-3"
+                              onClick={() => navigate('/software')}
+                            >
+                              Assign Software
+                            </Button>
+                          </div>
+                        }
+                      />
+                    ) : (
+                      <div className="text-center py-6">
+                        <PackageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <h3 className="text-sm font-medium text-gray-900">No software assigned</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          This user doesn't have any software licenses assigned yet.
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-3"
+                          onClick={() => navigate('/software')}
+                        >
+                          Assign Software
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Assigned Devices Card */}
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-center">
-                    <CardTitle>Assigned Software</CardTitle>
-                    <Link href="/software">
+                    <CardTitle>Assigned Devices</CardTitle>
+                    <Link href="/devices">
                       <Button variant="outline" size="sm">
-                        <PackageIcon className="h-4 w-4 mr-2" />
-                        Manage Software
+                        <LaptopIcon className="h-4 w-4 mr-2" />
+                        Manage Devices
                       </Button>
                     </Link>
                   </div>
                   <CardDescription>
-                    Software licenses assigned to this user
+                    Devices currently assigned to this user
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {assignmentsLoading ? (
-                    <div className="flex items-center justify-center h-32">
-                      <p>Loading software assignments...</p>
-                    </div>
-                  ) : softwareAssignments && softwareAssignments.length > 0 ? (
+                  {user.devices && user.devices.length > 0 ? (
                     <DataTable 
-                      data={softwareAssignments}
-                      columns={softwareColumns}
+                      data={user.devices}
+                      columns={deviceColumns}
                       keyField="id"
-                      onRowClick={(assignment) => navigate(`/software/${assignment.softwareId}`)}
+                      onRowClick={(device) => navigate(`/devices/${device.id}`)}
                       emptyState={
                         <div className="text-center py-6">
-                          <PackageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                          <h3 className="text-sm font-medium text-gray-900">No software assigned</h3>
+                          <LaptopIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <h3 className="text-sm font-medium text-gray-900">No devices assigned</h3>
                           <p className="text-sm text-gray-500 mt-1">
-                            This user doesn't have any software licenses assigned yet.
+                            This user doesn't have any devices assigned yet.
                           </p>
                           <Button 
                             variant="outline" 
                             size="sm" 
                             className="mt-3"
-                            onClick={() => navigate('/software')}
+                            onClick={() => navigate('/devices')}
                           >
-                            Assign Software
+                            Assign Device
                           </Button>
                         </div>
                       }
                     />
                   ) : (
                     <div className="text-center py-6">
-                      <PackageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <h3 className="text-sm font-medium text-gray-900">No software assigned</h3>
+                      <LaptopIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-sm font-medium text-gray-900">No devices assigned</h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        This user doesn't have any software licenses assigned yet.
+                        This user doesn't have any devices assigned yet.
                       </p>
                       <Button 
                         variant="outline" 
                         size="sm" 
                         className="mt-3"
-                        onClick={() => navigate('/software')}
+                        onClick={() => navigate('/devices')}
                       >
-                        Assign Software
+                        Assign Device
                       </Button>
                     </div>
                   )}
