@@ -40,7 +40,6 @@ const formSchema = z.object({
   userId: z.number().optional().nullable(),
   deviceId: z.number().optional().nullable(),
   assignmentDate: z.date(),
-  expiryDate: z.date().optional().nullable(),
   notes: z.string().optional().nullable(),
 }).refine(data => {
   // Ensure either userId or deviceId is provided based on assignmentType
@@ -101,7 +100,6 @@ export function SoftwareAssignmentForm({
       userId: assignment && assignment.userId ? assignment.userId : null,
       deviceId: assignment && assignment.deviceId ? assignment.deviceId : null,
       assignmentDate: assignment && assignment.assignedAt ? new Date(assignment.assignedAt) : new Date(),
-      expiryDate: assignment && assignment.expiryDate ? new Date(assignment.expiryDate) : null,
       notes: assignment && assignment.notes ? assignment.notes : "",
     },
   });
@@ -119,7 +117,6 @@ export function SoftwareAssignmentForm({
         userId: values.assignmentType === "user" ? parseInt(values.userId!.toString()) : null,
         deviceId: values.assignmentType === "device" ? parseInt(values.deviceId!.toString()) : null,
         assignedAt: values.assignmentDate ? new Date(values.assignmentDate) : new Date(),
-        expiryDate: values.expiryDate ? new Date(values.expiryDate) : null,
         notes: values.notes,
         // The server will automatically use the logged-in user as the assignedBy
       };
@@ -295,94 +292,47 @@ export function SoftwareAssignmentForm({
           />
         )}
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="assignmentDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Assignment Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          formatDate(field.value)
-                        ) : (
-                          <span>Select date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormDescription>
-                  When the software is assigned
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="expiryDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Expiry Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          formatDate(field.value)
-                        ) : (
-                          <span>Select date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value || undefined}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date < new Date()
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormDescription>
-                  When this assignment expires (optional)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="assignmentDate"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Assignment Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        formatDate(field.value)
+                      ) : (
+                        <span>Select date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormDescription>
+                When the software is assigned
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <FormField
           control={form.control}
