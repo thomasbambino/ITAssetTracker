@@ -18,6 +18,13 @@ import {
   insertQrCodeSchema, insertNotificationSchema, insertBrandingSettingsSchema
 } from "@shared/schema";
 
+// Define the session data type to fix type errors
+interface SessionData {
+  userId: number;
+  userRole: 'admin' | 'user';
+  passwordResetRequired: boolean;
+}
+
 // Configure session types
 declare module 'express-session' {
   interface SessionData {
@@ -1005,10 +1012,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/software/:id', async (req: Request, res: Response) => {
+  app.delete('/api/software/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteSoftware(id);
+      // Add logged-in user ID to the request
+      const loggedInUserId = (req.session as any).userId;
+      const success = await storage.deleteSoftware(id, loggedInUserId);
       
       if (!success) {
         return res.status(404).json({ message: "Software not found or has active assignments" });
@@ -1134,9 +1143,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/software-assignments', async (req: Request, res: Response) => {
+  app.post('/api/software-assignments', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const validatedData = insertSoftwareAssignmentSchema.parse(req.body);
+      // Add logged-in user ID to the request
+      const loggedInUserId = (req.session as any).userId;
+      
+      // Pass the logged-in user as assignedBy
+      if (!validatedData.assignedBy) {
+        validatedData.assignedBy = loggedInUserId;
+      }
+      
       const assignment = await storage.createSoftwareAssignment(validatedData);
 
       // Send notification email if configured for this software
@@ -1188,12 +1205,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/software-assignments/:id', async (req: Request, res: Response) => {
+  app.put('/api/software-assignments/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertSoftwareAssignmentSchema.partial().parse(req.body);
       
-      const assignment = await storage.updateSoftwareAssignment(id, validatedData);
+      // Add logged-in user ID to the request
+      const loggedInUserId = (req.session as any).userId;
+      
+      const assignment = await storage.updateSoftwareAssignment(id, validatedData, loggedInUserId);
       if (!assignment) {
         return res.status(404).json({ message: "Software assignment not found" });
       }
@@ -1207,7 +1227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/software-assignments/:id', async (req: Request, res: Response) => {
+  app.delete('/api/software-assignments/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -1223,8 +1243,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = assignment.userId;
       const deviceId = assignment.deviceId;
       
+      // Get logged-in user ID from session
+      const loggedInUserId = (req.session as any).userId;
+      
       // Delete the assignment
-      const success = await storage.deleteSoftwareAssignment(id);
+      const success = await storage.deleteSoftwareAssignment(id, loggedInUserId);
       
       if (!success) {
         return res.status(404).json({ message: "Software assignment not found" });
