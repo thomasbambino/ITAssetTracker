@@ -121,6 +121,7 @@ export function SoftwareAssignmentForm({
         assignedAt: values.assignmentDate ? new Date(values.assignmentDate) : new Date(),
         expiryDate: values.expiryDate ? new Date(values.expiryDate) : null,
         notes: values.notes,
+        // The server will automatically use the logged-in user as the assignedBy
       };
       
       if (assignmentId) {
