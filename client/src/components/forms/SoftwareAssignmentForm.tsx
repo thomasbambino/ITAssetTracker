@@ -27,10 +27,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CalendarIcon, Laptop, User } from "lucide-react";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, mapErrorMessage } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 // Define the form schema
 const formSchema = z.object({
@@ -98,7 +99,7 @@ export function SoftwareAssignmentForm({
       assignmentType: assignment && assignment.userId ? "user" : "device",
       userId: assignment && assignment.userId ? assignment.userId : null,
       deviceId: assignment && assignment.deviceId ? assignment.deviceId : null,
-      assignmentDate: assignment && assignment.assignmentDate ? new Date(assignment.assignmentDate) : new Date(),
+      assignmentDate: assignment && assignment.assignedAt ? new Date(assignment.assignedAt) : new Date(),
       expiryDate: assignment && assignment.expiryDate ? new Date(assignment.expiryDate) : null,
       notes: assignment && assignment.notes ? assignment.notes : "",
     },
@@ -116,25 +117,25 @@ export function SoftwareAssignmentForm({
         softwareId: values.softwareId ? parseInt(values.softwareId.toString()) : null,
         userId: values.assignmentType === "user" ? parseInt(values.userId!.toString()) : null,
         deviceId: values.assignmentType === "device" ? parseInt(values.deviceId!.toString()) : null,
-        assignmentDate: values.assignmentDate ? new Date(values.assignmentDate) : new Date(),
+        assignedAt: values.assignmentDate ? new Date(values.assignmentDate) : new Date(),
         expiryDate: values.expiryDate ? new Date(values.expiryDate) : null,
         notes: values.notes,
       };
       
       if (assignmentId) {
         // Update existing assignment
-        await apiRequest(
-          "PUT",
-          `/api/software-assignments/${assignmentId}`,
-          dataToSubmit
-        );
+        await apiRequest({
+          method: "PUT",
+          url: `/api/software-assignments/${assignmentId}`,
+          data: dataToSubmit
+        });
       } else {
         // Create new assignment
-        await apiRequest(
-          "POST",
-          "/api/software-assignments",
-          dataToSubmit
-        );
+        await apiRequest({
+          method: "POST",
+          url: "/api/software-assignments",
+          data: dataToSubmit
+        });
       }
       
       if (onSuccess) {
