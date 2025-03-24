@@ -170,6 +170,16 @@ export async function initializeDatabase() {
     console.log('Database initialization complete.');
   } catch (error) {
     console.error('Error initializing database:', error);
+    
+    // Check for specific PostgreSQL connection errors
+    if (error.code === 'ECONNREFUSED') {
+      console.error('Database connection refused. Check if the database server is running and accessible.');
+    } else if (error.code === '28P01') {
+      console.error('Invalid database credentials. Check your PGUSER and PGPASSWORD environment variables.');
+    } else if (error.code === '3D000') {
+      console.error('Database does not exist. Check your PGDATABASE environment variable.');
+    }
+    
     throw error;
   }
 }

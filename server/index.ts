@@ -79,7 +79,29 @@ app.use((req, res, next) => {
   next();
 });
 
+// Validate required environment variables
+function validateEnvironmentVariables() {
+  const required = [
+    'DATABASE_URL',
+    'PGDATABASE',
+    'PGHOST',
+    'PGPORT',
+    'PGUSER',
+    'PGPASSWORD',
+    'SESSION_SECRET',
+    'MAILGUN_DOMAIN',
+    'MAILGUN_API_KEY'
+  ];
+  
+  const missing = required.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    console.error(`Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
+
 (async () => {
+  validateEnvironmentVariables();
   // Initialize the database
   try {
     log('Initializing database...');
