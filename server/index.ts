@@ -15,19 +15,27 @@ app.use(express.urlencoded({ extended: false }));
 // Set up session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'itassetmanagement-secret-key',
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
+  name: 'asset.sid', // Custom name to avoid default name collisions
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Set to false even in production for now to debug
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    sameSite: 'lax' // Allow cookies in same-site context
   }
 }));
 
+// Debug middleware for logging and session tracking
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
+
+  // Debug session data on authentication endpoints
+  if (path.startsWith("/api/auth") || path === "/api/users/me") {
+    log(`Session debug - Route: ${path}, SessionID: ${req.sessionID || 'none'}, SessionData: ${JSON.stringify(req.session) || 'none'}`);
+  }
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
@@ -48,6 +56,11 @@ app.use((req, res, next) => {
       }
 
       log(logLine);
+      
+      // Log session data after authentication endpoints
+      if ((path.startsWith("/api/auth") || path === "/api/users/me") && res.statusCode === 200) {
+        log(`Session after successful ${path}: ${JSON.stringify(req.session || {})}`);
+      }
     }
   });
 

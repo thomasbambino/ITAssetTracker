@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Redirect } from "wouter";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 interface User {
   id: number;
@@ -17,10 +18,21 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
-  const { data: user, isLoading, isError } = useQuery<User>({
+  const { data: user, isLoading, isError, error } = useQuery<User>({
     queryKey: ['/api/users/me'],
-    retry: false,
+    retry: 3, // Retry up to 3 times
+    retryDelay: 1000, // Wait 1 second between retries
   });
+
+  // For debugging
+  useEffect(() => {
+    if (isError) {
+      console.error('Protected route auth error:', error);
+    }
+    if (user) {
+      console.log('User data loaded:', user);
+    }
+  }, [isError, error, user]);
 
   if (isLoading) {
     return (

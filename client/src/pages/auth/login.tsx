@@ -60,11 +60,15 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setLoading(true);
     try {
+      console.log("Attempting login with:", values.email);
+      
       const data = await apiRequest({
         method: "POST", 
         url: "/api/auth/login", 
         data: values
       });
+
+      console.log("Login response:", data);
 
       if (data.success) {
         toast({
@@ -72,11 +76,14 @@ export default function LoginPage() {
           description: "Welcome to IT Asset Management System",
         });
 
-        if (data.passwordResetRequired) {
-          navigate("/auth/reset-password");
-        } else {
-          navigate("/");
-        }
+        // Add a small delay to allow session to be properly established
+        setTimeout(() => {
+          if (data.passwordResetRequired) {
+            navigate("/auth/reset-password");
+          } else {
+            navigate("/");
+          }
+        }, 300);
       } else {
         toast({
           title: "Login failed",
@@ -86,9 +93,15 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Login error:", error);
+      
+      let errorMessage = "An error occurred during login";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Login failed",
-        description: "An error occurred during login",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
