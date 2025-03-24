@@ -87,10 +87,11 @@ export default function LoginPage() {
           console.log("Updated user data in cache:", data.user);
         }
 
-        // Immediate navigation based on password reset status
+        // Immediate navigation based on password reset status with full page reload
         if (data.passwordResetRequired) {
           console.log("Redirecting to password reset page");
-          navigate("/auth/reset-password");
+          // Use window.location.href for a full page load to reset everything
+          window.location.href = "/auth/reset-password";
         } else {
           console.log("Redirecting to dashboard");
           // Use window.location.href for a full page load to reset everything

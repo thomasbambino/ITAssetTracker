@@ -76,7 +76,8 @@ export default function ResetPasswordPage() {
           description: "Your password has been updated successfully",
         });
 
-        navigate("/");
+        // Use direct navigation for clean page reload
+        window.location.href = "/";
       } else {
         toast({
           title: "Failed to change password",

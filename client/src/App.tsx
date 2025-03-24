@@ -100,14 +100,14 @@ function MainRouter() {
 }
 
 function Router() {
-  const [location, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
   const { data: user, isLoading, isError } = useQuery<any>({
     queryKey: ['/api/users/me'],
     retry: 1, // Minimize retries for faster auth check failure
     staleTime: 60 * 1000, // 1 minute cache
   });
   
-  // If we're on an auth route, use the auth router directly
+  // If we're on an auth route, use the auth router directly without checking auth
   if (location.startsWith("/auth/")) {
     return <AuthRouter />;
   }
@@ -122,10 +122,11 @@ function Router() {
     );
   }
   
-  // If there's an error or no user, redirect to login using router
+  // If there's an error or no user, redirect to login once (using window.location to avoid loops)
   if (isError || !user) {
     console.log('Not authenticated, redirecting to login');
-    navigate('/auth/login');
+    // Use direct navigation once to avoid infinite loops
+    window.location.href = '/auth/login';
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
