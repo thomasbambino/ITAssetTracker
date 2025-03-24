@@ -1,6 +1,7 @@
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import AppLayout from "@/components/layout/AppLayout";
 import NotFound from "@/pages/not-found";
@@ -100,13 +101,39 @@ function MainRouter() {
 
 function Router() {
   const [location] = useLocation();
+  const { data: user, isLoading, isError } = useQuery<any>({
+    queryKey: ['/api/users/me'],
+    retry: 1, // Minimize retries for faster auth check failure
+    staleTime: 60 * 1000, // 1 minute cache
+  });
   
-  // If we're on an auth route, use the auth router
+  // If we're on an auth route, use the auth router directly
   if (location.startsWith("/auth/")) {
     return <AuthRouter />;
   }
   
-  // Otherwise use the main router with protected routes
+  // For non-auth routes, check authentication first
+  // Show loading state during auth check
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  // If there's an error or no user, redirect to login immediately
+  if (isError || !user) {
+    console.log('Not authenticated, redirecting to login');
+    window.location.href = '/auth/login';
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  // User is authenticated, render the main router
   return (
     <AppLayout>
       <MainRouter />

@@ -34,7 +34,7 @@ export default function LoginPage() {
   const [_, navigate] = useLocation();
   
   // Fetch branding settings
-  const { data: brandingData } = useQuery<BrandingSettings>({
+  const { data: brandingData, isLoading: brandingLoading } = useQuery<BrandingSettings>({
     queryKey: ['/api/branding'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -126,32 +126,43 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-2">
-            {branding?.logo ? (
-              <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-2">
-                <img 
-                  src={branding.logo} 
-                  alt="Company logo"
-                  className="h-8 w-8 object-contain" 
-                />
+            {brandingLoading ? (
+              <div className="flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary/20 rounded-md flex items-center justify-center mr-2">
+                  <Loader2 className="h-7 w-7 text-primary animate-spin" />
+                </div>
+                <div className="h-8 w-48 bg-primary/20 animate-pulse rounded-md"></div>
               </div>
             ) : (
-              <div className="bg-primary p-1.5 rounded-md mr-2">
-                <ServerIcon className="h-7 w-7 text-white" />
-              </div>
+              <>
+                {branding?.logo ? (
+                  <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-2">
+                    <img 
+                      src={branding.logo} 
+                      alt="Company logo"
+                      className="h-8 w-8 object-contain" 
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-primary p-1.5 rounded-md mr-2">
+                    <ServerIcon className="h-7 w-7 text-white" />
+                  </div>
+                )}
+                <h2 
+                  className="text-2xl font-bold" 
+                  style={{
+                    color: branding.siteNameGradient ? 'transparent' : (branding.siteNameColor || '#1E40AF'),
+                    backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
+                      ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
+                      : 'none',
+                    backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
+                    WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
+                  }}
+                >
+                  {branding.companyName}
+                </h2>
+              </>
             )}
-            <h2 
-              className="text-2xl font-bold" 
-              style={{
-                color: branding.siteNameGradient ? 'transparent' : (branding.siteNameColor || '#1E40AF'),
-                backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
-                  ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
-                  : 'none',
-                backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
-                WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
-              }}
-            >
-              {branding.companyName}
-            </h2>
           </div>
         </CardHeader>
         <CardContent>

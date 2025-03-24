@@ -34,7 +34,7 @@ export default function ResetPasswordPage() {
   const [_, navigate] = useLocation();
   
   // Fetch branding settings
-  const { data: brandingData } = useQuery<BrandingSettings>({
+  const { data: brandingData, isLoading: brandingLoading } = useQuery<BrandingSettings>({
     queryKey: ['/api/branding'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
