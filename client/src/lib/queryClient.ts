@@ -2,8 +2,18 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      // Try to get the text, but handle issues with HTML responses
+      const text = await res.text();
+      // Check if this is an HTML response (typically containing a DOCTYPE)
+      if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+        throw new Error(`${res.status}: Server returned an HTML page instead of JSON. Your session may have expired.`);
+      }
+      throw new Error(`${res.status}: ${text || res.statusText}`);
+    } catch (parseError) {
+      // If we can't read the response text at all, use the status text
+      throw new Error(`${res.status}: ${res.statusText}`);
+    }
   }
 }
 
@@ -38,7 +48,12 @@ export async function apiRequest({
     
     // Parse JSON response if it's not a 204 No Content
     if (res.status !== 204) {
-      return await res.json();
+      try {
+        return await res.json();
+      } catch (error) {
+        console.error(`Error parsing JSON response from ${url}:`, error);
+        throw new Error(`Failed to parse server response as JSON. Your session might have expired.`);
+      }
     }
     
     return { success: true };
@@ -84,7 +99,13 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    
+    try {
+      return await res.json();
+    } catch (error) {
+      console.error(`Error parsing JSON in getQueryFn for ${url}:`, error);
+      throw new Error(`Failed to parse server response as JSON. Your session might have expired.`);
+    }
   };
 
 export const queryClient = new QueryClient({
