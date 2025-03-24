@@ -39,7 +39,7 @@ const formSchema = z.object({
   assignmentType: z.enum(["user", "device"]),
   userId: z.number().optional().nullable(),
   deviceId: z.number().optional().nullable(),
-  assignedAt: z.date(),
+  assignedAt: z.date(),  // Keep as date for form handling
   notes: z.string().optional().nullable(),
 }).refine(data => {
   // Ensure either userId or deviceId is provided based on assignmentType
@@ -116,7 +116,7 @@ export function SoftwareAssignmentForm({
         softwareId: values.softwareId ? parseInt(values.softwareId.toString()) : null,
         userId: values.assignmentType === "user" ? parseInt(values.userId!.toString()) : null,
         deviceId: values.assignmentType === "device" ? parseInt(values.deviceId!.toString()) : null,
-        assignedAt: values.assignedAt ? new Date(values.assignedAt) : new Date(),
+        assignedAt: values.assignedAt ? values.assignedAt.toISOString() : new Date().toISOString(), // Convert to ISO string format
         notes: values.notes,
         assignedBy: undefined, // Let the server add the current user's ID
       };

@@ -38,8 +38,8 @@ interface SoftwareAssignment {
   softwareId: number;
   userId?: number | null;
   deviceId?: number | null;
-  assignedAt: Date; // This is the actual field name from the API
-  expiryDate?: Date | null;
+  assignedAt: string; // API returns this as a string ISO date
+  expiryDate?: string | null;
   notes?: string | null;
   user?: {
     id: number;
