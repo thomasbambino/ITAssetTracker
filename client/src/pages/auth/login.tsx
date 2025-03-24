@@ -123,48 +123,42 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-2">
-            {brandingLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="w-10 h-10 bg-primary/20 rounded-md flex items-center justify-center mr-2">
-                  <Loader2 className="h-7 w-7 text-primary animate-spin" />
+      {brandingLoading ? (
+        <div className="w-full max-w-md h-80 bg-card rounded-lg border border-border shadow-sm flex items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      ) : (
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1">
+            <div className="flex items-center justify-center mb-2">
+              {branding?.logo ? (
+                <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-2">
+                  <img 
+                    src={branding.logo} 
+                    alt="Company logo"
+                    className="h-8 w-8 object-contain" 
+                  />
                 </div>
-                <div className="h-8 w-48 bg-primary/20 animate-pulse rounded-md"></div>
-              </div>
-            ) : (
-              <>
-                {branding?.logo ? (
-                  <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-2">
-                    <img 
-                      src={branding.logo} 
-                      alt="Company logo"
-                      className="h-8 w-8 object-contain" 
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-primary p-1.5 rounded-md mr-2">
-                    <ServerIcon className="h-7 w-7 text-white" />
-                  </div>
-                )}
-                <h2 
-                  className="text-2xl font-bold" 
-                  style={{
-                    color: branding.siteNameGradient ? 'transparent' : (branding.siteNameColor || '#1E40AF'),
-                    backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
-                      ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
-                      : 'none',
-                    backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
-                    WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
-                  }}
-                >
-                  {branding.companyName}
-                </h2>
-              </>
-            )}
-          </div>
-        </CardHeader>
+              ) : (
+                <div className="bg-primary p-1.5 rounded-md mr-2">
+                  <ServerIcon className="h-7 w-7 text-white" />
+                </div>
+              )}
+              <h2 
+                className="text-2xl font-bold" 
+                style={{
+                  color: branding.siteNameGradient ? 'transparent' : (branding.siteNameColor || '#1E40AF'),
+                  backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
+                    ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
+                    : 'none',
+                  backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
+                  WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
+                }}
+              >
+                {branding.companyName}
+              </h2>
+            </div>
+          </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -213,6 +207,7 @@ export default function LoginPage() {
           </div>
         </CardFooter>
       </Card>
+      )}
     </div>
   );
 }

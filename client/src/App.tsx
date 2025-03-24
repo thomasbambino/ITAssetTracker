@@ -100,7 +100,7 @@ function MainRouter() {
 }
 
 function Router() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { data: user, isLoading, isError } = useQuery<any>({
     queryKey: ['/api/users/me'],
     retry: 1, // Minimize retries for faster auth check failure
@@ -122,10 +122,10 @@ function Router() {
     );
   }
   
-  // If there's an error or no user, redirect to login immediately
+  // If there's an error or no user, redirect to login using router
   if (isError || !user) {
     console.log('Not authenticated, redirecting to login');
-    window.location.href = '/auth/login';
+    navigate('/auth/login');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
