@@ -290,13 +290,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/users/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const idParam = req.params.id;
+      let id: number;
+      
+      try {
+        id = parseInt(idParam);
+        if (isNaN(id)) {
+          console.error(`Invalid user ID format for update: ${idParam}`);
+          return res.status(400).json({ message: "Invalid user ID format" });
+        }
+      } catch (error) {
+        console.error(`Error parsing user ID: ${idParam}`, error);
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
       
       // Get the currently logged in user's ID from the session
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
-      console.log('User update - ID to update:', id, 'Logged in user ID:', loggedInUserId);
+      console.log('User update - ID to update:', id, '(original param:', idParam, '), Logged in user ID:', loggedInUserId);
       console.log('Received user update data:', req.body);
       
       // Check if user exists first

@@ -94,10 +94,15 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
           role: data.role?.toString()
         };
         
+        console.log("Updating user with ID:", user.id, "Type:", typeof user.id);
         console.log("Updating user with data:", payload);
+        
+        const userId = parseInt(user.id) || user.id; // Ensure it's a number if possible
+        console.log("Using user ID for update:", userId, "Type:", typeof userId);
+        
         return await apiRequest({
           method: "PUT",
-          url: `/api/users/${user.id}`,
+          url: `/api/users/${userId}`,
           data: payload
         });
       } catch (error) {
