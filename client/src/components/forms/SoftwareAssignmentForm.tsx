@@ -149,7 +149,7 @@ export function SoftwareAssignmentForm({
       
       // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/software-assignments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/software-assignments/software', softwareId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/software-assignments/software/${softwareId}`] });
       
       if (dataToSubmit.userId) {
         queryClient.invalidateQueries({ queryKey: ['/api/software-assignments/user', dataToSubmit.userId] });
