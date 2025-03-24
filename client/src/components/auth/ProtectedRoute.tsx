@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
+import { queryClient } from "@/lib/queryClient";
 
 interface User {
   id: number;
@@ -18,21 +19,44 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
-  const { data: user, isLoading, isError, error } = useQuery<User>({
+  const [location, setLocation] = useLocation();
+  
+  // Get the user data with improved error handling
+  const { data: user, isLoading, isError, error, refetch } = useQuery<User>({
     queryKey: ['/api/users/me'],
-    retry: 3, // Retry up to 3 times
+    retry: 2, // Only retry twice to avoid too many retries
     retryDelay: 1000, // Wait 1 second between retries
+    staleTime: 60 * 1000, // 1 minute
+    cacheTime: 5 * 60 * 1000, // 5 minutes
+    onError: (error) => {
+      console.error('Protected route auth error:', error);
+      // If the URL includes "/auth", don't attempt to redirect to avoid loops
+      if (!location.includes("/auth/")) {
+        setLocation("/auth/login");
+      }
+    }
   });
 
   // For debugging
   useEffect(() => {
-    if (isError) {
-      console.error('Protected route auth error:', error);
-    }
     if (user) {
       console.log('User data loaded:', user);
     }
-  }, [isError, error, user]);
+  }, [user]);
+
+  // Force refresh of user data when component mounts
+  useEffect(() => {
+    // Initial fetch to ensure we have fresh data
+    const fetchData = async () => {
+      try {
+        await queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+      } catch (error) {
+        console.error('Error refreshing auth status:', error);
+      }
+    };
+    
+    fetchData();
+  }, []);
 
   if (isLoading) {
     return (
@@ -44,7 +68,12 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
 
   // Not logged in
   if (isError || !user) {
-    return <Redirect to="/auth/login" />;
+    // If we're already on an auth page, don't redirect to prevent loops
+    if (!location.includes("/auth/")) {
+      return <Redirect to="/auth/login" />;
+    }
+    // Just return null to avoid rendering loops if already on auth page
+    return null;
   }
 
   // Admin access required but user is not admin
