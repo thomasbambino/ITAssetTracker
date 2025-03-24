@@ -75,6 +75,8 @@ router.post('/login', async (req: Request, res: Response) => {
 
 // Logout route
 router.post('/logout', (req: Request, res: Response) => {
+  console.log('Logout request received - destroying session:', req.sessionID);
+  
   req.session.destroy((err) => {
     if (err) {
       console.error('Logout error:', err);
@@ -84,7 +86,11 @@ router.post('/logout', (req: Request, res: Response) => {
       });
     }
     
+    // Clear both cookie names to be safe
+    res.clearCookie('asset.sid');
     res.clearCookie('connect.sid');
+    
+    console.log('Session destroyed successfully');
     return res.status(200).json({
       success: true,
       message: 'Logged out successfully'

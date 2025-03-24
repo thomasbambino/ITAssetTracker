@@ -78,23 +78,41 @@ export default function LoginPage() {
 
         // Manually update the cache with user data to prevent session validation issues
         if (data.user) {
-          // Invalidate any existing user data queries
-          queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
-          
-          // Set the query data manually
+          // Manually set the user data in the query cache first
           queryClient.setQueryData(['/api/users/me'], data.user);
           
           console.log("Updated user data in cache:", data.user);
+          
+          // We'll now perform a direct fetch to verify the session is working
+          try {
+            const verifyResponse = await fetch('/api/users/me', {
+              credentials: 'include',
+              headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+              },
+              cache: 'no-store'
+            });
+            
+            if (verifyResponse.ok) {
+              console.log("Session verification successful");
+              
+              // After verification is successful, invalidate the query to ensure it gets fresh data
+              await queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+            } else {
+              console.warn("Session verification failed, but proceeding with cached data");
+            }
+          } catch (verifyError) {
+            console.error("Session verification error:", verifyError);
+          }
         }
 
-        // Add a small delay to allow session to be properly established
-        setTimeout(() => {
-          if (data.passwordResetRequired) {
-            navigate("/auth/reset-password");
-          } else {
-            navigate("/");
-          }
-        }, 500); // Increased delay for session establishment
+        // Determine where to navigate based on password reset requirement
+        if (data.passwordResetRequired) {
+          navigate("/auth/reset-password");
+        } else {
+          navigate("/");
+        }
       } else {
         toast({
           title: "Login failed",

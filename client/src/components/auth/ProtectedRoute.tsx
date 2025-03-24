@@ -52,6 +52,12 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
 
   // Manually check authentication status on component mount
   useEffect(() => {
+    // Don't run this check if we're already on an auth page
+    if (location.includes("/auth/")) {
+      setAuthChecked(true);
+      return;
+    }
+    
     const checkAuth = async () => {
       try {
         // Direct API call to check authentication without using the cache
