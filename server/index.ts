@@ -13,40 +13,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Set up session middleware
-import pgSimple from 'connect-pg-simple';
-const pgSession = pgSimple(session);
-
-// Use memory storage in development for simplicity - avoids PG session table issues
-const sessionConfig: session.SessionOptions = {
-  secret: process.env.SESSION_SECRET || 'dev-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  name: 'connect.sid', // Use default cookie name
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'itassetmanagement-secret-key',
+  resave: true,
+  saveUninitialized: true,
+  name: 'asset.sid', // Custom name to avoid default name collisions
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Set to false even in production for now to debug
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    sameSite: 'lax' as const
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    sameSite: 'lax' // Allow cookies in same-site context
   }
-};
-
-// Only use Postgres session store in production
-if (process.env.NODE_ENV === 'production') {
-  sessionConfig.store = new pgSession({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true
-  });
-  console.log('Using PostgreSQL session store');
-} else {
-  console.log('Using in-memory session store for development');
-}
-
-app.use(session(sessionConfig));
-
-// Validate session secret in production
-if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
-  throw new Error('SESSION_SECRET must be set in production');
-}
+}));
 
 // Debug middleware for logging and session tracking
 app.use((req, res, next) => {
@@ -89,29 +67,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Validate required environment variables
-function validateEnvironmentVariables() {
-  const required = [
-    'DATABASE_URL',
-    'PGDATABASE',
-    'PGHOST',
-    'PGPORT',
-    'PGUSER',
-    'PGPASSWORD',
-    'SESSION_SECRET',
-    'MAILGUN_DOMAIN',
-    'MAILGUN_API_KEY'
-  ];
-  
-  const missing = required.filter(key => !process.env[key]);
-  if (missing.length > 0) {
-    console.error(`Missing required environment variables: ${missing.join(', ')}`);
-    process.exit(1);
-  }
-}
-
 (async () => {
-  validateEnvironmentVariables();
   // Initialize the database
   try {
     log('Initializing database...');
@@ -145,10 +101,6 @@ function validateEnvironmentVariables() {
     }
   } catch (error) {
     log(`Database initialization failed: ${error}`);
-    if (process.env.NODE_ENV === 'production') {
-      log('Fatal: Cannot continue without database in production');
-      process.exit(1);
-    }
   }
 
   const server = await registerRoutes(app);

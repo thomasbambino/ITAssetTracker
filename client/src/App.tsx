@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import AppLayout from "@/components/layout/AppLayout";
 import NotFound from "@/pages/not-found";
@@ -101,67 +99,14 @@ function MainRouter() {
 }
 
 function Router() {
-  // EMERGENCY FIX: Use localStorage to prevent infinite redirects 
-  // and directly check if we're on an auth page
-  const currentPath = window.location.pathname;
   const [location] = useLocation();
-  const [isAuth, setIsAuth] = useState<boolean | null>(null);
   
-  // Bypass auth check for auth routes
-  if (currentPath.startsWith("/auth/")) {
+  // If we're on an auth route, use the auth router
+  if (location.startsWith("/auth/")) {
     return <AuthRouter />;
   }
   
-  // One-time auth check on component mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/users/me');
-        if (response.ok) {
-          const userData = await response.json();
-          // Set auth state and cache user data
-          setIsAuth(true);
-          queryClient.setQueryData(['/api/users/me'], userData);
-        } else {
-          setIsAuth(false);
-          // Only redirect if we're not already on a login page
-          if (!currentPath.startsWith("/auth/")) {
-            // Use the native browser navigation to avoid React state issues
-            window.location.href = '/auth/login';
-          }
-        }
-      } catch (error) {
-        setIsAuth(false);
-        // Only redirect if we're not already on a login page
-        if (!currentPath.startsWith("/auth/")) {
-          window.location.href = '/auth/login';
-        }
-      }
-    };
-    
-    checkAuth();
-  }, [currentPath]);
-  
-  // Show loading state while checking auth
-  if (isAuth === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  // If not authenticated and not already redirecting, show loading
-  // This will only show briefly before the redirect happens
-  if (!isAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  // User is authenticated, render the main router
+  // Otherwise use the main router with protected routes
   return (
     <AppLayout>
       <MainRouter />

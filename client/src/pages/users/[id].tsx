@@ -81,25 +81,11 @@ export default function UserDetails() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      console.log(`Attempting to delete user ${userId}`);
-      try {
-        await apiRequest({
-          method: 'DELETE', 
-          url: `/api/users/${userId}`
-        });
-        console.log(`Successfully deleted user ${userId}`);
-        return userId;
-      } catch (error) {
-        console.error(`Error deleting user ${userId}:`, error);
-        
-        // Check if the error contains a "DOCTYPE" string, which would indicate HTML response
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes('DOCTYPE') || errorMessage.includes('<html')) {
-          throw new Error("Session expired or server error. Please log in again and retry.");
-        }
-        
-        throw error;
-      }
+      await apiRequest({
+        method: 'DELETE', 
+        url: `/api/users/${userId}`
+      });
+      return userId;
     },
     onSuccess: () => {
       toast({
@@ -107,12 +93,8 @@ export default function UserDetails() {
         description: "User deleted successfully",
       });
       navigate('/users');
-      
-      // Invalidate the users query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
     },
     onError: (error) => {
-      console.error("Delete user mutation error:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to delete user",

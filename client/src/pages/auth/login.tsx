@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { z } from "zod";
 import { loginSchema } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Loader2, ServerIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -34,7 +34,7 @@ export default function LoginPage() {
   const [_, navigate] = useLocation();
   
   // Fetch branding settings
-  const { data: brandingData, isLoading: brandingLoading } = useQuery<BrandingSettings>({
+  const { data: brandingData } = useQuery<BrandingSettings>({
     queryKey: ['/api/branding'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -76,27 +76,14 @@ export default function LoginPage() {
           description: "Welcome to IT Asset Management System",
         });
 
-        // Set user data in cache and invalidate queries
-        if (data.user) {
-          // Set the data directly
-          queryClient.setQueryData(['/api/users/me'], data.user);
-          
-          // Invalidate to ensure fresh data on next request
-          queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
-          
-          console.log("Updated user data in cache:", data.user);
-        }
-
-        // Immediate navigation based on password reset status with full page reload
-        if (data.passwordResetRequired) {
-          console.log("Redirecting to password reset page");
-          // Use window.location.href for a full page load to reset everything
-          window.location.href = "/auth/reset-password";
-        } else {
-          console.log("Redirecting to dashboard");
-          // Use window.location.href for a full page load to reset everything
-          window.location.href = "/";
-        }
+        // Add a small delay to allow session to be properly established
+        setTimeout(() => {
+          if (data.passwordResetRequired) {
+            navigate("/auth/reset-password");
+          } else {
+            navigate("/");
+          }
+        }, 300);
       } else {
         toast({
           title: "Login failed",
@@ -124,42 +111,37 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
-      {brandingLoading ? (
-        <div className="w-full max-w-md h-80 bg-card rounded-lg border border-border shadow-sm flex items-center justify-center">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </div>
-      ) : (
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <div className="flex items-center justify-center mb-2">
-              {branding?.logo ? (
-                <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-2">
-                  <img 
-                    src={branding.logo} 
-                    alt="Company logo"
-                    className="h-8 w-8 object-contain" 
-                  />
-                </div>
-              ) : (
-                <div className="bg-primary p-1.5 rounded-md mr-2">
-                  <ServerIcon className="h-7 w-7 text-white" />
-                </div>
-              )}
-              <h2 
-                className="text-2xl font-bold" 
-                style={{
-                  color: branding.siteNameGradient ? 'transparent' : (branding.siteNameColor || '#1E40AF'),
-                  backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
-                    ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
-                    : 'none',
-                  backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
-                  WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
-                }}
-              >
-                {branding.companyName}
-              </h2>
-            </div>
-          </CardHeader>
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-2">
+            {branding?.logo ? (
+              <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-2">
+                <img 
+                  src={branding.logo} 
+                  alt="Company logo"
+                  className="h-8 w-8 object-contain" 
+                />
+              </div>
+            ) : (
+              <div className="bg-primary p-1.5 rounded-md mr-2">
+                <ServerIcon className="h-7 w-7 text-white" />
+              </div>
+            )}
+            <h2 
+              className="text-2xl font-bold" 
+              style={{
+                color: branding.siteNameGradient ? 'transparent' : (branding.siteNameColor || '#1E40AF'),
+                backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
+                  ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
+                  : 'none',
+                backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
+                WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
+              }}
+            >
+              {branding.companyName}
+            </h2>
+          </div>
+        </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -208,7 +190,6 @@ export default function LoginPage() {
           </div>
         </CardFooter>
       </Card>
-      )}
     </div>
   );
 }
