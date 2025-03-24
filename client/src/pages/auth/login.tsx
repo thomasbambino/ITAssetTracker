@@ -76,42 +76,25 @@ export default function LoginPage() {
           description: "Welcome to IT Asset Management System",
         });
 
-        // Manually update the cache with user data to prevent session validation issues
+        // Set user data in cache and invalidate queries
         if (data.user) {
-          // Manually set the user data in the query cache first
+          // Set the data directly
           queryClient.setQueryData(['/api/users/me'], data.user);
           
-          console.log("Updated user data in cache:", data.user);
+          // Invalidate to ensure fresh data on next request
+          queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
           
-          // We'll now perform a direct fetch to verify the session is working
-          try {
-            const verifyResponse = await fetch('/api/users/me', {
-              credentials: 'include',
-              headers: {
-                'Accept': 'application/json',
-                'Cache-Control': 'no-cache'
-              },
-              cache: 'no-store'
-            });
-            
-            if (verifyResponse.ok) {
-              console.log("Session verification successful");
-              
-              // After verification is successful, invalidate the query to ensure it gets fresh data
-              await queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
-            } else {
-              console.warn("Session verification failed, but proceeding with cached data");
-            }
-          } catch (verifyError) {
-            console.error("Session verification error:", verifyError);
-          }
+          console.log("Updated user data in cache:", data.user);
         }
 
-        // Determine where to navigate based on password reset requirement
+        // Immediate navigation based on password reset status
         if (data.passwordResetRequired) {
+          console.log("Redirecting to password reset page");
           navigate("/auth/reset-password");
         } else {
-          navigate("/");
+          console.log("Redirecting to dashboard");
+          // Use window.location.href for a full page load to reset everything
+          window.location.href = "/";
         }
       } else {
         toast({

@@ -16,22 +16,32 @@ app.use(express.urlencoded({ extended: false }));
 import pgSimple from 'connect-pg-simple';
 const pgSession = pgSimple(session);
 
-app.use(session({
-  store: new pgSession({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true
-  }),
-  secret: process.env.SESSION_SECRET,
+// Use memory storage in development for simplicity - avoids PG session table issues
+const sessionConfig: session.SessionOptions = {
+  secret: process.env.SESSION_SECRET || 'dev-secret-key',
   resave: false,
   saveUninitialized: false,
-  name: 'asset.sid',
+  name: 'connect.sid', // Use default cookie name
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000,
-    sameSite: 'lax'
+    sameSite: 'lax' as const
   }
-}));
+};
+
+// Only use Postgres session store in production
+if (process.env.NODE_ENV === 'production') {
+  sessionConfig.store = new pgSession({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true
+  });
+  console.log('Using PostgreSQL session store');
+} else {
+  console.log('Using in-memory session store for development');
+}
+
+app.use(session(sessionConfig));
 
 // Validate session secret in production
 if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
