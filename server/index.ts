@@ -13,18 +13,29 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Set up session middleware
+const pgSession = require('connect-pg-simple')(session);
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'itassetmanagement-secret-key',
-  resave: true,
-  saveUninitialized: true,
-  name: 'asset.sid', // Custom name to avoid default name collisions
+  store: new pgSession({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true
+  }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  name: 'asset.sid',
   cookie: {
-    secure: false, // Set to false even in production for now to debug
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    sameSite: 'lax' // Allow cookies in same-site context
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax'
   }
 }));
+
+// Validate session secret in production
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET must be set in production');
+}
 
 // Debug middleware for logging and session tracking
 app.use((req, res, next) => {
@@ -101,6 +112,10 @@ app.use((req, res, next) => {
     }
   } catch (error) {
     log(`Database initialization failed: ${error}`);
+    if (process.env.NODE_ENV === 'production') {
+      log('Fatal: Cannot continue without database in production');
+      process.exit(1);
+    }
   }
 
   const server = await registerRoutes(app);
