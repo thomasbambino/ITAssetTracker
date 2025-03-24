@@ -39,7 +39,7 @@ const formSchema = z.object({
   assignmentType: z.enum(["user", "device"]),
   userId: z.number().optional().nullable(),
   deviceId: z.number().optional().nullable(),
-  assignmentDate: z.date(),
+  assignedAt: z.date(),
   notes: z.string().optional().nullable(),
 }).refine(data => {
   // Ensure either userId or deviceId is provided based on assignmentType
@@ -99,7 +99,7 @@ export function SoftwareAssignmentForm({
       assignmentType: assignment && assignment.userId ? "user" : "device",
       userId: assignment && assignment.userId ? assignment.userId : null,
       deviceId: assignment && assignment.deviceId ? assignment.deviceId : null,
-      assignmentDate: assignment && assignment.assignedAt ? new Date(assignment.assignedAt) : new Date(),
+      assignedAt: assignment && assignment.assignedAt ? new Date(assignment.assignedAt) : new Date(),
       notes: assignment && assignment.notes ? assignment.notes : "",
     },
   });
@@ -116,7 +116,7 @@ export function SoftwareAssignmentForm({
         softwareId: values.softwareId ? parseInt(values.softwareId.toString()) : null,
         userId: values.assignmentType === "user" ? parseInt(values.userId!.toString()) : null,
         deviceId: values.assignmentType === "device" ? parseInt(values.deviceId!.toString()) : null,
-        assignedAt: values.assignmentDate ? new Date(values.assignmentDate) : new Date(),
+        assignedAt: values.assignedAt ? new Date(values.assignedAt) : new Date(),
         notes: values.notes,
         // The server will automatically use the logged-in user as the assignedBy
       };
@@ -294,7 +294,7 @@ export function SoftwareAssignmentForm({
         
         <FormField
           control={form.control}
-          name="assignmentDate"
+          name="assignedAt"
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Assignment Date</FormLabel>
