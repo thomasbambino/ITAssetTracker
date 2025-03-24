@@ -39,8 +39,25 @@ export default function Users() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/users/${id}`);
-      return id;
+      console.log(`Attempting to delete user ${id}`);
+      try {
+        await apiRequest({
+          method: 'DELETE', 
+          url: `/api/users/${id}`
+        });
+        console.log(`Successfully deleted user ${id}`);
+        return id;
+      } catch (error) {
+        console.error(`Error deleting user ${id}:`, error);
+        
+        // Check if the error contains a "DOCTYPE" string, which would indicate HTML response
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('DOCTYPE') || errorMessage.includes('<html')) {
+          throw new Error("Session expired or server error. Please log in again and retry.");
+        }
+        
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -51,11 +68,14 @@ export default function Users() {
       setUserToDelete(null);
     },
     onError: (error) => {
+      console.error("Delete user mutation error:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to delete user",
         variant: "destructive",
       });
+      // Close the dialog even on error
+      setUserToDelete(null);
     }
   });
   
