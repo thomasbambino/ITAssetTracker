@@ -246,15 +246,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/users/:id', async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const idParam = req.params.id;
+      console.log(`[GET User] Received request for user ID: "${idParam}", type: ${typeof idParam}`);
+      
+      let id: number;
+      try {
+        id = parseInt(idParam);
+        if (isNaN(id)) {
+          console.error(`Invalid user ID format for retrieval: "${idParam}"`);
+          return res.status(400).json({ message: "Invalid user ID format" });
+        }
+      } catch (error) {
+        console.error(`Error parsing user ID: "${idParam}"`, error);
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
+      console.log(`[GET User] Looking up user with parsed ID: ${id}`);
       const user = await storage.getUserById(id);
       
       if (!user) {
+        console.error(`[GET User] User with ID ${id} not found`);
         return res.status(404).json({ message: "User not found" });
       }
       
+      console.log(`[GET User] Found user: ID=${user.id}, Email=${user.email}`);
+      
       // Get devices assigned to this user
       const devices = await storage.getDevicesByUser(id);
+      console.log(`[GET User] Found ${devices.length} devices assigned to user ${id}`);
       
       // Enrich devices with category information
       const enrichedDevices = await Promise.all(devices.map(async (device) => {

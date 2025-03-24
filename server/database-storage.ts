@@ -63,6 +63,13 @@ export class DatabaseStorage implements IStorage {
 
   async getUserById(id: number): Promise<User | undefined> {
     try {
+      if (!id || isNaN(Number(id))) {
+        console.error(`[DatabaseStorage] Invalid user ID provided: ${id}`);
+        return undefined;
+      }
+      
+      console.log(`[DatabaseStorage] Looking up user with ID: ${id}`);
+      
       const user = await db.one(`
         SELECT 
           id, 
@@ -83,8 +90,11 @@ export class DatabaseStorage implements IStorage {
         FROM users 
         WHERE id = $1
       `, [id]);
+      
+      console.log(`[DatabaseStorage] Found user with ID ${id}: ${user.email}`);
       return user;
     } catch (error) {
+      console.error(`[DatabaseStorage] Error looking up user with ID ${id}:`, error);
       // If no rows found, return undefined
       return undefined;
     }
@@ -157,6 +167,13 @@ export class DatabaseStorage implements IStorage {
 
   async updateUser(id: number, user: any, loggedInUserId?: number): Promise<User | undefined> {
     try {
+      if (!id || isNaN(Number(id))) {
+        console.error(`[DatabaseStorage] Invalid user ID provided for update: ${id}`);
+        return undefined;
+      }
+    
+      console.log(`[DatabaseStorage] Starting update for user with ID: ${id}`);
+      
       // Build dynamic update query
       const updates: string[] = [];
       const values: any[] = [];

@@ -94,10 +94,26 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
           role: data.role?.toString()
         };
         
+        if (!user || !user.id) {
+          throw new Error("Cannot update user: Missing user ID");
+        }
+        
         console.log("Updating user with ID:", user.id, "Type:", typeof user.id);
         console.log("Updating user with data:", payload);
         
-        const userId = parseInt(user.id) || user.id; // Ensure it's a number if possible
+        // Ensure we're working with a numeric ID for the API
+        let userId: number;
+        if (typeof user.id === 'string') {
+          userId = parseInt(user.id);
+          if (isNaN(userId)) {
+            throw new Error(`Invalid user ID format: ${user.id}`);
+          }
+        } else if (typeof user.id === 'number') {
+          userId = user.id;
+        } else {
+          throw new Error(`Unexpected user ID type: ${typeof user.id}`);
+        }
+        
         console.log("Using user ID for update:", userId, "Type:", typeof userId);
         
         return await apiRequest({
