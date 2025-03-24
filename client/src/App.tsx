@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
@@ -100,21 +101,49 @@ function MainRouter() {
 }
 
 function Router() {
-  const [location, setLocation] = useLocation();
-  const { data: user, isLoading, isError } = useQuery<any>({
-    queryKey: ['/api/users/me'],
-    retry: 1, // Minimize retries for faster auth check failure
-    staleTime: 60 * 1000, // 1 minute cache
-  });
+  // EMERGENCY FIX: Use localStorage to prevent infinite redirects 
+  // and directly check if we're on an auth page
+  const currentPath = window.location.pathname;
+  const [location] = useLocation();
+  const [isAuth, setIsAuth] = useState<boolean | null>(null);
   
-  // If we're on an auth route, use the auth router directly without checking auth
-  if (location.startsWith("/auth/")) {
+  // Bypass auth check for auth routes
+  if (currentPath.startsWith("/auth/")) {
     return <AuthRouter />;
   }
   
-  // For non-auth routes, check authentication first
-  // Show loading state during auth check
-  if (isLoading) {
+  // One-time auth check on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/users/me');
+        if (response.ok) {
+          const userData = await response.json();
+          // Set auth state and cache user data
+          setIsAuth(true);
+          queryClient.setQueryData(['/api/users/me'], userData);
+        } else {
+          setIsAuth(false);
+          // Only redirect if we're not already on a login page
+          if (!currentPath.startsWith("/auth/")) {
+            // Use the native browser navigation to avoid React state issues
+            window.location.href = '/auth/login';
+          }
+        }
+      } catch (error) {
+        setIsAuth(false);
+        // Only redirect if we're not already on a login page
+        if (!currentPath.startsWith("/auth/")) {
+          window.location.href = '/auth/login';
+        }
+      }
+    };
+    
+    checkAuth();
+  }, [currentPath]);
+  
+  // Show loading state while checking auth
+  if (isAuth === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -122,11 +151,9 @@ function Router() {
     );
   }
   
-  // If there's an error or no user, redirect to login once (using window.location to avoid loops)
-  if (isError || !user) {
-    console.log('Not authenticated, redirecting to login');
-    // Use direct navigation once to avoid infinite loops
-    window.location.href = '/auth/login';
+  // If not authenticated and not already redirecting, show loading
+  // This will only show briefly before the redirect happens
+  if (!isAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
