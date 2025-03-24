@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { z } from "zod";
 import { loginSchema } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Loader2, ServerIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -76,6 +76,17 @@ export default function LoginPage() {
           description: "Welcome to IT Asset Management System",
         });
 
+        // Manually update the cache with user data to prevent session validation issues
+        if (data.user) {
+          // Invalidate any existing user data queries
+          queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+          
+          // Set the query data manually
+          queryClient.setQueryData(['/api/users/me'], data.user);
+          
+          console.log("Updated user data in cache:", data.user);
+        }
+
         // Add a small delay to allow session to be properly established
         setTimeout(() => {
           if (data.passwordResetRequired) {
@@ -83,7 +94,7 @@ export default function LoginPage() {
           } else {
             navigate("/");
           }
-        }, 300);
+        }, 500); // Increased delay for session establishment
       } else {
         toast({
           title: "Login failed",

@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Redirect, useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 
 interface User {
   id: number;
@@ -20,6 +21,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
   const [location, setLocation] = useLocation();
+  const [authChecked, setAuthChecked] = useState(false);
   
   // Get the user data with improved error handling
   const { data: user, isLoading, isError, error, refetch } = useQuery<User>({
@@ -27,15 +29,19 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
     retry: 2, // Only retry twice to avoid too many retries
     retryDelay: 1000, // Wait 1 second between retries
     staleTime: 60 * 1000, // 1 minute
-    cacheTime: 5 * 60 * 1000, // 5 minutes
-    onError: (error) => {
+    gcTime: 5 * 60 * 1000 // 5 minutes
+  });
+  
+  // Handle error with useEffect instead of onError
+  useEffect(() => {
+    if (isError) {
       console.error('Protected route auth error:', error);
       // If the URL includes "/auth", don't attempt to redirect to avoid loops
       if (!location.includes("/auth/")) {
         setLocation("/auth/login");
       }
     }
-  });
+  }, [isError, error, location, setLocation]);
 
   // For debugging
   useEffect(() => {
@@ -44,21 +50,45 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
     }
   }, [user]);
 
-  // Force refresh of user data when component mounts
+  // Manually check authentication status on component mount
   useEffect(() => {
-    // Initial fetch to ensure we have fresh data
-    const fetchData = async () => {
+    const checkAuth = async () => {
       try {
-        await queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+        // Direct API call to check authentication without using the cache
+        const response = await fetch('/api/users/me', {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          cache: 'no-store'
+        });
+        
+        // If successful, invalidate the query to update the cache
+        if (response.ok) {
+          const userData = await response.json();
+          console.log('Manual auth check succeeded:', userData);
+          queryClient.setQueryData(['/api/users/me'], userData);
+          await queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+        } else {
+          console.error('Manual auth check failed:', response.status);
+          // Only redirect if we're not already on an auth page
+          if (!location.includes("/auth/")) {
+            setLocation("/auth/login");
+          }
+        }
       } catch (error) {
-        console.error('Error refreshing auth status:', error);
+        console.error('Error during manual auth check:', error);
+      } finally {
+        setAuthChecked(true);
       }
     };
     
-    fetchData();
-  }, []);
+    checkAuth();
+  }, [location, setLocation]);
 
-  if (isLoading) {
+  // Show loading until both the query is done and we've completed our manual auth check
+  if (isLoading || !authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -74,6 +104,20 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
     }
     // Just return null to avoid rendering loops if already on auth page
     return null;
+  }
+
+  // Type guard to ensure user has expected properties
+  const isValidUser = (user: any): user is User => {
+    return user && 
+           typeof user.id === 'number' && 
+           typeof user.role === 'string' && 
+           (user.passwordResetRequired === true || user.passwordResetRequired === false);
+  };
+
+  // Validate the user object
+  if (!isValidUser(user)) {
+    console.error('Invalid user data structure:', user);
+    return <Redirect to="/auth/login" />;
   }
 
   // Admin access required but user is not admin

@@ -10,6 +10,8 @@ const router = Router();
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const credentials = req.body as LoginCredentials;
+    console.log('Attempting login for:', credentials.email);
+    
     const result = await loginUser(credentials);
 
     if (result.success && result.user) {
@@ -17,6 +19,26 @@ router.post('/login', async (req: Request, res: Response) => {
       req.session.userId = result.user.id;
       req.session.userRole = result.user.role;
       req.session.passwordResetRequired = result.passwordResetRequired;
+      
+      // Save the session to ensure the session store is updated immediately
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+      
+      // Log session after saving
+      console.log('Login successful - Session created:', {
+        id: req.sessionID,
+        userId: req.session.userId,
+        userRole: req.session.userRole,
+        cookie: req.session.cookie
+      });
       
       // Don't send password-related fields to the client
       const { 
@@ -29,8 +51,12 @@ router.post('/login', async (req: Request, res: Response) => {
       
       return res.status(200).json({
         success: true,
-        user: safeUserData,
-        passwordResetRequired: result.passwordResetRequired
+        user: {
+          ...safeUserData,
+          passwordResetRequired: result.passwordResetRequired
+        },
+        passwordResetRequired: result.passwordResetRequired,
+        sessionId: req.sessionID // Return the session ID for debugging
       });
     } else {
       return res.status(401).json({
@@ -69,11 +95,33 @@ router.post('/logout', (req: Request, res: Response) => {
 // Get current user
 router.get('/me', isAuthenticated, async (req: Request, res: Response) => {
   try {
+    // Log session information for debugging
+    console.log('GET /me - Session:', {
+      id: req.sessionID,
+      userId: req.session.userId,
+      userRole: req.session.userRole,
+      cookie: req.session.cookie
+    });
+    
     const userId = req.session.userId;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required - No userId in session'
+      });
+    }
+    
     const user = await storage.getUserById(userId);
     
     if (!user) {
-      return res.status(404).json({
+      console.error(`User with ID ${userId} from session not found in database`);
+      // Clear the invalid session
+      req.session.destroy((err) => {
+        if (err) console.error('Error destroying invalid session:', err);
+      });
+      
+      return res.status(401).json({
         success: false,
         message: 'User not found'
       });
@@ -94,6 +142,7 @@ router.get('/me', isAuthenticated, async (req: Request, res: Response) => {
       passwordResetRequired: req.session.passwordResetRequired
     };
     
+    console.log('GET /me - Returning user data for:', user.email);
     return res.status(200).json(userData);
   } catch (error) {
     console.error('Get user error:', error);
