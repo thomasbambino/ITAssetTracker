@@ -118,7 +118,7 @@ export function SoftwareAssignmentForm({
         deviceId: values.assignmentType === "device" ? parseInt(values.deviceId!.toString()) : null,
         assignedAt: values.assignedAt ? new Date(values.assignedAt) : new Date(),
         notes: values.notes,
-        // The server will automatically use the logged-in user as the assignedBy
+        assignedBy: undefined, // Let the server add the current user's ID
       };
       
       if (assignmentId) {
