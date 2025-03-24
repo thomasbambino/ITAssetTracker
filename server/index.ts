@@ -13,7 +13,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Set up session middleware
-const pgSession = require('connect-pg-simple')(session);
+import pgSimple from 'connect-pg-simple';
+const pgSession = pgSimple(session);
 
 app.use(session({
   store: new pgSession({
