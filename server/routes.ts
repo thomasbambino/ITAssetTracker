@@ -296,7 +296,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
+      console.log('User update - ID to update:', id, 'Logged in user ID:', loggedInUserId);
       console.log('Received user update data:', req.body);
+      
+      // Check if user exists first
+      const existingUser = await storage.getUserById(id);
+      console.log('Looking up user by ID:', id, 'Found:', existingUser ? 'Yes' : 'No');
+      
+      if (!existingUser) {
+        console.error(`User with ID ${id} not found for update operation`);
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      console.log('Found existing user:', existingUser.id, existingUser.email);
       
       // Explicitly handle the role field as an enum
       const schema = insertUserSchema.partial().extend({
@@ -307,14 +319,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Validated user data:', validatedData);
       
       // Pass the logged-in user's ID to updateUser
+      console.log('Calling storage.updateUser with ID:', id);
       const user = await storage.updateUser(id, validatedData, loggedInUserId);
       
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        console.error(`UpdateUser operation failed to return a user object for ID ${id}`);
+        return res.status(404).json({ message: "User not found or could not be updated" });
       }
       
+      console.log('User updated successfully:', user.id, user.email);
+      
       // Add activity log for user role change if role was updated
-      if (validatedData.role && user.role !== validatedData.role) {
+      if (validatedData.role && existingUser.role !== validatedData.role) {
         await storage.createActivityLog({
           actionType: 'USER_ROLE_CHANGE',
           userId: loggedInUserId,
@@ -328,7 +344,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid user data", errors: error.errors });
       }
-      res.status(500).json({ message: "Error updating user" });
+      
+      // More detailed error handling
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error('Detailed error:', errorMessage);
+      
+      res.status(500).json({ message: "Error updating user", error: errorMessage });
     }
   });
 
