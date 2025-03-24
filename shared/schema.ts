@@ -190,6 +190,13 @@ export const softwareAssignments = pgTable("software_assignments", {
 
 export const insertSoftwareAssignmentSchema = createInsertSchema(softwareAssignments).omit({
   id: true,
+}).extend({
+  // Allow assignedAt to be a string or date object
+  assignedAt: z.union([
+    z.string().transform((str) => new Date(str)), 
+    z.date(),
+    z.null()
+  ]).optional(),
 });
 
 export type InsertSoftwareAssignment = z.infer<typeof insertSoftwareAssignmentSchema>;
