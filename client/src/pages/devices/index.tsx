@@ -69,8 +69,15 @@ export default function Devices() {
   }, [location]);
   
   // Fetch devices
-  const { data: devices = [], isLoading } = useQuery<any[]>({
+  const { data: devicesData = [], isLoading } = useQuery<any[]>({
     queryKey: ['/api/devices'],
+  });
+  
+  // Sort devices alphabetically by brand and model
+  const devices = [...devicesData].sort((a, b) => {
+    const deviceA = `${a.brand} ${a.model}`.toLowerCase();
+    const deviceB = `${b.brand} ${b.model}`.toLowerCase();
+    return deviceA.localeCompare(deviceB);
   });
   
   // Fetch categories for the filter
@@ -163,7 +170,10 @@ export default function Devices() {
   // Delete device mutation
   const deleteDeviceMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/devices/${id}`);
+      await apiRequest({
+        method: 'DELETE',
+        url: `/api/devices/${id}`
+      });
       return id;
     },
     onSuccess: () => {

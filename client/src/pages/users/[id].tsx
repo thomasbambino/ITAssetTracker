@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation, useParams, Link } from 'wouter';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -27,12 +27,14 @@ import {
   AlertCircleIcon,
   UserPlusIcon,
   UserXIcon,
-  UserCheckIcon
+  UserCheckIcon,
+  Check,
+  ChevronsUpDown
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { DataTable } from '@/components/ui/data-table';
-import { formatPhoneNumber } from '@/lib/utils';
+import { formatPhoneNumber, cn } from '@/lib/utils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +60,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { UserForm } from '@/components/forms/UserForm';
 
@@ -776,51 +790,63 @@ export default function UserDetails() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="userId">Select User:</Label>
-                  <Select
-                    value={selectedUserId}
-                    onValueChange={setSelectedUserId}
-                  >
-                    <SelectTrigger id="userId" className="w-full">
-                      <SelectValue placeholder="Select a user" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="p-2">
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          placeholder="Search users..."
-                          onChange={(e) => {
-                            // Adding a data-search attribute to make Select component searchable
-                            const searchValue = e.target.value.toLowerCase();
-                            document.querySelectorAll('[data-user-searchable]').forEach((el) => {
-                              const text = el.textContent?.toLowerCase() || '';
-                              if (text.includes(searchValue)) {
-                                (el as HTMLElement).style.display = 'block';
-                              } else {
-                                (el as HTMLElement).style.display = 'none';
-                              }
-                            });
-                          }}
-                        />
-                      </div>
-                      {allUsers
-                        .filter((u: any) => u.id.toString() !== id) // Filter out current user
-                        .sort((a: any, b: any) => {
-                          // Sort alphabetically by first name and last name
-                          const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
-                          const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
-                          return nameA.localeCompare(nameB);
-                        })
-                        .map((user: any) => (
-                          <SelectItem 
-                            key={user.id} 
-                            value={user.id.toString()}
-                            data-user-searchable="true"
-                          >
-                            {user.firstName} {user.lastName} ({user.email})
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        id="userId"
+                        className="w-full justify-between"
+                      >
+                        {selectedUserId ? (
+                          allUsers.find((user) => user.id.toString() === selectedUserId) ? (
+                            `${allUsers.find((user) => user.id.toString() === selectedUserId)?.firstName} ${allUsers.find((user) => user.id.toString() === selectedUserId)?.lastName}`
+                          ) : "Select a user"
+                        ) : (
+                          "Select a user"
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search users..." />
+                        <CommandEmpty>No user found.</CommandEmpty>
+                        <CommandGroup className="max-h-[200px] overflow-y-auto">
+                          {allUsers
+                            .filter((u: any) => u.id.toString() !== id) // Filter out current user
+                            .sort((a: any, b: any) => {
+                              // Sort alphabetically by first name and last name
+                              const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+                              const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+                              return nameA.localeCompare(nameB);
+                            })
+                            .map((user: any) => (
+                              <CommandItem
+                                key={user.id}
+                                value={`${user.firstName} ${user.lastName} ${user.email}`}
+                                onSelect={() => {
+                                  setSelectedUserId(user.id.toString());
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedUserId === user.id.toString() ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span>
+                                  {user.firstName} {user.lastName}
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    ({user.email})
+                                  </span>
+                                </span>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>

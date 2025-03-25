@@ -209,14 +209,10 @@ export function DeviceAssignmentDialog({
               </PopoverTrigger>
               <PopoverContent className="p-0 w-[300px]">
                 <Command>
-                  <div className="relative">
-                    <SearchIcon className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                    <CommandInput 
-                      placeholder="Search users..."
-                      onValueChange={setSearchQuery}
-                      className="h-9 pl-8"
-                    />
-                  </div>
+                  <CommandInput 
+                    placeholder="Search users..."
+                    onValueChange={setSearchQuery}
+                  />
                   <CommandEmpty>
                     {usersLoading ? "Loading..." : "No users found"}
                   </CommandEmpty>

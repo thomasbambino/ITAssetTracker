@@ -26,12 +26,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon, Laptop, User } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, Laptop, User } from "lucide-react";
 import { cn, formatDate, mapErrorMessage } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 
 // Define the form schema
 const formSchema = z.object({
@@ -263,53 +270,61 @@ export function SoftwareAssignmentForm({
             control={form.control}
             name="userId"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Select User</FormLabel>
-                <Select 
-                  onValueChange={(value) => field.onChange(parseInt(value))} 
-                  defaultValue={field.value?.toString() || undefined}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a user" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <div className="p-2">
-                      <input
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder="Search users..."
-                        onChange={(e) => {
-                          // Search functionality for the dropdown
-                          const searchValue = e.target.value.toLowerCase();
-                          document.querySelectorAll('[data-user-searchable]').forEach((el) => {
-                            const text = el.textContent?.toLowerCase() || '';
-                            if (text.includes(searchValue)) {
-                              (el as HTMLElement).style.display = 'block';
-                            } else {
-                              (el as HTMLElement).style.display = 'none';
-                            }
-                          });
-                        }}
-                      />
-                    </div>
-                    {!Array.isArray(users) || users.length === 0 ? (
-                      <SelectItem value="no_users" disabled>
-                        No users available
-                      </SelectItem>
-                    ) : (
-                      users.map((user: any) => (
-                        <SelectItem 
-                          key={user.id} 
-                          value={user.id.toString()}
-                          data-user-searchable="true"
-                        >
-                          {user.firstName} {user.lastName} {user.department ? `(${user.department})` : ''}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value
+                          ? users.find((user) => user.id === field.value)
+                            ? `${users.find((user) => user.id === field.value)?.firstName} ${users.find((user) => user.id === field.value)?.lastName}`
+                            : "Select a user"
+                          : "Select a user"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search users..." />
+                      <CommandEmpty>No user found.</CommandEmpty>
+                      <CommandGroup className="max-h-[200px] overflow-y-auto">
+                        {users.map((user) => (
+                          <CommandItem
+                            key={user.id}
+                            value={`${user.firstName} ${user.lastName} ${user.department || ''}`}
+                            onSelect={() => {
+                              field.onChange(user.id);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                field.value === user.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <span>
+                              {user.firstName} {user.lastName}
+                              {user.department && (
+                                <span className="ml-2 text-xs text-muted-foreground">
+                                  ({user.department})
+                                </span>
+                              )}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -319,53 +334,56 @@ export function SoftwareAssignmentForm({
             control={form.control}
             name="deviceId"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Select Device</FormLabel>
-                <Select 
-                  onValueChange={(value) => field.onChange(parseInt(value))} 
-                  defaultValue={field.value?.toString() || undefined}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a device" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <div className="p-2">
-                      <input
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder="Search devices..."
-                        onChange={(e) => {
-                          // Search functionality for the dropdown
-                          const searchValue = e.target.value.toLowerCase();
-                          document.querySelectorAll('[data-device-searchable]').forEach((el) => {
-                            const text = el.textContent?.toLowerCase() || '';
-                            if (text.includes(searchValue)) {
-                              (el as HTMLElement).style.display = 'block';
-                            } else {
-                              (el as HTMLElement).style.display = 'none';
-                            }
-                          });
-                        }}
-                      />
-                    </div>
-                    {!Array.isArray(devices) || devices.length === 0 ? (
-                      <SelectItem value="no_devices" disabled>
-                        No devices available
-                      </SelectItem>
-                    ) : (
-                      devices.map((device: any) => (
-                        <SelectItem 
-                          key={device.id} 
-                          value={device.id.toString()}
-                          data-device-searchable="true"
-                        >
-                          {device.brand} {device.model} ({device.assetTag})
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value
+                          ? devices.find((device) => device.id === field.value)
+                            ? `${devices.find((device) => device.id === field.value)?.brand} ${devices.find((device) => device.id === field.value)?.model} (${devices.find((device) => device.id === field.value)?.assetTag})`
+                            : "Select a device"
+                          : "Select a device"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search devices..." />
+                      <CommandEmpty>No device found.</CommandEmpty>
+                      <CommandGroup className="max-h-[200px] overflow-y-auto">
+                        {devices.map((device) => (
+                          <CommandItem
+                            key={device.id}
+                            value={`${device.brand} ${device.model} ${device.assetTag}`}
+                            onSelect={() => {
+                              field.onChange(device.id);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                field.value === device.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <span>
+                              {device.brand} {device.model} ({device.assetTag})
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}

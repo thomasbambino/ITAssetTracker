@@ -29,9 +29,16 @@ export default function Users() {
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
   
   // Fetch users
-  const { data: users, isLoading } = useQuery<User[]>({
+  const { data: usersData, isLoading } = useQuery<User[]>({
     queryKey: ['/api/users'],
   });
+  
+  // Sort users alphabetically by name
+  const users = usersData ? [...usersData].sort((a, b) => {
+    const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+    const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+    return nameA.localeCompare(nameB);
+  }) : [];
   
   // Export CSV
   const { exportCsv, isExporting } = useCsvExport('/api/export/users');
@@ -39,7 +46,10 @@ export default function Users() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/users/${id}`);
+      await apiRequest({
+        method: 'DELETE',
+        url: `/api/users/${id}`
+      });
       return id;
     },
     onSuccess: () => {
