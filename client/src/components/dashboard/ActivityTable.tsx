@@ -90,7 +90,6 @@ export function ActivityTable({
       return parseInt(idMatch[1]);
     }
     
-    // No ID found
     return null;
   };
   
@@ -149,6 +148,10 @@ export function ActivityTable({
     <Card>
       <CardHeader className="px-4 py-5 border-b border-gray-200 sm:px-6">
         <CardTitle className="text-lg leading-6 font-medium text-gray-900">Recent Activity</CardTitle>
+        <div className="flex items-center text-xs text-muted-foreground mt-1">
+          <MousePointerClickIcon className="h-3 w-3 mr-1" />
+          <span>Device activities are clickable for details</span>
+        </div>
       </CardHeader>
       <div className="overflow-x-auto">
         <Table>
@@ -178,7 +181,8 @@ export function ActivityTable({
                 return (
                   <TableRow 
                     key={activity.id}
-                    className={isDeviceRelated ? "border-l-4 border-l-primary/40" : ""}
+                    onClick={() => isDeviceRelated ? handleActivityClick(activity) : null}
+                    className={isDeviceRelated ? "cursor-pointer hover:bg-gray-50" : ""}
                   >
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(activity.timestamp)}
@@ -212,14 +216,9 @@ export function ActivityTable({
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {isDeviceRelated ? (
-                        <div>
-                          <button 
-                            onClick={() => handleActivityClick(activity)}
-                            className="px-3 py-1 bg-primary text-white rounded hover:bg-primary/80 text-sm font-medium flex items-center"
-                          >
-                            View Device <MousePointerClickIcon className="ml-1 h-3 w-3" />
-                          </button>
-                          <div className="mt-1">{activity.details}</div>
+                        <div className="flex items-center text-primary hover:underline" title="Click to view device details">
+                          {activity.details}
+                          <MousePointerClickIcon className="ml-1 h-3 w-3 text-primary/70" />
                         </div>
                       ) : (
                         activity.details
