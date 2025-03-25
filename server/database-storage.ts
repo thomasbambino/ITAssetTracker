@@ -2609,6 +2609,8 @@ export class DatabaseStorage implements IStorage {
           company_tagline as "companyTagline",
           support_email as "supportEmail",
           support_phone as "supportPhone",
+          site_title as "siteTitle",
+          site_description as "siteDescription",
           updated_at as "updatedAt"
         FROM branding_settings
         ORDER BY id ASC
@@ -2675,6 +2677,24 @@ export class DatabaseStorage implements IStorage {
           ADD COLUMN IF NOT EXISTS favicon TEXT DEFAULT NULL
         `);
         console.log('Added favicon column to branding_settings table');
+      }
+      
+      // Check if site_title column exists
+      const siteTitleResult = await db.oneOrNone(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'branding_settings' AND column_name = 'site_title'
+      `);
+      
+      // If site_title column doesn't exist, add site_title and site_description columns
+      if (!siteTitleResult) {
+        console.log('Adding site metadata columns to branding_settings table...');
+        await db.none(`
+          ALTER TABLE branding_settings 
+          ADD COLUMN IF NOT EXISTS site_title TEXT DEFAULT 'IT Asset Manager',
+          ADD COLUMN IF NOT EXISTS site_description TEXT DEFAULT 'A comprehensive IT asset management system for tracking hardware, software, and maintenance.'
+        `);
+        console.log('Added site metadata columns to branding_settings table');
       }
     } catch (error) {
       console.error('Error ensuring branding columns exist:', error);
@@ -2747,6 +2767,16 @@ export class DatabaseStorage implements IStorage {
         if (settings.supportPhone !== undefined) {
           updates.push(`support_phone = $${paramCount++}`);
           values.push(settings.supportPhone);
+        }
+        
+        if (settings.siteTitle !== undefined) {
+          updates.push(`site_title = $${paramCount++}`);
+          values.push(settings.siteTitle);
+        }
+        
+        if (settings.siteDescription !== undefined) {
+          updates.push(`site_description = $${paramCount++}`);
+          values.push(settings.siteDescription);
         }
         
         updates.push(`updated_at = NOW()`);
