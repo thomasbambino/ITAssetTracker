@@ -817,7 +817,7 @@ export default function UserDetails() {
                           onValueChange={setSearchQuery}
                         />
                         <CommandEmpty>No user found.</CommandEmpty>
-                        <div className="max-h-[200px] overflow-y-auto">
+                        <div className="dropdown-scrollable">
                           <CommandGroup>
                           {allUsers
                             .filter((u: any) => {

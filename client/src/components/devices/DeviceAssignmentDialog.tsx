@@ -217,7 +217,7 @@ export function DeviceAssignmentDialog({
                   <CommandEmpty>
                     {usersLoading ? "Loading..." : "No users found"}
                   </CommandEmpty>
-                  <div className="max-h-[200px] overflow-y-auto">
+                  <div className="dropdown-scrollable">
                     <CommandGroup>
                     {filteredUsers.map((user) => (
                       <CommandItem
