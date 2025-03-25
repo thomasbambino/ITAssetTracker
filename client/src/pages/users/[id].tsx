@@ -92,6 +92,7 @@ export default function UserDetails() {
   const [deviceToUnassign, setDeviceToUnassign] = useState<number | null>(null);
   const [deviceToTransfer, setDeviceToTransfer] = useState<any | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   
   // State for device action dialogs
   const [showTransferDialog, setShowTransferDialog] = useState(false);
@@ -768,6 +769,7 @@ export default function UserDetails() {
         if (!open) {
           setDeviceToTransfer(null);
           setSelectedUserId('');
+          setSearchQuery('');
         }
       }}>
         <DialogContent>
@@ -810,12 +812,32 @@ export default function UserDetails() {
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-[300px]">
                       <Command className="overflow-hidden">
-                        <CommandInput placeholder="Search users..." />
+                        <CommandInput 
+                          placeholder="Search users..."
+                          onValueChange={setSearchQuery}
+                        />
                         <CommandEmpty>No user found.</CommandEmpty>
-                        <div className="max-h-[200px] overflow-auto">
+                        <div className="max-h-[200px] overflow-y-auto">
                           <CommandGroup>
                           {allUsers
-                            .filter((u: any) => u.id.toString() !== id) // Filter out current user
+                            .filter((u: any) => {
+                              // Filter out current user
+                              if (u.id.toString() === id) return false;
+                              
+                              // Apply search filter if query exists
+                              if (searchQuery) {
+                                const query = searchQuery.toLowerCase();
+                                const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+                                const email = (u.email || '').toLowerCase();
+                                const department = (u.department || '').toLowerCase();
+                                
+                                return fullName.includes(query) || 
+                                       email.includes(query) || 
+                                       department.includes(query);
+                              }
+                              
+                              return true;
+                            })
                             .sort((a: any, b: any) => {
                               // Sort alphabetically by first name and last name
                               const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
@@ -855,6 +877,7 @@ export default function UserDetails() {
               setShowTransferDialog(false);
               setDeviceToTransfer(null);
               setSelectedUserId('');
+              setSearchQuery('');
             }}>
               Cancel
             </Button>
