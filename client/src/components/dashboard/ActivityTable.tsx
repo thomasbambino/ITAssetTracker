@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { 
   Table, 
   TableBody, 
@@ -17,8 +18,9 @@ import {
 } from '@/components/ui/pagination';
 import { formatDateTime } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MousePointerClickIcon } from "lucide-react";
 
 // Activity types and their corresponding badge styles
 const activityStyles: Record<string, { bg: string, text: string }> = {
@@ -72,6 +74,32 @@ export function ActivityTable({
   showFirstLast = false
 }: ActivityTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [, navigate] = useLocation();
+  
+  // Extract device ID from activity details
+  const extractDeviceId = (activity: ActivityLog): number | null => {
+    // Skip for non-device related activities
+    if (!activity.actionType.includes('device') && !activity.actionType.includes('assign')) {
+      return null;
+    }
+    
+    // Try to extract device ID from details
+    // Format: "Device XXX (ID: 123) was..."
+    const idMatch = activity.details.match(/\(ID: (\d+)\)/);
+    if (idMatch && idMatch[1]) {
+      return parseInt(idMatch[1]);
+    }
+    
+    return null;
+  };
+  
+  // Navigate to device details page when clicking a device-related activity
+  const handleActivityClick = (activity: ActivityLog) => {
+    const deviceId = extractDeviceId(activity);
+    if (deviceId) {
+      navigate(`/devices/${deviceId}`);
+    }
+  };
   
   // Calculate total pages
   const totalPages = Math.ceil(activities.length / itemsPerPage);
@@ -120,6 +148,10 @@ export function ActivityTable({
     <Card>
       <CardHeader className="px-4 py-5 border-b border-gray-200 sm:px-6">
         <CardTitle className="text-lg leading-6 font-medium text-gray-900">Recent Activity</CardTitle>
+        <div className="flex items-center text-xs text-muted-foreground mt-1">
+          <MousePointerClickIcon className="h-3 w-3 mr-1" />
+          <span>Device activities are clickable for details</span>
+        </div>
       </CardHeader>
       <div className="overflow-x-auto">
         <Table>
@@ -144,8 +176,14 @@ export function ActivityTable({
               currentActivities.map((activity) => {
                 const style = activityStyles[activity.actionType] || { bg: 'bg-gray-100', text: 'text-gray-800' };
                 
+                const isDeviceRelated = extractDeviceId(activity) !== null;
+                
                 return (
-                  <TableRow key={activity.id}>
+                  <TableRow 
+                    key={activity.id}
+                    onClick={() => isDeviceRelated ? handleActivityClick(activity) : null}
+                    className={isDeviceRelated ? "cursor-pointer hover:bg-gray-50" : ""}
+                  >
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(activity.timestamp)}
                     </TableCell>
@@ -177,7 +215,14 @@ export function ActivityTable({
                       )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
-                      {activity.details}
+                      {isDeviceRelated ? (
+                        <div className="flex items-center text-primary hover:underline" title="Click to view device details">
+                          {activity.details}
+                          <MousePointerClickIcon className="ml-1 h-3 w-3 text-primary/70" />
+                        </div>
+                      ) : (
+                        activity.details
+                      )}
                     </TableCell>
                   </TableRow>
                 );

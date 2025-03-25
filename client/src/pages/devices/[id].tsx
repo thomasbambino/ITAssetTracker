@@ -624,6 +624,13 @@ export default function DeviceDetails() {
                       columns={historyColumns}
                       keyField="id"
                       searchable={false}
+                      onRowClick={(historyEntry) => {
+                        // If we're already on the device page, no need to navigate
+                        if (historyEntry.deviceId.toString() === id) return;
+                        
+                        // Navigate to the device's details page
+                        navigate(`/devices/${historyEntry.deviceId}`);
+                      }}
                       emptyState={
                         <div className="text-center py-6">
                           <InfoIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
