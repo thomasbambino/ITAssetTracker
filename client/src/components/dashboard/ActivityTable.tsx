@@ -87,11 +87,9 @@ export function ActivityTable({
     // Format: "Device XXX (ID: 123) was..."
     const idMatch = activity.details.match(/\(ID: (\d+)\)/);
     if (idMatch && idMatch[1]) {
-      console.log("Found device ID in activity:", idMatch[1], "from details:", activity.details);
       return parseInt(idMatch[1]);
     }
     
-    console.log("No device ID found in activity details:", activity.details);
     return null;
   };
   
@@ -213,18 +211,28 @@ export function ActivityTable({
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {isDeviceRelated ? (
-                        <a 
-                          href="#" 
-                          className="flex items-center gap-1 p-1 rounded bg-primary/5 text-primary hover:bg-primary/10 transition-colors border border-primary/20"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            console.log("Link clicked for device ID:", extractDeviceId(activity));
-                            handleActivityClick(activity);
-                          }}
-                        >
-                          {activity.details}
-                          <MousePointerClickIcon className="h-4 w-4 text-primary/70" />
-                        </a>
+                        <div className="group">
+                          {/* Extract and display device name as a prominent link */}
+                          {activity.details.match(/Device ([^(]+) \(ID:/) ? (
+                            <>
+                              <span>Device </span>
+                              <button 
+                                onClick={() => handleActivityClick(activity)}
+                                className="font-medium underline text-primary cursor-pointer"
+                              >
+                                {activity.details.match(/Device ([^(]+) \(ID:/)?.[1]}
+                              </button>
+                              <span> {activity.details.replace(/Device [^)]+\)/, '')}</span>
+                            </>
+                          ) : (
+                            <button 
+                              onClick={() => handleActivityClick(activity)}
+                              className="underline text-primary hover:text-primary/80"
+                            >
+                              {activity.details}
+                            </button>
+                          )}
+                        </div>
                       ) : (
                         activity.details
                       )}
