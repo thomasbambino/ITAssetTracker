@@ -208,8 +208,8 @@ export function DeviceAssignmentDialog({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="p-0 w-[300px]">
-                <Command className="overflow-hidden">
+              <PopoverContent className="p-0 w-[300px]" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                <Command className="rounded-lg border shadow-md">
                   <CommandInput 
                     placeholder="Search users..."
                     onValueChange={setSearchQuery}
@@ -217,8 +217,7 @@ export function DeviceAssignmentDialog({
                   <CommandEmpty>
                     {usersLoading ? "Loading..." : "No users found"}
                   </CommandEmpty>
-                  <div className="dropdown-scrollable">
-                    <CommandGroup>
+                  <CommandGroup>
                     {filteredUsers.map((user) => (
                       <CommandItem
                         key={user.id}
@@ -239,7 +238,6 @@ export function DeviceAssignmentDialog({
                       </CommandItem>
                     ))}
                   </CommandGroup>
-                  </div>
                 </Command>
               </PopoverContent>
             </Popover>
