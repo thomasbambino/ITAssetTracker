@@ -140,7 +140,7 @@ export function SoftwareAssignmentForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       softwareId,
-      assignmentType: assignment && assignment.userId ? "user" : "device",
+      assignmentType: assignment ? (assignment.userId ? "user" : "device") : "user", // Default to "user" when creating new
       userId: assignment && assignment.userId ? assignment.userId : null,
       deviceId: assignment && assignment.deviceId ? assignment.deviceId : null,
       assignedAt: assignment && assignment.assignedAt ? new Date(assignment.assignedAt) : new Date(),
@@ -246,7 +246,8 @@ export function SoftwareAssignmentForm({
             <FormItem>
               <FormLabel>Assignment Type</FormLabel>
               <Tabs 
-                defaultValue={field.value} 
+                value={field.value} 
+                defaultValue="user"
                 className="w-full" 
                 onValueChange={(value) => field.onChange(value as "user" | "device")}
               >
