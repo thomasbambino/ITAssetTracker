@@ -211,27 +211,14 @@ export function ActivityTable({
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {isDeviceRelated ? (
-                        <div className="group">
-                          {/* Extract and display device name as a prominent link */}
-                          {activity.details.match(/Device ([^(]+) \(ID:/) ? (
-                            <>
-                              <span>Device </span>
-                              <button 
-                                onClick={() => handleActivityClick(activity)}
-                                className="font-medium underline text-primary cursor-pointer"
-                              >
-                                {activity.details.match(/Device ([^(]+) \(ID:/)?.[1]}
-                              </button>
-                              <span> {activity.details.replace(/Device [^)]+\)/, '')}</span>
-                            </>
-                          ) : (
-                            <button 
-                              onClick={() => handleActivityClick(activity)}
-                              className="underline text-primary hover:text-primary/80"
-                            >
-                              {activity.details}
-                            </button>
-                          )}
+                        <div>
+                          <button 
+                            onClick={() => handleActivityClick(activity)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800 font-bold"
+                          >
+                            CLICK HERE TO VIEW DEVICE
+                          </button>
+                          <div className="mt-1">{activity.details}</div>
                         </div>
                       ) : (
                         activity.details
