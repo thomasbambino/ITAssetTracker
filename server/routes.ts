@@ -149,7 +149,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const devices = await storage.getDevices();
       
       // Get unique departments
-      const departments = [...new Set(users.map(user => user.department).filter(Boolean))];
+      const departmentsArray = users.map(user => user.department).filter(Boolean) as string[];
+      const departmentsSet = new Set<string>(departmentsArray);
+      const departments = Array.from(departmentsSet);
       
       const distribution = departments.map(department => {
         // Get users in this department
@@ -205,7 +207,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current authenticated user
   app.get('/api/users/me', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.session.userId;
+      const userId = req.session.userId as number;
+      if (userId === undefined) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
       const user = await storage.getUserById(userId);
       
       if (!user) {
@@ -403,7 +408,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const category = device.categoryId ? await storage.getCategoryById(device.categoryId) : null;
       const user = device.userId ? await storage.getUserById(device.userId) : null;
       
-      // Get assignment history
+      res.json({
+        ...device,
+        category: category ? { id: category.id, name: category.name } : null,
+        user: user ? { 
+          id: user.id, 
+          name: `${user.firstName} ${user.lastName}`, 
+          department: user.department 
+        } : null
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching device" });
+    }
+  });
+
+  // Get device assignment history
+  app.get('/api/devices/:id/history', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
       const history = await storage.getAssignmentHistory(id);
       
       // Enrich history with user information
@@ -426,18 +448,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      res.json({
-        ...device,
-        category: category ? { id: category.id, name: category.name } : null,
-        user: user ? { 
-          id: user.id, 
-          name: `${user.firstName} ${user.lastName}`, 
-          department: user.department 
-        } : null,
-        history: enrichedHistory
-      });
+      res.json(enrichedHistory);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching device" });
+      res.status(500).json({ message: "Error fetching device assignment history" });
     }
   });
 

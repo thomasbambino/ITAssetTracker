@@ -298,7 +298,31 @@ export default function DeviceDetails() {
   const { data: assignmentHistory = [], refetch: refetchHistory } = useQuery({
     queryKey: [`/api/devices/${id}/history`],
     enabled: !isNewDevice && !!id && !!device,
+    refetchInterval: 10000, // Auto-refresh every 10 seconds
   });
+
+  // Set up auto-refresh of assignment history data
+  useEffect(() => {
+    // Function to refresh assignment history
+    const refreshHistory = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/devices/${id}/history`] });
+    };
+
+    // Set up a document visibility change listener to refresh when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshHistory();
+      }
+    };
+
+    // Add event listener for visibility change
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Clean up on component unmount
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [id]);
 
   const handleAssignmentComplete = () => {
     setShowAssignDialog(false);
