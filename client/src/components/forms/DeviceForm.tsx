@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,7 +26,16 @@ import {
 import { insertDeviceSchema } from "@shared/schema";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, UploadIcon } from "lucide-react";
+import { 
+  CalendarIcon, 
+  UploadIcon, 
+  FileIcon, 
+  PaperclipIcon, 
+  FileTextIcon, 
+  ImageIcon,
+  XIcon
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 // Create a schema for device creation/update
@@ -65,6 +74,20 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
     queryKey: ['/api/users'],
   });
 
+  // State for file upload
+  const [filePreview, setFilePreview] = useState<{
+    name: string;
+    type: string;
+    url?: string;
+  } | null>(device?.invoiceFileName ? {
+    name: device.invoiceFileName,
+    type: device.invoiceFileType,
+    url: device.invoiceFileUrl
+  } : null);
+  
+  // File input reference
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Initialize form with default values
   const form = useForm<DeviceFormValues>({
     resolver: zodResolver(formSchema),
@@ -72,20 +95,26 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
       brand: device?.brand || "",
       model: device?.model || "",
       serialNumber: device?.serialNumber || "",
-      assetTag: device?.assetTag || generateAssetTag(),
+      assetTag: device?.assetTag || "",
       categoryId: device?.categoryId?.toString() || "",
       purchaseCost: device?.purchaseCost ? device.purchaseCost : null,
       purchaseDate: device?.purchaseDate ? new Date(device.purchaseDate) : null,
       purchasedBy: device?.purchasedBy || "",
       warrantyEOL: device?.warrantyEOL ? new Date(device.warrantyEOL) : null,
+      invoiceFileName: device?.invoiceFileName || "",
+      invoiceFileType: device?.invoiceFileType || "",
     },
   });
 
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data: DeviceFormValues) => {
-      const response = await apiRequest("POST", "/api/devices", data);
-      return response.json();
+      const response = await apiRequest({
+        url: "/api/devices",
+        method: "POST",
+        data: data
+      });
+      return response;
     },
     onSuccess: () => {
       if (onSuccess) onSuccess();
@@ -103,8 +132,12 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: DeviceFormValues) => {
-      const response = await apiRequest("PUT", `/api/devices/${device.id}`, data);
-      return response.json();
+      const response = await apiRequest({
+        url: `/api/devices/${device.id}`,
+        method: "PUT",
+        data: data
+      });
+      return response;
     },
     onSuccess: () => {
       if (onSuccess) onSuccess();
@@ -120,7 +153,10 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
   });
 
   // Form submission handler
-  const onSubmit = (data: DeviceFormValues) => {
+  const onSubmit = async (data: DeviceFormValues) => {
+    // Create FormData for file upload
+    const formData = new FormData();
+    
     // Convert cost to cents and handle dates
     const formattedData = {
       ...data,
@@ -130,26 +166,105 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
       warrantyEOL: data.warrantyEOL ? new Date(data.warrantyEOL) : null,
     };
+    
+    // Remove the file from the data as it will be sent separately
+    const { invoiceFile, ...deviceData } = formattedData;
+    
+    // Add all device data fields to FormData
+    Object.entries(deviceData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        if (value instanceof Date) {
+          formData.append(key, value.toISOString());
+        } else {
+          formData.append(key, value.toString());
+        }
+      }
+    });
+    
+    // Add the file if provided
+    if (invoiceFile && invoiceFile instanceof File) {
+      formData.append('invoiceFile', invoiceFile);
+    }
 
     // Show form data for debugging
-    console.log("Submitting device data:", formattedData);
+    console.log("Submitting device data:", deviceData);
 
-    if (isUpdateMode) {
-      updateMutation.mutate(formattedData);
-    } else {
-      createMutation.mutate(formattedData);
+    try {
+      if (isUpdateMode) {
+        const response = await fetch(`/api/devices/${device.id}`, {
+          method: 'PUT',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to update device: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        queryClient.invalidateQueries({ queryKey: ['/api/devices'] });
+        if (onSuccess) onSuccess();
+        
+        toast({
+          title: "Success",
+          description: "Device updated successfully",
+        });
+      } else {
+        const response = await fetch('/api/devices', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to create device: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        queryClient.invalidateQueries({ queryKey: ['/api/devices'] });
+        if (onSuccess) onSuccess();
+        
+        toast({
+          title: "Success",
+          description: "Device created successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save device",
+        variant: "destructive",
+      });
     }
   };
 
-  // Generate a new asset tag
-  const handleGenerateAssetTag = () => {
-    form.setValue("assetTag", generateAssetTag());
-  };
-  
-  // Generate a random serial number
-  const handleGenerateSerialNumber = () => {
-    const randomSerial = `SN-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
-    form.setValue("serialNumber", randomSerial);
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file type
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a PDF, JPEG, or PNG file",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Store file in form
+      form.setValue("invoiceFile", file);
+      form.setValue("invoiceFileName", file.name);
+      form.setValue("invoiceFileType", file.type);
+      
+      // Create preview URL
+      setFilePreview({
+        name: file.name,
+        type: file.type,
+        url: URL.createObjectURL(file)
+      });
+    }
   };
 
   return (
@@ -194,20 +309,9 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             name="serialNumber"
             render={({ field }) => (
               <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel>
-                    Serial Number <span className="text-red-500">*</span>
-                  </FormLabel>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateSerialNumber}
-                    className="h-6 text-xs"
-                  >
-                    Generate
-                  </Button>
-                </div>
+                <FormLabel>
+                  Serial Number <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input placeholder="Serial Number" {...field} required />
                 </FormControl>
@@ -224,20 +328,9 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             name="assetTag"
             render={({ field }) => (
               <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel>
-                    Asset Tag <span className="text-red-500">*</span>
-                  </FormLabel>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateAssetTag}
-                    className="h-6 text-xs"
-                  >
-                    Generate
-                  </Button>
-                </div>
+                <FormLabel>
+                  Asset Tag <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input placeholder="Asset Tag" {...field} required />
                 </FormControl>
@@ -417,8 +510,8 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
               <FormLabel>Purchased By</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value}
-                value={field.value}
+                defaultValue={field.value?.toString() || ""}
+                value={field.value?.toString() || ""}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -448,6 +541,105 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
               </Select>
               <FormDescription>
                 Select who purchased this device
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="invoiceFile"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Invoice / Receipt</FormLabel>
+              <FormControl>
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="file"
+                      className="hidden"
+                      id="invoice-file-upload"
+                      onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      ref={fileInputRef}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        document.getElementById('invoice-file-upload')?.click();
+                      }}
+                      className="flex items-center"
+                    >
+                      <PaperclipIcon className="h-4 w-4 mr-2" />
+                      Upload Invoice
+                    </Button>
+                    {form.watch("invoiceFileName") && (
+                      <span className="text-sm text-muted-foreground">
+                        {form.watch("invoiceFileName")}
+                      </span>
+                    )}
+                  </div>
+                  {(device?.invoiceFileName || filePreview) && (
+                    <div className="mt-2 border border-gray-200 rounded-md p-3 bg-gray-50">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-2 text-sm">
+                          {(device?.invoiceFileType || filePreview?.type)?.includes('pdf') ? (
+                            <FileTextIcon className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <ImageIcon className="h-4 w-4 text-blue-500" />
+                          )}
+                          <span className="font-medium">
+                            {filePreview?.name || device?.invoiceFileName}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {filePreview?.url || device?.invoiceFileUrl ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const url = filePreview?.url || device?.invoiceFileUrl;
+                                if (url) {
+                                  window.open(url, '_blank');
+                                }
+                              }}
+                              className="h-8 px-2"
+                            >
+                              View
+                            </Button>
+                          ) : null}
+                          
+                          {device?.invoiceFileUrl && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (device?.invoiceFileUrl) {
+                                  const a = document.createElement('a');
+                                  a.href = device.invoiceFileUrl;
+                                  a.download = device.invoiceFileName || 'invoice';
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                }
+                              }}
+                              className="h-8 px-2"
+                            >
+                              Download
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </FormControl>
+              <FormDescription>
+                Upload an invoice or receipt for this device (PDF, JPEG, or PNG)
               </FormDescription>
               <FormMessage />
             </FormItem>
