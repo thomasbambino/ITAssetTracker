@@ -24,7 +24,10 @@ import {
   PackageIcon,
   KeyIcon,
   CheckCircleIcon,
-  AlertCircleIcon
+  AlertCircleIcon,
+  UserPlusIcon,
+  UserXIcon,
+  UserCheckIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -48,6 +51,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { UserForm } from '@/components/forms/UserForm';
 
 export default function UserDetails() {
