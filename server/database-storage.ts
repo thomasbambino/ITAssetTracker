@@ -2801,6 +2801,8 @@ export class DatabaseStorage implements IStorage {
             company_tagline as "companyTagline",
             support_email as "supportEmail",
             support_phone as "supportPhone",
+            site_title as "siteTitle",
+            site_description as "siteDescription",
             updated_at as "updatedAt"
         `, values);
         
@@ -2819,9 +2821,11 @@ export class DatabaseStorage implements IStorage {
             site_name_gradient,
             company_tagline,
             support_email,
-            support_phone
+            support_phone,
+            site_title,
+            site_description
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
           ) RETURNING 
             id, 
             company_name as "companyName", 
@@ -2835,6 +2839,8 @@ export class DatabaseStorage implements IStorage {
             company_tagline as "companyTagline",
             support_email as "supportEmail",
             support_phone as "supportPhone",
+            site_title as "siteTitle",
+            site_description as "siteDescription",
             updated_at as "updatedAt"
         `, [
           settings.companyName || 'IT Asset Management',
@@ -2847,7 +2853,9 @@ export class DatabaseStorage implements IStorage {
           settings.siteNameGradient !== undefined ? settings.siteNameGradient : true,
           settings.companyTagline || '',
           settings.supportEmail || '',
-          settings.supportPhone || ''
+          settings.supportPhone || '',
+          settings.siteTitle || 'IT Asset Manager',
+          settings.siteDescription || 'A comprehensive IT asset management system for tracking hardware, software, and maintenance.'
         ]);
         
         return newSettings;

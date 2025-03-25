@@ -54,7 +54,11 @@ export function FaviconManager() {
   /**
    * Helper function to update or create Open Graph meta tags
    */
-  function updateOpenGraphMetaTags(branding: any) {
+  function updateOpenGraphMetaTags(branding: {
+    companyName: string;
+    siteTitle?: string;
+    siteDescription?: string;
+  }) {
     const tags = [
       { property: 'og:title', content: `${branding.companyName} - ${branding.siteTitle || 'IT Asset Manager'}` },
       { property: 'og:description', content: branding.siteDescription || 'A comprehensive IT asset management system for tracking hardware, software, and maintenance.' },
