@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import { GlobalSearch } from '@/components/shared/GlobalSearch';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { ActionButton } from '@/components/dashboard/ActionButton';
@@ -79,7 +80,31 @@ export default function Dashboard() {
   // Fetch recent activity
   const { data: activities, isLoading: activitiesLoading } = useQuery<ActivityLog[]>({
     queryKey: ['/api/activity'],
+    refetchInterval: 10000, // Auto-refresh every 10 seconds
   });
+  
+  // Set up auto-refresh of activity data
+  useEffect(() => {
+    // Function to refresh activities
+    const refreshActivities = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
+    };
+
+    // Set up a document visibility change listener to refresh activities when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshActivities();
+      }
+    };
+
+    // Add event listener for visibility change
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Clean up on component unmount
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   // Export handlers
   const { exportCsv: exportUsers, isExporting: isExportingUsers } = useCsvExport('/api/export/users');
