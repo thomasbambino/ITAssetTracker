@@ -1,20 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ActivityTable, ActivityLog } from "@/components/dashboard/ActivityTable";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCcwIcon, SearchIcon } from 'lucide-react';
+import { SearchIcon } from 'lucide-react';
 
 export default function History() {
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Fetch all activity logs with no limit (unlimited)
-  const { data: activities, isLoading: activitiesLoading, refetch } = useQuery<ActivityLog[]>({
+  // Fetch all activity logs with no limit (unlimited) and auto-refresh
+  const { data: activities, isLoading: activitiesLoading } = useQuery<ActivityLog[]>({
     queryKey: ['/api/activity', { limit: 0 }],
+    refetchInterval: 10000, // Auto-refresh every 10 seconds
   });
+  
+  // Set up auto-refresh of activity data when tab becomes visible
+  useEffect(() => {
+    // Function to refresh activities
+    const refreshActivities = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
+    };
+
+    // Set up a document visibility change listener
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshActivities();
+      }
+    };
+
+    // Add event listener for visibility change
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Clean up on component unmount
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
   
   // Filter activities by search term
   const filterBySearch = (activities: ActivityLog[] | undefined) => {
@@ -50,16 +74,6 @@ export default function History() {
     <PageContainer 
       title="Activity History"
       description="View all system activity and changes over time"
-      actions={
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => refetch()}
-        >
-          <RefreshCcwIcon className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      }
     >
       <div className="w-full mb-4">
         <div className="relative">
