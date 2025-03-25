@@ -809,10 +809,11 @@ export default function UserDetails() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-[300px]">
-                      <Command>
+                      <Command className="overflow-hidden">
                         <CommandInput placeholder="Search users..." />
                         <CommandEmpty>No user found.</CommandEmpty>
-                        <CommandGroup className="max-h-[200px] overflow-auto">
+                        <div className="max-h-[200px] overflow-auto">
+                          <CommandGroup>
                           {allUsers
                             .filter((u: any) => u.id.toString() !== id) // Filter out current user
                             .sort((a: any, b: any) => {
@@ -839,7 +840,8 @@ export default function UserDetails() {
                                 {selectedUserId === user.id.toString() && <Check className="h-4 w-4" />}
                               </CommandItem>
                             ))}
-                        </CommandGroup>
+                          </CommandGroup>
+                        </div>
                       </Command>
                     </PopoverContent>
                   </Popover>
