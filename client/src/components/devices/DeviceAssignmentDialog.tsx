@@ -216,7 +216,7 @@ export function DeviceAssignmentDialog({
                   <CommandEmpty>
                     {usersLoading ? "Loading..." : "No users found"}
                   </CommandEmpty>
-                  <CommandGroup className="max-h-[200px] overflow-y-auto">
+                  <CommandGroup className="max-h-[200px] overflow-auto">
                     {filteredUsers.map((user) => (
                       <CommandItem
                         key={user.id}
@@ -228,7 +228,7 @@ export function DeviceAssignmentDialog({
                         className="flex items-center justify-between"
                       >
                         <div className="flex items-center">
-                          <span>{user.firstName} {user.lastName}</span>
+                          <span className="text-sm">{user.firstName} {user.lastName}</span>
                           {user.department && (
                             <span className="ml-2 text-xs text-gray-500">({user.department})</span>
                           )}

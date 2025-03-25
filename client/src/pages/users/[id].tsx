@@ -808,11 +808,11 @@ export default function UserDetails() {
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0">
+                    <PopoverContent className="p-0 w-[300px]">
                       <Command>
                         <CommandInput placeholder="Search users..." />
                         <CommandEmpty>No user found.</CommandEmpty>
-                        <CommandGroup className="max-h-[200px] overflow-y-auto">
+                        <CommandGroup className="max-h-[200px] overflow-auto">
                           {allUsers
                             .filter((u: any) => u.id.toString() !== id) // Filter out current user
                             .sort((a: any, b: any) => {
@@ -828,19 +828,15 @@ export default function UserDetails() {
                                 onSelect={() => {
                                   setSelectedUserId(user.id.toString());
                                 }}
+                                className="flex items-center justify-between"
                               >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedUserId === user.id.toString() ? "opacity-100" : "opacity-0"
+                                <div className="flex items-center">
+                                  <span className="text-sm">{user.firstName} {user.lastName}</span>
+                                  {user.email && (
+                                    <span className="ml-2 text-xs text-gray-500">({user.email})</span>
                                   )}
-                                />
-                                <span>
-                                  {user.firstName} {user.lastName}
-                                  <span className="ml-2 text-xs text-muted-foreground">
-                                    ({user.email})
-                                  </span>
-                                </span>
+                                </div>
+                                {selectedUserId === user.id.toString() && <Check className="h-4 w-4" />}
                               </CommandItem>
                             ))}
                         </CommandGroup>
