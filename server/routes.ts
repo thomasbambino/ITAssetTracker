@@ -421,6 +421,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching device" });
     }
   });
+  
+  // Get device invoice file
+  app.get('/api/devices/:id/invoice', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const device = await storage.getDeviceById(id);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      if (!device.invoiceFile || !device.invoiceFileName || !device.invoiceFileType) {
+        return res.status(404).json({ message: "No invoice file found for this device" });
+      }
+      
+      // Convert base64 back to binary
+      const fileBuffer = Buffer.from(device.invoiceFile, 'base64');
+      
+      // Set appropriate headers for file download
+      res.setHeader('Content-Type', device.invoiceFileType);
+      res.setHeader('Content-Disposition', `attachment; filename="${device.invoiceFileName}"`);
+      res.setHeader('Content-Length', fileBuffer.length);
+      
+      // Send the file
+      res.send(fileBuffer);
+    } catch (error) {
+      console.error("Error fetching device invoice:", error);
+      res.status(500).json({ message: "Error fetching device invoice" });
+    }
+  });
 
   // Get device assignment history
   app.get('/api/devices/:id/history', async (req: Request, res: Response) => {
@@ -454,11 +484,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/devices', async (req: Request, res: Response) => {
+  app.post('/api/devices', upload.single('invoiceFile'), async (req: Request, res: Response) => {
     try {
-      // The insertDeviceSchema now handles date conversion
-      const validatedData = insertDeviceSchema.parse(req.body);
-      const device = await storage.createDevice(validatedData);
+      // Parse and validate the form data
+      const formData = req.body;
+      
+      // Handle date parsing
+      if (formData.purchaseDate) {
+        try {
+          formData.purchaseDate = new Date(formData.purchaseDate);
+        } catch (e) {
+          console.warn("Failed to parse purchaseDate:", e);
+          formData.purchaseDate = null;
+        }
+      }
+      
+      if (formData.warrantyEOL) {
+        try {
+          formData.warrantyEOL = new Date(formData.warrantyEOL);
+        } catch (e) {
+          console.warn("Failed to parse warrantyEOL:", e);
+          formData.warrantyEOL = null;
+        }
+      }
+      
+      // Convert purchaseCost to integer (cents)
+      if (formData.purchaseCost) {
+        formData.purchaseCost = parseInt(formData.purchaseCost);
+      }
+      
+      // Handle the file upload if it exists
+      if (req.file) {
+        // Convert the file to base64 for storage
+        const base64File = req.file.buffer.toString('base64');
+        
+        // Store file information
+        formData.invoiceFile = base64File;
+        formData.invoiceFileName = req.file.originalname;
+        formData.invoiceFileType = req.file.mimetype;
+      }
+      
+      // The insertDeviceSchema now handles data validation
+      const validatedData = insertDeviceSchema.parse(formData);
+      
+      // Get the currently logged in user's ID from the session if available
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const device = await storage.createDevice(validatedData, loggedInUserId);
       res.status(201).json(device);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -469,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/devices/:id', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/devices/:id', isAuthenticated, upload.single('invoiceFile'), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -477,8 +550,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
-      // The insertDeviceSchema now handles date conversion
-      const validatedData = insertDeviceSchema.partial().parse(req.body);
+      // Parse and validate the form data
+      const formData = req.body;
+      
+      // Handle date parsing
+      if (formData.purchaseDate) {
+        try {
+          formData.purchaseDate = new Date(formData.purchaseDate);
+        } catch (e) {
+          console.warn("Failed to parse purchaseDate:", e);
+          formData.purchaseDate = null;
+        }
+      }
+      
+      if (formData.warrantyEOL) {
+        try {
+          formData.warrantyEOL = new Date(formData.warrantyEOL);
+        } catch (e) {
+          console.warn("Failed to parse warrantyEOL:", e);
+          formData.warrantyEOL = null;
+        }
+      }
+      
+      // Convert purchaseCost to integer (cents)
+      if (formData.purchaseCost) {
+        formData.purchaseCost = parseInt(formData.purchaseCost);
+      }
+      
+      // Handle the file upload if it exists
+      if (req.file) {
+        // Convert the file to base64 for storage
+        const base64File = req.file.buffer.toString('base64');
+        
+        // Store file information
+        formData.invoiceFile = base64File;
+        formData.invoiceFileName = req.file.originalname;
+        formData.invoiceFileType = req.file.mimetype;
+      }
+      
+      // The insertDeviceSchema now handles data validation
+      const validatedData = insertDeviceSchema.partial().parse(formData);
       
       const device = await storage.updateDevice(id, validatedData, loggedInUserId);
       if (!device) {
