@@ -34,7 +34,7 @@ export default function ResetPasswordPage() {
   const [_, navigate] = useLocation();
   
   // Fetch branding settings
-  const { data: brandingData } = useQuery<BrandingSettings>({
+  const { data: brandingData, isLoading: isBrandingLoading } = useQuery<BrandingSettings>({
     queryKey: ['/api/branding'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -94,6 +94,15 @@ export default function ResetPasswordPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Show loading animation when branding data is loading
+  if (isBrandingLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
