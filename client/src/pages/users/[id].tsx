@@ -769,7 +769,6 @@ export default function UserDetails() {
         if (!open) {
           setDeviceToTransfer(null);
           setSelectedUserId('');
-          setSearchQuery('');
         }
       }}>
         <DialogContent>
@@ -816,7 +815,6 @@ export default function UserDetails() {
               setShowTransferDialog(false);
               setDeviceToTransfer(null);
               setSelectedUserId('');
-              setSearchQuery('');
             }}>
               Cancel
             </Button>

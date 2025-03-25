@@ -30,6 +30,11 @@ export function DeviceAssignmentDialog({
 }: DeviceAssignmentDialogProps) {
   const { toast } = useToast();
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  
+  // Handle setting the selected user ID
+  const handleUserSelect = (value: string | number) => {
+    setSelectedUserId(value.toString());
+  };
   const isAssigned = !!device.user;
   
   // Fetch users for the assignment dropdown
@@ -162,7 +167,7 @@ export function DeviceAssignmentDialog({
                 sublabel: user.department || undefined
               }))}
               value={selectedUserId}
-              onChange={(value) => setSelectedUserId(value.toString())}
+              onChange={handleUserSelect}
               placeholder="Select a user"
               disabled={usersLoading}
               searchPlaceholder="Search users..."
