@@ -16,6 +16,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import {
   Popover,
@@ -208,7 +209,7 @@ export function DeviceAssignmentDialog({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-0 w-[300px]">
-                <Command>
+                <Command className="overflow-hidden">
                   <CommandInput 
                     placeholder="Search users..."
                     onValueChange={setSearchQuery}
