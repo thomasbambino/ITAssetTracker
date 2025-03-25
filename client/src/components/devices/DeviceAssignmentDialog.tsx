@@ -162,7 +162,7 @@ export function DeviceAssignmentDialog({
                 sublabel: user.department || undefined
               }))}
               value={selectedUserId}
-              onChange={setSelectedUserId}
+              onChange={(value) => setSelectedUserId(value.toString())}
               placeholder="Select a user"
               disabled={usersLoading}
               searchPlaceholder="Search users..."

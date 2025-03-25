@@ -74,6 +74,7 @@ import {
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { UserForm } from '@/components/forms/UserForm';
+import { CustomDropdown, type DropdownOption } from '@/components/ui/custom-dropdown';
 
 export default function UserDetails() {
   const { id } = useParams();
@@ -92,7 +93,6 @@ export default function UserDetails() {
   const [deviceToUnassign, setDeviceToUnassign] = useState<number | null>(null);
   const [deviceToTransfer, setDeviceToTransfer] = useState<any | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
   
   // State for device action dialogs
   const [showTransferDialog, setShowTransferDialog] = useState(false);
@@ -792,81 +792,20 @@ export default function UserDetails() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="userId">Select User:</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        id="userId"
-                        className="w-full justify-between"
-                      >
-                        {selectedUserId ? (
-                          allUsers.find((user) => user.id.toString() === selectedUserId) ? (
-                            `${allUsers.find((user) => user.id.toString() === selectedUserId)?.firstName} ${allUsers.find((user) => user.id.toString() === selectedUserId)?.lastName}`
-                          ) : "Select a user"
-                        ) : (
-                          "Select a user"
-                        )}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0 w-[300px]">
-                      <Command className="overflow-hidden">
-                        <CommandInput 
-                          placeholder="Search users..."
-                          onValueChange={setSearchQuery}
-                        />
-                        <CommandEmpty>No user found.</CommandEmpty>
-                        <div className="dropdown-scrollable">
-                          <CommandGroup>
-                          {allUsers
-                            .filter((u: any) => {
-                              // Filter out current user
-                              if (u.id.toString() === id) return false;
-                              
-                              // Apply search filter if query exists
-                              if (searchQuery) {
-                                const query = searchQuery.toLowerCase();
-                                const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
-                                const email = (u.email || '').toLowerCase();
-                                const department = (u.department || '').toLowerCase();
-                                
-                                return fullName.includes(query) || 
-                                       email.includes(query) || 
-                                       department.includes(query);
-                              }
-                              
-                              return true;
-                            })
-                            .sort((a: any, b: any) => {
-                              // Sort alphabetically by first name and last name
-                              const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
-                              const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
-                              return nameA.localeCompare(nameB);
-                            })
-                            .map((user: any) => (
-                              <CommandItem
-                                key={user.id}
-                                value={`${user.firstName} ${user.lastName} ${user.email}`}
-                                onSelect={() => {
-                                  setSelectedUserId(user.id.toString());
-                                }}
-                                className="flex items-center justify-between"
-                              >
-                                <div className="flex items-center">
-                                  <span className="text-sm">{user.firstName} {user.lastName}</span>
-                                  {user.email && (
-                                    <span className="ml-2 text-xs text-gray-500">({user.email})</span>
-                                  )}
-                                </div>
-                                {selectedUserId === user.id.toString() && <Check className="h-4 w-4" />}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </div>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <CustomDropdown 
+                    options={allUsers
+                      .filter((u: any) => u.id.toString() !== id) // Filter out current user
+                      .map((user: any) => ({
+                        id: user.id.toString(),
+                        label: `${user.firstName} ${user.lastName}`,
+                        sublabel: user.email || user.department || undefined
+                      }))
+                    }
+                    value={selectedUserId}
+                    onChange={(value) => setSelectedUserId(value.toString())}
+                    placeholder="Select a user"
+                    searchPlaceholder="Search users..."
+                  />
                 </div>
               </div>
             </div>
