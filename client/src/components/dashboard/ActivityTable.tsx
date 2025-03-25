@@ -148,10 +148,6 @@ export function ActivityTable({
     <Card>
       <CardHeader className="px-4 py-5 border-b border-gray-200 sm:px-6">
         <CardTitle className="text-lg leading-6 font-medium text-gray-900">Recent Activity</CardTitle>
-        <div className="flex items-center bg-primary/10 border border-primary/20 rounded-md p-1.5 mt-2 text-sm">
-          <MousePointerClickIcon className="h-4 w-4 mr-2 text-primary" />
-          <span className="text-primary font-medium">Click on highlighted rows to view device details</span>
-        </div>
       </CardHeader>
       <div className="overflow-x-auto">
         <Table>
@@ -181,8 +177,7 @@ export function ActivityTable({
                 return (
                   <TableRow 
                     key={activity.id}
-                    onClick={() => isDeviceRelated ? handleActivityClick(activity) : null}
-                    className={isDeviceRelated ? "cursor-pointer hover:bg-primary/5 transition-colors border-l-4 border-l-primary/40" : ""}
+                    className={isDeviceRelated ? "border-l-4 border-l-primary/40" : ""}
                   >
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(activity.timestamp)}
@@ -216,10 +211,17 @@ export function ActivityTable({
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {isDeviceRelated ? (
-                        <div className="flex items-center gap-1 p-1 rounded bg-primary/5 text-primary hover:bg-primary/10 transition-colors border border-primary/20" title="Click to view device details">
+                        <a 
+                          href={`/devices/${extractDeviceId(activity)}`} 
+                          className="flex items-center gap-1 p-1 rounded bg-primary/5 text-primary hover:bg-primary/10 transition-colors border border-primary/20"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleActivityClick(activity);
+                          }}
+                        >
                           {activity.details}
                           <MousePointerClickIcon className="h-4 w-4 text-primary/70" />
-                        </div>
+                        </a>
                       ) : (
                         activity.details
                       )}
