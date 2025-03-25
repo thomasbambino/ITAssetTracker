@@ -25,7 +25,9 @@ import {
   InfoIcon,
   QrCodeIcon,
   DownloadIcon,
-  PrinterIcon
+  PrinterIcon,
+  FileIcon,
+  FileTextIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -475,6 +477,53 @@ export default function DeviceDetails() {
                         <span className="text-sm text-gray-600 ml-2">
                           {device.purchasedBy}
                         </span>
+                      </div>
+                    )}
+                    
+                    {device.invoiceFileName && (
+                      <div className="flex items-center mt-3">
+                        {device.invoiceFileType?.includes('pdf') ? (
+                          <FileTextIcon className="h-5 w-5 text-red-500 mr-2" />
+                        ) : (
+                          <FileIcon className="h-5 w-5 text-blue-500 mr-2" />
+                        )}
+                        <span className="text-sm font-medium text-gray-700">Invoice:</span>
+                        <div className="flex items-center ml-2">
+                          <span className="text-sm text-gray-600 mr-2">
+                            {device.invoiceFileName}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (device.invoiceFileUrl) {
+                                window.open(device.invoiceFileUrl, '_blank');
+                              }
+                            }}
+                            className="h-6 px-2 text-blue-600 hover:text-blue-800"
+                          >
+                            View
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (device.invoiceFileUrl) {
+                                const a = document.createElement('a');
+                                a.href = `/api/devices/${device.id}/invoice`;
+                                a.download = device.invoiceFileName || 'invoice';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                              }
+                            }}
+                            className="h-6 px-2 text-blue-600 hover:text-blue-800"
+                          >
+                            <DownloadIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
