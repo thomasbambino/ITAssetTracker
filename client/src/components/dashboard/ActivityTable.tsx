@@ -239,7 +239,9 @@ export function ActivityTable({
                                     title="Click to view device details"
                                   >
                                     {deviceName.trim()}
-                                  </span> (ID: {deviceId}){after}
+                                  </span> (ID: {deviceId})
+                                  {/* Hide empty asset tag parentheses */}
+                                  {after && after.includes('()') ? after.replace('()', '') : after}
                                 </>
                               );
                             }
