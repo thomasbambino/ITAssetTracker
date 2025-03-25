@@ -39,6 +39,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import { CustomDropdown, type DropdownOption } from '@/components/ui/custom-dropdown';
 
 // Define the form schema
 const formSchema = z.object({
@@ -272,59 +273,19 @@ export function SoftwareAssignmentForm({
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Select User</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          "w-full justify-between",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value
-                          ? users.find((user) => user.id === field.value)
-                            ? `${users.find((user) => user.id === field.value)?.firstName} ${users.find((user) => user.id === field.value)?.lastName}`
-                            : "Select a user"
-                          : "Select a user"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search users..." />
-                      <CommandEmpty>No user found.</CommandEmpty>
-                      <CommandGroup className="max-h-[200px] overflow-y-auto">
-                        {users.map((user) => (
-                          <CommandItem
-                            key={user.id}
-                            value={`${user.firstName} ${user.lastName} ${user.department || ''}`}
-                            onSelect={() => {
-                              field.onChange(user.id);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                field.value === user.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <span>
-                              {user.firstName} {user.lastName}
-                              {user.department && (
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                  ({user.department})
-                                </span>
-                              )}
-                            </span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <CustomDropdown 
+                    options={users.map(user => ({
+                      id: user.id.toString(),
+                      label: `${user.firstName} ${user.lastName}`,
+                      sublabel: user.department || undefined
+                    }))}
+                    value={field.value ? field.value.toString() : ''}
+                    onChange={(value) => field.onChange(parseInt(value.toString()))}
+                    placeholder="Select a user"
+                    searchPlaceholder="Search users..."
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -336,54 +297,19 @@ export function SoftwareAssignmentForm({
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Select Device</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          "w-full justify-between",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value
-                          ? devices.find((device) => device.id === field.value)
-                            ? `${devices.find((device) => device.id === field.value)?.brand} ${devices.find((device) => device.id === field.value)?.model} (${devices.find((device) => device.id === field.value)?.assetTag})`
-                            : "Select a device"
-                          : "Select a device"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search devices..." />
-                      <CommandEmpty>No device found.</CommandEmpty>
-                      <CommandGroup className="max-h-[200px] overflow-y-auto">
-                        {devices.map((device) => (
-                          <CommandItem
-                            key={device.id}
-                            value={`${device.brand} ${device.model} ${device.assetTag}`}
-                            onSelect={() => {
-                              field.onChange(device.id);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                field.value === device.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <span>
-                              {device.brand} {device.model} ({device.assetTag})
-                            </span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <CustomDropdown 
+                    options={devices.map(device => ({
+                      id: device.id.toString(),
+                      label: `${device.brand} ${device.model}`,
+                      sublabel: device.assetTag || undefined
+                    }))}
+                    value={field.value ? field.value.toString() : ''}
+                    onChange={(value) => field.onChange(parseInt(value.toString()))}
+                    placeholder="Select a device"
+                    searchPlaceholder="Search devices..."
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
