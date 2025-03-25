@@ -150,7 +150,7 @@ export function ActivityTable({
         <CardTitle className="text-lg leading-6 font-medium text-gray-900">Recent Activity</CardTitle>
         <div className="flex items-center text-xs text-muted-foreground mt-1">
           <MousePointerClickIcon className="h-3 w-3 mr-1" />
-          <span>Device activities are clickable for details</span>
+          <span>Device names are clickable for details</span>
         </div>
       </CardHeader>
       <div className="overflow-x-auto">
@@ -181,8 +181,7 @@ export function ActivityTable({
                 return (
                   <TableRow 
                     key={activity.id}
-                    onClick={() => isDeviceRelated ? handleActivityClick(activity) : null}
-                    className={isDeviceRelated ? "cursor-pointer hover:bg-gray-50" : ""}
+                    className="hover:bg-gray-50"
                   >
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(activity.timestamp)}
@@ -216,9 +215,38 @@ export function ActivityTable({
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {isDeviceRelated ? (
-                        <div className="flex items-center text-primary hover:underline" title="Click to view device details">
-                          {activity.details}
-                          <MousePointerClickIcon className="ml-1 h-3 w-3 text-primary/70" />
+                        <div>
+                          {/* Extract device name and make only that part clickable */}
+                          {(() => {
+                            // Pattern to match "Device [Brand] [Model] (ID: [number])"
+                            const devicePattern = /(Device\s+([^(]+))\s+\(ID:\s+(\d+)\)/;
+                            const match = activity.details.match(devicePattern);
+                            
+                            if (match) {
+                              const [fullMatch, devicePart, deviceName, deviceId] = match;
+                              const before = activity.details.substring(0, activity.details.indexOf(fullMatch));
+                              const after = activity.details.substring(activity.details.indexOf(fullMatch) + fullMatch.length);
+                              
+                              return (
+                                <>
+                                  {before}
+                                  Device <span 
+                                    className="text-primary hover:underline cursor-pointer" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/devices/${deviceId}`);
+                                    }}
+                                    title="Click to view device details"
+                                  >
+                                    {deviceName.trim()}
+                                  </span> (ID: {deviceId}){after}
+                                </>
+                              );
+                            }
+                            
+                            // Fallback if pattern doesn't match
+                            return activity.details;
+                          })()}
                         </div>
                       ) : (
                         activity.details
