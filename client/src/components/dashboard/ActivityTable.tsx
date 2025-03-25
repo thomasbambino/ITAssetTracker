@@ -90,6 +90,7 @@ export function ActivityTable({
       return parseInt(idMatch[1]);
     }
     
+    // No ID found
     return null;
   };
   
@@ -214,9 +215,9 @@ export function ActivityTable({
                         <div>
                           <button 
                             onClick={() => handleActivityClick(activity)}
-                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800 font-bold"
+                            className="px-3 py-1 bg-primary text-white rounded hover:bg-primary/80 text-sm font-medium flex items-center"
                           >
-                            CLICK HERE TO VIEW DEVICE
+                            View Device <MousePointerClickIcon className="ml-1 h-3 w-3" />
                           </button>
                           <div className="mt-1">{activity.details}</div>
                         </div>
