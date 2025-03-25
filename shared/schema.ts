@@ -86,6 +86,9 @@ export const devices = pgTable("devices", {
   purchasedBy: text("purchased_by"),
   warrantyEOL: timestamp("warranty_eol"),
   userId: integer("user_id").references(() => users.id),
+  invoiceFile: text("invoice_file"),  // Store file data as base64
+  invoiceFileName: text("invoice_file_name"), // Original filename
+  invoiceFileType: text("invoice_file_type"), // MIME type of the file
   createdAt: timestamp("created_at").defaultNow(),
 });
 

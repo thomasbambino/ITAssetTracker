@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,11 +23,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { generateAssetTag } from "@/lib/utils";
 import { insertDeviceSchema } from "@shared/schema";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, UploadIcon } from "lucide-react";
 import { format } from "date-fns";
 
 // Create a schema for device creation/update
@@ -37,6 +37,10 @@ const formSchema = insertDeviceSchema.extend({
   categoryId: z.coerce.number().nullable(),
   purchaseDate: z.date().nullable().optional(),
   warrantyEOL: z.date().nullable().optional(),
+  // File upload fields - we'll handle file data separately
+  invoiceFile: z.any().optional(),
+  invoiceFileName: z.string().optional(),
+  invoiceFileType: z.string().optional(),
 });
 
 type DeviceFormValues = z.infer<typeof formSchema>;
