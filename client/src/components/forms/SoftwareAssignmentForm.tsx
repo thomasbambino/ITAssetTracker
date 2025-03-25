@@ -70,23 +70,59 @@ export function SoftwareAssignmentForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   
+  // Define interfaces for our data types
+  interface SoftwareType {
+    id: number;
+    name: string;
+    vendor: string;
+    licenseKey?: string;
+    licenseType: string;
+    seats?: number;
+    cost?: number;
+    status: string;
+    version?: string;
+  }
+  
+  interface AssignmentType {
+    id: number;
+    softwareId: number;
+    userId?: number;
+    deviceId?: number;
+    assignedAt: string;
+    notes?: string;
+  }
+  
   // Fetch software details to get the name and other info
-  const { data: software } = useQuery({
+  const { data: software } = useQuery<SoftwareType>({
     queryKey: ['/api/software', softwareId],
   });
   
   // Fetch users for selection
-  const { data: users = [] } = useQuery({
+  const { data: usersData = [] } = useQuery<any[]>({
     queryKey: ['/api/users'],
   });
   
+  // Create a sorted copy of users (alphabetically by name)
+  const users = [...usersData].sort((a: any, b: any) => {
+    const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+    const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+  
   // Fetch unassigned devices for selection
-  const { data: devices = [] } = useQuery({
+  const { data: devicesData = [] } = useQuery<any[]>({
     queryKey: ['/api/devices'],
   });
   
+  // Create a sorted copy of devices (alphabetically by brand/model)
+  const devices = [...devicesData].sort((a: any, b: any) => {
+    const deviceA = `${a.brand} ${a.model}`.toLowerCase();
+    const deviceB = `${b.brand} ${b.model}`.toLowerCase();
+    return deviceA.localeCompare(deviceB);
+  });
+  
   // Fetch assignment details if editing
-  const { data: assignment, isLoading: isLoadingAssignment } = useQuery({
+  const { data: assignment, isLoading: isLoadingAssignment } = useQuery<AssignmentType>({
     queryKey: ['/api/software-assignments', assignmentId],
     enabled: !!assignmentId,
   });
@@ -239,13 +275,35 @@ export function SoftwareAssignmentForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <div className="p-2">
+                      <input
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Search users..."
+                        onChange={(e) => {
+                          // Search functionality for the dropdown
+                          const searchValue = e.target.value.toLowerCase();
+                          document.querySelectorAll('[data-user-searchable]').forEach((el) => {
+                            const text = el.textContent?.toLowerCase() || '';
+                            if (text.includes(searchValue)) {
+                              (el as HTMLElement).style.display = 'block';
+                            } else {
+                              (el as HTMLElement).style.display = 'none';
+                            }
+                          });
+                        }}
+                      />
+                    </div>
                     {!Array.isArray(users) || users.length === 0 ? (
                       <SelectItem value="no_users" disabled>
                         No users available
                       </SelectItem>
                     ) : (
                       users.map((user: any) => (
-                        <SelectItem key={user.id} value={user.id.toString()}>
+                        <SelectItem 
+                          key={user.id} 
+                          value={user.id.toString()}
+                          data-user-searchable="true"
+                        >
                           {user.firstName} {user.lastName} {user.department ? `(${user.department})` : ''}
                         </SelectItem>
                       ))
@@ -273,13 +331,35 @@ export function SoftwareAssignmentForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <div className="p-2">
+                      <input
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Search devices..."
+                        onChange={(e) => {
+                          // Search functionality for the dropdown
+                          const searchValue = e.target.value.toLowerCase();
+                          document.querySelectorAll('[data-device-searchable]').forEach((el) => {
+                            const text = el.textContent?.toLowerCase() || '';
+                            if (text.includes(searchValue)) {
+                              (el as HTMLElement).style.display = 'block';
+                            } else {
+                              (el as HTMLElement).style.display = 'none';
+                            }
+                          });
+                        }}
+                      />
+                    </div>
                     {!Array.isArray(devices) || devices.length === 0 ? (
                       <SelectItem value="no_devices" disabled>
                         No devices available
                       </SelectItem>
                     ) : (
                       devices.map((device: any) => (
-                        <SelectItem key={device.id} value={device.id.toString()}>
+                        <SelectItem 
+                          key={device.id} 
+                          value={device.id.toString()}
+                          data-device-searchable="true"
+                        >
                           {device.brand} {device.model} ({device.assetTag})
                         </SelectItem>
                       ))
