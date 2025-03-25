@@ -92,8 +92,8 @@ function MainRouter() {
       <Route path="/reports" component={() => <ProtectedPageWrapper component={Reports} adminRequired />} />
       <Route path="/settings" component={() => <ProtectedPageWrapper component={Settings} adminRequired />} />
       
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
+      {/* Fallback to 404 - this is still inside the protected wrapper */}
+      <Route component={() => <ProtectedPageWrapper component={NotFound} />} />
     </Switch>
   );
 }
@@ -106,11 +106,16 @@ function Router() {
     return <AuthRouter />;
   }
   
-  // Otherwise use the main router with protected routes
+  // Use our custom ProtectedRoute component which will:
+  // 1. Check if user is authenticated
+  // 2. If not, redirect to login page
+  // 3. If yes, render the main app layout with main router inside
   return (
-    <AppLayout>
-      <MainRouter />
-    </AppLayout>
+    <ProtectedRoute>
+      <AppLayout>
+        <MainRouter />
+      </AppLayout>
+    </ProtectedRoute>
   );
 }
 
