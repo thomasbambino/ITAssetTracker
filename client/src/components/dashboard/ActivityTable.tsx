@@ -87,9 +87,11 @@ export function ActivityTable({
     // Format: "Device XXX (ID: 123) was..."
     const idMatch = activity.details.match(/\(ID: (\d+)\)/);
     if (idMatch && idMatch[1]) {
+      console.log("Found device ID in activity:", idMatch[1], "from details:", activity.details);
       return parseInt(idMatch[1]);
     }
     
+    console.log("No device ID found in activity details:", activity.details);
     return null;
   };
   
@@ -212,10 +214,11 @@ export function ActivityTable({
                     <TableCell className="whitespace-nowrap text-sm text-gray-500">
                       {isDeviceRelated ? (
                         <a 
-                          href={`/devices/${extractDeviceId(activity)}`} 
+                          href="#" 
                           className="flex items-center gap-1 p-1 rounded bg-primary/5 text-primary hover:bg-primary/10 transition-colors border border-primary/20"
                           onClick={(e) => {
                             e.preventDefault();
+                            console.log("Link clicked for device ID:", extractDeviceId(activity));
                             handleActivityClick(activity);
                           }}
                         >
