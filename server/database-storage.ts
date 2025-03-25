@@ -802,7 +802,37 @@ export class DatabaseStorage implements IStorage {
       
       if (!device || !user) return undefined;
       
-      // Update device
+      // If device is already assigned to someone else, unassign it first
+      if (device.userId && device.userId !== userId) {
+        const previousUser = await this.getUserById(device.userId);
+        
+        // Update the latest assignment history record for this device to mark it as unassigned
+        const latestAssignment = await db.oneOrNone(`
+          SELECT id FROM assignment_history
+          WHERE device_id = $1 AND user_id = $2 AND unassigned_at IS NULL
+          ORDER BY assigned_at DESC
+          LIMIT 1
+        `, [deviceId, device.userId]);
+        
+        if (latestAssignment) {
+          await db.none(`
+            UPDATE assignment_history SET
+              unassigned_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+          `, [latestAssignment.id]);
+        }
+        
+        // Log unassignment activity
+        if (previousUser) {
+          await this.createActivityLog({
+            userId: assignedBy,
+            actionType: 'device_unassigned',
+            details: `Device ${device.brand} ${device.model} (${device.assetTag || ''}) unassigned from ${previousUser.firstName} ${previousUser.lastName} (reassignment)`
+          });
+        }
+      }
+      
+      // Update device with new assignment
       const updatedDevice = await db.one(`
         UPDATE devices SET
           user_id = $1
@@ -848,7 +878,7 @@ export class DatabaseStorage implements IStorage {
       await this.createActivityLog({
         userId: assignedBy,
         actionType: 'device_assigned',
-        details: `Device ${device.brand} ${device.model} (${device.assetTag}) assigned to ${user.firstName} ${user.lastName}`
+        details: `Device ${device.brand} ${device.model} (${device.assetTag || ''}) assigned to ${user.firstName} ${user.lastName}`
       });
       
       return updatedDevice;
