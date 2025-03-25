@@ -279,6 +279,8 @@ export const brandingSettings = pgTable("branding_settings", {
   companyTagline: text("company_tagline"),
   supportEmail: text("support_email"),
   supportPhone: text("support_phone"),
+  siteTitle: text("site_title").default('IT Asset Manager'),
+  siteDescription: text("site_description").default('A comprehensive IT asset management system for tracking hardware, software, and maintenance.'),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

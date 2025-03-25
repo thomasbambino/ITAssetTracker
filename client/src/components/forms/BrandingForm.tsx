@@ -39,6 +39,8 @@ const formSchema = z.object({
     z.string().email("Please enter a valid email address").optional().nullable()
   ),
   supportPhone: z.string().optional().nullable(),
+  siteTitle: z.string().optional().nullable(),
+  siteDescription: z.string().max(160, "Description should be 160 characters or less for best SEO results").optional().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -73,6 +75,8 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
       companyTagline: initialData?.companyTagline || "",
       supportEmail: initialData?.supportEmail || "",
       supportPhone: initialData?.supportPhone || "",
+      siteTitle: initialData?.siteTitle || "IT Asset Manager",
+      siteDescription: initialData?.siteDescription || "A comprehensive IT asset management system for tracking hardware, software, and maintenance.",
     },
   });
 
