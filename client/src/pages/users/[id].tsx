@@ -73,6 +73,15 @@ export default function UserDetails() {
     emailSent?: boolean;
     emailError?: string;
   } | null>(null);
+  
+  // Device action states
+  const [deviceToUnassign, setDeviceToUnassign] = useState<number | null>(null);
+  const [deviceToTransfer, setDeviceToTransfer] = useState<any | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  
+  // State for device action dialogs
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [showUnassignDialog, setShowUnassignDialog] = useState(false);
 
   // Determine if we're in "new user" mode
   const isNewUser = id === 'new';
@@ -169,6 +178,114 @@ export default function UserDetails() {
       resetPasswordMutation.mutate(id);
     }
   };
+
+  // Unassign device mutation
+  const unassignDeviceMutation = useMutation({
+    mutationFn: async (deviceId: number) => {
+      await apiRequest({
+        method: 'POST',
+        url: `/api/devices/${deviceId}/unassign`
+      });
+      return deviceId;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Device has been unassigned successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+      setShowUnassignDialog(false);
+      setDeviceToUnassign(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to unassign device",
+        variant: "destructive",
+      });
+      setShowUnassignDialog(false);
+    }
+  });
+
+  // Transfer device mutation
+  const transferDeviceMutation = useMutation({
+    mutationFn: async ({ deviceId, userId }: { deviceId: number, userId: string }) => {
+      await apiRequest({
+        method: 'POST',
+        url: `/api/devices/${deviceId}/assign`,
+        data: { userId: parseInt(userId) }
+      });
+      return { deviceId, userId };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Device has been transferred successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+      setShowTransferDialog(false);
+      setDeviceToTransfer(null);
+      setSelectedUserId('');
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to transfer device",
+        variant: "destructive",
+      });
+      setShowTransferDialog(false);
+    }
+  });
+  
+  // Fetch all users for transfer dialog
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['/api/users'],
+    enabled: showTransferDialog,
+  });
+
+  // Handle device unassignment
+  const handleUnassignDevice = () => {
+    if (deviceToUnassign) {
+      unassignDeviceMutation.mutate(deviceToUnassign);
+    }
+  };
+
+  // Handle device transfer
+  const handleTransferDevice = () => {
+    if (deviceToTransfer && selectedUserId) {
+      transferDeviceMutation.mutate({ 
+        deviceId: deviceToTransfer.id, 
+        userId: selectedUserId 
+      });
+    }
+  };
+
+  // Device actions for the table
+  const deviceActions = [
+    {
+      label: "Edit",
+      icon: <EditIcon className="h-4 w-4" />,
+      onClick: (device: any) => {
+        navigate(`/devices/${device.id}`);
+      },
+    },
+    {
+      label: "Transfer",
+      icon: <UserCheckIcon className="h-4 w-4" />,
+      onClick: (device: any) => {
+        setDeviceToTransfer(device);
+        setShowTransferDialog(true);
+      },
+    },
+    {
+      label: "Unassign",
+      icon: <UserXIcon className="h-4 w-4" />,
+      onClick: (device: any) => {
+        setDeviceToUnassign(device.id);
+        setShowUnassignDialog(true);
+      },
+    },
+  ];
 
   // Table columns for devices
   const deviceColumns = [
@@ -451,6 +568,7 @@ export default function UserDetails() {
                       columns={deviceColumns}
                       keyField="id"
                       onRowClick={(device) => navigate(`/devices/${device.id}`)}
+                      actions={deviceActions}
                       emptyState={
                         <div className="text-center py-6">
                           <LaptopIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
@@ -599,6 +717,101 @@ export default function UserDetails() {
 
           <DialogFooter>
             <Button onClick={() => setResetPasswordResult(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Unassign Device Confirmation Dialog */}
+      <AlertDialog open={showUnassignDialog} onOpenChange={setShowUnassignDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unassign Device</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to unassign this device from the user? 
+              The device will be marked as unassigned and available for assignment to other users.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => setDeviceToUnassign(null)}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleUnassignDevice}
+              className="bg-primary"
+              disabled={unassignDeviceMutation.isPending}
+            >
+              {unassignDeviceMutation.isPending ? 'Unassigning...' : 'Unassign Device'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Transfer Device Dialog */}
+      <Dialog open={showTransferDialog} onOpenChange={(open) => {
+        setShowTransferDialog(open);
+        if (!open) {
+          setDeviceToTransfer(null);
+          setSelectedUserId('');
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transfer Device</DialogTitle>
+            <DialogDescription>
+              Transfer this device to another user. Select the user you want to transfer the device to.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {deviceToTransfer && (
+            <div className="py-2">
+              <h3 className="text-sm font-medium mb-1">Device Information:</h3>
+              <div className="bg-muted p-3 rounded-md mb-4">
+                <p className="font-medium">{deviceToTransfer.brand} {deviceToTransfer.model}</p>
+                <p className="text-sm text-muted-foreground">Serial: {deviceToTransfer.serialNumber}</p>
+                <p className="text-sm text-muted-foreground">Asset Tag: {deviceToTransfer.assetTag}</p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="userId">Select User:</Label>
+                  <Select
+                    value={selectedUserId}
+                    onValueChange={setSelectedUserId}
+                  >
+                    <SelectTrigger id="userId" className="w-full">
+                      <SelectValue placeholder="Select a user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allUsers
+                        .filter((u: any) => u.id.toString() !== id) // Filter out current user
+                        .map((user: any) => (
+                          <SelectItem key={user.id} value={user.id.toString()}>
+                            {user.firstName} {user.lastName} ({user.email})
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowTransferDialog(false);
+              setDeviceToTransfer(null);
+              setSelectedUserId('');
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleTransferDevice}
+              disabled={!selectedUserId || transferDeviceMutation.isPending}
+            >
+              {transferDeviceMutation.isPending ? 'Transferring...' : 'Transfer Device'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
