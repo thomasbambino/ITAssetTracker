@@ -812,22 +812,8 @@ export class DatabaseStorage implements IStorage {
         // It's a different user, so we need to explicitly unassign first
         const previousUser = await this.getUserById(device.userId);
         
-        // Close the current assignment record by marking it as unassigned
-        const latestAssignment = await db.oneOrNone(`
-          SELECT id FROM assignment_history
-          WHERE device_id = $1 AND user_id = $2 AND unassigned_at IS NULL
-          ORDER BY assigned_at DESC
-          LIMIT 1
-        `, [deviceId, device.userId]);
-        
-        if (latestAssignment) {
-          // Update the unassignedAt timestamp
-          await db.none(`
-            UPDATE assignment_history SET
-              unassigned_at = CURRENT_TIMESTAMP
-            WHERE id = $1
-          `, [latestAssignment.id]);
-        }
+        // DON'T update any existing records - instead, create a completely new unassignment record
+        // This maintains an immutable history of all device events
         
         // Create an explicit unassignment record with its own entry
         // This helps maintain a clear history of all device state changes
@@ -950,22 +936,8 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
-      // Update assignment history
-      // Find the latest assignment for this device
-      const latestAssignment = await db.oneOrNone(`
-        SELECT id FROM assignment_history
-        WHERE device_id = $1 AND user_id = $2 AND unassigned_at IS NULL
-        ORDER BY assigned_at DESC
-        LIMIT 1
-      `, [deviceId, previousUserId]);
-      
-      if (latestAssignment) {
-        await db.none(`
-          UPDATE assignment_history SET
-            unassigned_at = CURRENT_TIMESTAMP
-          WHERE id = $1
-        `, [latestAssignment.id]);
-      }
+      // REMOVED: Updating the latest assignment record
+      // We no longer modify existing records to maintain an immutable history
       
       // Create a new explicit unassignment history record
       // This creates a dedicated record showing the unassignment action
