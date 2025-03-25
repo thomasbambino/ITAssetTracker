@@ -208,7 +208,7 @@ export function DeviceAssignmentDialog({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-0 w-[300px]">
-                <Command className="overflow-hidden">
+                <Command>
                   <CommandInput 
                     placeholder="Search users..."
                     onValueChange={setSearchQuery}
@@ -216,7 +216,7 @@ export function DeviceAssignmentDialog({
                   <CommandEmpty>
                     {usersLoading ? "Loading..." : "No users found"}
                   </CommandEmpty>
-                  <div className="max-h-[200px] overflow-auto">
+                  <div className="max-h-[200px] overflow-y-auto">
                     <CommandGroup>
                     {filteredUsers.map((user) => (
                       <CommandItem
