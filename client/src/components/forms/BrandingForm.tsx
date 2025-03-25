@@ -696,6 +696,57 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                 </FormItem>
               )}
             />
+            
+            {/* Website Metadata Section */}
+            <div className="border rounded-md p-4 space-y-4 mt-2">
+              <h3 className="text-sm font-medium">Website Metadata</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                Customize metadata for search engines and link previews
+              </p>
+              
+              <FormField
+                control={form.control}
+                name="siteTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website Title</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="IT Asset Manager" 
+                        {...field} 
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Title that appears in browser tabs and search results
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="siteDescription"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Meta Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="A comprehensive IT asset management system for tracking hardware, software, and maintenance." 
+                        {...field} 
+                        value={field.value || ""}
+                        className="resize-y min-h-[80px]"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Brief description of your site for search engines and social media (max 160 characters)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         </div>
         
