@@ -19,6 +19,7 @@ import {
   ServerIcon,
   CircleUserIcon,
   LogOutIcon,
+  ShieldIcon,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { NotificationBell } from '@/components/shared/NotificationBell';
@@ -27,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories'],
-  management: ['/software', '/maintenance', '/qrcodes'],
+  management: ['/software', '/maintenance', '/qrcodes', '/warranties'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
 
@@ -123,6 +124,12 @@ export function Sidebar() {
       href: '/qrcodes',
       label: 'QR Codes',
       icon: QrCodeIcon,
+      category: 'management',
+    },
+    {
+      href: '/warranties',
+      label: 'Warranties',
+      icon: ShieldIcon,
       category: 'management',
     },
     {

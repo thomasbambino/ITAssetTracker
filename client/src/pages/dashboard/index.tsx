@@ -319,7 +319,7 @@ export default function Dashboard() {
           title="Expiring Warranties"
           value={statsLoading ? 0 : stats?.expiringWarranties || 0}
           footerText="View all"
-          footerLink="/devices"
+          footerLink="/warranties"
           additionalInfo={
             stats?.expiringWarranties
               ? {
