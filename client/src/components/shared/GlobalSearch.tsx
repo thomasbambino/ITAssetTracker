@@ -21,6 +21,29 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
+// Define types for the data received from API
+interface User {
+  id: number;
+  firstName: string;
+  lastName: string;
+  department?: string;
+  email: string;
+}
+
+interface Device {
+  id: number;
+  brand: string;
+  model: string;
+  assetTag: string;
+  serialNumber?: string;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  description?: string;
+}
+
 type SearchResult = {
   id: number;
   type: 'user' | 'device' | 'category';
@@ -37,19 +60,19 @@ export function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Fetch users for search
-  const { data: users = [] } = useQuery({
+  const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
     enabled: open,
   });
 
   // Fetch devices for search
-  const { data: devices = [] } = useQuery({
+  const { data: devices = [] } = useQuery<Device[]>({
     queryKey: ['/api/devices'],
     enabled: open,
   });
 
   // Fetch categories for search
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
     enabled: open,
   });
@@ -57,7 +80,7 @@ export function GlobalSearch() {
   // Combine all results
   const searchResults: SearchResult[] = [
     // Map users to search results
-    ...(users || []).map((user: any) => ({
+    ...users.map((user) => ({
       id: user.id,
       type: 'user' as const,
       title: `${user.firstName} ${user.lastName}`,
@@ -67,7 +90,7 @@ export function GlobalSearch() {
     })),
     
     // Map devices to search results
-    ...(devices || []).map((device: any) => ({
+    ...devices.map((device) => ({
       id: device.id,
       type: 'device' as const,
       title: `${device.brand} ${device.model}`,
@@ -77,7 +100,7 @@ export function GlobalSearch() {
     })),
     
     // Map categories to search results
-    ...(categories || []).map((category: any) => ({
+    ...categories.map((category) => ({
       id: category.id,
       type: 'category' as const,
       title: category.name,
@@ -120,14 +143,14 @@ export function GlobalSearch() {
   };
 
   return (
-    <div className="relative rounded-md shadow-sm max-w-md w-full">
+    <div className="relative w-full max-w-md border border-input rounded-md bg-background">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <SearchIcon className="h-4 w-4 text-gray-400" />
+        <SearchIcon className="h-4 w-4 text-muted-foreground" />
       </div>
       <Input
         ref={inputRef}
         type="text"
-        className="pl-10 pr-12 w-full truncate text-sm"
+        className="pl-10 pr-10 w-full border-0 shadow-none font-medium text-base focus-visible:ring-0"
         placeholder="Search..."
         onClick={() => setOpen(true)}
         readOnly
@@ -137,10 +160,10 @@ export function GlobalSearch() {
           type="button" 
           variant="ghost" 
           size="sm" 
-          className="h-full rounded-l-none rounded-r-md border-0"
+          className="h-full rounded-md"
           onClick={() => setOpen(true)}
         >
-          <FilterIcon className="h-4 w-4 text-gray-400" />
+          <FilterIcon className="h-4 w-4 text-muted-foreground" />
           <span className="sr-only">Advanced search</span>
         </Button>
       </div>
@@ -149,6 +172,7 @@ export function GlobalSearch() {
         <CommandInput 
           placeholder="Search users, devices, categories..." 
           value={searchQuery}
+          className="text-base font-medium"
           onValueChange={setSearchQuery}
         />
         <CommandList>
