@@ -30,11 +30,12 @@ import {
   SearchIcon,
   BellDotIcon,
   LogOutIcon,
+  ShieldIcon,
 } from 'lucide-react';
 
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories'],
-  management: ['/software', '/maintenance', '/qrcodes'],
+  management: ['/software', '/maintenance', '/qrcodes', '/warranties'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
 
@@ -136,6 +137,12 @@ export function MobileNav() {
       href: '/qrcodes',
       label: 'QR Codes',
       icon: QrCodeIcon,
+      category: 'management',
+    },
+    {
+      href: '/warranties',
+      label: 'Warranties',
+      icon: ShieldIcon,
       category: 'management',
     },
     {
