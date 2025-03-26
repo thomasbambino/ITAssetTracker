@@ -234,7 +234,7 @@ export default function WarrantiesPage() {
         <TabsList>
           <TabsTrigger value="all">All Devices ({totalCount})</TabsTrigger>
           <TabsTrigger value="expired">Expired ({expiredCount})</TabsTrigger>
-          <TabsTrigger value="expiring">Expiring Soon - 30 Days ({expiringCount})</TabsTrigger>
+          <TabsTrigger value="expiring">Expiring Soon ({expiringCount})</TabsTrigger>
           <TabsTrigger value="valid">Valid ({validCount})</TabsTrigger>
         </TabsList>
         
