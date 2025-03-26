@@ -25,9 +25,10 @@ interface Device {
   invoiceFile?: string | null;
   user?: {
     id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
     department?: string | null;
   } | null;
 }
@@ -107,7 +108,13 @@ export default function WarrantiesPage() {
     },
     {
       header: 'Assigned To',
-      accessor: (device: any) => device.user ? `${device.user.firstName} ${device.user.lastName}` : 'Unassigned',
+      accessor: (device: any) => {
+        if (!device.user) return 'Unassigned';
+        // Use the name property if available, otherwise try firstName + lastName
+        return device.user.name || 
+               (device.user.firstName && device.user.lastName ? 
+                `${device.user.firstName} ${device.user.lastName}` : 'Unknown User');
+      },
       sortable: true
     },
     {
@@ -200,11 +207,15 @@ export default function WarrantiesPage() {
 
         <Card className={`border-l-4 ${expiringCount > 0 ? 'border-l-amber-500' : 'border-l-gray-200'}`}>
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Expiring Soon</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Expiring Soon <span className="text-amber-600 font-semibold">(30 days)</span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold">{expiringCount}</div>
-            <p className="text-xs text-muted-foreground">devices with warranties expiring in 30 days</p>
+            <p className="text-xs text-muted-foreground">
+              devices with warranties expiring in <span className="font-medium text-amber-600">30 days</span> or less
+            </p>
           </CardContent>
         </Card>
 
@@ -223,7 +234,7 @@ export default function WarrantiesPage() {
         <TabsList>
           <TabsTrigger value="all">All Devices ({totalCount})</TabsTrigger>
           <TabsTrigger value="expired">Expired ({expiredCount})</TabsTrigger>
-          <TabsTrigger value="expiring">Expiring Soon ({expiringCount})</TabsTrigger>
+          <TabsTrigger value="expiring">Expiring Soon - 30 Days ({expiringCount})</TabsTrigger>
           <TabsTrigger value="valid">Valid ({validCount})</TabsTrigger>
         </TabsList>
         
@@ -268,8 +279,10 @@ export default function WarrantiesPage() {
             loading={isLoading}
             emptyState={
               <div className="text-center p-6">
-                <p className="text-lg font-medium">No expiring warranties</p>
-                <p className="text-sm text-muted-foreground">There are no devices with warranties expiring soon.</p>
+                <p className="text-lg font-medium">No warranties expiring soon</p>
+                <p className="text-sm text-muted-foreground">
+                  Good news! No devices have warranties expiring within the next 30 days.
+                </p>
               </div>
             }
           />
