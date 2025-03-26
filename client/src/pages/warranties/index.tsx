@@ -43,27 +43,29 @@ export default function WarrantiesPage() {
     staleTime: 30000, // Consider data stale after 30 seconds
   });
 
-  // Calculate warranty status for all devices
-  const devicesWithWarrantyInfo = devices.map(device => {
-    const daysLeft = device.warrantyEOL ? daysFromNow(device.warrantyEOL) : null;
-    let warrantyStatus: 'expired' | 'expiring' | 'valid' | 'unknown' = 'unknown';
-    
-    if (daysLeft === null) {
-      warrantyStatus = 'unknown';
-    } else if (daysLeft <= 0) {
-      warrantyStatus = 'expired';
-    } else if (daysLeft <= 30) {
-      warrantyStatus = 'expiring';
-    } else {
-      warrantyStatus = 'valid';
-    }
-    
-    return {
-      ...device,
-      daysLeft,
-      warrantyStatus
-    };
-  });
+  // Calculate warranty status for all devices and filter out those without warranty data
+  const devicesWithWarrantyInfo = devices
+    .filter(device => device.warrantyEOL !== null && device.warrantyEOL !== undefined)
+    .map(device => {
+      const daysLeft = device.warrantyEOL ? daysFromNow(device.warrantyEOL) : null;
+      let warrantyStatus: 'expired' | 'expiring' | 'valid' = 'valid';
+      
+      if (daysLeft !== null) {
+        if (daysLeft <= 0) {
+          warrantyStatus = 'expired';
+        } else if (daysLeft <= 30) {
+          warrantyStatus = 'expiring';
+        } else {
+          warrantyStatus = 'valid';
+        }
+      }
+      
+      return {
+        ...device,
+        daysLeft,
+        warrantyStatus
+      };
+    });
 
   // Filter devices based on active tab
   const filteredDevices = activeTab === 'all' 
@@ -72,7 +74,7 @@ export default function WarrantiesPage() {
 
   // Sort devices by warranty status (expired first, then expiring, then valid)
   const sortedDevices = [...filteredDevices].sort((a, b) => {
-    const statusPriority = { expired: 0, expiring: 1, valid: 2, unknown: 3 };
+    const statusPriority = { expired: 0, expiring: 1, valid: 2 };
     const priorityA = statusPriority[a.warrantyStatus];
     const priorityB = statusPriority[b.warrantyStatus];
     
@@ -174,7 +176,6 @@ export default function WarrantiesPage() {
   const expiredCount = devicesWithWarrantyInfo.filter(d => d.warrantyStatus === 'expired').length;
   const expiringCount = devicesWithWarrantyInfo.filter(d => d.warrantyStatus === 'expiring').length;
   const validCount = devicesWithWarrantyInfo.filter(d => d.warrantyStatus === 'valid').length;
-  const unknownCount = devicesWithWarrantyInfo.filter(d => d.warrantyStatus === 'unknown').length;
   const totalCount = devicesWithWarrantyInfo.length;
 
   return (
@@ -186,7 +187,7 @@ export default function WarrantiesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className={`border-l-4 ${expiredCount > 0 ? 'border-l-destructive' : 'border-l-gray-200'}`}>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Expired</CardTitle>
@@ -214,16 +215,6 @@ export default function WarrantiesPage() {
           <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold">{validCount}</div>
             <p className="text-xs text-muted-foreground">devices with valid warranties</p>
-          </CardContent>
-        </Card>
-
-        <Card className={`border-l-4 ${unknownCount > 0 ? 'border-l-gray-400' : 'border-l-gray-200'}`}>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Unknown</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold">{unknownCount}</div>
-            <p className="text-xs text-muted-foreground">devices with unknown warranty status</p>
           </CardContent>
         </Card>
       </div>
