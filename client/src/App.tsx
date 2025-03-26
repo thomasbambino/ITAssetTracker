@@ -18,6 +18,7 @@ import Settings from "@/pages/settings";
 import Maintenance from "@/pages/maintenance";
 import Notifications from "@/pages/notifications";
 import QrCodes from "@/pages/qrcodes";
+import Warranties from "@/pages/warranties";
 import Branding from "@/pages/branding";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import LoginPage from "@/pages/auth/login";
@@ -34,6 +35,7 @@ const ADMIN_ROUTES = [
   "/software",
   "/maintenance",
   "/qrcodes",
+  "/warranties",
   "/branding",
   "/reports",
   "/settings",
@@ -87,6 +89,7 @@ function MainRouter() {
       <Route path="/maintenance" component={() => <ProtectedPageWrapper component={Maintenance} adminRequired />} />
       <Route path="/notifications" component={() => <ProtectedPageWrapper component={Notifications} />} />
       <Route path="/qrcodes" component={() => <ProtectedPageWrapper component={QrCodes} adminRequired />} />
+      <Route path="/warranties" component={() => <ProtectedPageWrapper component={Warranties} adminRequired />} />
       <Route path="/branding" component={() => <ProtectedPageWrapper component={Branding} adminRequired />} />
       <Route path="/history" component={() => <ProtectedPageWrapper component={History} adminRequired />} />
       <Route path="/reports" component={() => <ProtectedPageWrapper component={Reports} adminRequired />} />
