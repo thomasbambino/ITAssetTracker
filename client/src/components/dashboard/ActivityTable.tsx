@@ -20,7 +20,6 @@ import { formatDateTime } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MousePointerClickIcon } from "lucide-react";
 
 // Activity types and their corresponding badge styles
 const activityStyles: Record<string, { bg: string, text: string }> = {
@@ -148,10 +147,6 @@ export function ActivityTable({
     <Card>
       <CardHeader className="px-4 py-5 border-b border-gray-200 sm:px-6">
         <CardTitle className="text-lg leading-6 font-medium text-gray-900">Recent Activity</CardTitle>
-        <div className="flex items-center text-xs text-muted-foreground mt-1">
-          <MousePointerClickIcon className="h-3 w-3 mr-1" />
-          <span>Device names are clickable for details</span>
-        </div>
       </CardHeader>
       <div className="overflow-x-auto">
         <Table>
@@ -236,7 +231,6 @@ export function ActivityTable({
                                       e.stopPropagation();
                                       navigate(`/devices/${deviceId}`);
                                     }}
-                                    title="Click to view device details"
                                   >
                                     {deviceName.trim()}
                                   </span> (ID: {deviceId})
