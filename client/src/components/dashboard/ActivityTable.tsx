@@ -214,6 +214,7 @@ export function ActivityTable({
                           {/* Extract device name and make only that part clickable */}
                           {(() => {
                             // Pattern to match "Device [Brand] [Model] (ID: [number])"
+                            // Still need to capture the ID for navigation, but won't display it
                             const devicePattern = /(Device\s+([^(]+))\s+\(ID:\s+(\d+)\)/;
                             const match = activity.details.match(devicePattern);
                             
@@ -233,7 +234,7 @@ export function ActivityTable({
                                     }}
                                   >
                                     {deviceName.trim()}
-                                  </span> (ID: {deviceId})
+                                  </span>
                                   {/* Hide empty asset tag parentheses */}
                                   {after && after.includes('()') ? after.replace('()', '') : after}
                                 </>
