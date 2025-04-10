@@ -1400,7 +1400,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (deviceId) {
               const device = await storage.getDeviceById(deviceId);
               if (device) {
-                deviceName = `${device.brand} ${device.model} (${device.assetTag})`;
+                deviceName = device.name ? 
+                  `${device.name} (${device.assetTag})` : 
+                  `${device.brand} ${device.model} (${device.assetTag})`;
               }
             }
             
