@@ -368,7 +368,7 @@ export default function DeviceDetails() {
           <ChevronLeftIcon className="mr-2 h-4 w-4" />
           Back to Devices
         </Button>
-        <h1 className="text-2xl font-semibold text-gray-900">
+        <h1 className="text-2xl font-semibold text-foreground">
           {isNewDevice ? 'Add New Device' : isEditing ? 'Edit Device' : 'Device Details'}
         </h1>
       </div>
@@ -428,16 +428,16 @@ export default function DeviceDetails() {
 
                   <div className="space-y-3">
                     <div className="flex items-center">
-                      <TagIcon className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm font-medium text-gray-700">Serial Number:</span>
-                      <span className="text-sm text-gray-600 ml-2">{device.serialNumber}</span>
+                      <TagIcon className="h-5 w-5 text-muted-foreground mr-2" />
+                      <span className="text-sm font-medium text-foreground">Serial Number:</span>
+                      <span className="text-sm text-muted-foreground ml-2">{device.serialNumber}</span>
                     </div>
                     
                     {device.purchaseCost && (
                       <div className="flex items-center">
-                        <CreditCardIcon className="h-5 w-5 text-gray-400 mr-2" />
-                        <span className="text-sm font-medium text-gray-700">Purchase Cost:</span>
-                        <span className="text-sm text-gray-600 ml-2">
+                        <CreditCardIcon className="h-5 w-5 text-muted-foreground mr-2" />
+                        <span className="text-sm font-medium text-foreground">Purchase Cost:</span>
+                        <span className="text-sm text-muted-foreground ml-2">
                           {formatCurrency(device.purchaseCost)}
                         </span>
                       </div>
@@ -445,9 +445,9 @@ export default function DeviceDetails() {
                     
                     {device.purchaseDate && (
                       <div className="flex items-center">
-                        <CalendarIcon className="h-5 w-5 text-gray-400 mr-2" />
-                        <span className="text-sm font-medium text-gray-700">Purchase Date:</span>
-                        <span className="text-sm text-gray-600 ml-2">
+                        <CalendarIcon className="h-5 w-5 text-muted-foreground mr-2" />
+                        <span className="text-sm font-medium text-foreground">Purchase Date:</span>
+                        <span className="text-sm text-muted-foreground ml-2">
                           {formatDate(device.purchaseDate)}
                         </span>
                       </div>
@@ -455,15 +455,15 @@ export default function DeviceDetails() {
                     
                     {device.warrantyEOL && (
                       <div className="flex items-center">
-                        <CalendarIcon className="h-5 w-5 text-gray-400 mr-2" />
-                        <span className="text-sm font-medium text-gray-700">Warranty Ends:</span>
+                        <CalendarIcon className="h-5 w-5 text-muted-foreground mr-2" />
+                        <span className="text-sm font-medium text-foreground">Warranty Ends:</span>
                         <span 
                           className={`text-sm ml-2 ${
                             hasWarrantyExpired(device.warrantyEOL)
                               ? "text-red-600"
                               : isWarrantyExpiringSoon(device.warrantyEOL)
                               ? "text-yellow-600"
-                              : "text-gray-600"
+                              : "text-muted-foreground"
                           }`}
                         >
                           {formatDate(device.warrantyEOL)}
@@ -475,9 +475,9 @@ export default function DeviceDetails() {
                     
                     {device.purchasedBy && (
                       <div className="flex items-center">
-                        <UserIcon className="h-5 w-5 text-gray-400 mr-2" />
-                        <span className="text-sm font-medium text-gray-700">Purchased By:</span>
-                        <span className="text-sm text-gray-600 ml-2">
+                        <UserIcon className="h-5 w-5 text-muted-foreground mr-2" />
+                        <span className="text-sm font-medium text-foreground">Purchased By:</span>
+                        <span className="text-sm text-muted-foreground ml-2">
                           {device.purchasedBy}
                         </span>
                       </div>
@@ -490,9 +490,9 @@ export default function DeviceDetails() {
                         ) : (
                           <FileIcon className="h-5 w-5 text-blue-500 mr-2" />
                         )}
-                        <span className="text-sm font-medium text-gray-700">Invoice:</span>
+                        <span className="text-sm font-medium text-foreground">Invoice:</span>
                         <div className="flex items-center ml-2">
-                          <span className="text-sm text-gray-600 mr-2">
+                          <span className="text-sm text-muted-foreground mr-2">
                             {device.invoiceFileName}
                           </span>
                           <Button
