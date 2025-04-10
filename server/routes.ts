@@ -1043,6 +1043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         header: true,
         columns: [
           { key: 'id', header: 'ID' },
+          { key: 'name', header: 'Device Name' },
           { key: 'brand', header: 'Brand' },
           { key: 'model', header: 'Model' },
           { key: 'assetTag', header: 'Asset Tag' },          
@@ -1300,7 +1301,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (validatedData.deviceId) {
             const device = await storage.getDeviceById(validatedData.deviceId);
             if (device) {
-              deviceName = `${device.brand} ${device.model} (${device.assetTag})`;
+              deviceName = device.name ? 
+                `${device.name} (${device.assetTag})` : 
+                `${device.brand} ${device.model} (${device.assetTag})`;
             }
           }
           
