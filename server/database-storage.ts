@@ -476,7 +476,8 @@ export class DatabaseStorage implements IStorage {
   async getDevices(): Promise<Device[]> {
     const devices = await db.any(`
       SELECT 
-        d.id, 
+        d.id,
+        d.name,
         d.brand, 
         d.model, 
         d.serial_number as "serialNumber", 
@@ -501,7 +502,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const device = await db.one(`
         SELECT 
-          d.id, 
+          d.id,
+          d.name,
           d.brand, 
           d.model, 
           d.serial_number as "serialNumber", 
@@ -690,7 +692,7 @@ export class DatabaseStorage implements IStorage {
       await this.createActivityLog({
         userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'device_updated',
-        details: `Device updated: ${updatedDevice.brand} ${updatedDevice.model} (${updatedDevice.assetTag})`
+        details: `Device updated: ${updatedDevice.name ? updatedDevice.name : `${updatedDevice.brand} ${updatedDevice.model}`} (${updatedDevice.assetTag})`
       });
       
       return updatedDevice;
@@ -719,7 +721,7 @@ export class DatabaseStorage implements IStorage {
         await this.createActivityLog({
           userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
           actionType: 'device_deleted',
-          details: `Device deleted: ${device.brand} ${device.model} (${device.assetTag})`
+          details: `Device deleted: ${device.name ? device.name : `${device.brand} ${device.model}`} (${device.assetTag})`
         });
         return true;
       }
