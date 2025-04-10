@@ -532,7 +532,7 @@ export default function DeviceDetails() {
                   </div>
 
                   <div className="mt-6 pt-4 border-t">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Current Assignment</h3>
+                    <h3 className="text-sm font-medium text-foreground mb-2">Current Assignment</h3>
                     {device.user ? (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                         <div className="flex items-center">
@@ -542,9 +542,9 @@ export default function DeviceDetails() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-900">{device.user.name}</p>
+                            <p className="text-sm font-medium text-foreground">{device.user.name}</p>
                             {device.user.department && (
-                              <p className="text-xs text-gray-500">{device.user.department}</p>
+                              <p className="text-xs text-muted-foreground">{device.user.department}</p>
                             )}
                           </div>
                         </div>
@@ -580,9 +580,9 @@ export default function DeviceDetails() {
                   {/* QR Code Section */}
                   <div className="mt-6 pt-4 border-t">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-700">
+                      <h3 className="text-sm font-medium text-foreground">
                         <div className="flex items-center">
-                          <QrCodeIcon className="h-4 w-4 text-gray-500 mr-1" />
+                          <QrCodeIcon className="h-4 w-4 text-muted-foreground mr-1" />
                           <span>Device QR Code</span>
                         </div>
                       </h3>
@@ -685,9 +685,9 @@ export default function DeviceDetails() {
                       }}
                       emptyState={
                         <div className="text-center py-6">
-                          <InfoIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                          <h3 className="text-sm font-medium text-gray-900">No assignment history</h3>
-                          <p className="text-sm text-gray-500 mt-1">
+                          <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <h3 className="text-sm font-medium text-foreground">No assignment history</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
                             This device hasn't been assigned to any users yet.
                           </p>
                         </div>
@@ -695,9 +695,9 @@ export default function DeviceDetails() {
                     />
                   ) : (
                     <div className="text-center py-6">
-                      <InfoIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <h3 className="text-sm font-medium text-gray-900">No assignment history</h3>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <h3 className="text-sm font-medium text-foreground">No assignment history</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
                         This device hasn't been assigned to any users yet.
                       </p>
                     </div>
@@ -709,8 +709,8 @@ export default function DeviceDetails() {
             <Card>
               <CardContent className="py-10">
                 <div className="text-center">
-                  <h3 className="text-lg font-medium text-gray-900">Device not found</h3>
-                  <p className="mt-1 text-sm text-gray-500">The device you're looking for doesn't exist or has been deleted.</p>
+                  <h3 className="text-lg font-medium text-foreground">Device not found</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">The device you're looking for doesn't exist or has been deleted.</p>
                   <Button 
                     variant="outline" 
                     className="mt-4"
@@ -776,8 +776,8 @@ export default function DeviceDetails() {
                 id="device-qrcode"
               />
               <div className="mt-4 text-center">
-                <p className="font-medium text-gray-700">{`${device.brand} ${device.model}`}</p>
-                <p className="text-sm text-gray-500">Asset Tag: {device.assetTag}</p>
+                <p className="font-medium text-foreground">{`${device.brand} ${device.model}`}</p>
+                <p className="text-sm text-muted-foreground">Asset Tag: {device.assetTag}</p>
                 <p className="text-xs text-muted-foreground mt-2">
                   Last scanned: {qrCodeData.lastScanned ? formatDate(qrCodeData.lastScanned) : 'Never'}<br />
                   Scan count: {qrCodeData.scanCount || 0}
