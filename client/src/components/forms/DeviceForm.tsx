@@ -40,6 +40,8 @@ import { format } from "date-fns";
 
 // Create a schema for device creation/update
 const formSchema = insertDeviceSchema.extend({
+  // Device name field
+  name: z.string().optional(),
   // Make sure serial number and assetTag are required with clear error messages
   serialNumber: z.string().min(1, "Serial number is required"),
   assetTag: z.string().min(1, "Asset tag is required"),
@@ -92,6 +94,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
   const form = useForm<DeviceFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: device?.name || "",
       brand: device?.brand || "",
       model: device?.model || "",
       serialNumber: device?.serialNumber || "",
@@ -273,6 +276,25 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
         <div className="text-sm text-gray-500 pb-2 border-b border-gray-200">
           Fields marked with <span className="text-red-500">*</span> are required
         </div>
+        
+        {/* Device Name Field */}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Device Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter a descriptive name for this device" value={field.value || ""} onChange={field.onChange} />
+              </FormControl>
+              <FormDescription className="text-xs">
+                A descriptive name to easily identify this device
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}

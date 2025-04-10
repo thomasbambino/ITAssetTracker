@@ -76,6 +76,7 @@ export type Category = typeof categories.$inferSelect;
 // Device schema
 export const devices = pgTable("devices", {
   id: serial("id").primaryKey(),
+  name: text("name"),  // New device name field
   brand: text("brand").notNull(),
   model: text("model").notNull(),
   serialNumber: text("serial_number").notNull().unique(),

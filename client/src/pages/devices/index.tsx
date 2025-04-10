@@ -204,6 +204,10 @@ export default function Devices() {
       accessor: "model",
     },
     {
+      header: "Device Name",
+      accessor: "name",
+    },
+    {
       header: "Asset Tag",
       accessor: "assetTag",
     },
