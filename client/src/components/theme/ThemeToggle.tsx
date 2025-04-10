@@ -1,7 +1,6 @@
 import { useThemeContext } from "@/components/theme/ThemeProvider";
 import { SunIcon, MoonIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function ThemeToggle({ className = "", size = "default" }: { className?: string, size?: "sm" | "default" | "lg" }) {
@@ -12,8 +11,6 @@ export function ThemeToggle({ className = "", size = "default" }: { className?: 
   };
 
   const iconSize = size === "sm" ? 14 : size === "lg" ? 20 : 16;
-  const switchSize = size === "sm" ? "h-5 w-9" : size === "lg" ? "h-7 w-14" : "h-6 w-11";
-  const thumbSize = size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5.5 w-5.5" : "h-4.5 w-4.5";
 
   return (
     <div className={cn("flex items-center space-x-2", className)}>
@@ -27,8 +24,6 @@ export function ThemeToggle({ className = "", size = "default" }: { className?: 
       <Switch 
         checked={activeTheme === 'dark'}
         onCheckedChange={toggleTheme}
-        className={cn(switchSize)}
-        thumbClassName={cn(thumbSize)}
       />
       <MoonIcon 
         className={cn(

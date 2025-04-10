@@ -200,14 +200,14 @@ export function MobileNav() {
         className={cn(
           isActive
             ? "bg-primary/10 text-primary border-l-2 border-primary"
-            : "text-gray-700 hover:bg-gray-100 hover:text-primary",
+            : "text-foreground hover:bg-muted hover:text-primary",
           "group flex items-center px-3 py-2 text-sm font-medium transition-all duration-150 ease-in-out"
         )}
         onClick={closeMenu}
       >
         <Icon className={cn(
           "mr-3 flex-shrink-0 h-5 w-5",
-          isActive ? "text-primary" : "text-gray-500 group-hover:text-primary"
+          isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
         )} />
         <span className="flex-1">{route.label}</span>
         {route.badge && (
@@ -338,7 +338,7 @@ export function MobileNav() {
         <div className="px-2 py-4 space-y-4">
           {/* Main Group */}
           <div>
-            <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Main
             </h3>
             <div className="mt-1 space-y-1">
@@ -353,7 +353,7 @@ export function MobileNav() {
           
           {/* Management Group */}
           <div>
-            <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Management
             </h3>
             <div className="mt-1 space-y-1">
@@ -368,7 +368,7 @@ export function MobileNav() {
           
           {/* System Group */}
           <div>
-            <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               System
             </h3>
             <div className="mt-1 space-y-1">
