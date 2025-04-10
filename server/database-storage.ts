@@ -734,7 +734,8 @@ export class DatabaseStorage implements IStorage {
   async getDevicesByCategory(categoryId: number): Promise<Device[]> {
     const devices = await db.any(`
       SELECT 
-        d.id, 
+        d.id,
+        d.name,
         d.brand, 
         d.model, 
         d.serial_number as "serialNumber", 
@@ -758,7 +759,8 @@ export class DatabaseStorage implements IStorage {
   async getDevicesByUser(userId: number): Promise<Device[]> {
     const devices = await db.any(`
       SELECT 
-        d.id, 
+        d.id,
+        d.name,
         d.brand, 
         d.model, 
         d.serial_number as "serialNumber", 
@@ -782,7 +784,8 @@ export class DatabaseStorage implements IStorage {
   async getUnassignedDevices(): Promise<Device[]> {
     const devices = await db.any(`
       SELECT 
-        d.id, 
+        d.id,
+        d.name,
         d.brand, 
         d.model, 
         d.serial_number as "serialNumber", 
@@ -842,7 +845,7 @@ export class DatabaseStorage implements IStorage {
           await this.createActivityLog({
             userId: assignedBy,
             actionType: 'device_unassigned',
-            details: `Device ${device.brand} ${device.model} (ID: ${device.id}) (${device.assetTag || ''}) unassigned from ${previousUser.firstName} ${previousUser.lastName} before reassignment`
+            details: `Device ${device.name ? device.name : `${device.brand} ${device.model}`} (ID: ${device.id}) (${device.assetTag || ''}) unassigned from ${previousUser.firstName} ${previousUser.lastName} before reassignment`
           });
         }
       }
@@ -853,7 +856,8 @@ export class DatabaseStorage implements IStorage {
           user_id = $1
         WHERE id = $2
         RETURNING 
-          id, 
+          id,
+          name,
           brand, 
           model, 
           serial_number as "serialNumber", 
@@ -893,7 +897,7 @@ export class DatabaseStorage implements IStorage {
       await this.createActivityLog({
         userId: assignedBy,
         actionType: 'device_assigned',
-        details: `Device ${device.brand} ${device.model} (ID: ${device.id}) (${device.assetTag || ''}) assigned to ${user.firstName} ${user.lastName}`
+        details: `Device ${device.name ? device.name : `${device.brand} ${device.model}`} (ID: ${device.id}) (${device.assetTag || ''}) assigned to ${user.firstName} ${user.lastName}`
       });
       
       return updatedDevice;
@@ -919,7 +923,8 @@ export class DatabaseStorage implements IStorage {
           user_id = NULL
         WHERE id = $1
         RETURNING 
-          id, 
+          id,
+          name,
           brand, 
           model, 
           serial_number as "serialNumber", 
@@ -966,8 +971,8 @@ export class DatabaseStorage implements IStorage {
         userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
         actionType: 'device_unassigned',
         details: previousUser 
-          ? `Device ${device.brand} ${device.model} (ID: ${device.id}) (${device.assetTag || ''}) unassigned from ${previousUser.firstName} ${previousUser.lastName}`
-          : `Device ${device.brand} ${device.model} (ID: ${device.id}) (${device.assetTag || ''}) unassigned`
+          ? `Device ${device.name ? device.name : `${device.brand} ${device.model}`} (ID: ${device.id}) (${device.assetTag || ''}) unassigned from ${previousUser.firstName} ${previousUser.lastName}`
+          : `Device ${device.name ? device.name : `${device.brand} ${device.model}`} (ID: ${device.id}) (${device.assetTag || ''}) unassigned`
       });
       
       return updatedDevice;
@@ -984,7 +989,8 @@ export class DatabaseStorage implements IStorage {
     
     const devices = await db.any(`
       SELECT 
-        d.id, 
+        d.id,
+        d.name,
         d.brand, 
         d.model, 
         d.serial_number as "serialNumber", 
