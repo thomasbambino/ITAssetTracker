@@ -154,8 +154,8 @@ export default function Categories() {
         actions={actions}
         emptyState={
           <div className="text-center py-10">
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">No categories</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new category.</p>
+            <h3 className="mt-2 text-sm font-semibold text-foreground">No categories</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Get started by creating a new category.</p>
             <div className="mt-6">
               <Button onClick={() => setIsAddDialogOpen(true)}>
                 <PlusIcon className="h-4 w-4 mr-2" />

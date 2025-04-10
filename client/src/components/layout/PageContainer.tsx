@@ -13,8 +13,8 @@ export function PageContainer({ title, description, actions, children }: PageCon
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">{title}</h1>
-          {description && <p className="mt-1 text-sm text-gray-600">{description}</p>}
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground">{title}</h1>
+          {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
         </div>
         
         {/* Actions */}

@@ -155,8 +155,8 @@ export default function Users() {
         actions={actions}
         emptyState={
           <div className="text-center py-10">
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">No users</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new user.</p>
+            <h3 className="mt-2 text-sm font-semibold text-foreground">No users</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Get started by creating a new user.</p>
             <div className="mt-6">
               <Button onClick={() => navigate('/users/new')}>
                 <PlusIcon className="h-4 w-4 mr-2" />
