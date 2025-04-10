@@ -202,7 +202,7 @@ export function DesktopSidebar() {
       <div className="flex items-center h-16 px-4 border-b border-border">
         <div className="flex items-center">
           {branding?.logo ? (
-            <div className="w-9 h-9 bg-background rounded-md flex items-center justify-center">
+            <div className="w-9 h-9 bg-card rounded-md flex items-center justify-center border border-border">
               <img 
                 src={branding.logo} 
                 alt="Company logo"

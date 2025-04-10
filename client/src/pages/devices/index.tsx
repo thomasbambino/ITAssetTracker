@@ -452,8 +452,8 @@ export default function Devices() {
               </>
             ) : (
               <>
-                <h3 className="mt-2 text-sm font-semibold text-gray-900">No devices</h3>
-                <p className="mt-1 text-sm text-gray-500">Get started by creating a new device.</p>
+                <h3 className="mt-2 text-sm font-semibold text-foreground">No devices</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Get started by creating a new device.</p>
                 <div className="mt-6">
                   <Button onClick={() => navigate('/devices/new')}>
                     <PlusIcon className="h-4 w-4 mr-2" />

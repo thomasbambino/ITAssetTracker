@@ -237,7 +237,7 @@ export function MobileNav() {
           </Button>
           <div className="flex items-center">
             {branding?.logo ? (
-              <div className="w-7 h-7 bg-background rounded-md flex items-center justify-center">
+              <div className="w-7 h-7 bg-card rounded-md flex items-center justify-center border border-border">
                 <img 
                   src={branding.logo} 
                   alt="Company logo"
@@ -299,7 +299,7 @@ export function MobileNav() {
         <div className="flex items-center justify-between h-16 px-4 bg-muted border-b border-border">
           <div className="flex items-center">
             {branding?.logo ? (
-              <div className="w-9 h-9 bg-background rounded-md flex items-center justify-center">
+              <div className="w-9 h-9 bg-card rounded-md flex items-center justify-center border border-border">
                 <img 
                   src={branding.logo} 
                   alt="Company logo"
