@@ -290,8 +290,8 @@ export default function Devices() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Devices</h1>
-          <p className="mt-1 text-sm text-gray-600">Manage hardware assets in your organization</p>
+          <h1 className="text-2xl font-semibold text-foreground">Devices</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage hardware assets in your organization</p>
         </div>
         
         {/* Actions */}
@@ -441,8 +441,8 @@ export default function Devices() {
           <div className="text-center py-10">
             {selectedCategory || selectedDepartment ? (
               <>
-                <h3 className="mt-2 text-sm font-semibold text-gray-900">No matching devices</h3>
-                <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or clearing them.</p>
+                <h3 className="mt-2 text-sm font-semibold text-foreground">No matching devices</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Try adjusting your filters or clearing them.</p>
                 <div className="mt-6">
                   <Button onClick={clearFilters} variant="outline">
                     <XIcon className="h-4 w-4 mr-2" />

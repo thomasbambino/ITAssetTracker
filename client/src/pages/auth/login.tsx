@@ -121,7 +121,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-2">
             {branding?.logo ? (
-              <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center mr-2">
+              <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center mr-2">
                 <img 
                   src={branding.logo} 
                   alt="Company logo"

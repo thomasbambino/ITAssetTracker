@@ -257,10 +257,10 @@ export function ActivityTable({
         </Table>
       </div>
       {showPagination && totalPages > 1 && (
-        <CardContent className="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <CardContent className="bg-muted px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-muted-foreground">
                 Showing <span className="font-medium">{indexOfFirstActivity + 1}</span> to{' '}
                 <span className="font-medium">
                   {indexOfLastActivity > activities.length ? activities.length : indexOfLastActivity}
