@@ -199,7 +199,7 @@ export function DesktopSidebar() {
 
   return (
     <div className="hidden md:flex flex-col w-64 bg-background border-r border-border h-screen sticky top-0">
-      <div className="flex items-center h-16 px-4 bg-muted border-b border-border">
+      <div className="flex items-center h-16 px-4 border-b border-border">
         <div className="flex items-center">
           {branding?.logo ? (
             <div className="w-9 h-9 bg-background rounded-md flex items-center justify-center">
@@ -233,7 +233,7 @@ export function DesktopSidebar() {
       <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4">
         {/* Main Group */}
         <div>
-          <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Main
           </h3>
           <div className="mt-1 space-y-1">
@@ -248,7 +248,7 @@ export function DesktopSidebar() {
         
         {/* Management Group */}
         <div>
-          <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Management
           </h3>
           <div className="mt-1 space-y-1">
@@ -263,7 +263,7 @@ export function DesktopSidebar() {
         
         {/* System Group */}
         <div>
-          <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             System
           </h3>
           <div className="mt-1 space-y-1">
