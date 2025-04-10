@@ -232,8 +232,8 @@ export default function Dashboard() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-600">Overview of your IT asset management system</p>
+          <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Overview of your IT asset management system</p>
         </div>
         
         {/* Global Search */}
@@ -505,15 +505,15 @@ export default function Dashboard() {
                       title={`View devices in ${deptName} department`}
                     >
                       <div 
-                        className="text-4xl font-semibold mb-1 text-black" 
+                        className="text-4xl font-semibold mb-1 text-foreground" 
                       >
                         {formatNumber(dept.value)}
                       </div>
-                      <div className="text-sm text-gray-500 flex items-center">
+                      <div className="text-sm text-muted-foreground flex items-center">
                         {deptName}
                         <svg 
                           xmlns="http://www.w3.org/2000/svg" 
-                          className="h-3 w-3 ml-1 text-gray-400" 
+                          className="h-3 w-3 ml-1 text-muted-foreground" 
                           fill="none" 
                           viewBox="0 0 24 24" 
                           stroke="currentColor"
