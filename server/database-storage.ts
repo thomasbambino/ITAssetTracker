@@ -527,6 +527,7 @@ export class DatabaseStorage implements IStorage {
   async createDevice(device: InsertDevice, loggedInUserId?: number): Promise<Device> {
     const newDevice = await db.one(`
       INSERT INTO devices (
+        name,
         brand, 
         model, 
         serial_number, 
@@ -538,9 +539,10 @@ export class DatabaseStorage implements IStorage {
         warranty_eol,
         user_id
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
       ) RETURNING 
         id, 
+        name,
         brand, 
         model, 
         serial_number as "serialNumber", 
@@ -553,6 +555,7 @@ export class DatabaseStorage implements IStorage {
         created_at as "createdAt", 
         user_id as "userId"
     `, [
+      device.name || null,
       device.brand, 
       device.model, 
       device.serialNumber, 
@@ -581,7 +584,7 @@ export class DatabaseStorage implements IStorage {
     await this.createActivityLog({
       userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
       actionType: 'device_added',
-      details: `Device added: ${device.brand} ${device.model} (${device.assetTag})`
+      details: `Device added: ${device.name ? device.name : `${device.brand} ${device.model}`} (${device.assetTag})`
     });
     
     return newDevice;
@@ -593,6 +596,11 @@ export class DatabaseStorage implements IStorage {
       const updates: string[] = [];
       const values: any[] = [];
       let paramCount = 1;
+      
+      if (device.name !== undefined) {
+        updates.push(`name = $${paramCount++}`);
+        values.push(device.name);
+      }
       
       if (device.brand !== undefined) {
         updates.push(`brand = $${paramCount++}`);
@@ -652,6 +660,7 @@ export class DatabaseStorage implements IStorage {
         WHERE id = $${paramCount}
         RETURNING 
           id, 
+          name,
           brand, 
           model, 
           serial_number as "serialNumber", 
