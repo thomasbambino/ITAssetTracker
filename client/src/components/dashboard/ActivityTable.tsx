@@ -145,8 +145,8 @@ export function ActivityTable({
 
   return (
     <Card>
-      <CardHeader className="px-4 py-5 border-b border-gray-200 sm:px-6">
-        <CardTitle className="text-lg leading-6 font-medium text-gray-900">Recent Activity</CardTitle>
+      <CardHeader className="px-4 py-5 border-b border-border sm:px-6">
+        <CardTitle className="text-lg leading-6 font-medium text-foreground">Recent Activity</CardTitle>
       </CardHeader>
       <div className="overflow-x-auto">
         <Table>
@@ -176,9 +176,9 @@ export function ActivityTable({
                 return (
                   <TableRow 
                     key={activity.id}
-                    className="hover:bg-gray-50"
+                    className="hover:bg-muted/50"
                   >
-                    <TableCell className="whitespace-nowrap text-sm text-gray-500">
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                       {formatDateTime(activity.timestamp)}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
@@ -198,17 +198,17 @@ export function ActivityTable({
                             </AvatarFallback>
                           </Avatar>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{activity.user.name}</div>
+                            <div className="text-sm font-medium text-foreground">{activity.user.name}</div>
                             {activity.user.department && (
-                              <div className="text-sm text-gray-500">{activity.user.department}</div>
+                              <div className="text-sm text-muted-foreground">{activity.user.department}</div>
                             )}
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500">System</span>
+                        <span className="text-sm text-muted-foreground">System</span>
                       )}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm text-gray-500">
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                       {isDeviceRelated ? (
                         <div>
                           {/* Extract device name and make only that part clickable */}
