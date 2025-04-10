@@ -71,11 +71,8 @@ export default function LoginPage() {
       console.log("Login response:", data);
 
       if (data.success) {
-        toast({
-          title: "Login successful",
-          description: "Welcome to IT Asset Management System",
-        });
-
+        // No toast notification on login success
+        
         // Add a small delay to allow session to be properly established
         setTimeout(() => {
           if (data.passwordResetRequired) {

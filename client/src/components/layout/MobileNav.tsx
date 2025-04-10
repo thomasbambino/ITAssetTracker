@@ -225,19 +225,19 @@ export function MobileNav() {
   return (
     <>
       {/* Header */}
-      <div className="md:hidden bg-white border-b border-gray-200 w-full flex items-center justify-between p-3 shadow-sm">
+      <div className="md:hidden bg-background border-b border-border w-full flex items-center justify-between p-3 shadow-sm">
         <div className="flex items-center">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-gray-700 hover:bg-gray-100 mr-2" 
+            className="text-foreground hover:bg-muted mr-2" 
             onClick={toggleMenu}
           >
             <MenuIcon className="h-5 w-5" />
           </Button>
           <div className="flex items-center">
             {branding?.logo ? (
-              <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center">
+              <div className="w-7 h-7 bg-background rounded-md flex items-center justify-center">
                 <img 
                   src={branding.logo} 
                   alt="Company logo"
@@ -269,7 +269,7 @@ export function MobileNav() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-700 hover:bg-gray-100"
+            className="text-foreground hover:bg-muted"
             onClick={toggleSearch}
           >
             <SearchIcon className="h-5 w-5" />
@@ -281,7 +281,7 @@ export function MobileNav() {
 
       {/* Search Bar */}
       {showSearch && (
-        <div className="md:hidden bg-white border-b border-gray-200 w-full p-2 shadow-sm">
+        <div className="md:hidden bg-background border-b border-border w-full p-2 shadow-sm">
           <GlobalSearch />
         </div>
       )}
@@ -293,13 +293,13 @@ export function MobileNav() {
 
       {/* Sidebar */}
       <div className={cn(
-        "md:hidden fixed inset-y-0 left-0 transform bg-white w-72 z-50 transition-transform duration-300 ease-in-out overflow-y-auto",
+        "md:hidden fixed inset-y-0 left-0 transform bg-background w-72 z-50 transition-transform duration-300 ease-in-out overflow-y-auto",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex items-center justify-between h-16 px-4 bg-gray-50 border-b border-gray-200">
+        <div className="flex items-center justify-between h-16 px-4 bg-muted border-b border-border">
           <div className="flex items-center">
             {branding?.logo ? (
-              <div className="w-9 h-9 bg-white rounded-md flex items-center justify-center">
+              <div className="w-9 h-9 bg-background rounded-md flex items-center justify-center">
                 <img 
                   src={branding.logo} 
                   alt="Company logo"
@@ -328,7 +328,7 @@ export function MobileNav() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-gray-700 hover:bg-gray-100" 
+            className="text-foreground hover:bg-muted" 
             onClick={closeMenu}
           >
             <XIcon className="h-6 w-6" />
@@ -381,7 +381,7 @@ export function MobileNav() {
         </div>
         
         <div className="absolute bottom-0 w-full">
-          <div className="flex-shrink-0 border-t border-gray-200 p-4 bg-gray-50">
+          <div className="flex-shrink-0 border-t border-border p-4 bg-muted">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium shadow-sm">
@@ -393,10 +393,10 @@ export function MobileNav() {
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-800">
+                <p className="text-sm font-medium text-foreground">
                   {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Loading...'}
                 </p>
-                <p className="text-xs font-medium text-gray-500 mt-0.5">
+                <p className="text-xs font-medium text-muted-foreground mt-0.5">
                   {currentUser ? (currentUser.role === 'admin' ? 'Administrator' : 'User') : ''}
                 </p>
               </div>
@@ -434,7 +434,7 @@ export function MobileNav() {
                       });
                     }
                   }}
-                  className="text-gray-500 hover:text-red-500 transition-colors"
+                  className="text-muted-foreground hover:text-destructive transition-colors"
                   title="Logout"
                 >
                   <LogOutIcon className="h-5 w-5" />

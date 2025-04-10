@@ -4,8 +4,8 @@ type Theme = 'light' | 'dark' | 'system';
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
-    // Get theme from localStorage or default to 'system'
-    return (localStorage.getItem('theme') as Theme) || 'system';
+    // Get theme from localStorage or default to 'light'
+    return (localStorage.getItem('theme') as Theme) || 'light';
   });
   
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(() => {

@@ -178,13 +178,13 @@ export function DesktopSidebar() {
         className={cn(
           isActive
             ? "bg-primary/10 text-primary border-l-2 border-primary"
-            : "text-gray-700 hover:bg-gray-100 hover:text-primary",
+            : "text-foreground hover:bg-muted hover:text-primary",
           "group flex items-center px-3 py-2 text-sm font-medium transition-all duration-150 ease-in-out"
         )}
       >
         <Icon className={cn(
           "mr-3 flex-shrink-0 h-5 w-5",
-          isActive ? "text-primary" : "text-gray-500 group-hover:text-primary"
+          isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
         )} />
         <span className="flex-1">{route.label}</span>
         {route.badge && (
@@ -198,11 +198,11 @@ export function DesktopSidebar() {
   };
 
   return (
-    <div className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0">
-      <div className="flex items-center h-16 px-4 bg-gray-50 border-b border-gray-200">
+    <div className="hidden md:flex flex-col w-64 bg-background border-r border-border h-screen sticky top-0">
+      <div className="flex items-center h-16 px-4 bg-muted border-b border-border">
         <div className="flex items-center">
           {branding?.logo ? (
-            <div className="w-9 h-9 bg-white rounded-md flex items-center justify-center">
+            <div className="w-9 h-9 bg-background rounded-md flex items-center justify-center">
               <img 
                 src={branding.logo} 
                 alt="Company logo"
@@ -275,7 +275,7 @@ export function DesktopSidebar() {
         </div>
       </div>
       
-      <div className="flex-shrink-0 border-t border-gray-200 p-4 bg-gray-50">
+      <div className="flex-shrink-0 border-t border-border p-4 bg-muted">
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <div className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium shadow-sm">
@@ -287,10 +287,10 @@ export function DesktopSidebar() {
             </div>
           </div>
           <div className="ml-3">
-            <p className="text-sm font-medium text-gray-800">
+            <p className="text-sm font-medium text-foreground">
               {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Loading...'}
             </p>
-            <p className="text-xs font-medium text-gray-500 mt-0.5">
+            <p className="text-xs font-medium text-muted-foreground mt-0.5">
               {currentUser ? (currentUser.role === 'admin' ? 'Administrator' : 'User') : ''}
             </p>
           </div>
@@ -328,7 +328,7 @@ export function DesktopSidebar() {
                   });
                 }
               }}
-              className="text-gray-500 hover:text-red-500 transition-colors"
+              className="text-muted-foreground hover:text-destructive transition-colors"
               title="Logout"
             >
               <LogOutIcon className="h-5 w-5" />
