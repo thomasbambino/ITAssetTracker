@@ -165,7 +165,8 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
     // Convert cost to cents and handle dates
     const formattedData = {
       ...data,
-      purchaseCost: data.purchaseCost ? parseInt(data.purchaseCost.toString()) : null,
+      // Ensure purchaseCost is properly converted to a string for FormData
+      purchaseCost: data.purchaseCost ? data.purchaseCost.toString() : null,
       categoryId: data.categoryId ? parseInt(data.categoryId.toString()) : null,
       // Ensure dates are properly parsed to ISO strings
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
@@ -193,6 +194,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
 
     // Show form data for debugging
     console.log("Submitting device data:", deviceData);
+    console.log("Purchase cost value type:", typeof deviceData.purchaseCost, "Value:", deviceData.purchaseCost);
 
     try {
       if (isUpdateMode) {
