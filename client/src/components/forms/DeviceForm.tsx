@@ -338,11 +338,13 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                   Serial Number
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Serial Number" {...field} />
+                  <Input placeholder="Serial Number (optional)" 
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(e.target.value || null)} />
                 </FormControl>
                 <FormMessage />
                 <FormDescription className="text-xs">
-                  A unique identifier for this device
+                  An optional unique identifier for this device
                 </FormDescription>
               </FormItem>
             )}
@@ -357,11 +359,13 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                   Asset Tag
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Asset Tag" {...field} />
+                  <Input placeholder="Asset Tag (optional)" 
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(e.target.value || null)} />
                 </FormControl>
                 <FormMessage />
                 <FormDescription className="text-xs">
-                  A unique tracking identifier for the device
+                  An optional tracking identifier for the device
                 </FormDescription>
               </FormItem>
             )}
