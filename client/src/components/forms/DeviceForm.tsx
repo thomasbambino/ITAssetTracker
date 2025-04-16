@@ -162,10 +162,11 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
     // Create FormData for file upload
     const formData = new FormData();
     
-    // Convert cost to cents and handle dates
+    // Handle dates and ensure proper types
     const formattedData = {
       ...data,
-      purchaseCost: data.purchaseCost ? parseInt(data.purchaseCost.toString()) : null,
+      // Keep purchaseCost as a string for proper schema validation
+      purchaseCost: data.purchaseCost ? data.purchaseCost.toString() : null,
       categoryId: data.categoryId ? parseInt(data.categoryId.toString()) : null,
       // Ensure dates are properly parsed to ISO strings
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
@@ -451,7 +452,6 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                 <Input 
                   type="text" 
                   placeholder="0.00" 
-                  {...field} 
                   onChange={(e) => {
                     // Allow empty value or valid numbers with decimals
                     const value = e.target.value;
@@ -463,11 +463,11 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                       // Convert to cents for storage
                       const centsValue = Math.round(parseFloat(numericValue) * 100);
                       if (!isNaN(centsValue)) {
-                        field.onChange(centsValue);
+                        field.onChange(centsValue.toString()); // Convert to string for schema validation
                       }
                     }
                   }}
-                  value={field.value ? (field.value / 100).toFixed(2) : ""}
+                  value={field.value ? (parseInt(field.value.toString()) / 100).toFixed(2) : ""}
                 />
               </FormControl>
               <FormDescription>
