@@ -136,7 +136,7 @@ export default function LoginPage() {
             <h2 
               className="text-2xl font-bold text-foreground" 
               style={{
-                color: branding.siteNameGradient ? 'transparent' : (branding.siteNameColor || 'var(--foreground)'),
+                color: branding.siteNameGradient ? 'transparent' : 'var(--foreground)',
                 backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
                   ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
                   : 'none',
