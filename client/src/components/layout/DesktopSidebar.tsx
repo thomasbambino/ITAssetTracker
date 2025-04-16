@@ -23,6 +23,7 @@ import {
   LogOutIcon,
   ShieldIcon,
   CloudIcon,
+  AlertCircleIcon,
 } from 'lucide-react';
 
 // Define category groups

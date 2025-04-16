@@ -411,6 +411,38 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
 
         <FormField
           control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="lost">Lost</SelectItem>
+                  <SelectItem value="broken">Broken</SelectItem>
+                  <SelectItem value="retired">Retired</SelectItem>
+                  <SelectItem value="in_repair">In Repair</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Current status of the device
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="purchaseCost"
           render={({ field }) => (
             <FormItem>
