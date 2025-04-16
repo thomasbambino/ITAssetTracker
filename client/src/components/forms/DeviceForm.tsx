@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -446,44 +446,66 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
         <FormField
           control={form.control}
           name="purchaseCost"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Purchase Cost</FormLabel>
-              <FormControl>
-                <Input 
-                  type="text" 
-                  placeholder="0.00" 
-                  onChange={(e) => {
-                    // Allow empty value or valid numbers with decimals
-                    const value = e.target.value;
-                    if (value === "" || value === null) {
-                      field.onChange(null);
-                    } else {
-                      // Allow raw text input for better editing experience
-                      const numericValue = value.replace(/[^0-9.]/g, '');
-                      if (numericValue === "") {
-                        field.onChange(null);
-                      } else {
-                        // Only convert to cents when a valid number is entered
-                        const parsedValue = parseFloat(numericValue);
-                        if (!isNaN(parsedValue)) {
-                          const centsValue = Math.round(parsedValue * 100);
-                          field.onChange(centsValue);
+          render={({ field }) => {
+            // Use local state to track input value as text
+            const [inputValue, setInputValue] = useState<string>(
+              field.value !== null && field.value !== undefined
+                ? (field.value / 100).toFixed(2)
+                : ""
+            );
+            
+            // When the form is first loaded, set the input value
+            useEffect(() => {
+              if (field.value !== null && field.value !== undefined) {
+                setInputValue((field.value / 100).toFixed(2));
+              }
+            }, []);
+            
+            return (
+              <FormItem>
+                <FormLabel>Purchase Cost</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="text" 
+                    placeholder="0.00" 
+                    onChange={(e) => {
+                      // Store raw input value
+                      const value = e.target.value;
+                      
+                      // Allow only numbers and a single decimal point
+                      const regex = /^[0-9]*\.?[0-9]*$/;
+                      if (value === "" || regex.test(value)) {
+                        setInputValue(value);
+                        
+                        // Convert to cents for form data only when value is valid
+                        if (value === "") {
+                          field.onChange(null);
+                        } else {
+                          const parsedValue = parseFloat(value);
+                          if (!isNaN(parsedValue)) {
+                            const centsValue = Math.round(parsedValue * 100);
+                            field.onChange(centsValue);
+                          }
                         }
                       }
-                    }
-                  }}
-                  value={field.value !== null && field.value !== undefined
-                    ? (field.value / 100).toFixed(2)
-                    : ""}
-                />
-              </FormControl>
-              <FormDescription>
-                Enter the cost in dollars (e.g., 1299.99)
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+                    }}
+                    // Display the raw input text, not the converted value
+                    value={inputValue}
+                    onBlur={() => {
+                      // Format on blur for better display
+                      if (inputValue !== "" && !isNaN(parseFloat(inputValue))) {
+                        setInputValue(parseFloat(inputValue).toFixed(2));
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Enter the cost in dollars (e.g., 1299.99)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )
+          }}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
