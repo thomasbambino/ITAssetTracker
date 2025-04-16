@@ -1970,6 +1970,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error uploading favicon" });
     }
   });
+  
+  // Intune Management Routes
+  
+  // Get all Intune-eligible devices (Laptops and Desktops)
+  app.get('/api/intune/devices', async (req: Request, res: Response) => {
+    try {
+      const devices = await storage.getIntuneEligibleDevices();
+      res.json(devices);
+    } catch (error) {
+      console.error('Error fetching Intune devices:', error);
+      res.status(500).json({ message: "Error fetching Intune devices" });
+    }
+  });
+  
+  // Update device Intune status
+  app.patch('/api/intune/devices/:id', async (req: Request, res: Response) => {
+    try {
+      const deviceId = parseInt(req.params.id);
+      const intuneStatus = req.body;
+      
+      // Get the user ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData?.userId;
+      
+      // Update the device Intune status
+      const updatedDevice = await storage.updateDeviceIntuneStatus(
+        deviceId, 
+        intuneStatus, 
+        loggedInUserId
+      );
+      
+      if (!updatedDevice) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      res.json(updatedDevice);
+    } catch (error) {
+      console.error('Error updating device Intune status:', error);
+      res.status(500).json({ message: "Error updating device Intune status" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

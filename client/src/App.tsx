@@ -20,6 +20,7 @@ import Notifications from "@/pages/notifications";
 import QrCodes from "@/pages/qrcodes";
 import Warranties from "@/pages/warranties";
 import Branding from "@/pages/branding";
+import IntuneManagement from "@/pages/management/intune";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import LoginPage from "@/pages/auth/login";
 import ResetPasswordPage from "@/pages/auth/reset-password";
@@ -40,6 +41,7 @@ const ADMIN_ROUTES = [
   "/reports",
   "/settings",
   "/history",
+  "/management",
 ];
 
 function ProtectedPageWrapper({ component: Component, adminRequired = false }: { 
@@ -94,6 +96,7 @@ function MainRouter() {
       <Route path="/history" component={() => <ProtectedPageWrapper component={History} adminRequired />} />
       <Route path="/reports" component={() => <ProtectedPageWrapper component={Reports} adminRequired />} />
       <Route path="/settings" component={() => <ProtectedPageWrapper component={Settings} adminRequired />} />
+      <Route path="/management/intune" component={() => <ProtectedPageWrapper component={IntuneManagement} adminRequired />} />
       
       {/* Fallback to 404 - this is still inside the protected wrapper */}
       <Route component={() => <ProtectedPageWrapper component={NotFound} />} />
