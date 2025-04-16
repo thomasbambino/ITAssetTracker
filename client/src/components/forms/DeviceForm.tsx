@@ -102,7 +102,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
       assetTag: device?.assetTag || "",
       categoryId: device?.categoryId?.toString() || "",
       status: device?.status || "active",
-      purchaseCost: device?.purchaseCost ? device.purchaseCost : null,
+      purchaseCost: device?.purchaseCost ? Number(device.purchaseCost) : null,
       purchaseDate: device?.purchaseDate ? new Date(device.purchaseDate) : null,
       purchasedBy: device?.purchasedBy || "",
       warrantyEOL: device?.warrantyEOL ? new Date(device.warrantyEOL) : null,
