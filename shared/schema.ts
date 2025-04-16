@@ -131,8 +131,8 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
     z.null()
   ]).optional(),
   // Make these fields optional
-  serialNumber: z.string().optional().default(() => `SN-${Math.floor(Math.random() * 1000000)}`),
-  assetTag: z.string().optional().default(() => `AT-${Math.floor(Math.random() * 1000000)}`),
+  serialNumber: z.string().nullable().optional(),
+  assetTag: z.string().nullable().optional(),
   // Status field with default
   status: z.string().optional().default('active'),
   // Intune fields with defaults
