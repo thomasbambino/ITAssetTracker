@@ -46,6 +46,7 @@ const formSchema = insertDeviceSchema.extend({
   serialNumber: z.string().min(1, "Serial number is required"),
   assetTag: z.string().min(1, "Asset tag is required"),
   categoryId: z.coerce.number().nullable(),
+  status: z.string().default('active'),
   purchaseDate: z.date().nullable().optional(),
   warrantyEOL: z.date().nullable().optional(),
   // File upload fields - we'll handle file data separately
@@ -100,6 +101,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
       serialNumber: device?.serialNumber || "",
       assetTag: device?.assetTag || "",
       categoryId: device?.categoryId?.toString() || "",
+      status: device?.status || "active",
       purchaseCost: device?.purchaseCost ? device.purchaseCost : null,
       purchaseDate: device?.purchaseDate ? new Date(device.purchaseDate) : null,
       purchasedBy: device?.purchasedBy || "",

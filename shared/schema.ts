@@ -90,6 +90,7 @@ export const devices = pgTable("devices", {
   invoiceFile: text("invoice_file"),  // Store file data as base64
   invoiceFileName: text("invoice_file_name"), // Original filename
   invoiceFileType: text("invoice_file_type"), // MIME type of the file
+  status: text("status").default('active'), // Values: active, lost, broken, retired, etc.
   isIntuneOnboarded: boolean("is_intune_onboarded").default(false), // Tracks if device is onboarded in Intune
   intuneComplianceStatus: text("intune_compliance_status").default('unknown'), // Values: compliant, noncompliant, unknown
   intuneLastSync: timestamp("intune_last_sync"), // When device last synced with Intune
@@ -123,6 +124,8 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
   // Make these fields optional for CSV import
   serialNumber: z.string().default(() => `SN-${Math.floor(Math.random() * 1000000)}`),
   assetTag: z.string().default(() => `AT-${Math.floor(Math.random() * 1000000)}`),
+  // Status field with default
+  status: z.string().optional().default('active'),
   // Intune fields with defaults
   isIntuneOnboarded: z.boolean().optional().default(false),
   intuneComplianceStatus: z.string().optional().default('unknown'),
