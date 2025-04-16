@@ -378,7 +378,7 @@ export default function Dashboard() {
                           y={0} 
                           dy={4} 
                           textAnchor="end" 
-                          fill="#64748B" 
+                          fill="var(--muted-foreground)" 
                           fontSize={13}
                           className="cursor-pointer hover:underline"
                           onClick={() => {
@@ -394,7 +394,7 @@ export default function Dashboard() {
                           y={0} 
                           dy={4} 
                           textAnchor="end" 
-                          fill="#94a3b8"
+                          fill="var(--muted-foreground)"
                           fontSize={10}
                           className="cursor-pointer"
                         >
@@ -423,7 +423,7 @@ export default function Dashboard() {
                       ''
                     ];
                   }}
-                  cursor={{ fill: '#f5f5f5' }}
+                  cursor={{ fill: 'var(--muted)' }}
                   // Custom content to fully control the tooltip display
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -438,7 +438,7 @@ export default function Dashboard() {
                       }).format(totalValue / 100);
                       
                       return (
-                        <div className="p-2 bg-white shadow border rounded">
+                        <div className="p-2 bg-card text-card-foreground shadow border rounded">
                           <p className="text-sm font-medium">{data.name}</p>
                           <p className="text-sm">{deviceCount} device{deviceCount !== 1 ? 's' : ''} - {formattedValue}</p>
                         </div>
@@ -472,7 +472,7 @@ export default function Dashboard() {
                     dataKey="percentage" 
                     position="right" 
                     formatter={(value: number) => `${value}%`}
-                    style={{ fontWeight: "500", fill: "#64748B" }}
+                    style={{ fontWeight: "500", fill: "var(--muted-foreground)" }}
                     offset={10} // Padding between bar end and label
                   />
                 </Bar>
