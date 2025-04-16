@@ -599,8 +599,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(device);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.log("Validation error when updating device:", JSON.stringify(error.errors));
-        console.log("Form data submitted:", JSON.stringify(req.body));
         return res.status(400).json({ message: "Invalid device data", errors: error.errors });
       }
       console.error("Error updating device:", error);

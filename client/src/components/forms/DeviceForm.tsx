@@ -162,11 +162,10 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
     // Create FormData for file upload
     const formData = new FormData();
     
-    // Handle dates and ensure proper types
+    // Convert cost to cents and handle dates
     const formattedData = {
       ...data,
-      // Keep purchaseCost as a string for proper schema validation
-      purchaseCost: data.purchaseCost ? data.purchaseCost.toString() : null,
+      purchaseCost: data.purchaseCost ? parseInt(data.purchaseCost.toString()) : null,
       categoryId: data.categoryId ? parseInt(data.categoryId.toString()) : null,
       // Ensure dates are properly parsed to ISO strings
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
@@ -335,16 +334,14 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Serial Number
+                  Serial Number <span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Serial Number (optional)" 
-                    value={field.value || ""}
-                    onChange={(e) => field.onChange(e.target.value || null)} />
+                  <Input placeholder="Serial Number" {...field} required />
                 </FormControl>
                 <FormMessage />
                 <FormDescription className="text-xs">
-                  An optional unique identifier for this device
+                  A unique identifier for this device
                 </FormDescription>
               </FormItem>
             )}
@@ -356,16 +353,14 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Asset Tag
+                  Asset Tag <span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Asset Tag (optional)" 
-                    value={field.value || ""}
-                    onChange={(e) => field.onChange(e.target.value || null)} />
+                  <Input placeholder="Asset Tag" {...field} required />
                 </FormControl>
                 <FormMessage />
                 <FormDescription className="text-xs">
-                  An optional tracking identifier for the device
+                  A unique tracking identifier for the device
                 </FormDescription>
               </FormItem>
             )}
@@ -456,6 +451,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                 <Input 
                   type="text" 
                   placeholder="0.00" 
+                  {...field} 
                   onChange={(e) => {
                     // Allow empty value or valid numbers with decimals
                     const value = e.target.value;
@@ -467,11 +463,11 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                       // Convert to cents for storage
                       const centsValue = Math.round(parseFloat(numericValue) * 100);
                       if (!isNaN(centsValue)) {
-                        field.onChange(centsValue.toString()); // Convert to string for schema validation
+                        field.onChange(centsValue);
                       }
                     }
                   }}
-                  value={field.value ? (parseInt(field.value.toString()) / 100).toFixed(2) : ""}
+                  value={field.value ? (field.value / 100).toFixed(2) : ""}
                 />
               </FormControl>
               <FormDescription>

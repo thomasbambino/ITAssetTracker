@@ -79,8 +79,8 @@ export const devices = pgTable("devices", {
   name: text("name"),  // New device name field
   brand: text("brand").notNull(),
   model: text("model").notNull(),
-  serialNumber: text("serial_number").unique(),  // No longer required
-  assetTag: text("asset_tag").unique(),  // No longer required
+  serialNumber: text("serial_number").notNull().unique(),
+  assetTag: text("asset_tag").notNull().unique(),
   categoryId: integer("category_id").references(() => categories.id),
   purchaseCost: integer("purchase_cost"),  // Store in cents
   purchaseDate: timestamp("purchase_date"),
@@ -105,15 +105,6 @@ const baseDeviceSchema = createInsertSchema(devices).omit({
 
 // Enhanced schema with custom date validation
 export const insertDeviceSchema = baseDeviceSchema.extend({
-  // Allow purchaseCost to be a string, number, or null
-  purchaseCost: z.union([
-    z.string().transform((str) => {
-      const num = parseInt(str);
-      return isNaN(num) ? null : num;
-    }),
-    z.number(),
-    z.null()
-  ]).optional(),
   // Override the date fields to accept strings
   purchaseDate: z.union([
     z.string().transform((str) => new Date(str)), 
@@ -130,9 +121,9 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
     z.date(),
     z.null()
   ]).optional(),
-  // Make these fields optional
-  serialNumber: z.string().nullable().optional(),
-  assetTag: z.string().nullable().optional(),
+  // Make these fields optional for CSV import
+  serialNumber: z.string().default(() => `SN-${Math.floor(Math.random() * 1000000)}`),
+  assetTag: z.string().default(() => `AT-${Math.floor(Math.random() * 1000000)}`),
   // Status field with default
   status: z.string().optional().default('active'),
   // Intune fields with defaults
