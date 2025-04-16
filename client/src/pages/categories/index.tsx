@@ -27,21 +27,32 @@ import {
 import { Button } from '@/components/ui/button';
 import { CategoryForm } from '@/components/forms/CategoryForm';
 
+// Define the Category type for type safety
+interface Category {
+  id: number;
+  name: string;
+  description?: string | null;
+  devices?: { id: number }[];
+}
+
 export default function Categories() {
   const { toast } = useToast();
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
-  const [editingCategory, setEditingCategory] = useState<any | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  
+
   // Fetch categories
-  const { data: categories, isLoading } = useQuery({
+  const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
   });
   
   // Delete category mutation
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/categories/${id}`);
+      await apiRequest({
+        url: `/api/categories/${id}`,
+        method: 'DELETE'
+      });
       return id;
     },
     onSuccess: () => {
@@ -68,21 +79,21 @@ export default function Categories() {
     {
       header: "Name",
       accessor: "name",
-      cell: (category: any) => (
+      cell: (category: Category) => (
         <div className="font-medium">{category.name}</div>
       ),
     },
     {
       header: "Description",
       accessor: "description",
-      cell: (category: any) => (
-        <div className="text-gray-600">{category.description || '-'}</div>
+      cell: (category: Category) => (
+        <div className="text-foreground">{category.description || '-'}</div>
       ),
     },
     {
       header: "Devices",
-      accessor: (category: any) => category.devices?.length || 0,
-      cell: (category: any) => {
+      accessor: (category: Category) => category.devices?.length || 0,
+      cell: (category: Category) => {
         const count = category.devices?.length || 0;
         return count > 0 ? (
           <Badge variant="secondary">
@@ -90,7 +101,7 @@ export default function Categories() {
             {count} {count === 1 ? 'device' : 'devices'}
           </Badge>
         ) : (
-          <span className="text-gray-500">No devices</span>
+          <span className="text-muted-foreground">No devices</span>
         );
       },
     },
@@ -101,14 +112,14 @@ export default function Categories() {
     {
       label: "Edit",
       icon: <EditIcon className="h-4 w-4" />,
-      onClick: (category: any) => {
+      onClick: (category: Category) => {
         setEditingCategory(category);
       },
     },
     {
       label: "Delete",
       icon: <Trash2Icon className="h-4 w-4" />,
-      onClick: (category: any) => {
+      onClick: (category: Category) => {
         setCategoryToDelete(category.id);
       },
     },
@@ -131,8 +142,8 @@ export default function Categories() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Categories</h1>
-          <p className="mt-1 text-sm text-gray-600">Manage device categories</p>
+          <h1 className="text-2xl font-semibold text-foreground">Categories</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage device categories</p>
         </div>
         
         {/* Actions */}
