@@ -489,6 +489,9 @@ export class DatabaseStorage implements IStorage {
         d.warranty_eol as "warrantyEOL", 
         d.created_at as "createdAt", 
         d.user_id as "userId",
+        d.is_intune_onboarded as "isIntuneOnboarded",
+        d.intune_compliance_status as "intuneComplianceStatus",
+        d.intune_last_sync as "intuneLastSync",
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
@@ -515,6 +518,9 @@ export class DatabaseStorage implements IStorage {
           d.warranty_eol as "warrantyEOL", 
           d.created_at as "createdAt", 
           d.user_id as "userId",
+          d.is_intune_onboarded as "isIntuneOnboarded",
+          d.intune_compliance_status as "intuneComplianceStatus",
+          d.intune_last_sync as "intuneLastSync",
           c.name as "categoryName"
         FROM devices d
         LEFT JOIN categories c ON d.category_id = c.id
@@ -749,6 +755,9 @@ export class DatabaseStorage implements IStorage {
         d.warranty_eol as "warrantyEOL", 
         d.created_at as "createdAt", 
         d.user_id as "userId",
+        d.is_intune_onboarded as "isIntuneOnboarded",
+        d.intune_compliance_status as "intuneComplianceStatus",
+        d.intune_last_sync as "intuneLastSync",
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
@@ -756,6 +765,122 @@ export class DatabaseStorage implements IStorage {
     `, [categoryId]);
     
     return devices;
+  }
+  
+  async getIntuneEligibleDevices(): Promise<Device[]> {
+    const devices = await db.any(`
+      SELECT 
+        d.id,
+        d.name,
+        d.brand, 
+        d.model, 
+        d.serial_number as "serialNumber", 
+        d.asset_tag as "assetTag", 
+        d.category_id as "categoryId", 
+        d.purchase_cost as "purchaseCost", 
+        d.purchase_date as "purchaseDate", 
+        d.purchased_by as "purchasedBy", 
+        d.warranty_eol as "warrantyEOL", 
+        d.created_at as "createdAt", 
+        d.user_id as "userId",
+        d.is_intune_onboarded as "isIntuneOnboarded",
+        d.intune_compliance_status as "intuneComplianceStatus",
+        d.intune_last_sync as "intuneLastSync",
+        c.name as "categoryName",
+        u.first_name as "userFirstName",
+        u.last_name as "userLastName",
+        u.email as "userEmail"
+      FROM devices d
+      LEFT JOIN categories c ON d.category_id = c.id
+      LEFT JOIN users u ON d.user_id = u.id
+      WHERE (d.deleted = FALSE OR d.deleted IS NULL)
+      AND c.name IN ('Laptop', 'Desktop')
+      ORDER BY d.brand, d.model
+    `);
+    
+    return devices;
+  }
+  
+  async updateDeviceIntuneStatus(id: number, intuneStatus: {
+    isIntuneOnboarded?: boolean;
+    intuneComplianceStatus?: string;
+    intuneLastSync?: Date | null;
+  }, loggedInUserId?: number): Promise<Device | undefined> {
+    try {
+      // Build dynamic update query for Intune status
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+      
+      if (intuneStatus.isIntuneOnboarded !== undefined) {
+        updates.push(`is_intune_onboarded = $${paramCount++}`);
+        values.push(intuneStatus.isIntuneOnboarded);
+      }
+      
+      if (intuneStatus.intuneComplianceStatus !== undefined) {
+        updates.push(`intune_compliance_status = $${paramCount++}`);
+        values.push(intuneStatus.intuneComplianceStatus);
+      }
+      
+      if (intuneStatus.intuneLastSync !== undefined) {
+        updates.push(`intune_last_sync = $${paramCount++}`);
+        values.push(intuneStatus.intuneLastSync);
+      }
+      
+      // If no updates, return the device
+      if (updates.length === 0) {
+        return this.getDeviceById(id);
+      }
+      
+      values.push(id); // Add id as the last parameter
+      
+      const updatedDevice = await db.one(`
+        UPDATE devices SET
+          ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING 
+          id, 
+          name,
+          brand, 
+          model, 
+          serial_number as "serialNumber", 
+          asset_tag as "assetTag", 
+          category_id as "categoryId", 
+          purchase_cost as "purchaseCost", 
+          purchase_date as "purchaseDate", 
+          purchased_by as "purchasedBy", 
+          warranty_eol as "warrantyEOL", 
+          created_at as "createdAt", 
+          user_id as "userId",
+          is_intune_onboarded as "isIntuneOnboarded",
+          intune_compliance_status as "intuneComplianceStatus",
+          intune_last_sync as "intuneLastSync"
+      `, values);
+      
+      // Get category name for the device
+      if (updatedDevice.categoryId) {
+        try {
+          const category = await this.getCategoryById(updatedDevice.categoryId);
+          if (category) {
+            (updatedDevice as any).categoryName = category.name;
+          }
+        } catch (error) {
+          console.error('Error fetching category for updated device:', error);
+        }
+      }
+      
+      // Log activity
+      await this.createActivityLog({
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        actionType: 'device_intune_updated',
+        details: `Intune status updated for device: ${updatedDevice.name ? updatedDevice.name : `${updatedDevice.brand} ${updatedDevice.model}`} (${updatedDevice.assetTag})`
+      });
+      
+      return updatedDevice;
+    } catch (error) {
+      console.error('Error updating device Intune status:', error);
+      return undefined;
+    }
   }
 
   async getDevicesByUser(userId: number): Promise<Device[]> {

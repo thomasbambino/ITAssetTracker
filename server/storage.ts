@@ -37,6 +37,12 @@ export interface IStorage {
   updateDevice(id: number, device: Partial<InsertDevice>, loggedInUserId?: number): Promise<Device | undefined>;
   deleteDevice(id: number, loggedInUserId?: number): Promise<boolean>;
   getDevicesByCategory(categoryId: number): Promise<Device[]>;
+  getIntuneEligibleDevices(): Promise<Device[]>;
+  updateDeviceIntuneStatus(id: number, intuneStatus: {
+    isIntuneOnboarded?: boolean;
+    intuneComplianceStatus?: string;
+    intuneLastSync?: Date | null;
+  }, loggedInUserId?: number): Promise<Device | undefined>;
   getDevicesByUser(userId: number): Promise<Device[]>;
   getUnassignedDevices(): Promise<Device[]>;
   assignDevice(deviceId: number, userId: number, assignedBy: number): Promise<Device | undefined>;
