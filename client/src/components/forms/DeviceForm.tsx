@@ -334,10 +334,10 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Serial Number <span className="text-red-500">*</span>
+                  Serial Number
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Serial Number" {...field} required />
+                  <Input placeholder="Serial Number" {...field} />
                 </FormControl>
                 <FormMessage />
                 <FormDescription className="text-xs">
@@ -353,10 +353,10 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Asset Tag <span className="text-red-500">*</span>
+                  Asset Tag
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Asset Tag" {...field} required />
+                  <Input placeholder="Asset Tag" {...field} />
                 </FormControl>
                 <FormMessage />
                 <FormDescription className="text-xs">
