@@ -22,12 +22,13 @@ import {
   CircleUserIcon,
   LogOutIcon,
   ShieldIcon,
+  CloudIcon,
 } from 'lucide-react';
 
 // Define category groups
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories'],
-  management: ['/software', '/maintenance', '/qrcodes', '/warranties'],
+  management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
 
@@ -133,6 +134,12 @@ export function DesktopSidebar() {
       href: '/warranties',
       label: 'Warranties',
       icon: ShieldIcon,
+      category: 'management',
+    },
+    {
+      href: '/management/intune',
+      label: 'Intune Management',
+      icon: CloudIcon,
       category: 'management',
     },
     {

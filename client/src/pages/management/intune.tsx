@@ -32,8 +32,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest as apiRequestOriginal } from '@/lib/queryClient';
 import { Loader2, CheckCircle2, AlertCircle, HelpCircle, RefreshCcw } from 'lucide-react';
+
+// Helper function to match the format we're using in the component
+const apiRequest = (url: string, method: string, data?: any) => {
+  return apiRequestOriginal({ url, method, data });
+};
 
 // Define types for our Intune device data
 interface IntuneDevice {
@@ -99,10 +104,7 @@ const DeviceManagementDialog = ({ device, onClose }: { device: IntuneDevice; onC
       intuneComplianceStatus: string;
       intuneLastSync: Date | null;
     }) => {
-      return apiRequest(`/api/intune/devices/${device.id}`, {
-        method: 'PATCH',
-        data,
-      });
+      return apiRequest(`/api/intune/devices/${device.id}`, 'PATCH', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/intune/devices'] });
@@ -180,7 +182,7 @@ export default function IntunePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Fetch Intune-eligible devices
-  const { data: devices, isLoading, error } = useQuery({
+  const { data: devices = [], isLoading, error } = useQuery<IntuneDevice[]>({
     queryKey: ['/api/intune/devices'],
     retry: 1,
   });
