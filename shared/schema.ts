@@ -90,6 +90,9 @@ export const devices = pgTable("devices", {
   invoiceFile: text("invoice_file"),  // Store file data as base64
   invoiceFileName: text("invoice_file_name"), // Original filename
   invoiceFileType: text("invoice_file_type"), // MIME type of the file
+  isIntuneOnboarded: boolean("is_intune_onboarded").default(false), // Tracks if device is onboarded in Intune
+  intuneComplianceStatus: text("intune_compliance_status").default('unknown'), // Values: compliant, noncompliant, unknown
+  intuneLastSync: timestamp("intune_last_sync"), // When device last synced with Intune
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -112,9 +115,17 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
     z.date(),
     z.null()
   ]).optional(),
+  intuneLastSync: z.union([
+    z.string().transform((str) => new Date(str)), 
+    z.date(),
+    z.null()
+  ]).optional(),
   // Make these fields optional for CSV import
   serialNumber: z.string().default(() => `SN-${Math.floor(Math.random() * 1000000)}`),
-  assetTag: z.string().default(() => `AT-${Math.floor(Math.random() * 1000000)}`)
+  assetTag: z.string().default(() => `AT-${Math.floor(Math.random() * 1000000)}`),
+  // Intune fields with defaults
+  isIntuneOnboarded: z.boolean().optional().default(false),
+  intuneComplianceStatus: z.string().optional().default('unknown'),
 });
 
 export type InsertDevice = z.infer<typeof insertDeviceSchema>;
