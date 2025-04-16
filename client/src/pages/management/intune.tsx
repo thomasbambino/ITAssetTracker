@@ -238,14 +238,13 @@ export default function IntunePage() {
                         <TableHead>User</TableHead>
                         <TableHead>Onboarded</TableHead>
                         <TableHead>Compliance</TableHead>
-                        <TableHead>Last Sync</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {devices?.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                          <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                             No Intune-eligible devices found
                           </TableCell>
                         </TableRow>
@@ -280,7 +279,6 @@ export default function IntunePage() {
                             <TableCell>
                               <ComplianceStatusBadge status={device.intuneComplianceStatus} />
                             </TableCell>
-                            <TableCell>{formatDate(device.intuneLastSync)}</TableCell>
                             <TableCell className="text-right">
                               <Button 
                                 variant="ghost" 
