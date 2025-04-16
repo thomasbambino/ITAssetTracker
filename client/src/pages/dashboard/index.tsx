@@ -423,7 +423,11 @@ export default function Dashboard() {
                       ''
                     ];
                   }}
-                  cursor={{ fill: 'var(--muted)' }}
+                  cursor={{
+                    // Use a very subtle gray that works in both modes
+                    fill: 'rgba(128, 128, 128, 0.1)',
+                    stroke: 'rgba(128, 128, 128, 0.2)'
+                  }}
                   // Custom content to fully control the tooltip display
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
