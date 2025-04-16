@@ -162,11 +162,12 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
     // Create FormData for file upload
     const formData = new FormData();
     
-    // Convert cost to cents and handle dates
+    // Handle data formatting for submission
     const formattedData = {
       ...data,
-      // Ensure purchaseCost is properly converted to a string for FormData
-      purchaseCost: data.purchaseCost ? data.purchaseCost.toString() : null,
+      // Important: purchaseCost needs to be a number for server validation
+      // We keep it as a number here, it will be converted to string when added to FormData
+      purchaseCost: data.purchaseCost !== null && data.purchaseCost !== undefined ? Number(data.purchaseCost) : null,
       categoryId: data.categoryId ? parseInt(data.categoryId.toString()) : null,
       // Ensure dates are properly parsed to ISO strings
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
