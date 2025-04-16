@@ -32,11 +32,12 @@ import {
   LogOutIcon,
   ShieldIcon,
   CloudIcon,
+  AlertCircleIcon,
 } from 'lucide-react';
 
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories'],
-  management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune'],
+  management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune', '/management/status'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
 
@@ -150,6 +151,12 @@ export function MobileNav() {
       href: '/management/intune',
       label: 'Intune Management',
       icon: CloudIcon,
+      category: 'management',
+    },
+    {
+      href: '/management/status',
+      label: 'Status Management',
+      icon: AlertCircleIcon,
       category: 'management',
     },
     {

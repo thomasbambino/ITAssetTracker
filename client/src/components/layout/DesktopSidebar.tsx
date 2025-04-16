@@ -29,7 +29,7 @@ import {
 // Define category groups
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories'],
-  management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune'],
+  management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune', '/management/status'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
 
@@ -141,6 +141,12 @@ export function DesktopSidebar() {
       href: '/management/intune',
       label: 'Intune Management',
       icon: CloudIcon,
+      category: 'management',
+    },
+    {
+      href: '/management/status',
+      label: 'Status Management',
+      icon: AlertCircleIcon,
       category: 'management',
     },
     {
