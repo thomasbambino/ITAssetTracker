@@ -31,11 +31,12 @@ import {
   BellDotIcon,
   LogOutIcon,
   ShieldIcon,
+  CloudIcon,
 } from 'lucide-react';
 
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories'],
-  management: ['/software', '/maintenance', '/qrcodes', '/warranties'],
+  management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
 
@@ -143,6 +144,12 @@ export function MobileNav() {
       href: '/warranties',
       label: 'Warranties',
       icon: ShieldIcon,
+      category: 'management',
+    },
+    {
+      href: '/management/intune',
+      label: 'Intune Management',
+      icon: CloudIcon,
       category: 'management',
     },
     {
