@@ -80,7 +80,12 @@ export default function Categories() {
       header: "Name",
       accessor: "name",
       cell: (category: Category) => (
-        <div className="font-medium">{category.name}</div>
+        <div 
+          className="font-medium cursor-pointer hover:text-primary hover:underline"
+          onClick={() => handleCategoryClick(category.id)}
+        >
+          {category.name}
+        </div>
       ),
     },
     {
@@ -96,7 +101,11 @@ export default function Categories() {
       cell: (category: Category) => {
         const count = category.devices?.length || 0;
         return count > 0 ? (
-          <Badge variant="secondary">
+          <Badge 
+            variant="secondary" 
+            className="cursor-pointer hover:bg-primary/20"
+            onClick={() => handleCategoryClick(category.id)}
+          >
             <LaptopIcon className="h-3.5 w-3.5 mr-1" />
             {count} {count === 1 ? 'device' : 'devices'}
           </Badge>
@@ -106,6 +115,11 @@ export default function Categories() {
       },
     },
   ];
+  
+  // Function to navigate to devices page with category filter
+  const handleCategoryClick = (categoryId: number) => {
+    navigate(`/devices?category=${categoryId}`);
+  };
   
   // Table actions
   const actions = [
