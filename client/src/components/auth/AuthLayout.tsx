@@ -30,7 +30,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                 className="h-8 w-auto"
               />
             )}
-            <h1 className="text-xl font-bold">
+            <h1 className="text-xl font-bold text-foreground">
               {branding?.companyName || "IT Asset Management"}
             </h1>
           </div>
