@@ -103,8 +103,19 @@ const baseDeviceSchema = createInsertSchema(devices).omit({
   createdAt: true,
 });
 
-// Enhanced schema with custom date validation
+// Enhanced schema with custom date validation and purchase cost handling
 export const insertDeviceSchema = baseDeviceSchema.extend({
+  // Handle purchase cost as number, string, or null
+  purchaseCost: z.union([
+    z.string().transform((str) => {
+      // Parse string to number - handle empty strings
+      if (str === '' || str === null || str === undefined) return null;
+      const num = Number(str);
+      return isNaN(num) ? null : num;
+    }),
+    z.number(),
+    z.null()
+  ]).optional().nullable(),
   // Override the date fields to accept strings
   purchaseDate: z.union([
     z.string().transform((str) => new Date(str)), 

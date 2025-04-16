@@ -165,9 +165,8 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
     // Handle data formatting for submission
     const formattedData = {
       ...data,
-      // Important: purchaseCost needs to be a number for server validation
-      // We keep it as a number here, it will be converted to string when added to FormData
-      purchaseCost: data.purchaseCost !== null && data.purchaseCost !== undefined ? Number(data.purchaseCost) : null,
+      // Simply pass the purchase cost value - our Zod schema will handle conversion
+      purchaseCost: data.purchaseCost,
       categoryId: data.categoryId ? parseInt(data.categoryId.toString()) : null,
       // Ensure dates are properly parsed to ISO strings
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
@@ -454,23 +453,29 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                 <Input 
                   type="text" 
                   placeholder="0.00" 
-                  {...field} 
                   onChange={(e) => {
                     // Allow empty value or valid numbers with decimals
                     const value = e.target.value;
                     if (value === "" || value === null) {
                       field.onChange(null);
                     } else {
-                      // Remove any non-numeric characters except decimal point
+                      // Allow raw text input for better editing experience
                       const numericValue = value.replace(/[^0-9.]/g, '');
-                      // Convert to cents for storage
-                      const centsValue = Math.round(parseFloat(numericValue) * 100);
-                      if (!isNaN(centsValue)) {
-                        field.onChange(centsValue);
+                      if (numericValue === "") {
+                        field.onChange(null);
+                      } else {
+                        // Only convert to cents when a valid number is entered
+                        const parsedValue = parseFloat(numericValue);
+                        if (!isNaN(parsedValue)) {
+                          const centsValue = Math.round(parsedValue * 100);
+                          field.onChange(centsValue);
+                        }
                       }
                     }
                   }}
-                  value={field.value ? (field.value / 100).toFixed(2) : ""}
+                  value={field.value !== null && field.value !== undefined
+                    ? (field.value / 100).toFixed(2)
+                    : ""}
                 />
               </FormControl>
               <FormDescription>
