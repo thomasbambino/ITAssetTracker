@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 import { DataTable } from '@/components/ui/data-table';
 import { PlusIcon, Trash2Icon, EditIcon, LaptopIcon } from 'lucide-react';
 import { ActionButton } from '@/components/dashboard/ActionButton';
@@ -40,6 +41,7 @@ export default function Categories() {
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [, navigate] = useLocation();
 
   // Fetch categories
   const { data: categories, isLoading } = useQuery<Category[]>({
@@ -177,6 +179,7 @@ export default function Categories() {
         keyField="id"
         loading={isLoading}
         actions={actions}
+        onRowClick={(category) => handleCategoryClick(category.id)}
         emptyState={
           <div className="text-center py-10">
             <h3 className="mt-2 text-sm font-semibold text-foreground">No categories</h3>
