@@ -466,11 +466,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           return {
             ...entry,
-            assignedTo: assignedToUser ? {
+            user: assignedToUser ? {
               id: assignedToUser.id,
-              name: `${assignedToUser.firstName} ${assignedToUser.lastName}`
+              name: `${assignedToUser.firstName} ${assignedToUser.lastName}`,
+              department: assignedToUser.department
             } : null,
-            assignedBy: assignedByUser ? {
+            assignor: assignedByUser ? {
               id: assignedByUser.id,
               name: `${assignedByUser.firstName} ${assignedByUser.lastName}`
             } : null
@@ -480,13 +481,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(enrichedHistory);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching device assignment history" });
+      console.error("Error fetching device history:", error);
+      res.status(500).json({ message: "Error fetching device history" });
+    }
+  });
+  
+  // Get QR code for a device
+  app.get('/api/devices/:id/qrcode', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const qrCode = await storage.getQrCodeByDeviceId(id);
+      
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found for device" });
+      }
+      
+      res.json(qrCode);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching QR code" });
     }
   });
 
-  app.post('/api/devices', upload.single('invoiceFile'), async (req: Request, res: Response) => {
+  // Get Intune eligible devices (laptops and desktops)
+  app.get('/api/devices/intune/eligible', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // Parse and validate the form data
+      const devices = await storage.getIntuneEligibleDevices();
+      
+      // Enrich with user information
+      const enrichedDevices = await Promise.all(
+        devices.map(async (device) => {
+          const category = device.categoryId ? await storage.getCategoryById(device.categoryId) : null;
+          const user = device.userId ? await storage.getUserById(device.userId) : null;
+          
+          return {
+            ...device,
+            category: category ? { id: category.id, name: category.name } : null,
+            user: user ? { 
+              id: user.id, 
+              name: `${user.firstName} ${user.lastName}`, 
+              department: user.department 
+            } : null
+          };
+        })
+      );
+      
+      res.json(enrichedDevices);
+    } catch (error) {
+      console.error("Error fetching Intune eligible devices:", error);
+      res.status(500).json({ message: "Error fetching Intune eligible devices" });
+    }
+  });
+  
+  // Update device Intune status
+  app.put('/api/devices/:id/intune', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isIntuneOnboarded, intuneComplianceStatus } = req.body;
+      
+      // Validate the update data
+      const updateData = z.object({
+        isIntuneOnboarded: z.boolean().optional(),
+        intuneComplianceStatus: z.string().optional(),
+      }).parse(req.body);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Update the device Intune status
+      const device = await storage.updateDeviceIntuneStatus(id, {
+        isIntuneOnboarded: updateData.isIntuneOnboarded,
+        intuneComplianceStatus: updateData.intuneComplianceStatus,
+        updatedBy: loggedInUserId
+      });
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      res.json(device);
+    } catch (error) {
+      console.error("Error updating device Intune status:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating device Intune status" });
+    }
+  });
+
+  // Create device
+  app.post('/api/devices', isAuthenticated, upload.single('invoiceFile'), async (req: Request, res: Response) => {
+    try {
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Parse the form data
       const formData = req.body;
       
       // Handle date parsing
@@ -508,9 +598,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Convert purchaseCost to integer (cents)
+      // Handle purchase cost conversion
       if (formData.purchaseCost) {
-        formData.purchaseCost = parseInt(formData.purchaseCost);
+        const costValue = formData.purchaseCost.toString().trim();
+        
+        if (costValue === '') {
+          formData.purchaseCost = null;
+        } else {
+          // Try to convert to a number
+          const numValue = parseFloat(costValue);
+          
+          if (!isNaN(numValue)) {
+            // Convert dollars to cents and round to nearest cent
+            formData.purchaseCost = Math.round(numValue * 100);
+            console.log(`Converted purchase cost ${costValue} to ${formData.purchaseCost} cents`);
+          } else {
+            formData.purchaseCost = null;
+            console.warn(`Invalid purchase cost value: ${costValue}`);
+          }
+        }
       }
       
       // Handle the file upload if it exists
@@ -527,21 +633,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // The insertDeviceSchema now handles data validation
       const validatedData = insertDeviceSchema.parse(formData);
       
-      // Get the currently logged in user's ID from the session if available
-      const sessionData = req.session as any;
-      const loggedInUserId = sessionData.userId;
-      
       const device = await storage.createDevice(validatedData, loggedInUserId);
       res.status(201).json(device);
     } catch (error) {
+      console.error("Error creating device:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid device data", errors: error.errors });
       }
-      console.error("Error creating device:", error);
       res.status(500).json({ message: "Error creating device" });
     }
   });
 
+  // Update device
   app.put('/api/devices/:id', isAuthenticated, upload.single('invoiceFile'), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -572,9 +675,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Convert purchaseCost to integer (cents)
+      // Handle purchase cost conversion
       if (formData.purchaseCost) {
-        formData.purchaseCost = parseInt(formData.purchaseCost);
+        const costValue = formData.purchaseCost.toString().trim();
+        
+        if (costValue === '') {
+          formData.purchaseCost = null;
+        } else {
+          // Try to convert to a number
+          const numValue = parseFloat(costValue);
+          
+          if (!isNaN(numValue)) {
+            // Convert dollars to cents and round to nearest cent
+            formData.purchaseCost = Math.round(numValue * 100);
+            console.log(`Converted purchase cost ${costValue} to ${formData.purchaseCost} cents`);
+          } else {
+            formData.purchaseCost = null;
+            console.warn(`Invalid purchase cost value: ${costValue}`);
+          }
+        }
       }
       
       // Handle the file upload if it exists
@@ -598,10 +717,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(device);
     } catch (error) {
+      console.error("Error updating device:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid device data", errors: error.errors });
       }
-      console.error("Error updating device:", error);
       res.status(500).json({ message: "Error updating device" });
     }
   });
@@ -626,34 +745,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Assign device to user
+  // Device assignment routes
   app.post('/api/devices/:id/assign', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const deviceId = parseInt(req.params.id);
+      const { userId, notes } = req.body;
+      
+      // Validate the assignment data
+      const assignmentSchema = z.object({
+        userId: z.number(),
+        notes: z.string().optional(),
+      });
+      
+      const assignmentData = assignmentSchema.parse(req.body);
       
       // Get the currently logged in user's ID from the session
       const sessionData = req.session as any;
-      const loggedInUserId = sessionData.userId;
+      const assignedBy = sessionData.userId;
       
-      const { userId } = req.body;
+      // Assign the device
+      const device = await storage.assignDevice(deviceId, assignmentData.userId, assignedBy, assignmentData.notes);
       
-      if (!userId) {
-        return res.status(400).json({ message: "userId is required" });
-      }
-      
-      // Now we use the logged-in user's ID as the assignedBy parameter
-      const device = await storage.assignDevice(deviceId, userId, loggedInUserId);
       if (!device) {
-        return res.status(404).json({ message: "Device or user not found" });
+        return res.status(404).json({ message: "Device not found or already assigned" });
       }
       
       res.json(device);
     } catch (error) {
+      console.error("Error assigning device:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid assignment data", errors: error.errors });
+      }
       res.status(500).json({ message: "Error assigning device" });
     }
   });
 
-  // Unassign device
   app.post('/api/devices/:id/unassign', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const deviceId = parseInt(req.params.id);
@@ -662,37 +788,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
+      // Unassign the device
       const device = await storage.unassignDevice(deviceId, loggedInUserId);
+      
       if (!device) {
-        return res.status(404).json({ message: "Device not found" });
+        return res.status(404).json({ message: "Device not found or not currently assigned" });
       }
       
       res.json(device);
     } catch (error) {
+      console.error("Error unassigning device:", error);
       res.status(500).json({ message: "Error unassigning device" });
     }
   });
 
-  // Category routes
+  // Device by status routes
+  app.get('/api/devices/status/:status', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const status = req.params.status.toLowerCase();
+      
+      // Get all devices first
+      const allDevices = await storage.getDevices();
+      
+      // Filter by status
+      const filteredDevices = allDevices.filter(device => 
+        (device.status || 'active').toLowerCase() === status
+      );
+      
+      // Enrich with category and user information
+      const enrichedDevices = await Promise.all(
+        filteredDevices.map(async (device) => {
+          const category = device.categoryId ? await storage.getCategoryById(device.categoryId) : null;
+          const user = device.userId ? await storage.getUserById(device.userId) : null;
+          
+          return {
+            ...device,
+            category: category ? { id: category.id, name: category.name } : null,
+            user: user ? { 
+              id: user.id, 
+              name: `${user.firstName} ${user.lastName}`, 
+              department: user.department 
+            } : null
+          };
+        })
+      );
+      
+      res.json(enrichedDevices);
+    } catch (error) {
+      console.error(`Error fetching devices with status ${req.params.status}:`, error);
+      res.status(500).json({ message: `Error fetching devices with status ${req.params.status}` });
+    }
+  });
+
+  // Categories
   app.get('/api/categories', async (req: Request, res: Response) => {
     try {
       const categories = await storage.getCategories();
-      const devices = await storage.getDevices();
       
       // Add device counts to each category
-      const enrichedCategories = await Promise.all(categories.map(async (category) => {
-        // Find devices in this category
+      const devices = await storage.getDevices();
+      
+      const enrichedCategories = categories.map(category => {
         const categoryDevices = devices.filter(device => device.categoryId === category.id);
-        
         return {
           ...category,
-          devices: categoryDevices
+          deviceCount: categoryDevices.length
         };
-      }));
+      });
       
       res.json(enrichedCategories);
     } catch (error) {
-      console.error("Error fetching categories:", error);
       res.status(500).json({ message: "Error fetching categories" });
     }
   });
@@ -715,10 +880,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/categories', async (req: Request, res: Response) => {
+  app.post('/api/categories', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
       const validatedData = insertCategorySchema.parse(req.body);
-      const category = await storage.createCategory(validatedData);
+      const category = await storage.createCategory(validatedData, loggedInUserId);
       res.status(201).json(category);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -728,12 +897,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/categories/:id', async (req: Request, res: Response) => {
+  app.put('/api/categories/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertCategorySchema.partial().parse(req.body);
       
-      const category = await storage.updateCategory(id, validatedData);
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const validatedData = insertCategorySchema.partial().parse(req.body);
+      const category = await storage.updateCategory(id, validatedData, loggedInUserId);
+      
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
       }
@@ -747,331 +921,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/categories/:id', async (req: Request, res: Response) => {
+  app.delete('/api/categories/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteCategory(id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const success = await storage.deleteCategory(id, loggedInUserId);
       
       if (!success) {
-        return res.status(404).json({ message: "Category not found or still has devices" });
+        return res.status(404).json({ message: "Category not found or in use" });
       }
       
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Error deleting category" });
-    }
-  });
-
-  // Import/Export routes
-  // Import users from CSV
-  app.post('/api/import/users', upload.single('file'), async (req: Request, res: Response) => {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
-    
-    const results: any[] = [];
-    const parser = parse({
-      delimiter: ',',
-      columns: true,
-      skip_empty_lines: true
-    });
-    
-    parser.on('readable', function() {
-      let record;
-      while ((record = parser.read()) !== null) {
-        results.push(record);
-      }
-    });
-    
-    parser.on('error', function(err) {
-      return res.status(400).json({ message: "CSV parsing error", error: err.message });
-    });
-    
-    parser.on('end', async function() {
-      try {
-        // Map and validate CSV data to user schema
-        const importedUsers = [];
-        
-        for (const record of results) {
-          try {
-            const userData = {
-              firstName: record.firstName || record['First Name'] || '',
-              lastName: record.lastName || record['Last Name'] || '',
-              email: record.email || record['Email'] || '',
-              phoneNumber: record.phoneNumber || record['Phone Number'] || '',
-              department: record.department || record['Department'] || ''
-            };
-            
-            // Validate the data
-            const validatedData = insertUserSchema.parse(userData);
-            
-            // Create the user
-            const user = await storage.createUser(validatedData);
-            importedUsers.push(user);
-          } catch (error) {
-            // Skip invalid records
-            console.error('Error importing user:', record, error);
-          }
-        }
-        
-        res.json({ 
-          message: `Imported ${importedUsers.length} users`,
-          users: importedUsers
-        });
-      } catch (error) {
-        res.status(500).json({ message: "Error processing import" });
-      }
-    });
-    
-    // Feed the file buffer to the parser
-    parser.write(req.file.buffer.toString());
-    parser.end();
-  });
-  
-  // Import devices from CSV
-  app.post('/api/import/devices', upload.single('file'), async (req: Request, res: Response) => {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
-    
-    const results: any[] = [];
-    const parser = parse({
-      delimiter: ',',
-      columns: true,
-      skip_empty_lines: true
-    });
-    
-    parser.on('readable', function() {
-      let record;
-      while ((record = parser.read()) !== null) {
-        results.push(record);
-      }
-    });
-    
-    parser.on('error', function(err) {
-      return res.status(400).json({ message: "CSV parsing error", error: err.message });
-    });
-    
-    parser.on('end', async function() {
-      try {
-        // Get categories for lookup
-        const categories = await storage.getCategories();
-        const categoryMap = new Map(categories.map(c => [c.name.toLowerCase(), c.id]));
-        
-        // Map and validate CSV data to device schema
-        const importedDevices = [];
-        
-        for (const record of results) {
-          try {
-            // Try to find category by name
-            let categoryId = null;
-            if (record.category || record['Category']) {
-              const categoryName = (record.category || record['Category']).toLowerCase();
-              categoryId = categoryMap.get(categoryName);
-              
-              // Create category if it doesn't exist
-              if (!categoryId && categoryName) {
-                const newCategory = await storage.createCategory({
-                  name: record.category || record['Category'],
-                  description: ''
-                });
-                categoryId = newCategory.id;
-                categoryMap.set(categoryName, categoryId);
-              }
-            }
-            
-            // Parse purchase cost to cents if provided
-            let purchaseCost = null;
-            if (record.purchaseCost || record['Purchase Cost']) {
-              const costStr = record.purchaseCost || record['Purchase Cost'];
-              // Remove currency symbol and convert to cents
-              const cost = parseFloat(costStr.replace(/[^0-9.-]+/g, ""));
-              if (!isNaN(cost)) {
-                purchaseCost = Math.round(cost * 100); // Convert to cents
-              }
-            }
-            
-            // Parse dates if provided
-            let purchaseDate = null;
-            if (record.purchaseDate || record['Purchase Date']) {
-              const dateStr = record.purchaseDate || record['Purchase Date'];
-              purchaseDate = new Date(dateStr);
-              if (isNaN(purchaseDate.getTime())) purchaseDate = null;
-            }
-            
-            let warrantyEOL = null;
-            if (record.warrantyEOL || record['Warranty EOL']) {
-              const dateStr = record.warrantyEOL || record['Warranty EOL'];
-              warrantyEOL = new Date(dateStr);
-              if (isNaN(warrantyEOL.getTime())) warrantyEOL = null;
-            }
-            
-            // Try to find the user by email for assignment
-            let userId = null;
-            if (record.assignedTo || record['Assigned To']) {
-              const email = record.assignedTo || record['Assigned To'];
-              
-              // Find all users to search by email
-              const users = await storage.getUsers();
-              const user = users.find(u => u.email === email);
-              
-              if (user) {
-                userId = user.id;
-              }
-            }
-            
-            const deviceData = {
-              brand: record.brand || record['Brand'] || '',
-              model: record.model || record['Model'] || '',
-              serialNumber: record.serialNumber || record['Serial Number'] || '',
-              assetTag: record.assetTag || record['Asset Tag'] || '',
-              categoryId,
-              purchaseCost,
-              purchaseDate,
-              purchasedBy: record.purchasedBy || record['Purchased By'] || '',
-              warrantyEOL,
-              userId
-            };
-            
-            // Validate the data
-            const validatedData = insertDeviceSchema.parse(deviceData);
-            
-            // Create the device
-            const device = await storage.createDevice(validatedData);
-            
-            // If there's a userId, manually create the assignment history record
-            if (userId) {
-              // Get the currently logged in user's ID from the session (if available)
-              const sessionData = req.session as any;
-              const loggedInUserId = sessionData?.userId || 1; // Fallback to admin ID 1 if no session
-              
-              await storage.createAssignmentHistory({
-                deviceId: device.id,
-                userId: userId,
-                assignedBy: loggedInUserId,
-                assignedAt: new Date(),
-                unassignedAt: null,
-                notes: 'Assigned during import'
-              });
-            }
-            
-            importedDevices.push(device);
-          } catch (error) {
-            // Skip invalid records
-            console.error('Error importing device:', record, error);
-          }
-        }
-        
-        res.json({ 
-          message: `Imported ${importedDevices.length} devices`,
-          devices: importedDevices
-        });
-      } catch (error) {
-        res.status(500).json({ message: "Error processing import" });
-      }
-    });
-    
-    // Feed the file buffer to the parser
-    parser.write(req.file.buffer.toString());
-    parser.end();
-  });
-  
-  // Export users to CSV
-  app.get('/api/export/users', async (req: Request, res: Response) => {
-    try {
-      const users = await storage.getUsers();
-      
-      const stringifier = stringify({
-        header: true,
-        columns: [
-          { key: 'id', header: 'ID' },
-          { key: 'firstName', header: 'First Name' },
-          { key: 'lastName', header: 'Last Name' },
-          { key: 'email', header: 'Email' },
-          { key: 'phoneNumber', header: 'Phone Number' },
-          { key: 'department', header: 'Department' }
-        ]
-      });
-      
-      // Set response headers for file download
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
-      
-      // Stream the CSV data
-      stringifier.pipe(res);
-      
-      // Write users to the stringifier
-      users.forEach(user => {
-        stringifier.write(user);
-      });
-      
-      stringifier.end();
-    } catch (error) {
-      res.status(500).json({ message: "Error exporting users" });
-    }
-  });
-  
-  // Export devices to CSV
-  app.get('/api/export/devices', async (req: Request, res: Response) => {
-    try {
-      const devices = await storage.getDevices();
-      const categories = await storage.getCategories();
-      const users = await storage.getUsers();
-      
-      // Create category and user lookup maps
-      const categoryMap = new Map(categories.map(c => [c.id, c.name]));
-      const userMap = new Map(users.map(u => [u.id, `${u.firstName} ${u.lastName}`]));
-      
-      // Get email map for users
-      const userEmailMap = new Map(users.map(u => [u.id, u.email]));
-      
-      // Prepare enhanced device data for export
-      const enhancedDevices = devices.map(device => {
-        return {
-          ...device,
-          categoryName: device.categoryId ? categoryMap.get(device.categoryId) : '',
-          assignedTo: device.userId ? userEmailMap.get(device.userId) : '',
-          // Convert cents to dollars for the export
-          purchaseCostFormatted: device.purchaseCost ? `$${(device.purchaseCost / 100).toFixed(2)}` : '',
-          // Format dates
-          purchaseDateFormatted: device.purchaseDate ? new Date(device.purchaseDate).toLocaleDateString() : '',
-          warrantyEOLFormatted: device.warrantyEOL ? new Date(device.warrantyEOL).toLocaleDateString() : ''
-        };
-      });
-      
-      const stringifier = stringify({
-        header: true,
-        columns: [
-          { key: 'id', header: 'ID' },
-          { key: 'name', header: 'Device Name' },
-          { key: 'brand', header: 'Brand' },
-          { key: 'model', header: 'Model' },
-          { key: 'assetTag', header: 'Asset Tag' },          
-          { key: 'serialNumber', header: 'Serial Number' },
-          { key: 'categoryName', header: 'Category' },
-          { key: 'purchaseDateFormatted', header: 'Purchase Date' },
-          { key: 'purchasedBy', header: 'Purchased By' },
-          { key: 'warrantyEOLFormatted', header: 'Warranty End Date' },
-          { key: 'purchaseCostFormatted', header: 'Purchase Cost' },
-          { key: 'assignedTo', header: 'Assigned To' }
-        ]
-      });
-      
-      // Set response headers for file download
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=devices.csv');
-      
-      // Stream the CSV data
-      stringifier.pipe(res);
-      
-      // Write devices to the stringifier
-      enhancedDevices.forEach(device => {
-        stringifier.write(device);
-      });
-      
-      stringifier.end();
-    } catch (error) {
-      res.status(500).json({ message: "Error exporting devices" });
     }
   });
 
@@ -1088,25 +954,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/software/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const softwareItem = await storage.getSoftwareById(id);
+      const software = await storage.getSoftwareById(id);
       
-      if (!softwareItem) {
+      if (!software) {
         return res.status(404).json({ message: "Software not found" });
       }
       
-      res.json(softwareItem);
+      res.json(software);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching software details" });
+      res.status(500).json({ message: "Error fetching software" });
     }
   });
 
   app.post('/api/software', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
       const validatedData = insertSoftwareSchema.parse(req.body);
-      // Pass the logged-in user ID for proper activity logging
-      const loggedInUserId = (req.session as any).userId;
-      const softwareItem = await storage.createSoftware(validatedData, loggedInUserId);
-      res.status(201).json(softwareItem);
+      const software = await storage.createSoftware(validatedData, loggedInUserId);
+      res.status(201).json(software);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid software data", errors: error.errors });
@@ -1118,17 +986,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/software/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
       const validatedData = insertSoftwareSchema.partial().parse(req.body);
+      const software = await storage.updateSoftware(id, validatedData, loggedInUserId);
       
-      // Pass the logged-in user ID for proper activity logging
-      const loggedInUserId = (req.session as any).userId;
-      const softwareItem = await storage.updateSoftware(id, validatedData, loggedInUserId);
-      
-      if (!softwareItem) {
+      if (!software) {
         return res.status(404).json({ message: "Software not found" });
       }
       
-      res.json(softwareItem);
+      res.json(software);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid software data", errors: error.errors });
@@ -1140,12 +1010,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/software/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      // Add logged-in user ID to the request
-      const loggedInUserId = (req.session as any).userId;
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
       const success = await storage.deleteSoftware(id, loggedInUserId);
       
       if (!success) {
-        return res.status(404).json({ message: "Software not found or has active assignments" });
+        return res.status(404).json({ message: "Software not found or in use" });
       }
       
       res.status(204).send();
@@ -1154,57 +1027,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/software/status/:status', async (req: Request, res: Response) => {
+  // Software assignments
+  app.get('/api/software/:id/assignments', async (req: Request, res: Response) => {
     try {
-      const status = req.params.status;
+      const id = parseInt(req.params.id);
+      const assignments = await storage.getSoftwareAssignments(id);
       
-      if (!['active', 'expired', 'pending'].includes(status)) {
-        return res.status(400).json({ message: "Invalid status. Must be one of: active, expired, pending" });
-      }
-      
-      const softwareItems = await storage.getSoftwareByStatus(status);
-      res.json(softwareItems);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching software by status" });
-    }
-  });
-
-  app.get('/api/software/expiring/:days', async (req: Request, res: Response) => {
-    try {
-      const days = parseInt(req.params.days);
-      
-      if (isNaN(days) || days < 1) {
-        return res.status(400).json({ message: "Days parameter must be a positive number" });
-      }
-      
-      const softwareItems = await storage.getSoftwareExpiringSoon(days);
-      res.json(softwareItems);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching expiring software" });
-    }
-  });
-
-  // Software Assignment routes
-  app.get('/api/software-assignments/software/:softwareId', async (req: Request, res: Response) => {
-    try {
-      const softwareId = parseInt(req.params.softwareId);
-      const assignments = await storage.getSoftwareAssignments(softwareId);
-      
-      // Enrich assignments with user and device details
+      // Enrich with user and device information
       const enrichedAssignments = await Promise.all(
         assignments.map(async (assignment) => {
-          const user = assignment.userId 
-            ? await storage.getUserById(assignment.userId) 
-            : null;
-            
-          const device = assignment.deviceId 
-            ? await storage.getDeviceById(assignment.deviceId) 
-            : null;
-            
+          const user = assignment.userId ? await storage.getUserById(assignment.userId) : null;
+          const device = assignment.deviceId ? await storage.getDeviceById(assignment.deviceId) : null;
+          const assignedBy = assignment.assignedBy ? await storage.getUserById(assignment.assignedBy) : null;
+          
           return {
             ...assignment,
-            user: user || null,
-            device: device || null
+            user: user ? { 
+              id: user.id, 
+              name: `${user.firstName} ${user.lastName}`,
+              department: user.department
+            } : null,
+            device: device ? {
+              id: device.id,
+              name: device.name,
+              brand: device.brand,
+              model: device.model,
+              assetTag: device.assetTag
+            } : null,
+            assignor: assignedBy ? {
+              id: assignedBy.id,
+              name: `${assignedBy.firstName} ${assignedBy.lastName}`
+            } : null
           };
         })
       );
@@ -1216,141 +1069,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/software-assignments/user/:userId', async (req: Request, res: Response) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const assignments = await storage.getSoftwareAssignmentsByUser(userId);
-      
-      // Enrich assignments with software details
-      const enrichedAssignments = await Promise.all(
-        assignments.map(async (assignment) => {
-          const software = assignment.softwareId 
-            ? await storage.getSoftwareById(assignment.softwareId) 
-            : null;
-            
-          return {
-            ...assignment,
-            software: software || null
-          };
-        })
-      );
-      
-      res.json(enrichedAssignments);
-    } catch (error) {
-      console.error("Error fetching user software assignments:", error);
-      res.status(500).json({ message: "Error fetching user software assignments" });
-    }
-  });
-
-  app.get('/api/software-assignments/device/:deviceId', async (req: Request, res: Response) => {
-    try {
-      const deviceId = parseInt(req.params.deviceId);
-      const assignments = await storage.getSoftwareAssignmentsByDevice(deviceId);
-      
-      // Enrich assignments with software details
-      const enrichedAssignments = await Promise.all(
-        assignments.map(async (assignment) => {
-          const software = assignment.softwareId 
-            ? await storage.getSoftwareById(assignment.softwareId) 
-            : null;
-            
-          return {
-            ...assignment,
-            software: software || null
-          };
-        })
-      );
-      
-      res.json(enrichedAssignments);
-    } catch (error) {
-      console.error("Error fetching device software assignments:", error);
-      res.status(500).json({ message: "Error fetching device software assignments" });
-    }
-  });
-
   app.post('/api/software-assignments', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const validatedData = insertSoftwareAssignmentSchema.parse(req.body);
-      // Add logged-in user ID to the request
-      const loggedInUserId = (req.session as any).userId;
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
       
-      // Pass the logged-in user as assignedBy
-      if (!validatedData.assignedBy) {
-        validatedData.assignedBy = loggedInUserId;
-      }
+      // Add the assignedBy field
+      const assignmentData = {
+        ...req.body,
+        assignedBy: loggedInUserId
+      };
+      
+      // Debug log to help track issues with field names
+      console.log('Software assignment request data:', assignmentData);
+      
+      const validatedData = insertSoftwareAssignmentSchema.parse(assignmentData);
+      console.log('Validated software assignment data:', validatedData);
       
       const assignment = await storage.createSoftwareAssignment(validatedData);
-
-      // Send notification email if configured for this software
-      try {
-        // Get the software details
-        const software = await storage.getSoftwareById(validatedData.softwareId);
+      
+      // Get the software to check if we need to send a notification
+      const software = await storage.getSoftwareById(validatedData.softwareId);
+      
+      // Send notification email if configured
+      if (software && software.sendAccessNotifications && software.notificationEmail) {
+        // Get user information
+        const user = validatedData.userId ? await storage.getUserById(validatedData.userId) : null;
         
-        if (software?.sendAccessNotifications && software.notificationEmail) {
-          // Get user or device details
-          let userName = '';
-          let deviceName = '';
-          
-          if (validatedData.userId) {
-            const user = await storage.getUserById(validatedData.userId);
-            if (user) {
-              userName = `${user.firstName} ${user.lastName}`;
-            }
-          }
-          
-          if (validatedData.deviceId) {
-            const device = await storage.getDeviceById(validatedData.deviceId);
-            if (device) {
-              deviceName = device.name ? 
-                `${device.name} (${device.assetTag})` : 
-                `${device.brand} ${device.model} (${device.assetTag})`;
-            }
-          }
-          
-          // Send the notification
+        if (user) {
           const emailResult = await mailgunService.sendSoftwareAccessEmail(
             software.notificationEmail,
-            'assigned',
+            user.email,
+            `${user.firstName} ${user.lastName}`,
             software.name,
-            userName,
-            deviceName || undefined
+            software.vendor
           );
           
-          console.log('Software assignment notification result:', emailResult);
+          console.log('Software access notification email result:', emailResult);
         }
-      } catch (emailError) {
-        console.error('Error sending software assignment notification:', emailError);
-        // Continue with response even if notification fails
       }
       
       res.status(201).json(assignment);
     } catch (error) {
+      console.error("Error creating software assignment:", error);
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid assignment data", errors: error.errors });
+        return res.status(400).json({ 
+          message: "Invalid software assignment data", 
+          errors: error.errors 
+        });
       }
       res.status(500).json({ message: "Error creating software assignment" });
-    }
-  });
-
-  app.put('/api/software-assignments/:id', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertSoftwareAssignmentSchema.partial().parse(req.body);
-      
-      // Add logged-in user ID to the request
-      const loggedInUserId = (req.session as any).userId;
-      
-      const assignment = await storage.updateSoftwareAssignment(id, validatedData, loggedInUserId);
-      if (!assignment) {
-        return res.status(404).json({ message: "Software assignment not found" });
-      }
-      
-      res.json(assignment);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid assignment data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Error updating software assignment" });
     }
   });
 
@@ -1358,147 +1127,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // First, get the assignment to access software, user and device information
-      const assignment = await storage.getSoftwareAssignmentById(id);
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
       
-      if (!assignment) {
-        return res.status(404).json({ message: "Software assignment not found" });
-      }
-      
-      // Store necessary data for notification before deletion
-      const softwareId = assignment.softwareId;
-      const userId = assignment.userId;
-      const deviceId = assignment.deviceId;
-      
-      // Get logged-in user ID from session
-      const loggedInUserId = (req.session as any).userId;
-      
-      // Delete the assignment
       const success = await storage.deleteSoftwareAssignment(id, loggedInUserId);
       
       if (!success) {
         return res.status(404).json({ message: "Software assignment not found" });
       }
       
-      // Send notification email if configured
-      try {
-        if (softwareId) {
-          const software = await storage.getSoftwareById(softwareId);
-          
-          if (software?.sendAccessNotifications && software.notificationEmail) {
-            // Get user or device details
-            let userName = '';
-            let deviceName = '';
-            
-            if (userId) {
-              const user = await storage.getUserById(userId);
-              if (user) {
-                userName = `${user.firstName} ${user.lastName}`;
-              }
-            }
-            
-            if (deviceId) {
-              const device = await storage.getDeviceById(deviceId);
-              if (device) {
-                deviceName = device.name ? 
-                  `${device.name} (${device.assetTag})` : 
-                  `${device.brand} ${device.model} (${device.assetTag})`;
-              }
-            }
-            
-            // Send the notification
-            const emailResult = await mailgunService.sendSoftwareAccessEmail(
-              software.notificationEmail,
-              'unassigned',
-              software.name,
-              userName,
-              deviceName || undefined
-            );
-            
-            console.log('Software unassignment notification result:', emailResult);
-          }
-        }
-      } catch (emailError) {
-        console.error('Error sending software unassignment notification:', emailError);
-        // Continue with response even if notification fails
-      }
-      
       res.status(204).send();
     } catch (error) {
-      console.error('Error in software assignment deletion:', error);
+      console.error("Error deleting software assignment:", error);
       res.status(500).json({ message: "Error deleting software assignment" });
     }
   });
 
-  // ===== Maintenance Records =====
-  // Get all maintenance records
+  // Maintenance routes
   app.get('/api/maintenance', async (req: Request, res: Response) => {
     try {
       const records = await storage.getMaintenanceRecords();
-      res.json(records);
+      
+      // Enrich with device information
+      const enrichedRecords = await Promise.all(
+        records.map(async (record) => {
+          const device = await storage.getDeviceById(record.deviceId);
+          
+          return {
+            ...record,
+            device: device ? {
+              id: device.id,
+              name: device.name,
+              brand: device.brand,
+              model: device.model,
+              assetTag: device.assetTag
+            } : null
+          };
+        })
+      );
+      
+      res.json(enrichedRecords);
     } catch (error) {
       res.status(500).json({ message: "Error fetching maintenance records" });
     }
   });
 
-  // Get scheduled maintenance
-  app.get('/api/maintenance/scheduled', async (req: Request, res: Response) => {
-    try {
-      const records = await storage.getScheduledMaintenance();
-      res.json(records);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching scheduled maintenance" });
-    }
-  });
-
-  // Get maintenance record by ID
-  app.get('/api/maintenance/:id', async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const record = await storage.getMaintenanceRecordById(id);
-      
-      if (!record) {
-        return res.status(404).json({ message: "Maintenance record not found" });
-      }
-      
-      res.json(record);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching maintenance record" });
-    }
-  });
-
-  // Get maintenance records for device
   app.get('/api/devices/:id/maintenance', async (req: Request, res: Response) => {
     try {
-      const deviceId = parseInt(req.params.id);
-      const records = await storage.getMaintenanceRecordsByDevice(deviceId);
+      const id = parseInt(req.params.id);
+      const records = await storage.getMaintenanceRecordsByDevice(id);
       res.json(records);
     } catch (error) {
       res.status(500).json({ message: "Error fetching device maintenance records" });
     }
   });
 
-  // Create maintenance record
-  app.post('/api/maintenance', async (req: Request, res: Response) => {
+  app.post('/api/maintenance', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
       const validatedData = insertMaintenanceRecordSchema.parse(req.body);
-      const record = await storage.createMaintenanceRecord(validatedData);
+      const record = await storage.createMaintenanceRecord(validatedData, loggedInUserId);
+      
       res.status(201).json(record);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid maintenance data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid maintenance record data", errors: error.errors });
       }
       res.status(500).json({ message: "Error creating maintenance record" });
     }
   });
 
-  // Update maintenance record
-  app.put('/api/maintenance/:id', async (req: Request, res: Response) => {
+  app.put('/api/maintenance/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertMaintenanceRecordSchema.partial().parse(req.body);
       
-      const record = await storage.updateMaintenanceRecord(id, validatedData);
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const validatedData = insertMaintenanceRecordSchema.partial().parse(req.body);
+      const record = await storage.updateMaintenanceRecord(id, validatedData, loggedInUserId);
+      
       if (!record) {
         return res.status(404).json({ message: "Maintenance record not found" });
       }
@@ -1506,17 +1219,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(record);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid maintenance data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid maintenance record data", errors: error.errors });
       }
       res.status(500).json({ message: "Error updating maintenance record" });
     }
   });
 
-  // Delete maintenance record
-  app.delete('/api/maintenance/:id', async (req: Request, res: Response) => {
+  app.delete('/api/maintenance/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteMaintenanceRecord(id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const success = await storage.deleteMaintenanceRecord(id, loggedInUserId);
       
       if (!success) {
         return res.status(404).json({ message: "Maintenance record not found" });
@@ -1528,8 +1245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== QR Codes =====
-  // Get all QR codes
+  // QR code routes
   app.get('/api/qrcodes', async (req: Request, res: Response) => {
     try {
       const qrCodes = await storage.getQrCodes();
@@ -1539,7 +1255,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get QR code by ID
   app.get('/api/qrcodes/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -1555,83 +1270,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get QR code by code value
-  app.get('/api/qrcodes/code/:code', async (req: Request, res: Response) => {
-    try {
-      const code = req.params.code;
-      const qrCode = await storage.getQrCodeByCode(code);
-      
-      if (!qrCode) {
-        return res.status(404).json({ message: "QR code not found" });
-      }
-      
-      res.json(qrCode);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching QR code" });
-    }
-  });
-  
-  // Record QR code scan by code
-  app.post('/api/qrcodes/code/:code/scan', async (req: Request, res: Response) => {
-    try {
-      const code = req.params.code;
-      const qrCode = await storage.getQrCodeByCode(code);
-      
-      if (!qrCode) {
-        return res.status(404).json({ message: "QR code not found" });
-      }
-      
-      // Update the QR code scan info
-      const updatedQrCode = await storage.recordQrCodeScan(qrCode.id);
-      
-      // Get the device details to include in the response
-      let deviceDetails = null;
-      if (updatedQrCode && updatedQrCode.deviceId) {
-        deviceDetails = await storage.getDeviceById(updatedQrCode.deviceId);
-      }
-      
-      // Log the activity
-      await storage.createActivityLog({
-        actionType: 'qr_scan',
-        details: `QR code for device ID ${qrCode.deviceId} was scanned`,
-        userId: null
-      });
-      
-      // Return QR code with device details
-      res.json({
-        ...updatedQrCode,
-        device: deviceDetails
-      });
-    } catch (error) {
-      console.error('Error recording QR code scan:', error);
-      res.status(500).json({ message: "Error recording QR code scan" });
-    }
-  });
-
-  // Get QR code for device
-  app.get('/api/devices/:id/qrcode', async (req: Request, res: Response) => {
-    try {
-      const deviceId = parseInt(req.params.id);
-      const qrCode = await storage.getQrCodeByDeviceId(deviceId);
-      
-      if (!qrCode) {
-        return res.status(404).json({ message: "QR code not found for device" });
-      }
-      
-      res.json(qrCode);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching device QR code" });
-    }
-  });
-
-  // Create QR code
   app.post('/api/qrcodes', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const session = req.session as SessionData;
-      const userId = session.userId;
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
       
       const validatedData = insertQrCodeSchema.parse(req.body);
-      const qrCode = await storage.createQrCode(validatedData, userId);
+      const qrCode = await storage.createQrCode(validatedData, loggedInUserId);
       res.status(201).json(qrCode);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1641,16 +1287,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update QR code
   app.put('/api/qrcodes/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const session = req.session as SessionData;
-      const userId = session.userId;
-      
       const id = parseInt(req.params.id);
-      const validatedData = insertQrCodeSchema.partial().parse(req.body);
       
-      const qrCode = await storage.updateQrCode(id, validatedData, userId);
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const validatedData = insertQrCodeSchema.partial().parse(req.body);
+      const qrCode = await storage.updateQrCode(id, validatedData, loggedInUserId);
+      
       if (!qrCode) {
         return res.status(404).json({ message: "QR code not found" });
       }
@@ -1664,14 +1311,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete QR code
   app.delete('/api/qrcodes/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const session = req.session as SessionData;
-      const userId = session.userId;
-      
       const id = parseInt(req.params.id);
-      const success = await storage.deleteQrCode(id, userId);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const success = await storage.deleteQrCode(id, loggedInUserId);
       
       if (!success) {
         return res.status(404).json({ message: "QR code not found" });
@@ -1683,85 +1331,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Record QR code scan
-  app.post('/api/qrcodes/:id/scan', isAuthenticated, async (req: Request, res: Response) => {
+  // Scan a QR code
+  app.post('/api/qrcodes/scan/:code', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const session = req.session as SessionData;
-      const userId = session.userId;
+      const code = req.params.code;
       
-      const id = parseInt(req.params.id);
-      const qrCode = await storage.recordQrCodeScan(id, userId);
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Find the QR code
+      const qrCode = await storage.getQrCodeByCode(code);
       
       if (!qrCode) {
         return res.status(404).json({ message: "QR code not found" });
       }
       
-      // No need to log the activity separately as it's already logged in recordQrCodeScan method
-      res.json(qrCode);
-    } catch (error) {
-      console.error('Error recording QR code scan:', error);
-      res.status(500).json({ message: "Error recording QR code scan" });
-    }
-  });
-  
-  // Get scan history for a QR code
-  app.get('/api/qrcodes/:id/history', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      // Get the qrCode to verify it exists
-      const qrCode = await storage.getQrCodeById(id);
+      // Record the scan
+      const updatedQrCode = await storage.recordQrCodeScan(qrCode.id, loggedInUserId);
       
-      if (!qrCode) {
-        return res.status(404).json({ message: "QR code not found" });
+      // Get the associated device
+      let device = null;
+      if (qrCode.deviceId) {
+        device = await storage.getDeviceById(qrCode.deviceId);
       }
       
-      // Get relevant activity logs for this QR code
-      const logs = await storage.getActivityLogs();
-      
-      // Filter logs that are related to this QR code
-      const scanHistory = logs
-        .filter(log => 
-          log.actionType === 'qr_scan' && 
-          log.details && log.details.includes(`device ID ${qrCode.deviceId}`)
-        )
-        .map(log => ({
-          id: log.id,
-          timestamp: log.timestamp,
-          scannedBy: log.userId ? {
-            id: log.userId,
-            // Include additional user info if needed
-          } : null,
-          location: null // Future enhancement
-        }))
-        .sort((a, b) => {
-          // Safely handle null timestamps
-          const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
-          const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
-          return dateB.getTime() - dateA.getTime();
-        });
-      
-      res.json(scanHistory);
+      res.json({
+        qrCode: updatedQrCode,
+        device
+      });
     } catch (error) {
-      console.error('Error fetching QR code scan history:', error);
-      res.status(500).json({ message: "Error fetching QR code scan history" });
+      console.error("Error scanning QR code:", error);
+      res.status(500).json({ message: "Error scanning QR code" });
     }
   });
 
-  // ===== Notifications =====
-  // Get user notifications
+  // Notification routes
   app.get('/api/users/:id/notifications', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const session = req.session as SessionData;
-      const currentUserId = session.userId;
-      
       const userId = parseInt(req.params.id);
-      
-      // Check if the user is requesting their own notifications or if they are an admin
-      if (currentUserId !== userId && session.userRole !== 'admin') {
-        return res.status(403).json({ message: "Not authorized to access these notifications" });
-      }
-      
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      
       const notifications = await storage.getNotifications(userId, limit);
       res.json(notifications);
     } catch (error) {
@@ -1769,18 +1379,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get unread notifications
   app.get('/api/users/:id/notifications/unread', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const session = req.session as SessionData;
-      const currentUserId = session.userId;
-      
       const userId = parseInt(req.params.id);
-      
-      // Check if the user is requesting their own notifications or if they are an admin
-      if (currentUserId !== userId && session.userRole !== 'admin') {
-        return res.status(403).json({ message: "Not authorized to access these notifications" });
-      }
       
       const notifications = await storage.getUnreadNotifications(userId);
       res.json(notifications);
@@ -1789,82 +1390,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create notification
-  app.post('/api/notifications', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/notifications/:id/read', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const session = req.session as SessionData;
-      const userId = session.userId;
-      
-      const validatedData = insertNotificationSchema.parse(req.body);
-      
-      // If no userId is specified in the notification, use the current user's ID
-      if (!validatedData.userId) {
-        validatedData.userId = userId;
-      }
-      
-      // Only admins can create notifications for other users
-      if (validatedData.userId !== userId && session.userRole !== 'admin') {
-        return res.status(403).json({ message: "Not authorized to create notifications for other users" });
-      }
-      
-      const notification = await storage.createNotification(validatedData);
-      res.status(201).json(notification);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid notification data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Error creating notification" });
-    }
-  });
-
-  // Mark notification as read
-  app.put('/api/notifications/:id/read', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const session = req.session as SessionData;
-      const userId = session.userId;
-      const userRole = session.userRole;
-      
       const id = parseInt(req.params.id);
       
-      // Retrieve the notification first to check ownership
-      const existingNotification = await storage.getNotificationById(id);
+      const notification = await storage.markNotificationAsRead(id);
       
-      if (!existingNotification) {
+      if (!notification) {
         return res.status(404).json({ message: "Notification not found" });
       }
       
-      // Check ownership - only allow users to mark their own notifications as read (unless admin)
-      if (existingNotification.userId !== userId && userRole !== 'admin') {
-        return res.status(403).json({ message: "Not authorized to modify this notification" });
-      }
-      
-      const notification = await storage.markNotificationAsRead(id);
       res.json(notification);
     } catch (error) {
       res.status(500).json({ message: "Error marking notification as read" });
     }
   });
 
-  // Delete notification
   app.delete('/api/notifications/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const session = req.session as SessionData;
-      const userId = session.userId;
-      const userRole = session.userRole;
-      
       const id = parseInt(req.params.id);
-      
-      // Retrieve the notification first to check ownership
-      const existingNotification = await storage.getNotificationById(id);
-      
-      if (!existingNotification) {
-        return res.status(404).json({ message: "Notification not found" });
-      }
-      
-      // Check ownership - only allow users to delete their own notifications (unless admin)
-      if (existingNotification.userId !== userId && userRole !== 'admin') {
-        return res.status(403).json({ message: "Not authorized to delete this notification" });
-      }
       
       const success = await storage.deleteNotification(id);
       
@@ -1878,140 +1422,258 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== Branding =====
-  // Get branding settings
+  // Branding settings routes
   app.get('/api/branding', async (req: Request, res: Response) => {
     try {
-      const branding = await storage.getBrandingSettings();
-      res.json(branding || {});
+      const settings = await storage.getBrandingSettings();
+      res.json(settings || {});
     } catch (error) {
+      console.error("Error fetching branding settings:", error);
       res.status(500).json({ message: "Error fetching branding settings" });
     }
   });
 
-  // Update branding settings
-  app.put('/api/branding', async (req: Request, res: Response) => {
+  app.put('/api/branding', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
       const validatedData = insertBrandingSettingsSchema.partial().parse(req.body);
-      const branding = await storage.updateBrandingSettings(validatedData);
       
-      // Update theme.json file if primaryColor is provided
-      if (validatedData.primaryColor) {
-        try {
-          // Read the current theme.json
-          const themeFilePath = path.resolve('./theme.json');
-          const themeJson = JSON.parse(fs.readFileSync(themeFilePath, 'utf8'));
-          
-          // Update the primary color
-          themeJson.primary = validatedData.primaryColor;
-          
-          // Write the updated theme back to file
-          fs.writeFileSync(themeFilePath, JSON.stringify(themeJson, null, 2));
-          
-          // Force a restart to apply changes (in production, you'd use a different approach)
-          console.log('Theme updated, application will reload to apply changes');
-        } catch (fsError) {
-          console.error('Error updating theme.json:', fsError);
-          // Continue with the response even if theme update fails
-        }
+      // Validate site description length (for SEO purposes)
+      if (validatedData.siteDescription && validatedData.siteDescription.length > 160) {
+        return res.status(400).json({ 
+          message: "Site description is too long", 
+          errors: [{ path: ["siteDescription"], message: "Site description should be 160 characters or less for optimal SEO" }] 
+        });
       }
       
-      res.json(branding);
+      const settings = await storage.updateBrandingSettings(validatedData);
+      res.json(settings);
     } catch (error) {
+      console.error("Error updating branding settings:", error);
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid branding data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid branding settings data", errors: error.errors });
       }
       res.status(500).json({ message: "Error updating branding settings" });
     }
   });
-  
-  // Upload company logo
-  app.post('/api/branding/logo', upload.single('logo'), async (req: Request, res: Response) => {
+
+  // Import devices from CSV
+  app.post('/api/import/devices', isAuthenticated, isAdmin, upload.single('file'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ message: "No logo file uploaded" });
+        return res.status(400).json({ message: "No file uploaded" });
       }
       
-      // Convert the file to base64
-      const logoBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-      
-      // Update the branding settings with the new logo
-      const branding = await storage.updateBrandingSettings({ logo: logoBase64 });
-      
-      res.json({ 
-        message: "Logo uploaded successfully",
-        branding
-      });
-    } catch (error) {
-      console.error("Error uploading logo:", error);
-      res.status(500).json({ message: "Error uploading logo" });
-    }
-  });
-  
-  // Upload favicon
-  app.post('/api/branding/favicon', upload.single('favicon'), async (req: Request, res: Response) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No favicon file uploaded" });
-      }
-      
-      // Convert the file to base64
-      const faviconBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-      
-      // Update the branding settings with the new favicon
-      const branding = await storage.updateBrandingSettings({ favicon: faviconBase64 });
-      
-      res.json({ 
-        message: "Favicon uploaded successfully",
-        branding
-      });
-    } catch (error) {
-      console.error("Error uploading favicon:", error);
-      res.status(500).json({ message: "Error uploading favicon" });
-    }
-  });
-  
-  // Intune Management Routes
-  
-  // Get all Intune-eligible devices (Laptops and Desktops)
-  app.get('/api/intune/devices', async (req: Request, res: Response) => {
-    try {
-      const devices = await storage.getIntuneEligibleDevices();
-      res.json(devices);
-    } catch (error) {
-      console.error('Error fetching Intune devices:', error);
-      res.status(500).json({ message: "Error fetching Intune devices" });
-    }
-  });
-  
-  // Update device Intune status
-  app.patch('/api/intune/devices/:id', async (req: Request, res: Response) => {
-    try {
-      const deviceId = parseInt(req.params.id);
-      const intuneStatus = req.body;
-      
-      // Get the user ID from the session
+      // Get the currently logged in user's ID from the session
       const sessionData = req.session as any;
-      const loggedInUserId = sessionData?.userId;
+      const loggedInUserId = sessionData.userId;
       
-      // Update the device Intune status
-      const updatedDevice = await storage.updateDeviceIntuneStatus(
-        deviceId, 
-        intuneStatus, 
-        loggedInUserId
-      );
+      // Parse CSV file
+      const fileContent = req.file.buffer.toString('utf8');
       
-      if (!updatedDevice) {
-        return res.status(404).json({ message: "Device not found" });
-      }
-      
-      res.json(updatedDevice);
+      // Use the csv-parse library to parse the CSV data
+      parse(fileContent, {
+        columns: true,
+        trim: true,
+        skip_empty_lines: true
+      }, async (err, records) => {
+        if (err) {
+          console.error("Error parsing CSV:", err);
+          return res.status(400).json({ message: "Error parsing CSV file", error: err.message });
+        }
+        
+        try {
+          // Process each record
+          const results = {
+            success: 0,
+            failed: 0,
+            errors: [] as string[]
+          };
+          
+          for (const record of records) {
+            try {
+              // Map CSV columns to device fields
+              // Handle common variations in column names
+              const deviceData = {
+                name: record.Name || record.name || record.DeviceName || record.deviceName || null,
+                brand: record.Brand || record.brand || record.Manufacturer || record.manufacturer || "",
+                model: record.Model || record.model || "",
+                serialNumber: record.SerialNumber || record['Serial Number'] || record.serial || record.Serial || "",
+                assetTag: record.AssetTag || record['Asset Tag'] || record.Tag || record.tag || "",
+                // Convert purchase cost from dollars to cents if present
+                purchaseCost: record.PurchaseCost || record['Purchase Cost'] || record.Cost || record.cost
+                  ? Math.round(parseFloat(record.PurchaseCost || record['Purchase Cost'] || record.Cost || record.cost) * 100)
+                  : null,
+                purchaseDate: record.PurchaseDate || record['Purchase Date'] || record.Date || record.date
+                  ? new Date(record.PurchaseDate || record['Purchase Date'] || record.Date || record.date)
+                  : null,
+                purchasedBy: record.PurchasedBy || record['Purchased By'] || record.Purchaser || record.purchaser || "",
+                warrantyEOL: record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty
+                  ? new Date(record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty)
+                  : null,
+                status: record.Status || record.status || 'active',
+                isIntuneOnboarded: record.IntuneOnboarded || record.intuneOnboarded || false,
+                intuneComplianceStatus: record.IntuneStatus || record.intuneStatus || 'unknown',
+              };
+              
+              // Find category by name if provided
+              if (record.Category || record.category) {
+                const categoryName = record.Category || record.category;
+                const categories = await storage.getCategories();
+                const category = categories.find(c => 
+                  c.name.toLowerCase() === categoryName.toLowerCase()
+                );
+                
+                if (category) {
+                  deviceData.categoryId = category.id;
+                }
+              }
+              
+              // Validate and create device
+              const validatedData = insertDeviceSchema.parse(deviceData);
+              await storage.createDevice(validatedData, loggedInUserId);
+              results.success++;
+            } catch (error) {
+              console.error("Error importing device:", error);
+              results.failed++;
+              if (error instanceof z.ZodError) {
+                results.errors.push(`Row ${results.success + results.failed}: Validation error - ${error.errors.map(e => e.message).join(', ')}`);
+              } else {
+                results.errors.push(`Row ${results.success + results.failed}: ${error.message || 'Unknown error'}`);
+              }
+            }
+          }
+          
+          res.json(results);
+        } catch (error) {
+          console.error("Error processing CSV records:", error);
+          res.status(500).json({ message: "Error processing CSV records", error: error.message });
+        }
+      });
     } catch (error) {
-      console.error('Error updating device Intune status:', error);
-      res.status(500).json({ message: "Error updating device Intune status" });
+      console.error("Error importing devices:", error);
+      res.status(500).json({ message: "Error importing devices" });
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  // Export devices to CSV
+  app.get('/api/export/devices', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const devices = await storage.getDevices();
+      
+      // Transform data for CSV export
+      const exportData = await Promise.all(devices.map(async (device) => {
+        // Get category name
+        const category = device.categoryId 
+          ? await storage.getCategoryById(device.categoryId)
+          : null;
+          
+        // Get user name
+        const user = device.userId
+          ? await storage.getUserById(device.userId)
+          : null;
+          
+        return {
+          Name: device.name || "",
+          Brand: device.brand || "",
+          Model: device.model || "",
+          SerialNumber: device.serialNumber || "",
+          AssetTag: device.assetTag || "",
+          Category: category ? category.name : "",
+          PurchaseCost: device.purchaseCost ? `$${(device.purchaseCost / 100).toFixed(2)}` : "",
+          PurchaseDate: device.purchaseDate ? new Date(device.purchaseDate).toLocaleDateString() : "",
+          PurchasedBy: device.purchasedBy || "",
+          WarrantyEnd: device.warrantyEOL ? new Date(device.warrantyEOL).toLocaleDateString() : "",
+          Status: device.status || "active",
+          AssignedTo: user ? `${user.firstName} ${user.lastName}` : "",
+          Department: user ? user.department || "" : "",
+          IntuneOnboarded: device.isIntuneOnboarded ? "Yes" : "No",
+          IntuneStatus: device.intuneComplianceStatus || "unknown",
+        };
+      }));
+      
+      // Convert to CSV
+      stringify(exportData, { header: true }, (err, output) => {
+        if (err) {
+          console.error("Error generating CSV:", err);
+          return res.status(500).json({ message: "Error generating CSV" });
+        }
+        
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="devices-export-${new Date().toISOString().slice(0, 10)}.csv"`);
+        
+        // Send the CSV data
+        res.send(output);
+      });
+    } catch (error) {
+      console.error("Error exporting devices:", error);
+      res.status(500).json({ message: "Error exporting devices" });
+    }
+  });
+
+  // Export warranties to CSV
+  app.get('/api/export/warranties', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const devices = await storage.getDevices();
+      
+      // Filter devices with warranty info
+      const devicesWithWarranty = devices.filter(device => device.warrantyEOL);
+      
+      // Transform data for CSV export
+      const exportData = await Promise.all(devicesWithWarranty.map(async (device) => {
+        // Get category name
+        const category = device.categoryId 
+          ? await storage.getCategoryById(device.categoryId)
+          : null;
+          
+        // Get user name
+        const user = device.userId
+          ? await storage.getUserById(device.userId)
+          : null;
+          
+        // Calculate days until warranty expiration
+        const today = new Date();
+        const warrantyDate = new Date(device.warrantyEOL);
+        const diffTime = warrantyDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        return {
+          Name: device.name || "",
+          Brand: device.brand || "",
+          Model: device.model || "",
+          SerialNumber: device.serialNumber || "",
+          AssetTag: device.assetTag || "",
+          Category: category ? category.name : "",
+          PurchaseDate: device.purchaseDate ? new Date(device.purchaseDate).toLocaleDateString() : "",
+          WarrantyEnd: device.warrantyEOL ? new Date(device.warrantyEOL).toLocaleDateString() : "",
+          DaysRemaining: diffDays,
+          Status: device.status || "active",
+          AssignedTo: user ? `${user.firstName} ${user.lastName}` : "",
+          Department: user ? user.department || "" : "",
+        };
+      }));
+      
+      // Convert to CSV
+      stringify(exportData, { header: true }, (err, output) => {
+        if (err) {
+          console.error("Error generating CSV:", err);
+          return res.status(500).json({ message: "Error generating CSV" });
+        }
+        
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="warranty-export-${new Date().toISOString().slice(0, 10)}.csv"`);
+        
+        // Send the CSV data
+        res.send(output);
+      });
+    } catch (error) {
+      console.error("Error exporting warranties:", error);
+      res.status(500).json({ message: "Error exporting warranties" });
+    }
+  });
+
+  // Start the server
+  const server = createServer(app);
+  return server;
 }
