@@ -250,9 +250,9 @@ export function MobileNav() {
               </div>
             )}
             <span 
-              className={`ml-2 text-base font-bold ${branding?.siteNameGradient ? 'bg-clip-text text-transparent' : ''}`}
+              className={`ml-2 text-base font-bold ${branding?.siteNameGradient ? 'bg-clip-text text-transparent' : 'text-foreground'}`}
               style={{
-                color: branding?.siteNameGradient ? 'transparent' : (branding?.siteNameColor || '#1E40AF'),
+                color: branding?.siteNameGradient ? 'transparent' : 'var(--foreground)',
                 backgroundImage: branding?.siteNameGradient && branding?.siteNameColorSecondary
                   ? `linear-gradient(to right, ${branding?.siteNameColor || '#1E40AF'}, ${branding?.siteNameColorSecondary || '#3B82F6'})`
                   : 'none',
@@ -293,7 +293,7 @@ export function MobileNav() {
 
       {/* Sidebar */}
       <div className={cn(
-        "md:hidden fixed inset-y-0 left-0 transform bg-background w-72 z-50 transition-transform duration-300 ease-in-out overflow-y-auto",
+        "md:hidden fixed inset-y-0 left-0 transform bg-background w-72 z-50 transition-transform duration-300 ease-in-out overflow-y-auto overflow-x-hidden",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between h-16 px-4 bg-muted border-b border-border">
@@ -312,9 +312,9 @@ export function MobileNav() {
               </div>
             )}
             <span 
-              className={`ml-2 text-xl font-bold ${branding?.siteNameGradient ? 'bg-clip-text text-transparent' : ''}`}
+              className={`ml-2 text-xl font-bold ${branding?.siteNameGradient ? 'bg-clip-text text-transparent' : 'text-foreground'}`}
               style={{
-                color: branding?.siteNameGradient ? 'transparent' : (branding?.siteNameColor || '#1E40AF'),
+                color: branding?.siteNameGradient ? 'transparent' : 'var(--foreground)',
                 backgroundImage: branding?.siteNameGradient && branding?.siteNameColorSecondary
                   ? `linear-gradient(to right, ${branding?.siteNameColor || '#1E40AF'}, ${branding?.siteNameColorSecondary || '#3B82F6'})`
                   : 'none',

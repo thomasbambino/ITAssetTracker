@@ -215,9 +215,9 @@ export function DesktopSidebar() {
             </div>
           )}
           <span 
-            className={`ml-2 text-xl font-bold ${branding?.siteNameGradient ? 'bg-clip-text text-transparent' : ''}`}
+            className={`ml-2 text-xl font-bold ${branding?.siteNameGradient ? 'bg-clip-text text-transparent' : 'text-foreground'}`}
             style={{
-              color: branding?.siteNameGradient ? 'transparent' : (branding?.siteNameColor || '#1E40AF'),
+              color: branding?.siteNameGradient ? 'transparent' : 'var(--foreground)',
               backgroundImage: branding?.siteNameGradient && branding?.siteNameColorSecondary
                 ? `linear-gradient(to right, ${branding?.siteNameColor || '#1E40AF'}, ${branding?.siteNameColorSecondary || '#3B82F6'})`
                 : 'none',
@@ -230,7 +230,7 @@ export function DesktopSidebar() {
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4 space-y-4">
         {/* Main Group */}
         <div>
           <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
