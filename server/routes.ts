@@ -891,6 +891,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error deleting device" });
     }
   });
+  
+  // Update specific device properties (like notes)
+  app.patch('/api/devices/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Get the update data (notes, etc.)
+      const updateData = req.body;
+      
+      // Update the device
+      const updatedDevice = await storage.updateDevice(id, updateData, loggedInUserId);
+      
+      if (!updatedDevice) {
+        return res.status(404).json({ message: "Device not found or could not be updated" });
+      }
+      
+      res.status(200).json(updatedDevice);
+    } catch (error) {
+      console.error("Error updating device:", error);
+      res.status(500).json({ message: "Error updating device" });
+    }
+  });
 
   // Device assignment routes
   app.post('/api/devices/:id/assign', isAuthenticated, async (req: Request, res: Response) => {

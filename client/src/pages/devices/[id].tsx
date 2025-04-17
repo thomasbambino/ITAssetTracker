@@ -473,14 +473,19 @@ export default function DeviceDetails() {
   // Update comments mutation
   const updateCommentsMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest({
-        method: 'PATCH',
-        url: `/api/devices/${id}`,
-        data: {
-          notes: commentsValue
-        }
-      });
-      return response;
+      try {
+        const response = await apiRequest({
+          method: 'PATCH',
+          url: `/api/devices/${id}`,
+          data: {
+            notes: commentsValue
+          }
+        });
+        return response;
+      } catch (error) {
+        console.error("Error updating device comments:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       setIsCommentsEditing(false);
@@ -491,6 +496,7 @@ export default function DeviceDetails() {
       });
     },
     onError: (error) => {
+      console.error("Error in mutation handler:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to update device comments",
