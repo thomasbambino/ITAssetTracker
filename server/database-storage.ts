@@ -742,6 +742,7 @@ export class DatabaseStorage implements IStorage {
           d.serial_number as "serialNumber", 
           d.asset_tag as "assetTag", 
           d.category_id as "categoryId", 
+          d.site_id as "siteId",
           d.purchase_cost as "purchaseCost", 
           d.purchase_date as "purchaseDate", 
           d.purchased_by as "purchasedBy", 
