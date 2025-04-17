@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -102,11 +102,11 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
   });
   
   // Update deviceId default value when devices are loaded
-  React.useEffect(() => {
+  useEffect(() => {
     if (!record?.deviceId && Array.isArray(devices) && devices.length > 0 && !isDevicesLoading) {
       form.setValue('deviceId', devices[0].id);
     }
-  }, [devices, isDevicesLoading, record]);
+  }, [devices, isDevicesLoading, record, form]);
 
   // Watch status to conditionally show/hide completed date
   const watchStatus = form.watch("status");
