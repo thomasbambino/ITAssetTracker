@@ -532,6 +532,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all Intune devices for the Intune Management page
+  app.get('/api/intune/devices', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const devices = await storage.getIntuneEligibleDevices();
+      
+      // Format data specifically for the Intune Management page
+      const intuneDevices = await Promise.all(
+        devices.map(async (device) => {
+          const user = device.userId ? await storage.getUserById(device.userId) : null;
+          
+          return {
+            id: device.id,
+            name: device.name || "",
+            brand: device.brand,
+            model: device.model,
+            serialNumber: device.serialNumber,
+            assetTag: device.assetTag,
+            userId: device.userId,
+            userFirstName: user ? user.firstName : null,
+            userLastName: user ? user.lastName : null,
+            userEmail: user ? user.email : null,
+            isIntuneOnboarded: device.isIntuneOnboarded || false,
+            intuneComplianceStatus: device.intuneComplianceStatus || "unknown",
+            intuneLastSync: device.intuneLastSync || null
+          };
+        })
+      );
+      
+      res.json(intuneDevices);
+    } catch (error) {
+      console.error("Error fetching Intune devices:", error);
+      res.status(500).json({ message: "Error fetching Intune devices" });
+    }
+  });
+  
   // Update device Intune status
   app.put('/api/devices/:id/intune', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
