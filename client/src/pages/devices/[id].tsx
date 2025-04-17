@@ -474,6 +474,10 @@ export default function DeviceDetails() {
   const updateCommentsMutation = useMutation({
     mutationFn: async () => {
       try {
+        console.log(`Attempting to update comments for device ID: ${id}`, {
+          data: { notes: commentsValue }
+        });
+        
         const response = await apiRequest({
           method: 'PATCH',
           url: `/api/devices/${id}`,
@@ -481,6 +485,8 @@ export default function DeviceDetails() {
             notes: commentsValue
           }
         });
+        
+        console.log("Comments update response:", response);
         return response;
       } catch (error) {
         console.error("Error updating device comments:", error);

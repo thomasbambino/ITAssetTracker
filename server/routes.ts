@@ -904,6 +904,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the update data (notes, etc.)
       const updateData = req.body;
       
+      console.log(`PATCH request for device ${id}:`, { 
+        updateData,
+        loggedInUserId,
+        contentType: req.get('Content-Type')
+      });
+      
+      // Get the current device to update
+      const existingDevice = await storage.getDeviceById(id);
+      if (!existingDevice) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
       // Update the device
       const updatedDevice = await storage.updateDevice(id, updateData, loggedInUserId);
       
@@ -914,7 +926,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json(updatedDevice);
     } catch (error) {
       console.error("Error updating device:", error);
-      res.status(500).json({ message: "Error updating device" });
+      res.status(500).json({ message: "Error updating device", error: String(error) });
     }
   });
 

@@ -2,8 +2,14 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      const text = (await res.text()) || res.statusText;
+      console.error(`Response error: ${res.status} ${res.statusText}`, text);
+      throw new Error(`${res.status}: ${text}`);
+    } catch (error) {
+      console.error("Error parsing error response:", error);
+      throw new Error(`${res.status}: ${res.statusText}`);
+    }
   }
 }
 
@@ -38,7 +44,20 @@ export async function apiRequest({
     
     // Parse JSON response if it's not a 204 No Content
     if (res.status !== 204) {
-      return await res.json();
+      try {
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          return await res.json();
+        } else {
+          const text = await res.text();
+          console.error('Received non-JSON response:', text);
+          console.error('Content-Type:', contentType);
+          return { success: true, message: "Operation completed but server returned non-JSON response" };
+        }
+      } catch (jsonError) {
+        console.error('Error parsing JSON response:', jsonError);
+        throw new Error(`Failed to parse server response: ${jsonError}`);
+      }
     }
     
     return { success: true };
@@ -84,7 +103,20 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    try {
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await res.json();
+      } else {
+        const text = await res.text();
+        console.error('Received non-JSON response in query:', text);
+        console.error('Content-Type:', contentType);
+        return { success: false, message: "Server returned non-JSON response" };
+      }
+    } catch (jsonError) {
+      console.error('Error parsing JSON response in query:', jsonError);
+      throw new Error(`Failed to parse server response: ${jsonError}`);
+    }
   };
 
 export const queryClient = new QueryClient({
