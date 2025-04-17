@@ -609,9 +609,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const numValue = parseFloat(costValue);
           
           if (!isNaN(numValue)) {
-            // Convert dollars to cents and round to nearest cent
-            formData.purchaseCost = Math.round(numValue * 100);
-            console.log(`Converted purchase cost ${costValue} to ${formData.purchaseCost} cents`);
+            // Use value directly - client already sends in cents
+            formData.purchaseCost = numValue;
+            console.log(`Using purchase cost value directly (already in cents): ${formData.purchaseCost}`);
           } else {
             formData.purchaseCost = null;
             console.warn(`Invalid purchase cost value: ${costValue}`);
@@ -707,9 +707,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const numValue = parseFloat(costValue);
           
           if (!isNaN(numValue)) {
-            // Convert dollars to cents and round to nearest cent
-            formData.purchaseCost = Math.round(numValue * 100);
-            console.log(`Converted purchase cost ${costValue} to ${formData.purchaseCost} cents`);
+            // Use value directly - client already sends in cents
+            formData.purchaseCost = numValue;
+            console.log(`Using purchase cost value directly (already in cents): ${formData.purchaseCost}`);
           } else {
             formData.purchaseCost = null;
             console.warn(`Invalid purchase cost value: ${costValue}`);
