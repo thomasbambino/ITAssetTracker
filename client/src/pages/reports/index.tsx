@@ -295,7 +295,7 @@ export default function Reports() {
                   <Skeleton className="h-[320px] w-full" />
                 ) : departmentStats && departmentStats.length > 0 ? (
                   <BarChartComponent 
-                    data={departmentStats}
+                    data={[...departmentStats].sort((a, b) => b.count - a.count)}
                     xKey="department"
                     yKey="count"
                     tooltipFormatter={(value) => [`${value} devices`]}
@@ -575,7 +575,7 @@ export default function Reports() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {departmentStats.map((dept, index) => (
+                          {[...departmentStats].sort((a, b) => b.count - a.count).map((dept, index) => (
                             <TableRow key={index}>
                               <TableCell>{dept.department}</TableCell>
                               <TableCell>{dept.count}</TableCell>
