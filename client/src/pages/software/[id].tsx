@@ -39,16 +39,17 @@ interface SoftwareAssignment {
   userId?: number | null;
   deviceId?: number | null;
   assignedAt: string; // API returns this as a string ISO date
+  assignedBy: number | null;
   expiryDate?: string | null;
   notes?: string | null;
-  userName?: string | null;
+  userName?: string | null; // Flat field from the API
   softwareName?: string | null;
   deviceAssetTag?: string | null;
   user?: {
     id: number;
-    name?: string;
-    firstName?: string;
-    lastName?: string;
+    name?: string; // Matches the actual API response
+    firstName?: string; // For backward compatibility
+    lastName?: string; // For backward compatibility
     email?: string;
     department?: string | null;
   } | null;
@@ -62,6 +63,14 @@ interface SoftwareAssignment {
   assignor?: {
     id: number;
     name: string;
+  } | null;
+  software?: {
+    id: number;
+    name: string;
+    vendor: string;
+    licenseType: string;
+    status: string;
+    expiryDate?: string | null;
   } | null;
 }
 
@@ -173,10 +182,13 @@ export default function SoftwareDetails() {
       accessor: (assignment: SoftwareAssignment) => {
         if (assignment.user) {
           // Handle both the new API format (name) and potential old format (firstName/lastName)
-          return assignment.user.name || 
-                 (assignment.user.firstName && assignment.user.lastName) ? 
-                   `${assignment.user.firstName} ${assignment.user.lastName}` : 
-                   'Unknown User';
+          if (assignment.user.name) {
+            return assignment.user.name;
+          } else if (assignment.user.firstName && assignment.user.lastName) {
+            return `${assignment.user.firstName} ${assignment.user.lastName}`;
+          } else {
+            return assignment.userName || 'Unknown User';
+          }
         } else if (assignment.device) {
           return `${assignment.device.brand} ${assignment.device.model} (${assignment.device.assetTag})`;
         }
@@ -184,10 +196,15 @@ export default function SoftwareDetails() {
       },
       cell: (assignment: SoftwareAssignment) => {
         if (assignment.user) {
-          const displayName = assignment.user.name || 
-                             (assignment.user.firstName && assignment.user.lastName) ? 
-                              `${assignment.user.firstName} ${assignment.user.lastName}` : 
-                              'Unknown User';
+          let displayName = 'Unknown User';
+          if (assignment.user.name) {
+            displayName = assignment.user.name;
+          } else if (assignment.user.firstName && assignment.user.lastName) {
+            displayName = `${assignment.user.firstName} ${assignment.user.lastName}`;
+          } else if (assignment.userName) {
+            displayName = assignment.userName;
+          }
+          
           return (
             <button 
               className="text-primary hover:underline focus:outline-none"
