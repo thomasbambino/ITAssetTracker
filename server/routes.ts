@@ -746,7 +746,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         categoryId: formData.categoryId,
         categoryIdType: typeof formData.categoryId,
         isIntuneOnboarded: formData.isIntuneOnboarded,
-        isIntuneOnboardedType: typeof formData.isIntuneOnboarded
+        isIntuneOnboardedType: typeof formData.isIntuneOnboarded,
+        status: formData.status,
+        statusType: typeof formData.status,
+        allFields: Object.keys(formData)
       });
 
       // Now the insertDeviceSchema can validate the properly typed data
