@@ -44,7 +44,7 @@ type SiteFormValues = z.infer<typeof siteSchema>;
 export default function Sites() {
   const [isAddSiteOpen, setIsAddSiteOpen] = useState(false);
   const [isEditSiteOpen, setIsEditSiteOpen] = useState(false);
-  const [selectedSite, setSelectedSite] = useState<any>(null);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
   const { data: sites = [], isLoading, isError } = useQuery<Site[]>({
     queryKey: ['/api/sites'],
@@ -146,7 +146,7 @@ export default function Sites() {
     updateSiteMutation.mutate({ ...values, id: selectedSite.id });
   };
 
-  const handleEditClick = (site: any) => {
+  const handleEditClick = (site: Site) => {
     setSelectedSite(site);
     editForm.reset({
       name: site.name || '',
@@ -442,7 +442,7 @@ export default function Sites() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sites?.map((site: any) => (
+                  {sites?.map((site: Site) => (
                     <TableRow key={site.id}>
                       <TableCell className="font-medium">{site.name}</TableCell>
                       <TableCell>{site.address || '-'}</TableCell>
