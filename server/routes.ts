@@ -567,6 +567,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update Intune device status
+  app.patch('/api/intune/devices/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Validate the update data
+      const updateDataSchema = z.object({
+        isIntuneOnboarded: z.boolean().optional(),
+        intuneComplianceStatus: z.string().optional(),
+        intuneLastSync: z.date().optional().nullable(),
+      });
+      
+      const updateData = updateDataSchema.parse(req.body);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Update the device Intune status - note: don't pass loggedInUserId in the props object
+      const device = await storage.updateDeviceIntuneStatus(id, {
+        isIntuneOnboarded: updateData.isIntuneOnboarded,
+        intuneComplianceStatus: updateData.intuneComplianceStatus,
+        intuneLastSync: updateData.intuneLastSync
+      });
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      // Format the response to match the format expected by the client
+      const user = device.userId ? await storage.getUserById(device.userId) : null;
+      
+      const formattedDevice = {
+        id: device.id,
+        name: device.name || "",
+        brand: device.brand,
+        model: device.model,
+        serialNumber: device.serialNumber,
+        assetTag: device.assetTag,
+        userId: device.userId,
+        userFirstName: user ? user.firstName : null,
+        userLastName: user ? user.lastName : null,
+        userEmail: user ? user.email : null,
+        isIntuneOnboarded: device.isIntuneOnboarded || false,
+        intuneComplianceStatus: device.intuneComplianceStatus || "unknown",
+        intuneLastSync: device.intuneLastSync || null
+      };
+      
+      res.json(formattedDevice);
+    } catch (error) {
+      console.error("Error updating Intune device:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating Intune device" });
+    }
+  });
+  
   // Update device Intune status
   app.put('/api/devices/:id/intune', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
@@ -583,11 +641,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
-      // Update the device Intune status
+      // Update the device Intune status - note: don't pass loggedInUserId in the props object
       const device = await storage.updateDeviceIntuneStatus(id, {
         isIntuneOnboarded: updateData.isIntuneOnboarded,
-        intuneComplianceStatus: updateData.intuneComplianceStatus,
-        updatedBy: loggedInUserId
+        intuneComplianceStatus: updateData.intuneComplianceStatus
       });
       
       if (!device) {
