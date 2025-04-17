@@ -73,6 +73,27 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 
+// Sites/Offices schema for device location tracking
+export const sites = pgTable("sites", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  country: text("country"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSiteSchema = createInsertSchema(sites).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSite = z.infer<typeof insertSiteSchema>;
+export type Site = typeof sites.$inferSelect;
+
 // Device schema
 export const devices = pgTable("devices", {
   id: serial("id").primaryKey(),
@@ -82,6 +103,7 @@ export const devices = pgTable("devices", {
   serialNumber: text("serial_number").unique(),
   assetTag: text("asset_tag").unique(),
   categoryId: integer("category_id").references(() => categories.id),
+  siteId: integer("site_id").references(() => sites.id),
   purchaseCost: integer("purchase_cost"),  // Store in cents
   purchaseDate: timestamp("purchase_date"),
   purchasedBy: text("purchased_by"),
@@ -119,6 +141,17 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
   
   // Add support for categoryId as string or number
   categoryId: z.union([
+    z.string().transform((str) => {
+      if (str === '' || str === null || str === undefined) return null;
+      const num = parseInt(str);
+      return isNaN(num) ? null : num;
+    }),
+    z.number(),
+    z.null()
+  ]).optional().nullable(),
+  
+  // Add support for siteId as string or number
+  siteId: z.union([
     z.string().transform((str) => {
       if (str === '' || str === null || str === undefined) return null;
       const num = parseInt(str);

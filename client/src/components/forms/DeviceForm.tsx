@@ -277,9 +277,6 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="text-sm text-gray-500 pb-2 border-b border-gray-200">
-          Fields marked with <span className="text-red-500">*</span> are required
-        </div>
         
         {/* Device Name Field */}
         <FormField
