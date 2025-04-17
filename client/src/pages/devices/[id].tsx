@@ -256,25 +256,25 @@ export default function DeviceDetails() {
     },
     {
       header: "Assigned To",
-      accessor: (entry: any) => entry.assignedTo?.name || "-",
+      accessor: (entry: any) => entry.user?.name || "-",
       cell: (entry: any) => {
-        if (!entry.assignedTo) return "-";
+        if (!entry.user) return "-";
         
         return (
           <div className="flex items-center">
             <Avatar className="h-8 w-8 mr-2">
               <AvatarFallback>
-                {entry.assignedTo.name.split(' ').map((n: string) => n[0]).join('')}
+                {entry.user.name.split(' ').map((n: string) => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
-            <span>{entry.assignedTo.name}</span>
+            <span>{entry.user.name}</span>
           </div>
         );
       },
     },
     {
       header: "Assigned By",
-      accessor: (entry: any) => entry.assignedBy?.name || "-",
+      accessor: (entry: any) => entry.assignor?.name || "-",
     },
     {
       header: "End Date",
@@ -696,6 +696,31 @@ export default function DeviceDetails() {
                         </Button>
                       </div>
                     )}
+                  </div>
+                  
+                  {/* Comments Section */}
+                  <div className="mt-6 pt-4 border-t">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium text-foreground">
+                        <div className="flex items-center">
+                          <MessageSquareIcon className="h-4 w-4 text-muted-foreground mr-1" />
+                          <span>Comments</span>
+                        </div>
+                      </h3>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <Textarea 
+                        placeholder="Add comments about this device..."
+                        className="min-h-[100px] bg-background"
+                        value={device.notes || ""}
+                        readOnly
+                      />
+                      {!device.notes && (
+                        <p className="text-xs text-muted-foreground mt-2 italic">
+                          No comments have been added for this device yet.
+                        </p>
+                      )}
+                    </div>
                   </div>
                   
                   {/* QR Code Section */}
