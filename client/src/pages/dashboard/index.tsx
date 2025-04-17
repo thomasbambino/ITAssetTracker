@@ -378,9 +378,9 @@ export default function Dashboard() {
                           y={0} 
                           dy={4} 
                           textAnchor="end" 
-                          fill="var(--foreground)" 
+                          fill="currentColor" 
                           fontSize={13}
-                          className="cursor-pointer hover:underline"
+                          className="text-foreground cursor-pointer hover:underline"
                           onClick={() => {
                             if (categoryId) {
                               navigate(`/devices?category=${categoryId}`);
@@ -394,9 +394,9 @@ export default function Dashboard() {
                           y={0} 
                           dy={4} 
                           textAnchor="end" 
-                          fill="var(--foreground)"
+                          fill="currentColor"
                           fontSize={10}
-                          className="cursor-pointer"
+                          className="text-foreground cursor-pointer"
                         >
                           →
                         </text>
@@ -476,7 +476,8 @@ export default function Dashboard() {
                     dataKey="percentage" 
                     position="right" 
                     formatter={(value: number) => `${value}%`}
-                    style={{ fontWeight: "500", fill: "var(--foreground)" }}
+                    className="text-foreground"
+                    style={{ fontWeight: "500", fill: "currentColor" }}
                     offset={10} // Padding between bar end and label
                   />
                 </Bar>
