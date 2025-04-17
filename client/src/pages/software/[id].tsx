@@ -41,18 +41,27 @@ interface SoftwareAssignment {
   assignedAt: string; // API returns this as a string ISO date
   expiryDate?: string | null;
   notes?: string | null;
+  userName?: string | null;
+  softwareName?: string | null;
+  deviceAssetTag?: string | null;
   user?: {
     id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
     department?: string | null;
   } | null;
   device?: {
     id: number;
+    name?: string | null;
     brand: string;
     model: string;
     assetTag: string;
+  } | null;
+  assignor?: {
+    id: number;
+    name: string;
   } | null;
 }
 
@@ -163,7 +172,11 @@ export default function SoftwareDetails() {
       header: "Assigned To",
       accessor: (assignment: SoftwareAssignment) => {
         if (assignment.user) {
-          return `${assignment.user.firstName} ${assignment.user.lastName}`;
+          // Handle both the new API format (name) and potential old format (firstName/lastName)
+          return assignment.user.name || 
+                 (assignment.user.firstName && assignment.user.lastName) ? 
+                   `${assignment.user.firstName} ${assignment.user.lastName}` : 
+                   'Unknown User';
         } else if (assignment.device) {
           return `${assignment.device.brand} ${assignment.device.model} (${assignment.device.assetTag})`;
         }
@@ -171,6 +184,10 @@ export default function SoftwareDetails() {
       },
       cell: (assignment: SoftwareAssignment) => {
         if (assignment.user) {
+          const displayName = assignment.user.name || 
+                             (assignment.user.firstName && assignment.user.lastName) ? 
+                              `${assignment.user.firstName} ${assignment.user.lastName}` : 
+                              'Unknown User';
           return (
             <button 
               className="text-primary hover:underline focus:outline-none"
@@ -179,7 +196,7 @@ export default function SoftwareDetails() {
                 setLocation(`/users/${assignment.user!.id}`);
               }}
             >
-              {assignment.user.firstName} {assignment.user.lastName}
+              {displayName}
             </button>
           );
         } else if (assignment.device) {

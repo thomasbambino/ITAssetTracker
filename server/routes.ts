@@ -1313,6 +1313,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching software assignments" });
     }
   });
+  
+  // Software assignments by user
+  app.get('/api/software-assignments/user/:userId', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const assignments = await storage.getSoftwareAssignmentsByUser(userId);
+      
+      // Enrich with software information
+      const enrichedAssignments = await Promise.all(
+        assignments.map(async (assignment) => {
+          const software = await storage.getSoftwareById(assignment.softwareId);
+          
+          return {
+            ...assignment,
+            software: software ? {
+              id: software.id,
+              name: software.name,
+              vendor: software.vendor,
+              licenseType: software.licenseType,
+              expiryDate: software.expiryDate
+            } : null
+          };
+        })
+      );
+      
+      res.json(enrichedAssignments);
+    } catch (error) {
+      console.error("Error fetching user software assignments:", error);
+      res.status(500).json({ message: "Error fetching user software assignments" });
+    }
+  });
 
   app.post('/api/software-assignments', isAuthenticated, async (req: Request, res: Response) => {
     try {
