@@ -1,20 +1,20 @@
-import db from '../db';
+import { db } from '../db';
 
 export async function addSitesTableMigration() {
   console.log('Running migration: Adding sites table and siteId to devices table');
   
   try {
     // Check if the sites table already exists
-    const checkSitesTable = await db.query(`
+    const checkSitesTable = await db.one(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
         WHERE table_name = 'sites'
-      );
+      ) as exists;
     `);
     
-    if (!checkSitesTable.rows[0].exists) {
+    if (!checkSitesTable.exists) {
       // Create the sites table
-      await db.query(`
+      await db.none(`
         CREATE TABLE sites (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL UNIQUE,
@@ -33,16 +33,16 @@ export async function addSitesTableMigration() {
     }
     
     // Check if siteId column exists in devices table
-    const checkSiteIdColumn = await db.query(`
+    const checkSiteIdColumn = await db.one(`
       SELECT EXISTS (
         SELECT FROM information_schema.columns 
         WHERE table_name = 'devices' AND column_name = 'site_id'
-      );
+      ) as exists;
     `);
     
-    if (!checkSiteIdColumn.rows[0].exists) {
+    if (!checkSiteIdColumn.exists) {
       // Add siteId column to devices table
-      await db.query(`
+      await db.none(`
         ALTER TABLE devices 
         ADD COLUMN site_id INTEGER REFERENCES sites(id);
       `);

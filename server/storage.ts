@@ -1,14 +1,15 @@
 import { 
   categories, devices, users, assignmentHistory, activityLog,
   software, softwareAssignments, maintenanceRecords, qrCodes, 
-  notifications, brandingSettings, emailSettings,
+  notifications, brandingSettings, emailSettings, sites,
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
   type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
-  type Notification, type BrandingSettings, type EmailSettings,
+  type Notification, type BrandingSettings, type EmailSettings, type Site,
   type InsertCategory, type InsertDevice, type InsertUser, 
   type InsertAssignmentHistory, type InsertActivityLog,
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
-  type InsertQrCode, type InsertNotification, type InsertBrandingSettings, type InsertEmailSettings
+  type InsertQrCode, type InsertNotification, type InsertBrandingSettings, type InsertEmailSettings,
+  type InsertSite
 } from "@shared/schema";
 
 export interface IStorage {
@@ -110,6 +111,14 @@ export interface IStorage {
   // Email settings operations
   getEmailSettings(): Promise<EmailSettings | undefined>;
   updateEmailSettings(settings: Partial<InsertEmailSettings>): Promise<EmailSettings>;
+  
+  // Site operations
+  getSites(): Promise<Site[]>;
+  getSiteById(id: number): Promise<Site | undefined>;
+  createSite(site: InsertSite, loggedInUserId?: number): Promise<Site>;
+  updateSite(id: number, site: Partial<InsertSite>, loggedInUserId?: number): Promise<Site | undefined>;
+  deleteSite(id: number, loggedInUserId?: number): Promise<boolean>;
+  getDevicesBySite(siteId: number): Promise<Device[]>;
 }
 
 export class MemStorage implements IStorage {

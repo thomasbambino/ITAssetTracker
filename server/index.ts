@@ -8,6 +8,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { updateMailgunService } from "./direct-mailgun";
 import { addStatusField } from "./migrations/add-status-field";
+import { addSitesTableMigration } from "./migrations/add-sites-table";
 
 const app = express();
 app.use(express.json());
@@ -78,6 +79,7 @@ app.use((req, res, next) => {
     // Run schema migrations
     log('Running database migrations...');
     await addStatusField();
+    await addSitesTableMigration();
     log('Database migrations completed.');
     
     // Initialize direct mailgun service with settings from the database
