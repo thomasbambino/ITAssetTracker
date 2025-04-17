@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,9 @@ import {
   Calendar,
   DollarSign,
   ShieldAlert,
-  Clock 
+  Clock,
+  Building,
+  ReceiptText 
 } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PieChartComponent, BarChartComponent } from "@/components/reports/Charts";
@@ -26,6 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "@/components/ui/data-table";
+import { useCsvExport } from "@/hooks/use-csv";
 
 // Type definitions
 interface Stats {
@@ -69,6 +72,12 @@ interface WarrantyItem {
 
 export default function Reports() {
   const [timeframe, setTimeframe] = useState<string>("30");
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedSiteId, setSelectedSiteId] = useState<string>("");
+  
+  // Generate year options for the filter
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 10 }, (_, i) => currentYear - i);
   
   // Fetch stats data
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -127,6 +136,33 @@ export default function Reports() {
   const handleDownloadDevices = () => {
     window.location.href = '/api/export/devices';
   };
+  
+  // Handle tangible property report export with filters
+  const handleExportTangibleProperty = () => {
+    let url = '/api/export/tangible-property';
+    
+    // Add filters as query parameters if selected
+    const params = new URLSearchParams();
+    if (selectedYear) {
+      params.append('year', selectedYear);
+    }
+    if (selectedSiteId) {
+      params.append('siteId', selectedSiteId);
+    }
+    
+    // Append query parameters to the URL if any exist
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    window.location.href = url;
+  };
+  
+  // Fetch sites for the site filter in tangible property report
+  const { data: sites, isLoading: sitesLoading } = useQuery({
+    queryKey: ['/api/sites'],
+    queryFn: getQueryFn({ on401: "throw" })
+  });
   
   // PageActions menu
   const pageActions = (
@@ -545,6 +581,144 @@ export default function Reports() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+        
+        <TabsContent value="tangible" className="mt-0">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between">
+                <div>
+                  <CardTitle>Tangible Personal Property Report</CardTitle>
+                  <CardDescription>
+                    Model, Serial Number, Asset Tag, Purchase Cost, and Date purchased
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleExportTangibleProperty}
+                >
+                  <Download className="h-4 w-4 mr-2" /> Export Report
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                <div className="w-full sm:w-1/2">
+                  <label className="text-sm font-medium mb-1 block">Filter by Year</label>
+                  <Select
+                    value={selectedYear}
+                    onValueChange={setSelectedYear}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Years</SelectItem>
+                      {yearOptions.map(year => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-full sm:w-1/2">
+                  <label className="text-sm font-medium mb-1 block">Filter by Site</label>
+                  <Select
+                    value={selectedSiteId}
+                    onValueChange={setSelectedSiteId}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Site" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Sites</SelectItem>
+                      {sites && sites.map((site: any) => (
+                        <SelectItem key={site.id} value={site.id.toString()}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {devicesLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ) : devices && devices.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Model</TableHead>
+                        <TableHead>Serial Number</TableHead>
+                        <TableHead>Asset Tag</TableHead>
+                        <TableHead>Purchase Cost</TableHead>
+                        <TableHead>Purchase Date</TableHead>
+                        <TableHead>Site</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {devices
+                        .filter((device: any) => {
+                          // Apply year filter if selected
+                          if (selectedYear && device.purchaseDate) {
+                            const purchaseYear = new Date(device.purchaseDate).getFullYear();
+                            if (purchaseYear.toString() !== selectedYear) {
+                              return false;
+                            }
+                          }
+                          
+                          // Apply site filter if selected
+                          if (selectedSiteId && device.siteId) {
+                            if (device.siteId.toString() !== selectedSiteId) {
+                              return false;
+                            }
+                          }
+                          
+                          return true;
+                        })
+                        .slice(0, 50) // Limit to first 50 for performance
+                        .map((device: any) => {
+                          // Get site name
+                          const site = sites?.find((s: any) => s.id === device.siteId);
+                          
+                          return (
+                            <TableRow key={device.id}>
+                              <TableCell>{device.model || 'N/A'}</TableCell>
+                              <TableCell>{device.serialNumber || 'N/A'}</TableCell>
+                              <TableCell>{device.assetTag || 'N/A'}</TableCell>
+                              <TableCell>{device.purchaseCost ? formatCurrency(device.purchaseCost) : 'N/A'}</TableCell>
+                              <TableCell>{device.purchaseDate ? formatDate(device.purchaseDate) : 'N/A'}</TableCell>
+                              <TableCell>{site ? site.name : 'N/A'}</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[200px]">
+                  <div className="text-center">
+                    <p className="text-muted-foreground mb-2">No devices match the selected filters</p>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedYear("");
+                      setSelectedSiteId("");
+                    }}>
+                      Clear Filters
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="usage" className="mt-0">
