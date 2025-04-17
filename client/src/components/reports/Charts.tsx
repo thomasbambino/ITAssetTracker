@@ -67,8 +67,9 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
           y1={cy + (outerRadius + 1) * Math.sin(-midAngle * RADIAN)}
           x2={x}
           y2={y}
-          stroke="#999"
+          stroke="currentColor"
           strokeWidth={1}
+          className="text-muted-foreground"
         />
         {/* Main category name label */}
         <text 
@@ -103,17 +104,21 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
           label={renderCustomizedLabel}
         >
           {filteredData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="#fff" strokeWidth={1} />
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" strokeWidth={0} />
           ))}
         </Pie>
         <Tooltip 
           formatter={tooltipFormatter}
-          contentStyle={{ 
-            borderRadius: '8px', 
-            border: '1px solid #ddd',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            padding: '8px 12px',
-            fontSize: '12px'
+          content={({ active, payload }) => {
+            if (active && payload && payload.length) {
+              return (
+                <div className="bg-card border shadow rounded-lg p-3">
+                  <p className="text-sm font-medium text-foreground mb-1">{payload[0].name}</p>
+                  <p className="text-sm text-foreground">{payload[0].value} devices</p>
+                </div>
+              );
+            }
+            return null;
           }}
         />
         {/* Legend removed as requested */}
@@ -178,12 +183,16 @@ export const BarChartComponent: React.FC<BarChartProps> = ({
         />
         <Tooltip 
           formatter={tooltipFormatter}
-          contentStyle={{ 
-            borderRadius: '8px', 
-            border: '1px solid #ddd',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            padding: '8px 12px',
-            fontSize: '12px'
+          content={({ active, payload }) => {
+            if (active && payload && payload.length) {
+              return (
+                <div className="bg-card border shadow rounded-lg p-3">
+                  <p className="text-sm font-medium text-foreground mb-1">{payload[0].payload.department}</p>
+                  <p className="text-sm text-foreground">{payload[0].value} devices</p>
+                </div>
+              );
+            }
+            return null;
           }}
         />
         <Bar 
