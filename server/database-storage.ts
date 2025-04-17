@@ -655,6 +655,13 @@ export class DatabaseStorage implements IStorage {
         values.push(device.warrantyEOL);
       }
       
+      // Add status field handling
+      if (device.status !== undefined) {
+        updates.push(`status = $${paramCount++}`);
+        values.push(device.status);
+        console.log(`Adding status update: ${device.status}`);
+      }
+      
       // If no updates, return the device
       if (updates.length === 0) {
         return this.getDeviceById(id);
