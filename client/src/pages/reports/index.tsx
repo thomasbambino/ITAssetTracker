@@ -159,6 +159,7 @@ export default function Reports() {
         <TabsList className="mb-4">
           <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="assets">Asset Reports</TabsTrigger>
+          <TabsTrigger value="tangible">Tangible Property</TabsTrigger>
           <TabsTrigger value="usage">Usage Reports</TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance Reports</TabsTrigger>
         </TabsList>

@@ -1944,7 +1944,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Export warranties to CSV
+  // Export Tangible Personal Property report to CSV
+  app.get('/api/export/tangible-property', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const devices = await storage.getDevices();
+      
+      // Get optional filters from query parameters
+      const yearFilter = req.query.year ? parseInt(req.query.year as string) : null;
+      const siteIdFilter = req.query.siteId ? parseInt(req.query.siteId as string) : null;
+      
+      // Filter devices based on purchase year and site if filters are provided
+      const filteredDevices = devices.filter(device => {
+        // Apply year filter
+        if (yearFilter && device.purchaseDate) {
+          const purchaseYear = new Date(device.purchaseDate).getFullYear();
+          if (purchaseYear !== yearFilter) {
+            return false;
+          }
+        }
+        
+        // Apply site filter
+        if (siteIdFilter && device.siteId !== siteIdFilter) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      // Transform data for CSV export
+      const exportData = await Promise.all(filteredDevices.map(async (device) => {
+        // Get site name
+        const site = device.siteId
+          ? await storage.getSiteById(device.siteId)
+          : null;
+          
+        return {
+          Model: device.model || "",
+          SerialNumber: device.serialNumber || "",
+          AssetTag: device.assetTag || "",
+          PurchaseCost: device.purchaseCost ? `$${(device.purchaseCost / 100).toFixed(2)}` : "",
+          PurchaseDate: device.purchaseDate ? new Date(device.purchaseDate).toLocaleDateString() : "",
+          Site: site ? site.name : "",
+        };
+      }));
+      
+      // Convert to CSV
+      stringify(exportData, { header: true }, (err, output) => {
+        if (err) {
+          console.error("Error generating CSV:", err);
+          return res.status(500).json({ message: "Error generating CSV" });
+        }
+        
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="tangible-property-export-${new Date().toISOString().slice(0, 10)}.csv"`);
+        
+        // Send the CSV data
+        res.send(output);
+      });
+    } catch (error) {
+      console.error("Error exporting tangible property report:", error);
+      res.status(500).json({ message: "Error exporting tangible property report" });
+    }
+  });
+
+// Export warranties to CSV
   app.get('/api/export/warranties', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const devices = await storage.getDevices();
