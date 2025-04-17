@@ -116,6 +116,7 @@ export const devices = pgTable("devices", {
   isIntuneOnboarded: boolean("is_intune_onboarded").default(false), // Tracks if device is onboarded in Intune
   intuneComplianceStatus: text("intune_compliance_status").default('unknown'), // Values: compliant, noncompliant, unknown
   intuneLastSync: timestamp("intune_last_sync"), // When device last synced with Intune
+  notes: text("notes"), // Comments about the device
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -195,6 +196,8 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
   status: z.string().optional().default('active'),
   // Default for intuneComplianceStatus
   intuneComplianceStatus: z.string().optional().default('unknown'),
+  // Notes field for device comments
+  notes: z.string().optional().nullable(),
 });
 
 export type InsertDevice = z.infer<typeof insertDeviceSchema>;

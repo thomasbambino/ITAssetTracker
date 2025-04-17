@@ -723,6 +723,7 @@ export class DatabaseStorage implements IStorage {
         d.intune_compliance_status as "intuneComplianceStatus",
         d.intune_last_sync as "intuneLastSync",
         d.status,
+        d.notes,
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
@@ -1016,6 +1017,8 @@ export class DatabaseStorage implements IStorage {
         d.is_intune_onboarded as "isIntuneOnboarded",
         d.intune_compliance_status as "intuneComplianceStatus",
         d.intune_last_sync as "intuneLastSync",
+        d.status,
+        d.notes,
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
@@ -1162,6 +1165,8 @@ export class DatabaseStorage implements IStorage {
         d.warranty_eol as "warrantyEOL", 
         d.created_at as "createdAt", 
         d.user_id as "userId",
+        d.status,
+        d.notes,
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
@@ -1188,6 +1193,8 @@ export class DatabaseStorage implements IStorage {
         d.warranty_eol as "warrantyEOL", 
         d.created_at as "createdAt", 
         d.user_id as "userId",
+        d.status,
+        d.notes,
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
@@ -1396,6 +1403,8 @@ export class DatabaseStorage implements IStorage {
         d.warranty_eol as "warrantyEOL", 
         d.created_at as "createdAt", 
         d.user_id as "userId",
+        d.status,
+        d.notes,
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id

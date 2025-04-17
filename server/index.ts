@@ -9,6 +9,7 @@ import { storage } from "./storage";
 import { updateMailgunService } from "./direct-mailgun";
 import { addStatusField } from "./migrations/add-status-field";
 import { addSitesTableMigration } from "./migrations/add-sites-table";
+import { addNotesField } from "./migrations/add-notes-field";
 
 const app = express();
 app.use(express.json());
@@ -80,6 +81,7 @@ app.use((req, res, next) => {
     log('Running database migrations...');
     await addStatusField();
     await addSitesTableMigration();
+    await addNotesField();
     log('Database migrations completed.');
     
     // Initialize direct mailgun service with settings from the database
