@@ -11,6 +11,7 @@ import { formatDate, formatCurrency } from "@/lib/utils";
 import { MaintenanceForm } from "@/components/forms/MaintenanceForm";
 import { queryClient } from "@/lib/queryClient";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { useLocation } from "wouter";
 
 // Define maintenance record type based on our schema
 interface MaintenanceRecord {
@@ -36,6 +37,7 @@ interface MaintenanceRecord {
 export default function Maintenance() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<MaintenanceRecord | null>(null);
+  const [, navigate] = useLocation();
   
   // Query for fetching all maintenance records
   const { data: maintenanceRecords = [], isLoading: isRecordsLoading } = useQuery({
@@ -46,6 +48,13 @@ export default function Maintenance() {
   const { data: scheduledMaintenance = [], isLoading: isScheduledLoading } = useQuery({
     queryKey: ['/api/maintenance/scheduled'],
   });
+
+  // Handle navigation to device details
+  const handleRowClick = (record: MaintenanceRecord) => {
+    if (record.deviceId && record.device) {
+      navigate(`/devices/${record.deviceId}`);
+    }
+  };
 
   const columns = [
     {
@@ -224,6 +233,8 @@ export default function Maintenance() {
                 keyField="id"
                 loading={isRecordsLoading}
                 searchable
+                onRowClick={handleRowClick}
+                rowCursor="pointer"
                 actions={[
                   {
                     label: "Edit",
@@ -264,6 +275,8 @@ export default function Maintenance() {
                 keyField="id"
                 loading={isScheduledLoading}
                 searchable
+                onRowClick={handleRowClick}
+                rowCursor="pointer"
                 actions={[
                   {
                     label: "Edit",
@@ -291,6 +304,8 @@ export default function Maintenance() {
                 keyField="id"
                 loading={isRecordsLoading}
                 searchable
+                onRowClick={handleRowClick}
+                rowCursor="pointer"
                 actions={[
                   {
                     label: "View",
