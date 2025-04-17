@@ -358,7 +358,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
                   Asset Tag
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Asset Tag (optional)" {...field} />
+                  <Input placeholder="Asset Tag (optional)" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
                 <FormDescription className="text-xs">
