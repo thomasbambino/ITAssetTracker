@@ -12,6 +12,7 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   ChevronLeftIcon, 
   LaptopIcon, 
@@ -28,6 +29,7 @@ import {
   PrinterIcon,
   FileIcon,
   FileTextIcon,
+  MessageSquare,
   Wrench,
   CalendarClock,
   CheckCircle,
@@ -703,7 +705,7 @@ export default function DeviceDetails() {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium text-foreground">
                         <div className="flex items-center">
-                          <MessageSquareIcon className="h-4 w-4 text-muted-foreground mr-1" />
+                          <MessageSquare className="h-4 w-4 text-muted-foreground mr-1" />
                           <span>Comments</span>
                         </div>
                       </h3>
