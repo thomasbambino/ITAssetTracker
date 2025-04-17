@@ -116,6 +116,29 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
     z.number(),
     z.null()
   ]).optional().nullable(),
+  
+  // Add support for categoryId as string or number
+  categoryId: z.union([
+    z.string().transform((str) => {
+      if (str === '' || str === null || str === undefined) return null;
+      const num = parseInt(str);
+      return isNaN(num) ? null : num;
+    }),
+    z.number(),
+    z.null()
+  ]).optional().nullable(),
+  
+  // Support for isIntuneOnboarded as string or boolean
+  isIntuneOnboarded: z.union([
+    z.string().transform((str) => {
+      if (str === 'true') return true;
+      if (str === 'false') return false;
+      return false; // Default value
+    }),
+    z.boolean(),
+    z.null().transform(() => false)
+  ]).optional().default(false),
+  
   // Override the date fields to accept strings
   purchaseDate: z.union([
     z.string().transform((str) => new Date(str)), 
@@ -137,8 +160,7 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
   assetTag: z.string().default(() => `AT-${Math.floor(Math.random() * 1000000)}`),
   // Status field with default
   status: z.string().optional().default('active'),
-  // Intune fields with defaults
-  isIntuneOnboarded: z.boolean().optional().default(false),
+  // Default for intuneComplianceStatus
   intuneComplianceStatus: z.string().optional().default('unknown'),
 });
 
