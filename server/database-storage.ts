@@ -12,6 +12,235 @@ import { IStorage } from "./storage";
 import { db } from "./db";
 
 export class DatabaseStorage implements IStorage {
+  // Site operations
+  async getSites(): Promise<Site[]> {
+    const sites = await db.any(`
+      SELECT 
+        id, 
+        name, 
+        address, 
+        city, 
+        state, 
+        zip_code as "zipCode", 
+        country, 
+        notes, 
+        created_at as "createdAt"
+      FROM sites
+      ORDER BY name
+    `);
+    return sites;
+  }
+
+  async getSiteById(id: number): Promise<Site | undefined> {
+    try {
+      const site = await db.one(`
+        SELECT 
+          id, 
+          name, 
+          address, 
+          city, 
+          state, 
+          zip_code as "zipCode", 
+          country, 
+          notes, 
+          created_at as "createdAt"
+        FROM sites 
+        WHERE id = $1
+      `, [id]);
+      return site;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async createSite(site: InsertSite, loggedInUserId?: number): Promise<Site> {
+    const newSite = await db.one(`
+      INSERT INTO sites (
+        name, 
+        address, 
+        city, 
+        state, 
+        zip_code, 
+        country, 
+        notes
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7
+      ) RETURNING 
+        id, 
+        name, 
+        address, 
+        city, 
+        state, 
+        zip_code as "zipCode", 
+        country, 
+        notes, 
+        created_at as "createdAt"
+    `, [
+      site.name,
+      site.address || null,
+      site.city || null,
+      site.state || null,
+      site.zipCode || null,
+      site.country || null,
+      site.notes || null
+    ]);
+    
+    // Log activity
+    await this.createActivityLog({
+      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+      actionType: 'site_added',
+      details: `Site created: ${site.name}`
+    });
+    
+    return newSite;
+  }
+
+  async updateSite(id: number, site: Partial<InsertSite>, loggedInUserId?: number): Promise<Site | undefined> {
+    try {
+      // Build dynamic update query
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+      
+      if (site.name !== undefined) {
+        updates.push(`name = $${paramCount++}`);
+        values.push(site.name);
+      }
+      
+      if (site.address !== undefined) {
+        updates.push(`address = $${paramCount++}`);
+        values.push(site.address);
+      }
+      
+      if (site.city !== undefined) {
+        updates.push(`city = $${paramCount++}`);
+        values.push(site.city);
+      }
+      
+      if (site.state !== undefined) {
+        updates.push(`state = $${paramCount++}`);
+        values.push(site.state);
+      }
+      
+      if (site.zipCode !== undefined) {
+        updates.push(`zip_code = $${paramCount++}`);
+        values.push(site.zipCode);
+      }
+      
+      if (site.country !== undefined) {
+        updates.push(`country = $${paramCount++}`);
+        values.push(site.country);
+      }
+      
+      if (site.notes !== undefined) {
+        updates.push(`notes = $${paramCount++}`);
+        values.push(site.notes);
+      }
+      
+      // If no updates, return the site
+      if (updates.length === 0) {
+        return this.getSiteById(id);
+      }
+      
+      values.push(id); // Add id as the last parameter
+      
+      const updatedSite = await db.one(`
+        UPDATE sites SET
+          ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING 
+          id, 
+          name, 
+          address, 
+          city, 
+          state, 
+          zip_code as "zipCode", 
+          country, 
+          notes, 
+          created_at as "createdAt"
+      `, values);
+      
+      // Log activity
+      await this.createActivityLog({
+        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        actionType: 'site_updated',
+        details: `Site updated: ${updatedSite.name}`
+      });
+      
+      return updatedSite;
+    } catch (error) {
+      console.error('Error updating site:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSite(id: number, loggedInUserId?: number): Promise<boolean> {
+    try {
+      // Check if any devices use this site
+      const deviceCount = await db.one(`
+        SELECT COUNT(*) FROM devices
+        WHERE site_id = $1
+      `, [id]);
+      
+      if (parseInt(deviceCount.count) > 0) {
+        return false; // Cannot delete site in use
+      }
+      
+      // First, get site for logging
+      const site = await this.getSiteById(id);
+      if (!site) return false;
+      
+      // Delete site
+      const result = await db.result(`
+        DELETE FROM sites
+        WHERE id = $1
+      `, [id]);
+      
+      if (result.rowCount > 0) {
+        // Log activity
+        await this.createActivityLog({
+          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          actionType: 'site_deleted',
+          details: `Site deleted: ${site.name}`
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error deleting site:', error);
+      return false;
+    }
+  }
+
+  async getDevicesBySite(siteId: number): Promise<Device[]> {
+    const devices = await db.any(`
+      SELECT 
+        d.id,
+        d.name,
+        d.brand, 
+        d.model, 
+        d.serial_number as "serialNumber", 
+        d.asset_tag as "assetTag", 
+        d.category_id as "categoryId", 
+        d.purchase_cost as "purchaseCost", 
+        d.purchase_date as "purchaseDate", 
+        d.purchased_by as "purchasedBy", 
+        d.warranty_eol as "warrantyEOL", 
+        d.created_at as "createdAt", 
+        d.user_id as "userId",
+        d.is_intune_onboarded as "isIntuneOnboarded",
+        d.intune_compliance_status as "intuneComplianceStatus",
+        d.intune_last_sync as "intuneLastSync",
+        d.status,
+        c.name as "categoryName"
+      FROM devices d
+      LEFT JOIN categories c ON d.category_id = c.id
+      WHERE d.site_id = $1 AND (d.deleted = FALSE OR d.deleted IS NULL)
+      ORDER BY d.brand, d.model
+    `, [siteId]);
+    return devices;
+  }
   // User operations
   async getUsers(): Promise<User[]> {
     const users = await db.any(`
@@ -540,7 +769,8 @@ export class DatabaseStorage implements IStorage {
         name,
         brand, 
         model, 
-        serial_number, 
+        serial_number,
+        site_id, 
         asset_tag, 
         category_id, 
         purchase_cost, 
