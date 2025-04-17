@@ -1,9 +1,20 @@
 import { useState } from 'react';
+
+interface Site {
+  id: number;
+  name: string;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zipCode: string | null;
+  country: string | null;
+  notes: string | null;
+}
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Icons } from '@/components/icons';
+import { Icons } from '../../components/icons';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -35,7 +46,7 @@ export default function Sites() {
   const [isEditSiteOpen, setIsEditSiteOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<any>(null);
 
-  const { data: sites, isLoading, isError } = useQuery({
+  const { data: sites = [], isLoading, isError } = useQuery<Site[]>({
     queryKey: ['/api/sites'],
     retry: 1,
   });
@@ -68,9 +79,10 @@ export default function Sites() {
 
   const createSiteMutation = useMutation({
     mutationFn: (values: SiteFormValues) => {
-      return apiRequest('/api/sites', {
+      return apiRequest({
+        url: '/api/sites', 
         method: 'POST',
-        data: values,
+        data: values
       });
     },
     onSuccess: () => {
@@ -86,9 +98,10 @@ export default function Sites() {
 
   const updateSiteMutation = useMutation({
     mutationFn: (values: SiteFormValues & { id: number }) => {
-      return apiRequest(`/api/sites/${values.id}`, {
+      return apiRequest({
+        url: `/api/sites/${values.id}`,
         method: 'PATCH',
-        data: values,
+        data: values
       });
     },
     onSuccess: () => {
@@ -104,8 +117,9 @@ export default function Sites() {
 
   const deleteSiteMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest(`/api/sites/${id}`, {
-        method: 'DELETE',
+      return apiRequest({
+        url: `/api/sites/${id}`,
+        method: 'DELETE'
       });
     },
     onSuccess: () => {
