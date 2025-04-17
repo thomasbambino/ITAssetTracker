@@ -28,7 +28,7 @@ import {
 
 // Define category groups
 const categoryGroups = {
-  main: ['/', '/users', '/devices', '/categories'],
+  main: ['/', '/users', '/devices', '/categories', '/sites'],
   management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune', '/management/status'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
@@ -111,6 +111,12 @@ export function DesktopSidebar() {
       href: '/categories',
       label: 'Categories',
       icon: TagIcon,
+      category: 'main',
+    },
+    {
+      href: '/sites',
+      label: 'Sites',
+      icon: ServerIcon,
       category: 'main',
     },
     {
