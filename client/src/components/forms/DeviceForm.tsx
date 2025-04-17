@@ -78,6 +78,11 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['/api/users'],
   });
+  
+  // Fetch sites for site selection dropdown
+  const { data: sites, isLoading: sitesLoading } = useQuery({
+    queryKey: ['/api/sites'],
+  });
 
   // State for file upload
   const [filePreview, setFilePreview] = useState<{
@@ -406,6 +411,48 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
               </Select>
               <FormDescription>
                 Select the type of device
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="siteId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Site</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value?.toString()}
+                value={field.value?.toString()}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a site" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {sitesLoading ? (
+                    <SelectItem value="loading_sites" disabled>
+                      Loading sites...
+                    </SelectItem>
+                  ) : sites && Array.isArray(sites) && sites.length > 0 ? (
+                    sites.map((site: any) => (
+                      <SelectItem key={site.id} value={site.id.toString()}>
+                        {site.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no_sites" disabled>
+                      No sites available
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Select the site/location for this device
               </FormDescription>
               <FormMessage />
             </FormItem>
