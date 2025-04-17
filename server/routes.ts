@@ -595,12 +595,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
-      // Update the device Intune status - note: don't pass loggedInUserId in the props object
+      // Update the device Intune status - pass loggedInUserId as the third parameter
       const device = await storage.updateDeviceIntuneStatus(id, {
         isIntuneOnboarded: updateData.isIntuneOnboarded,
         intuneComplianceStatus: updateData.intuneComplianceStatus,
         intuneLastSync: updateData.intuneLastSync
-      });
+      }, loggedInUserId);
       
       if (!device) {
         return res.status(404).json({ message: "Device not found" });
@@ -651,11 +651,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
-      // Update the device Intune status - note: don't pass loggedInUserId in the props object
+      // Update the device Intune status - pass loggedInUserId as the third parameter
       const device = await storage.updateDeviceIntuneStatus(id, {
         isIntuneOnboarded: updateData.isIntuneOnboarded,
         intuneComplianceStatus: updateData.intuneComplianceStatus
-      });
+      }, loggedInUserId);
       
       if (!device) {
         return res.status(404).json({ message: "Device not found" });
