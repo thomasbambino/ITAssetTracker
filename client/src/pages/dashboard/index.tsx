@@ -378,7 +378,7 @@ export default function Dashboard() {
                           y={0} 
                           dy={4} 
                           textAnchor="end" 
-                          fill="var(--muted-foreground)" 
+                          fill="var(--foreground)" 
                           fontSize={13}
                           className="cursor-pointer hover:underline"
                           onClick={() => {
@@ -394,7 +394,7 @@ export default function Dashboard() {
                           y={0} 
                           dy={4} 
                           textAnchor="end" 
-                          fill="var(--muted-foreground)"
+                          fill="var(--foreground)"
                           fontSize={10}
                           className="cursor-pointer"
                         >
@@ -476,7 +476,7 @@ export default function Dashboard() {
                     dataKey="percentage" 
                     position="right" 
                     formatter={(value: number) => `${value}%`}
-                    style={{ fontWeight: "500", fill: "var(--muted-foreground)" }}
+                    style={{ fontWeight: "500", fill: "var(--foreground)" }}
                     offset={10} // Padding between bar end and label
                   />
                 </Bar>
