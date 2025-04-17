@@ -21,7 +21,7 @@ import QrCodes from "@/pages/qrcodes";
 import Warranties from "@/pages/warranties";
 import Branding from "@/pages/branding";
 import IntuneManagement from "@/pages/management/intune";
-import DeviceStatus from "@/pages/management/status";
+import DeviceManagement from "@/pages/management/status";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import LoginPage from "@/pages/auth/login";
 import ResetPasswordPage from "@/pages/auth/reset-password";
@@ -98,7 +98,7 @@ function MainRouter() {
       <Route path="/reports" component={() => <ProtectedPageWrapper component={Reports} adminRequired />} />
       <Route path="/settings" component={() => <ProtectedPageWrapper component={Settings} adminRequired />} />
       <Route path="/management/intune" component={() => <ProtectedPageWrapper component={IntuneManagement} adminRequired />} />
-      <Route path="/management/status" component={() => <ProtectedPageWrapper component={DeviceStatus} adminRequired />} />
+      <Route path="/management/status" component={() => <ProtectedPageWrapper component={DeviceManagement} adminRequired />} />
       
       {/* Fallback to 404 - this is still inside the protected wrapper */}
       <Route component={() => <ProtectedPageWrapper component={NotFound} />} />
