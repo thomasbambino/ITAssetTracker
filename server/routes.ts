@@ -576,7 +576,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateDataSchema = z.object({
         isIntuneOnboarded: z.boolean().optional(),
         intuneComplianceStatus: z.string().optional(),
-        intuneLastSync: z.date().optional().nullable(),
+        intuneLastSync: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
+          if (!val) return null;
+          if (val instanceof Date) return val;
+          // Try to convert string to Date
+          try {
+            return new Date(val);
+          } catch (e) {
+            console.warn("Failed to parse intuneLastSync date:", e);
+            return null;
+          }
+        }),
       });
       
       const updateData = updateDataSchema.parse(req.body);
