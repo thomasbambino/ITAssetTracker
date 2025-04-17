@@ -34,7 +34,10 @@ import { useQuery } from "@tanstack/react-query";
 
 // Define the form schema
 const formSchema = z.object({
-  deviceId: z.number(),
+  deviceId: z.number({
+    required_error: "Please select a device",
+    invalid_type_error: "Please select a valid device"
+  }).min(1, "Device selection is required"),
   description: z.string().min(2, "Description must be at least 2 characters"),
   maintenanceType: z.string().min(1, "Maintenance type is required"),
   scheduledDate: z.date().optional().nullable(),
@@ -78,17 +81,17 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch devices for selection
-  const { data: devices = [], isLoading: isDevicesLoading } = useQuery({
+  const { data: devices = [], isLoading: isDevicesLoading } = useQuery<any[]>({
     queryKey: ['/api/devices'],
   });
 
-  // Create form
+  // Initialize form with defaults, set device ID after data is loaded
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      deviceId: record?.deviceId || 0,
+      deviceId: record?.deviceId || 0, // Will update this after devices load if needed
       description: record?.description || "",
-      maintenanceType: record?.maintenanceType || "",
+      maintenanceType: record?.maintenanceType || MAINTENANCE_TYPES[0],
       scheduledDate: record?.scheduledDate ? new Date(record.scheduledDate) : null,
       completedDate: record?.completedDate ? new Date(record.completedDate) : null,
       status: record?.status || "scheduled",
@@ -97,6 +100,13 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
       notes: record?.notes || "",
     },
   });
+  
+  // Update deviceId default value when devices are loaded
+  React.useEffect(() => {
+    if (!record?.deviceId && Array.isArray(devices) && devices.length > 0 && !isDevicesLoading) {
+      form.setValue('deviceId', devices[0].id);
+    }
+  }, [devices, isDevicesLoading, record]);
 
   // Watch status to conditionally show/hide completed date
   const watchStatus = form.watch("status");
@@ -116,18 +126,18 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
       
       if (record?.id) {
         // Update existing record
-        await apiRequest(
-          "PUT",
-          `/api/maintenance/${record.id}`,
-          formattedData
-        );
+        await apiRequest({
+          method: "PUT",
+          url: `/api/maintenance/${record.id}`,
+          data: formattedData
+        });
       } else {
         // Create new record
-        await apiRequest(
-          "POST",
-          "/api/maintenance",
-          formattedData
-        );
+        await apiRequest({
+          method: "POST", 
+          url: "/api/maintenance",
+          data: formattedData
+        });
       }
 
       if (onSuccess) {
