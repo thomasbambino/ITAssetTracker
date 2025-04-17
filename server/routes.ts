@@ -15,7 +15,7 @@ import mailgunService from "./direct-mailgun";
 import { 
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
   insertSoftwareSchema, insertSoftwareAssignmentSchema, insertMaintenanceRecordSchema,
-  insertQrCodeSchema, insertNotificationSchema, insertBrandingSettingsSchema
+  insertQrCodeSchema, insertNotificationSchema, insertBrandingSettingsSchema, insertSiteSchema
 } from "@shared/schema";
 
 // Define the session data type to fix type errors
@@ -984,6 +984,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error(`Error fetching devices with status ${req.params.status}:`, error);
       res.status(500).json({ message: `Error fetching devices with status ${req.params.status}` });
+    }
+  });
+
+  // Sites
+  app.get('/api/sites', async (req: Request, res: Response) => {
+    try {
+      const sites = await storage.getSites();
+      res.json(sites);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching sites" });
+    }
+  });
+
+  app.get('/api/sites/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const site = await storage.getSiteById(id);
+      
+      if (!site) {
+        return res.status(404).json({ message: "Site not found" });
+      }
+      
+      // Get devices at this site
+      const devices = await storage.getDevicesBySite(id);
+      
+      res.json({ ...site, devices });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching site" });
+    }
+  });
+
+  app.post('/api/sites', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const validatedData = insertSiteSchema.parse(req.body);
+      const site = await storage.createSite(validatedData, loggedInUserId);
+      res.status(201).json(site);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid site data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating site" });
+    }
+  });
+
+  app.patch('/api/sites/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      const validatedData = insertSiteSchema.partial().parse(req.body);
+      const site = await storage.updateSite(id, validatedData, loggedInUserId);
+      
+      if (!site) {
+        return res.status(404).json({ message: "Site not found" });
+      }
+      
+      res.json(site);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid site data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating site" });
+    }
+  });
+
+  app.delete('/api/sites/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Check if any devices are assigned to this site
+      const devices = await storage.getDevicesBySite(id);
+      if (devices.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete site that has devices assigned",
+          count: devices.length 
+        });
+      }
+      
+      const success = await storage.deleteSite(id, loggedInUserId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Site not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting site" });
     }
   });
 
