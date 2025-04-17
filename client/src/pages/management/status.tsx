@@ -90,7 +90,7 @@ export default function DeviceStatusPage() {
                   <AlertCircleIcon className="w-4 h-4 mr-2" />
                   Lost
                   {getStatusCount('lost') > 0 && (
-                    <Badge variant="destructive" className="ml-2 absolute -top-2 -right-2 bg-amber-500 hover:bg-amber-500 text-white font-bold">
+                    <Badge variant="destructive" className="ml-2 absolute -top-2 -right-2 bg-amber-500 hover:bg-amber-500 text-white font-bold z-10">
                       {getStatusCount('lost')}
                     </Badge>
                   )}
@@ -99,7 +99,7 @@ export default function DeviceStatusPage() {
                   <BookXIcon className="w-4 h-4 mr-2" />
                   Broken
                   {getStatusCount('broken') > 0 && (
-                    <Badge variant="destructive" className="ml-2 absolute -top-2 -right-2 bg-red-500 hover:bg-red-500 text-white font-bold">
+                    <Badge variant="destructive" className="ml-2 absolute -top-2 -right-2 bg-red-500 hover:bg-red-500 text-white font-bold z-10">
                       {getStatusCount('broken')}
                     </Badge>
                   )}
@@ -108,7 +108,7 @@ export default function DeviceStatusPage() {
                   <WrenchIcon className="w-4 h-4 mr-2" />
                   In Repair
                   {getStatusCount('in_repair') > 0 && (
-                    <Badge variant="destructive" className="ml-2 absolute -top-2 -right-2 bg-blue-500 hover:bg-blue-500 text-white font-bold">
+                    <Badge variant="destructive" className="ml-2 absolute -top-2 -right-2 bg-blue-500 hover:bg-blue-500 text-white font-bold z-10">
                       {getStatusCount('in_repair')}
                     </Badge>
                   )}
@@ -117,7 +117,7 @@ export default function DeviceStatusPage() {
                   <ArchiveIcon className="w-4 h-4 mr-2" />
                   Retired
                   {getStatusCount('retired') > 0 && (
-                    <Badge variant="destructive" className="ml-2 absolute -top-2 -right-2 bg-gray-500 hover:bg-gray-500 text-white font-bold">
+                    <Badge variant="destructive" className="ml-2 absolute -top-2 -right-2 bg-gray-500 hover:bg-gray-500 text-white font-bold z-10">
                       {getStatusCount('retired')}
                     </Badge>
                   )}
