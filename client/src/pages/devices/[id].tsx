@@ -27,7 +27,12 @@ import {
   DownloadIcon,
   PrinterIcon,
   FileIcon,
-  FileTextIcon
+  FileTextIcon,
+  Wrench,
+  CalendarClock,
+  CheckCircle,
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -276,6 +281,68 @@ export default function DeviceDetails() {
       accessor: (entry: any) => formatDate(entry.unassignedAt) || "-",
     },
   ];
+  
+  // Maintenance records table columns
+  const maintenanceColumns = [
+    {
+      header: "Type",
+      accessor: (record: any) => record.maintenanceType,
+      cell: (record: any) => (
+        <div className="flex items-center">
+          {record.maintenanceType === 'repair' && (
+            <Wrench className="h-4 w-4 mr-2 text-blue-500" />
+          )}
+          {record.maintenanceType === 'upgrade' && (
+            <Wrench className="h-4 w-4 mr-2 text-green-500" />
+          )}
+          {record.maintenanceType === 'cleaning' && (
+            <Wrench className="h-4 w-4 mr-2 text-yellow-500" />
+          )}
+          {record.maintenanceType === 'inspection' && (
+            <Wrench className="h-4 w-4 mr-2 text-purple-500" />
+          )}
+          <span className="capitalize">{record.maintenanceType}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Description",
+      accessor: (record: any) => record.description,
+    },
+    {
+      header: "Status",
+      accessor: (record: any) => record.status,
+      cell: (record: any) => {
+        const statusColors = {
+          scheduled: { bg: "bg-blue-100", text: "text-blue-800", icon: <CalendarClock className="h-4 w-4 mr-1" /> },
+          in_progress: { bg: "bg-yellow-100", text: "text-yellow-800", icon: <Clock className="h-4 w-4 mr-1" /> },
+          completed: { bg: "bg-green-100", text: "text-green-800", icon: <CheckCircle className="h-4 w-4 mr-1" /> },
+          cancelled: { bg: "bg-red-100", text: "text-red-800", icon: <AlertTriangle className="h-4 w-4 mr-1" /> },
+        };
+        
+        const statusConfig = statusColors[record.status as keyof typeof statusColors] || statusColors.scheduled;
+        
+        return (
+          <Badge variant="outline" className={`${statusConfig.bg} ${statusConfig.text} border-0 flex items-center`}>
+            {statusConfig.icon}
+            <span className="capitalize">{record.status.replace('_', ' ')}</span>
+          </Badge>
+        );
+      },
+    },
+    {
+      header: "Scheduled Date",
+      accessor: (record: any) => record.scheduledDate ? formatDate(record.scheduledDate) : "Not scheduled",
+    },
+    {
+      header: "Completed Date",
+      accessor: (record: any) => record.completedDate ? formatDate(record.completedDate) : "Pending",
+    },
+    {
+      header: "Cost",
+      accessor: (record: any) => record.cost ? formatCurrency(record.cost) : "N/A",
+    },
+  ];
 
   const handleFormSubmitSuccess = () => {
     setIsEditing(false);
@@ -302,6 +369,13 @@ export default function DeviceDetails() {
     enabled: !isNewDevice && !!id && !!device,
     refetchInterval: 10000, // Auto-refresh every 10 seconds
   });
+  
+  // Fetch maintenance records separately
+  const { data: maintenanceRecords = [], refetch: refetchMaintenance } = useQuery({
+    queryKey: [`/api/devices/${id}/maintenance`],
+    enabled: !isNewDevice && !!id && !!device,
+    refetchInterval: 10000, // Auto-refresh every 10 seconds
+  });
 
   // Set up auto-refresh of assignment history data
   useEffect(() => {
@@ -314,6 +388,29 @@ export default function DeviceDetails() {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         refreshHistory();
+      }
+    };
+
+    // Add event listener for visibility change
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Clean up on component unmount
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [id]);
+  
+  // Set up auto-refresh of maintenance records
+  useEffect(() => {
+    // Function to refresh maintenance records
+    const refreshMaintenance = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/devices/${id}/maintenance`] });
+    };
+
+    // Set up a document visibility change listener to refresh when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshMaintenance();
       }
     };
 
