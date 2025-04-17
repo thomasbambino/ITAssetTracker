@@ -145,7 +145,7 @@ export function DesktopSidebar() {
     },
     {
       href: '/management/status',
-      label: 'Status Management',
+      label: 'Device Management',
       icon: AlertCircleIcon,
       category: 'management',
     },

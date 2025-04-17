@@ -31,7 +31,7 @@ interface Device {
   warrantyEOL?: string | null;
 }
 
-export default function DeviceStatusPage() {
+export default function DeviceManagementPage() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("lost");
 
@@ -74,11 +74,11 @@ export default function DeviceStatusPage() {
   };
 
   return (
-    <PageContainer title="Device Status Management">
+    <PageContainer title="Device Management">
       <div className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>Device Status Management</CardTitle>
+            <CardTitle>Device Management</CardTitle>
             <CardDescription>
               View and manage devices by their status
             </CardDescription>
