@@ -419,8 +419,25 @@ export default function DeviceDetails() {
                         {device.assetTag}
                       </Badge>
                       {device.category && (
-                        <Badge variant="secondary">
+                        <Badge variant="secondary" className="mr-2">
                           {device.category.name}
+                        </Badge>
+                      )}
+                      {device.status && (
+                        <Badge variant="outline" className={
+                          device.status === 'active' ? "bg-green-100 text-green-800 border-0" :
+                          device.status === 'broken' ? "bg-red-100 text-red-800 border-0" : 
+                          device.status === 'lost' ? "bg-amber-100 text-amber-800 border-0" :
+                          device.status === 'retired' ? "bg-gray-100 text-gray-800 border-0" :
+                          device.status === 'in_repair' ? "bg-blue-100 text-blue-800 border-0" :
+                          ""
+                        }>
+                          {device.status === 'active' ? 'Active' :
+                           device.status === 'broken' ? 'Broken' :
+                           device.status === 'lost' ? 'Lost' :
+                           device.status === 'retired' ? 'Retired' :
+                           device.status === 'in_repair' ? 'In Repair' :
+                           device.status}
                         </Badge>
                       )}
                     </div>
