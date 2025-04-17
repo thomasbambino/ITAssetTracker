@@ -70,6 +70,8 @@ export default function DeviceDetails() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [isCommentsEditing, setIsCommentsEditing] = useState(false);
+  const [commentsValue, setCommentsValue] = useState("");
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [showQrCodeDialog, setShowQrCodeDialog] = useState(false);
@@ -82,6 +84,13 @@ export default function DeviceDetails() {
     queryKey: [`/api/devices/${id}`],
     enabled: !isNewDevice && !!id,
   });
+  
+  // Initialize comments value when device data is available
+  useEffect(() => {
+    if (device) {
+      setCommentsValue(device.notes || "");
+    }
+  }, [device]);
   
   // Fetch QR code for device
   const { data: qrCodeData, isLoading: qrCodeLoading } = useQuery({
@@ -460,6 +469,40 @@ export default function DeviceDetails() {
     const days = daysFromNow(warrantyDate);
     return days !== null && days <= 0;
   };
+  
+  // Update comments mutation
+  const updateCommentsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest({
+        method: 'PATCH',
+        url: `/api/devices/${id}`,
+        data: {
+          notes: commentsValue
+        }
+      });
+      return response;
+    },
+    onSuccess: () => {
+      setIsCommentsEditing(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/devices/${id}`] });
+      toast({
+        title: "Success",
+        description: "Device comments updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update device comments",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle comments update
+  const handleCommentsUpdate = () => {
+    updateCommentsMutation.mutate();
+  };
 
   return (
     <div className="px-4 py-6 sm:px-6 lg:px-8 mt-10 md:mt-0">
@@ -709,15 +752,46 @@ export default function DeviceDetails() {
                           <span>Comments</span>
                         </div>
                       </h3>
+                      {isCommentsEditing ? (
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setIsCommentsEditing(false);
+                              setCommentsValue(device.notes || "");
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={handleCommentsUpdate}
+                            disabled={updateCommentsMutation.isPending}
+                          >
+                            {updateCommentsMutation.isPending ? "Saving..." : "Save"}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsCommentsEditing(true)}
+                        >
+                          Edit
+                        </Button>
+                      )}
                     </div>
                     <div className="bg-muted/50 rounded-lg p-3">
                       <Textarea 
                         placeholder="Add comments about this device..."
                         className="min-h-[100px] bg-background"
-                        value={device.notes || ""}
-                        readOnly
+                        value={commentsValue}
+                        onChange={(e) => setCommentsValue(e.target.value)}
+                        disabled={!isCommentsEditing || updateCommentsMutation.isPending}
                       />
-                      {!device.notes && (
+                      {!device.notes && !isCommentsEditing && (
                         <p className="text-xs text-muted-foreground mt-2 italic">
                           No comments have been added for this device yet.
                         </p>
