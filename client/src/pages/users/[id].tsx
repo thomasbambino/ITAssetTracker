@@ -330,7 +330,7 @@ export default function UserDetails() {
   const softwareColumns = [
     {
       header: "Software",
-      accessor: (assignment: any) => assignment.software?.name || 'Unknown Software',
+      accessor: (assignment: any) => assignment.software?.name || assignment.softwareName || 'Unknown Software',
     },
     {
       header: "Vendor",
@@ -342,13 +342,20 @@ export default function UserDetails() {
     },
     {
       header: "Assignment Date",
-      accessor: (assignment: any) => assignment.assignmentDate ? 
-        new Date(assignment.assignmentDate).toLocaleDateString() : '-',
+      accessor: (assignment: any) => assignment.assignedAt ? 
+        new Date(assignment.assignedAt).toLocaleDateString() : '-',
     },
     {
       header: "Expiry Date",
-      accessor: (assignment: any) => assignment.expiryDate ? 
-        new Date(assignment.expiryDate).toLocaleDateString() : 'No expiry',
+      accessor: (assignment: any) => {
+        if (assignment.expiryDate) {
+          return new Date(assignment.expiryDate).toLocaleDateString();
+        } else if (assignment.software?.expiryDate) {
+          return new Date(assignment.software.expiryDate).toLocaleDateString();
+        } else {
+          return 'No expiry';
+        }
+      },
     },
   ];
 
@@ -520,7 +527,7 @@ export default function UserDetails() {
                         data={softwareAssignments}
                         columns={softwareColumns}
                         keyField="id"
-                        onRowClick={(assignment) => navigate(`/software/${assignment.softwareId}`)}
+                        onRowClick={(assignment) => navigate(`/software/${assignment.software?.id || assignment.softwareId}`)}
                         emptyState={
                           <div className="text-center py-6">
                             <PackageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
