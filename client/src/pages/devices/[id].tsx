@@ -808,90 +808,92 @@ export default function DeviceDetails() {
 
 
               {/* Assignment History Card */}
-              <Card className="md:col-span-2">
-                <CardHeader className="pb-3">
-                  <CardTitle>Assignment History</CardTitle>
-                  <CardDescription>
-                    History of all assignments for this device
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {assignmentHistory.length > 0 ? (
-                    <DataTable 
-                      data={assignmentHistory}
-                      columns={historyColumns}
-                      keyField="id"
-                      searchable={false}
-                      onRowClick={(historyEntry) => {
-                        // If we're already on the device page, no need to navigate
-                        if (historyEntry.deviceId.toString() === id) return;
-                        
-                        // Navigate to the device's details page
-                        navigate(`/devices/${historyEntry.deviceId}`);
-                      }}
-                      emptyState={
-                        <div className="text-center py-6">
-                          <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                          <h3 className="text-sm font-medium text-foreground">No assignment history</h3>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            This device hasn't been assigned to any users yet.
-                          </p>
-                        </div>
-                      }
-                    />
-                  ) : (
-                    <div className="text-center py-6">
-                      <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <h3 className="text-sm font-medium text-foreground">No assignment history</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        This device hasn't been assigned to any users yet.
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="md:col-span-2 space-y-6">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle>Assignment History</CardTitle>
+                    <CardDescription>
+                      History of all assignments for this device
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {assignmentHistory.length > 0 ? (
+                      <DataTable 
+                        data={assignmentHistory}
+                        columns={historyColumns}
+                        keyField="id"
+                        searchable={false}
+                        onRowClick={(historyEntry) => {
+                          // If we're already on the device page, no need to navigate
+                          if (historyEntry.deviceId.toString() === id) return;
+                          
+                          // Navigate to the device's details page
+                          navigate(`/devices/${historyEntry.deviceId}`);
+                        }}
+                        emptyState={
+                          <div className="text-center py-6">
+                            <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                            <h3 className="text-sm font-medium text-foreground">No assignment history</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              This device hasn't been assigned to any users yet.
+                            </p>
+                          </div>
+                        }
+                      />
+                    ) : (
+                      <div className="text-center py-6">
+                        <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <h3 className="text-sm font-medium text-foreground">No assignment history</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          This device hasn't been assigned to any users yet.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-              {/* Maintenance Records Card */}
-              <Card className="md:col-span-2">
-                <CardHeader className="pb-3">
-                  <CardTitle>
-                    <div className="flex items-center">
-                      <Wrench className="h-5 w-5 mr-2 text-primary" />
-                      <span>Maintenance Records</span>
-                    </div>
-                  </CardTitle>
-                  <CardDescription>
-                    History of maintenance activities for this device
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {maintenanceRecords.length > 0 ? (
-                    <DataTable 
-                      data={maintenanceRecords}
-                      columns={maintenanceColumns}
-                      keyField="id"
-                      searchable={false}
-                      emptyState={
-                        <div className="text-center py-6">
-                          <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                          <h3 className="text-sm font-medium text-foreground">No maintenance records</h3>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            This device hasn't had any maintenance activities recorded yet.
-                          </p>
-                        </div>
-                      }
-                    />
-                  ) : (
-                    <div className="text-center py-6">
-                      <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <h3 className="text-sm font-medium text-foreground">No maintenance records</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        This device hasn't had any maintenance activities recorded yet.
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                {/* Maintenance Records Card */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle>
+                      <div className="flex items-center">
+                        <Wrench className="h-5 w-5 mr-2 text-primary" />
+                        <span>Maintenance Records</span>
+                      </div>
+                    </CardTitle>
+                    <CardDescription>
+                      History of maintenance activities for this device
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {maintenanceRecords.length > 0 ? (
+                      <DataTable 
+                        data={maintenanceRecords}
+                        columns={maintenanceColumns}
+                        keyField="id"
+                        searchable={false}
+                        emptyState={
+                          <div className="text-center py-6">
+                            <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                            <h3 className="text-sm font-medium text-foreground">No maintenance records</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              This device hasn't had any maintenance activities recorded yet.
+                            </p>
+                          </div>
+                        }
+                      />
+                    ) : (
+                      <div className="text-center py-6">
+                        <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <h3 className="text-sm font-medium text-foreground">No maintenance records</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          This device hasn't had any maintenance activities recorded yet.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           ) : (
             <Card>
