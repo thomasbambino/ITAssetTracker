@@ -42,9 +42,9 @@ import { format } from "date-fns";
 const formSchema = insertDeviceSchema.extend({
   // Device name field
   name: z.string().optional(),
-  // Make sure serial number and assetTag are required with clear error messages
-  serialNumber: z.string().min(1, "Serial number is required"),
-  assetTag: z.string().min(1, "Asset tag is required"),
+  // Make serial number and assetTag optional
+  serialNumber: z.string().optional().nullable(),
+  assetTag: z.string().optional().nullable(),
   categoryId: z.coerce.number().nullable(),
   status: z.string().default('active'),
   purchaseDate: z.date().nullable().optional(),
@@ -336,10 +336,10 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Serial Number <span className="text-red-500">*</span>
+                  Serial Number
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Serial Number" {...field} required />
+                  <Input placeholder="Serial Number (optional)" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
                 <FormDescription className="text-xs">
@@ -355,10 +355,10 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Asset Tag <span className="text-red-500">*</span>
+                  Asset Tag
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Asset Tag" {...field} required />
+                  <Input placeholder="Asset Tag (optional)" {...field} />
                 </FormControl>
                 <FormMessage />
                 <FormDescription className="text-xs">

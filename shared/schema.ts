@@ -79,8 +79,8 @@ export const devices = pgTable("devices", {
   name: text("name"),  // New device name field
   brand: text("brand").notNull(),
   model: text("model").notNull(),
-  serialNumber: text("serial_number").notNull().unique(),
-  assetTag: text("asset_tag").notNull().unique(),
+  serialNumber: text("serial_number").unique(),
+  assetTag: text("asset_tag").unique(),
   categoryId: integer("category_id").references(() => categories.id),
   purchaseCost: integer("purchase_cost"),  // Store in cents
   purchaseDate: timestamp("purchase_date"),
@@ -155,9 +155,9 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
     z.date(),
     z.null()
   ]).optional(),
-  // Make these fields optional for CSV import
-  serialNumber: z.string().default(() => `SN-${Math.floor(Math.random() * 1000000)}`),
-  assetTag: z.string().default(() => `AT-${Math.floor(Math.random() * 1000000)}`),
+  // Make these fields optional
+  serialNumber: z.string().optional().nullable(),
+  assetTag: z.string().optional().nullable(),
   // Status field with default
   status: z.string().optional().default('active'),
   // Default for intuneComplianceStatus
