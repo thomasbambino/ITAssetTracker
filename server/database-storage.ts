@@ -754,6 +754,7 @@ export class DatabaseStorage implements IStorage {
           d.intune_compliance_status as "intuneComplianceStatus",
           d.intune_last_sync as "intuneLastSync",
           d.status,
+          d.notes,
           c.name as "categoryName"
         FROM devices d
         LEFT JOIN categories c ON d.category_id = c.id
@@ -903,6 +904,13 @@ export class DatabaseStorage implements IStorage {
         console.log(`Adding status update: ${device.status}`);
       }
       
+      // Handle notes field
+      if (device.notes !== undefined) {
+        updates.push(`notes = $${paramCount++}`);
+        values.push(device.notes);
+        console.log(`Adding notes update: ${device.notes}`);
+      }
+      
       // If no updates, return the device
       if (updates.length === 0) {
         return this.getDeviceById(id);
@@ -927,7 +935,8 @@ export class DatabaseStorage implements IStorage {
           purchased_by as "purchasedBy", 
           warranty_eol as "warrantyEOL", 
           created_at as "createdAt", 
-          user_id as "userId"
+          user_id as "userId",
+          notes
       `, values);
       
       // Get category name for the device
@@ -1106,7 +1115,8 @@ export class DatabaseStorage implements IStorage {
           user_id as "userId",
           is_intune_onboarded as "isIntuneOnboarded",
           intune_compliance_status as "intuneComplianceStatus",
-          intune_last_sync as "intuneLastSync"
+          intune_last_sync as "intuneLastSync",
+          notes
       `, values);
       
       // Get category name for the device
