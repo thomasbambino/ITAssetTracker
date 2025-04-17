@@ -85,7 +85,7 @@ export function CsvImport({
         <DialogHeader>
           <DialogTitle>Import {entityName} from CSV</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to import {entityName.toLowerCase()}. Make sure your CSV file has the required fields.
+            Upload a CSV file to import {entityName.toLowerCase()}. Make sure your CSV file has the required fields, including Site if you want to assign devices to a location.
           </DialogDescription>
         </DialogHeader>
         

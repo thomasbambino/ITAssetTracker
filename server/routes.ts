@@ -1773,6 +1773,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
               
+              // Find site by name if provided
+              if (record.Site || record.site) {
+                const siteName = record.Site || record.site;
+                const sites = await storage.getSites();
+                const site = sites.find(s => 
+                  s.name.toLowerCase() === siteName.toLowerCase()
+                );
+                
+                if (site) {
+                  deviceData.siteId = site.id;
+                }
+              }
+              
               // Validate and create device
               const validatedData = insertDeviceSchema.parse(deviceData);
               await storage.createDevice(validatedData, loggedInUserId);
@@ -1817,6 +1830,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? await storage.getUserById(device.userId)
           : null;
           
+        // Get site name
+        const site = device.siteId
+          ? await storage.getSiteById(device.siteId)
+          : null;
+          
         return {
           Name: device.name || "",
           Brand: device.brand || "",
@@ -1824,6 +1842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           SerialNumber: device.serialNumber || "",
           AssetTag: device.assetTag || "",
           Category: category ? category.name : "",
+          Site: site ? site.name : "",
           PurchaseCost: device.purchaseCost ? `$${(device.purchaseCost / 100).toFixed(2)}` : "",
           PurchaseDate: device.purchaseDate ? new Date(device.purchaseDate).toLocaleDateString() : "",
           PurchasedBy: device.purchasedBy || "",
@@ -1876,6 +1895,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? await storage.getUserById(device.userId)
           : null;
           
+        // Get site name
+        const site = device.siteId
+          ? await storage.getSiteById(device.siteId)
+          : null;
+          
         // Calculate days until warranty expiration
         const today = new Date();
         const warrantyDate = new Date(device.warrantyEOL);
@@ -1889,6 +1913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           SerialNumber: device.serialNumber || "",
           AssetTag: device.assetTag || "",
           Category: category ? category.name : "",
+          Site: site ? site.name : "",
           PurchaseDate: device.purchaseDate ? new Date(device.purchaseDate).toLocaleDateString() : "",
           WarrantyEnd: device.warrantyEOL ? new Date(device.warrantyEOL).toLocaleDateString() : "",
           DaysRemaining: diffDays,
