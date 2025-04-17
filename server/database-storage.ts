@@ -779,7 +779,7 @@ export class DatabaseStorage implements IStorage {
         warranty_eol,
         user_id
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
       ) RETURNING 
         id, 
         name,
@@ -788,6 +788,7 @@ export class DatabaseStorage implements IStorage {
         serial_number as "serialNumber", 
         asset_tag as "assetTag", 
         category_id as "categoryId", 
+        site_id as "siteId",
         purchase_cost as "purchaseCost", 
         purchase_date as "purchaseDate", 
         purchased_by as "purchasedBy", 
@@ -799,6 +800,7 @@ export class DatabaseStorage implements IStorage {
       device.brand, 
       device.model, 
       device.serialNumber, 
+      device.siteId || null,
       device.assetTag, 
       device.categoryId || null, 
       device.purchaseCost || null, 
@@ -865,6 +867,11 @@ export class DatabaseStorage implements IStorage {
       if (device.categoryId !== undefined) {
         updates.push(`category_id = $${paramCount++}`);
         values.push(device.categoryId);
+      }
+      
+      if (device.siteId !== undefined) {
+        updates.push(`site_id = $${paramCount++}`);
+        values.push(device.siteId);
       }
       
       if (device.purchaseCost !== undefined) {
