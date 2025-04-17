@@ -75,11 +75,12 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
         <text 
           x={x} 
           y={y} 
-          fill="#555"
+          fill="currentColor"
           textAnchor={x > cx ? 'start' : 'end'} 
           dominantBaseline="central"
           fontSize="12px"
           fontWeight="500"
+          className="text-foreground"
         >
           {name} ({(percent * 100).toFixed(0)}%)
         </text>
@@ -162,7 +163,13 @@ export const BarChartComponent: React.FC<BarChartProps> = ({
         margin={dynamicMargin}
         barSize={data.length > 6 ? 30 : 50}
       >
-        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+        <CartesianGrid 
+          strokeDasharray="3 3" 
+          vertical={false} 
+          opacity={0.3}
+          stroke="currentColor"
+          className="text-muted-foreground/20" 
+        />
         <XAxis 
           dataKey={xKey} 
           fontSize={12}
@@ -171,15 +178,15 @@ export const BarChartComponent: React.FC<BarChartProps> = ({
           interval={0}
           height={60}
           tickMargin={10}
-          tick={{ fill: '#555' }}
-          axisLine={{ stroke: '#e0e0e0' }}
-          tickLine={{ stroke: '#e0e0e0' }}
+          tick={{ fill: 'currentColor', className: 'text-foreground' }}
+          axisLine={{ stroke: 'currentColor', className: 'text-muted-foreground/30' }}
+          tickLine={{ stroke: 'currentColor', className: 'text-muted-foreground/30' }}
         />
         <YAxis 
           fontSize={12}
-          tick={{ fill: '#555' }}
-          axisLine={{ stroke: '#e0e0e0' }}
-          tickLine={{ stroke: '#e0e0e0' }}
+          tick={{ fill: 'currentColor', className: 'text-foreground' }}
+          axisLine={{ stroke: 'currentColor', className: 'text-muted-foreground/30' }}
+          tickLine={{ stroke: 'currentColor', className: 'text-muted-foreground/30' }}
         />
         <Tooltip 
           formatter={tooltipFormatter}
@@ -207,7 +214,8 @@ export const BarChartComponent: React.FC<BarChartProps> = ({
             position="top" 
             fontSize={12} 
             fontWeight="500"
-            fill="#555"
+            fill="currentColor"
+            className="text-foreground"
           />
         </Bar>
       </BarChart>
