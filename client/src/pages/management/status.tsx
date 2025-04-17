@@ -61,15 +61,15 @@ export default function DeviceStatusPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'lost':
-        return <Badge variant="outline" className="bg-amber-100 text-amber-800 border-0">Lost</Badge>;
+        return <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">Lost</Badge>;
       case 'broken':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-0">Broken</Badge>;
+        return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">Broken</Badge>;
       case 'retired':
-        return <Badge variant="outline" className="bg-gray-100 text-gray-800 border-0">Retired</Badge>;
+        return <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/20">Retired</Badge>;
       case 'in_repair':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-0">In Repair</Badge>;
+        return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">In Repair</Badge>;
       default:
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-0">Active</Badge>;
+        return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Active</Badge>;
     }
   };
 
@@ -87,37 +87,37 @@ export default function DeviceStatusPage() {
             <Tabs defaultValue="lost" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="lost" className="relative">
-                  <AlertCircleIcon className="w-4 h-4 mr-2 text-amber-500" />
-                  <span className={activeTab === "lost" ? "text-white" : "text-amber-800"}>Lost</span>
+                  <AlertCircleIcon className="w-4 h-4 mr-2" />
+                  Lost
                   {getStatusCount('lost') > 0 && (
-                    <Badge variant="secondary" className="ml-2 absolute -top-2 -right-2 bg-amber-100 text-amber-800">
+                    <Badge variant="secondary" className="ml-2 absolute -top-2 -right-2">
                       {getStatusCount('lost')}
                     </Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="broken" className="relative">
-                  <BookXIcon className="w-4 h-4 mr-2 text-red-500" />
-                  <span className={activeTab === "broken" ? "text-white" : "text-red-800"}>Broken</span>
+                  <BookXIcon className="w-4 h-4 mr-2" />
+                  Broken
                   {getStatusCount('broken') > 0 && (
-                    <Badge variant="secondary" className="ml-2 absolute -top-2 -right-2 bg-red-100 text-red-800">
+                    <Badge variant="secondary" className="ml-2 absolute -top-2 -right-2">
                       {getStatusCount('broken')}
                     </Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="in_repair" className="relative">
-                  <WrenchIcon className="w-4 h-4 mr-2 text-blue-500" />
-                  <span className={activeTab === "in_repair" ? "text-white" : "text-blue-800"}>In Repair</span>
+                  <WrenchIcon className="w-4 h-4 mr-2" />
+                  In Repair
                   {getStatusCount('in_repair') > 0 && (
-                    <Badge variant="secondary" className="ml-2 absolute -top-2 -right-2 bg-blue-100 text-blue-800">
+                    <Badge variant="secondary" className="ml-2 absolute -top-2 -right-2">
                       {getStatusCount('in_repair')}
                     </Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="retired" className="relative">
-                  <ArchiveIcon className="w-4 h-4 mr-2 text-gray-500" />
-                  <span className={activeTab === "retired" ? "text-white" : "text-gray-800"}>Retired</span>
+                  <ArchiveIcon className="w-4 h-4 mr-2" />
+                  Retired
                   {getStatusCount('retired') > 0 && (
-                    <Badge variant="secondary" className="ml-2 absolute -top-2 -right-2 bg-gray-100 text-gray-800">
+                    <Badge variant="secondary" className="ml-2 absolute -top-2 -right-2">
                       {getStatusCount('retired')}
                     </Badge>
                   )}
