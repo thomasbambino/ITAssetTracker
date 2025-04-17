@@ -46,6 +46,8 @@ const formSchema = insertDeviceSchema.extend({
   serialNumber: z.string().optional().nullable(),
   assetTag: z.string().optional().nullable(),
   categoryId: z.coerce.number().nullable(),
+  // Add site selection
+  siteId: z.coerce.number().nullable(),
   status: z.string().default('active'),
   purchaseDate: z.date().nullable().optional(),
   warrantyEOL: z.date().nullable().optional(),
@@ -101,6 +103,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
       serialNumber: device?.serialNumber || "",
       assetTag: device?.assetTag || "",
       categoryId: device?.categoryId?.toString() || "",
+      siteId: device?.siteId?.toString() || "",
       status: device?.status || "active",
       purchaseCost: device?.purchaseCost ? Number(device.purchaseCost) : null,
       purchaseDate: device?.purchaseDate ? new Date(device.purchaseDate) : null,
@@ -168,6 +171,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
       // Simply pass the purchase cost value - our Zod schema will handle conversion
       purchaseCost: data.purchaseCost,
       categoryId: data.categoryId ? parseInt(data.categoryId.toString()) : null,
+      siteId: data.siteId ? parseInt(data.siteId.toString()) : null,
       // Ensure dates are properly parsed to ISO strings
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
       warrantyEOL: data.warrantyEOL ? new Date(data.warrantyEOL) : null,
