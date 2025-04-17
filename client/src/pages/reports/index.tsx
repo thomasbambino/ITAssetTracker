@@ -72,8 +72,8 @@ interface WarrantyItem {
 
 export default function Reports() {
   const [timeframe, setTimeframe] = useState<string>("30");
-  const [selectedYear, setSelectedYear] = useState<string>("");
-  const [selectedSiteId, setSelectedSiteId] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedSiteId, setSelectedSiteId] = useState<string>("all");
   
   // Generate year options for the filter
   const currentYear = new Date().getFullYear();
@@ -141,12 +141,12 @@ export default function Reports() {
   const handleExportTangibleProperty = () => {
     let url = '/api/export/tangible-property';
     
-    // Add filters as query parameters if selected
+    // Add filters as query parameters if selected and not "all"
     const params = new URLSearchParams();
-    if (selectedYear) {
+    if (selectedYear && selectedYear !== "all") {
       params.append('year', selectedYear);
     }
-    if (selectedSiteId) {
+    if (selectedSiteId && selectedSiteId !== "all") {
       params.append('siteId', selectedSiteId);
     }
     
@@ -614,7 +614,7 @@ export default function Reports() {
                       <SelectValue placeholder="Select Year" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Years</SelectItem>
+                      <SelectItem value="all">All Years</SelectItem>
                       {yearOptions.map(year => (
                         <SelectItem key={year} value={year.toString()}>
                           {year}
@@ -633,7 +633,7 @@ export default function Reports() {
                       <SelectValue placeholder="Select Site" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Sites</SelectItem>
+                      <SelectItem value="all">All Sites</SelectItem>
                       {sites && sites.map((site: any) => (
                         <SelectItem key={site.id} value={site.id.toString()}>
                           {site.name}
@@ -668,16 +668,16 @@ export default function Reports() {
                     <TableBody>
                       {devices
                         .filter((device: any) => {
-                          // Apply year filter if selected
-                          if (selectedYear && device.purchaseDate) {
+                          // Apply year filter if selected and not "all"
+                          if (selectedYear && selectedYear !== "all" && device.purchaseDate) {
                             const purchaseYear = new Date(device.purchaseDate).getFullYear();
                             if (purchaseYear.toString() !== selectedYear) {
                               return false;
                             }
                           }
                           
-                          // Apply site filter if selected
-                          if (selectedSiteId && device.siteId) {
+                          // Apply site filter if selected and not "all"
+                          if (selectedSiteId && selectedSiteId !== "all" && device.siteId) {
                             if (device.siteId.toString() !== selectedSiteId) {
                               return false;
                             }
@@ -709,8 +709,8 @@ export default function Reports() {
                   <div className="text-center">
                     <p className="text-muted-foreground mb-2">No devices match the selected filters</p>
                     <Button variant="outline" size="sm" onClick={() => {
-                      setSelectedYear("");
-                      setSelectedSiteId("");
+                      setSelectedYear("all");
+                      setSelectedSiteId("all");
                     }}>
                       Clear Filters
                     </Button>
