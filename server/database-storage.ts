@@ -804,6 +804,7 @@ export class DatabaseStorage implements IStorage {
       LEFT JOIN users u ON d.user_id = u.id
       WHERE (d.deleted = FALSE OR d.deleted IS NULL)
       AND c.name IN ('Laptop', 'Desktop')
+      AND d.user_id IS NOT NULL
       ORDER BY d.brand, d.model
     `);
     

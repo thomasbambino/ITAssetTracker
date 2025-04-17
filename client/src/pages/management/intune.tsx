@@ -204,7 +204,7 @@ export default function IntunePage() {
           <CardHeader>
             <CardTitle>Microsoft Intune Management</CardTitle>
             <CardDescription>
-              Manage device enrollment and compliance status for Microsoft Intune-eligible devices (laptops and desktops).
+              Manage device enrollment and compliance status for assigned laptops and desktops. Only devices that are assigned to users are displayed.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -221,7 +221,7 @@ export default function IntunePage() {
               <>
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    Showing {devices?.length || 0} Intune-eligible devices
+                    Showing {devices?.length || 0} Intune-eligible devices assigned to users
                   </p>
                   <Button variant="outline" size="sm" className="flex items-center gap-1"
                     onClick={() => window.location.reload()}>
@@ -245,7 +245,7 @@ export default function IntunePage() {
                       {devices?.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                            No Intune-eligible devices found
+                            No assigned laptops or desktops found. Devices must be assigned to users to appear here.
                           </TableCell>
                         </TableRow>
                       ) : (
