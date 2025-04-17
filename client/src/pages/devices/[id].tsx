@@ -349,6 +349,12 @@ export default function DeviceDetails() {
     queryClient.invalidateQueries({ queryKey: [`/api/devices/${id}`] });
     queryClient.invalidateQueries({ queryKey: ['/api/devices'] });
     
+    // Also refresh maintenance records and assignment history
+    if (!isNewDevice) {
+      refetchMaintenance();
+      refetchHistory();
+    }
+    
     if (isNewDevice) {
       navigate('/devices');
       toast({
@@ -429,8 +435,9 @@ export default function DeviceDetails() {
     queryClient.invalidateQueries({ queryKey: [`/api/devices/${id}`] });
     queryClient.invalidateQueries({ queryKey: ['/api/devices'] });
     
-    // Explicitly refetch the assignment history
+    // Explicitly refetch the assignment history and maintenance records
     refetchHistory();
+    refetchMaintenance();
     
     toast({
       title: "Success",
