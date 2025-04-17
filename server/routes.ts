@@ -630,7 +630,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         formData.invoiceFileType = req.file.mimetype;
       }
       
-      // The insertDeviceSchema now handles data validation
+      // Handle other field type conversions
+      if (formData.categoryId) {
+        formData.categoryId = parseInt(formData.categoryId);
+      }
+      
+      // Convert boolean fields from strings to actual booleans
+      if (formData.isIntuneOnboarded !== undefined) {
+        if (formData.isIntuneOnboarded === 'true' || formData.isIntuneOnboarded === true) {
+          formData.isIntuneOnboarded = true;
+        } else if (formData.isIntuneOnboarded === 'false' || formData.isIntuneOnboarded === false) {
+          formData.isIntuneOnboarded = false;
+        }
+      }
+      
+      console.log('Formatted data before validation (create):', {
+        categoryId: formData.categoryId,
+        categoryIdType: typeof formData.categoryId,
+        isIntuneOnboarded: formData.isIntuneOnboarded,
+        isIntuneOnboardedType: typeof formData.isIntuneOnboarded
+      });
+
+      // Now the insertDeviceSchema can validate the properly typed data
       const validatedData = insertDeviceSchema.parse(formData);
       
       const device = await storage.createDevice(validatedData, loggedInUserId);
@@ -707,7 +728,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         formData.invoiceFileType = req.file.mimetype;
       }
       
-      // The insertDeviceSchema now handles data validation
+      // Handle other field type conversions
+      if (formData.categoryId) {
+        formData.categoryId = parseInt(formData.categoryId);
+      }
+      
+      // Convert boolean fields from strings to actual booleans
+      if (formData.isIntuneOnboarded !== undefined) {
+        if (formData.isIntuneOnboarded === 'true' || formData.isIntuneOnboarded === true) {
+          formData.isIntuneOnboarded = true;
+        } else if (formData.isIntuneOnboarded === 'false' || formData.isIntuneOnboarded === false) {
+          formData.isIntuneOnboarded = false;
+        }
+      }
+      
+      console.log('Formatted data before validation:', {
+        categoryId: formData.categoryId,
+        categoryIdType: typeof formData.categoryId,
+        isIntuneOnboarded: formData.isIntuneOnboarded,
+        isIntuneOnboardedType: typeof formData.isIntuneOnboarded
+      });
+
+      // Now the insertDeviceSchema can validate the properly typed data
       const validatedData = insertDeviceSchema.partial().parse(formData);
       
       const device = await storage.updateDevice(id, validatedData, loggedInUserId);
