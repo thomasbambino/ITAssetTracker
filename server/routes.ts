@@ -422,7 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get device invoice file
+  // Get device invoice file for download
   app.get('/api/devices/:id/invoice', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -449,6 +449,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching device invoice:", error);
       res.status(500).json({ message: "Error fetching device invoice" });
+    }
+  });
+  
+  // Get device invoice file for viewing in browser
+  app.get('/api/devices/:id/invoice/view', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const device = await storage.getDeviceById(id);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      if (!device.invoiceFile || !device.invoiceFileName || !device.invoiceFileType) {
+        return res.status(404).json({ message: "No invoice file found for this device" });
+      }
+      
+      // Convert base64 back to binary
+      const fileBuffer = Buffer.from(device.invoiceFile, 'base64');
+      
+      // Set appropriate headers for inline viewing
+      res.setHeader('Content-Type', device.invoiceFileType);
+      // Use inline disposition to view in browser rather than download
+      res.setHeader('Content-Disposition', `inline; filename="${device.invoiceFileName}"`);
+      res.setHeader('Content-Length', fileBuffer.length);
+      
+      // Send the file
+      res.send(fileBuffer);
+    } catch (error) {
+      console.error("Error viewing device invoice:", error);
+      res.status(500).json({ message: "Error viewing device invoice" });
     }
   });
 
