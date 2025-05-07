@@ -1,15 +1,15 @@
 import { 
   categories, devices, users, assignmentHistory, activityLog,
   software, softwareAssignments, maintenanceRecords, qrCodes, 
-  notifications, brandingSettings, emailSettings, sites,
+  notifications, brandingSettings, emailSettings, sites, departments,
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
   type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
-  type Notification, type BrandingSettings, type EmailSettings, type Site,
+  type Notification, type BrandingSettings, type EmailSettings, type Site, type Department,
   type InsertCategory, type InsertDevice, type InsertUser, 
   type InsertAssignmentHistory, type InsertActivityLog,
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
   type InsertQrCode, type InsertNotification, type InsertBrandingSettings, type InsertEmailSettings,
-  type InsertSite
+  type InsertSite, type InsertDepartment
 } from "@shared/schema";
 
 export interface IStorage {

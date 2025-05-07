@@ -397,3 +397,21 @@ export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit(
 
 export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
 export type EmailSettings = typeof emailSettings.$inferSelect;
+
+// Departments Table
+export const departments = pgTable("departments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  manager: text("manager"),
+  budget: integer("budget"),  // Store in cents
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDepartmentSchema = createInsertSchema(departments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+export type Department = typeof departments.$inferSelect;

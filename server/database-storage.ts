@@ -3435,4 +3435,187 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Department CRUD operations
+  async getDepartments(): Promise<Department[]> {
+    try {
+      const departments = await this.client.query<Department>(`
+        SELECT * FROM departments ORDER BY name ASC
+      `);
+      return departments.rows;
+    } catch (error) {
+      console.error('Error getting departments:', error);
+      throw error;
+    }
+  }
+  
+  async getDepartmentById(id: number): Promise<Department | undefined> {
+    try {
+      const [department] = await this.client.query<Department>(`
+        SELECT * FROM departments WHERE id = $1
+      `, [id]);
+      return department;
+    } catch (error) {
+      console.error('Error getting department by ID:', error);
+      throw error;
+    }
+  }
+  
+  async getDepartmentByName(name: string): Promise<Department | undefined> {
+    try {
+      const [department] = await this.client.query<Department>(`
+        SELECT * FROM departments WHERE name = $1
+      `, [name]);
+      return department;
+    } catch (error) {
+      console.error('Error getting department by name:', error);
+      throw error;
+    }
+  }
+  
+  async createDepartment(department: InsertDepartment, loggedInUserId?: number): Promise<Department> {
+    try {
+      // Create the department
+      const [newDepartment] = await this.client.query<Department>(`
+        INSERT INTO departments (
+          name, description, manager, budget
+        ) VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `, [
+        department.name,
+        department.description || null,
+        department.manager || null,
+        department.budget || null
+      ]);
+      
+      // Log the activity
+      if (loggedInUserId) {
+        await this.createActivityLog({
+          userId: loggedInUserId,
+          actionType: 'department_added',
+          details: `Department "${department.name}" created`
+        });
+      }
+      
+      return newDepartment;
+    } catch (error) {
+      console.error('Error creating department:', error);
+      throw error;
+    }
+  }
+  
+  async updateDepartment(id: number, department: Partial<InsertDepartment>, loggedInUserId?: number): Promise<Department | undefined> {
+    try {
+      // Check if the department exists
+      const existingDept = await this.getDepartmentById(id);
+      if (!existingDept) {
+        return undefined;
+      }
+      
+      // Build update query
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+      
+      if (department.name !== undefined) {
+        updates.push(`name = $${paramCount++}`);
+        values.push(department.name);
+      }
+      
+      if (department.description !== undefined) {
+        updates.push(`description = $${paramCount++}`);
+        values.push(department.description);
+      }
+      
+      if (department.manager !== undefined) {
+        updates.push(`manager = $${paramCount++}`);
+        values.push(department.manager);
+      }
+      
+      if (department.budget !== undefined) {
+        updates.push(`budget = $${paramCount++}`);
+        values.push(department.budget);
+      }
+      
+      if (updates.length === 0) {
+        return existingDept; // No updates to make
+      }
+      
+      // Add the ID as the last parameter
+      values.push(id);
+      
+      // Execute the update
+      const [updatedDepartment] = await this.client.query<Department>(`
+        UPDATE departments
+        SET ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING *
+      `, values);
+      
+      // Log the activity
+      if (loggedInUserId) {
+        await this.createActivityLog({
+          userId: loggedInUserId,
+          actionType: 'department_updated',
+          details: `Department "${updatedDepartment.name}" updated`
+        });
+      }
+      
+      return updatedDepartment;
+    } catch (error) {
+      console.error('Error updating department:', error);
+      throw error;
+    }
+  }
+  
+  async deleteDepartment(id: number, loggedInUserId?: number): Promise<boolean> {
+    try {
+      // Check if the department exists
+      const department = await this.getDepartmentById(id);
+      if (!department) {
+        return false;
+      }
+      
+      // Check if any users are assigned to this department
+      const usersInDept = await this.getUsersByDepartment(department.name);
+      if (usersInDept.length > 0) {
+        // Don't delete if users are still associated
+        return false;
+      }
+      
+      // Delete the department
+      await this.client.query(`
+        DELETE FROM departments WHERE id = $1
+      `, [id]);
+      
+      // Log the activity
+      if (loggedInUserId) {
+        await this.createActivityLog({
+          userId: loggedInUserId,
+          actionType: 'department_deleted',
+          details: `Department "${department.name}" deleted`
+        });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      throw error;
+    }
+  }
+  
+  // Method to get all users in a specific department by ID
+  async getUsersByDepartmentId(departmentId: number): Promise<User[]> {
+    try {
+      const department = await this.getDepartmentById(departmentId);
+      if (!department) {
+        return [];
+      }
+      
+      return this.getUsersByDepartment(department.name);
+    } catch (error) {
+      console.error('Error getting users by department ID:', error);
+      throw error;
+    }
+  }
 }
