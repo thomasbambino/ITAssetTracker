@@ -34,6 +34,7 @@ interface Category {
   name: string;
   description?: string | null;
   devices?: { id: number }[];
+  deviceCount?: number;
 }
 
 export default function Categories() {
@@ -45,10 +46,7 @@ export default function Categories() {
 
   // Fetch categories
   const { data: categories, isLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
-    onSuccess: (data) => {
-      console.log('Fetched categories:', data); // Log the data to inspect the structure
-    }
+    queryKey: ['/api/categories']
   });
   
   // Delete category mutation
@@ -102,9 +100,9 @@ export default function Categories() {
     },
     {
       header: "Devices",
-      accessor: (category: Category) => category.devices?.length || 0,
+      accessor: (category: Category) => category.deviceCount || 0,
       cell: (category: Category) => {
-        const count = category.devices?.length || 0;
+        const count = category.deviceCount || 0;
         return count > 0 ? (
           <Badge 
             variant="secondary" 
