@@ -46,6 +46,9 @@ export default function Categories() {
   // Fetch categories
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
+    onSuccess: (data) => {
+      console.log('Fetched categories:', data); // Log the data to inspect the structure
+    }
   });
   
   // Delete category mutation
