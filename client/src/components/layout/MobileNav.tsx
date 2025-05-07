@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 
 const categoryGroups = {
-  main: ['/', '/users', '/devices', '/categories', '/sites'],
+  main: ['/', '/users', '/devices', '/categories', '/sites', '/departments'],
   management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune', '/management/status'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
@@ -127,6 +127,12 @@ export function MobileNav() {
       href: '/sites',
       label: 'Sites',
       icon: ServerIcon,
+      category: 'main',
+    },
+    {
+      href: '/departments',
+      label: 'Departments',
+      icon: UsersIcon,
       category: 'main',
     },
     {

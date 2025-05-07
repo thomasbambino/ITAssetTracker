@@ -120,6 +120,12 @@ export function DesktopSidebar() {
       category: 'main',
     },
     {
+      href: '/departments',
+      label: 'Departments',
+      icon: UsersIcon,
+      category: 'main',
+    },
+    {
       href: '/software',
       label: 'Software',
       icon: BoxIcon,
