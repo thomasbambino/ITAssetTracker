@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation, useParams, Link } from 'wouter';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { PdfViewerDialog } from '@/components/devices/PdfViewerDialog';
 import { Button } from '@/components/ui/button';
 import { 
   Card, 
@@ -75,6 +76,7 @@ export default function DeviceDetails() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [showQrCodeDialog, setShowQrCodeDialog] = useState(false);
+  const [showPdfViewerDialog, setShowPdfViewerDialog] = useState(false);
 
   // Determine if we're in "new device" mode
   const isNewDevice = id === 'new';
@@ -677,11 +679,7 @@ export default function DeviceDetails() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              if (device.invoiceFileUrl) {
-                                window.open(device.invoiceFileUrl, '_blank');
-                              }
-                            }}
+                            onClick={() => setShowPdfViewerDialog(true)}
                             className="h-6 px-2 text-blue-600 hover:text-blue-800"
                           >
                             View
@@ -691,14 +689,12 @@ export default function DeviceDetails() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              if (device.invoiceFileUrl) {
-                                const a = document.createElement('a');
-                                a.href = `/api/devices/${device.id}/invoice`;
-                                a.download = device.invoiceFileName || 'invoice';
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                              }
+                              const a = document.createElement('a');
+                              a.href = `/api/devices/${device.id}/invoice`;
+                              a.download = device.invoiceFileName || 'invoice';
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
                             }}
                             className="h-6 px-2 text-blue-600 hover:text-blue-800"
                           >
@@ -1082,6 +1078,16 @@ export default function DeviceDetails() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+      
+      {/* PDF Viewer Dialog */}
+      {device && device.invoiceFileName && (
+        <PdfViewerDialog
+          isOpen={showPdfViewerDialog}
+          onClose={() => setShowPdfViewerDialog(false)}
+          deviceId={parseInt(id)}
+          fileName={device.invoiceFileName}
+        />
       )}
     </div>
   );
