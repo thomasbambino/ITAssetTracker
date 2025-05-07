@@ -15,7 +15,8 @@ import mailgunService from "./direct-mailgun";
 import { 
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
   insertSoftwareSchema, insertSoftwareAssignmentSchema, insertMaintenanceRecordSchema,
-  insertQrCodeSchema, insertNotificationSchema, insertBrandingSettingsSchema, insertSiteSchema
+  insertQrCodeSchema, insertNotificationSchema, insertBrandingSettingsSchema, insertSiteSchema,
+  insertDepartmentSchema
 } from "@shared/schema";
 
 // Define the session data type to fix type errors
@@ -1151,6 +1152,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Error deleting site" });
+    }
+  });
+
+  // Departments
+  app.get('/api/departments', async (req: Request, res: Response) => {
+    try {
+      const departments = await storage.getDepartments();
+      res.json(departments);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      res.status(500).json({ message: "Error fetching departments" });
+    }
+  });
+
+  app.get('/api/departments/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const department = await storage.getDepartmentById(id);
+      
+      if (!department) {
+        return res.status(404).json({ message: "Department not found" });
+      }
+      
+      // Get users in this department
+      const users = await storage.getUsersByDepartmentId(id);
+      
+      res.json({ ...department, users });
+    } catch (error) {
+      console.error('Error fetching department details:', error);
+      res.status(500).json({ message: "Error fetching department" });
+    }
+  });
+
+  app.post('/api/departments', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as SessionData;
+      const loggedInUserId = sessionData.userId;
+      
+      const validatedData = insertDepartmentSchema.parse(req.body);
+      const department = await storage.createDepartment(validatedData, loggedInUserId);
+      res.status(201).json(department);
+    } catch (error) {
+      console.error('Error creating department:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid department data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating department" });
+    }
+  });
+
+  app.patch('/api/departments/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as SessionData;
+      const loggedInUserId = sessionData.userId;
+      
+      const validatedData = insertDepartmentSchema.partial().parse(req.body);
+      const department = await storage.updateDepartment(id, validatedData, loggedInUserId);
+      
+      if (!department) {
+        return res.status(404).json({ message: "Department not found" });
+      }
+      
+      res.json(department);
+    } catch (error) {
+      console.error('Error updating department:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid department data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating department" });
+    }
+  });
+
+  app.delete('/api/departments/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as SessionData;
+      const loggedInUserId = sessionData.userId;
+      
+      // Try to delete the department
+      const success = await storage.deleteDepartment(id, loggedInUserId);
+      
+      if (!success) {
+        // This could either mean the department doesn't exist or has users assigned
+        // First check if the department exists
+        const department = await storage.getDepartmentById(id);
+        if (!department) {
+          return res.status(404).json({ message: "Department not found" });
+        }
+        
+        // If we get here, the department exists but has users assigned
+        const users = await storage.getUsersByDepartmentId(id);
+        return res.status(400).json({ 
+          message: "Cannot delete department that has users assigned", 
+          count: users.length 
+        });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      res.status(500).json({ message: "Error deleting department" });
     }
   });
 

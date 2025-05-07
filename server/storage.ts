@@ -119,6 +119,15 @@ export interface IStorage {
   updateSite(id: number, site: Partial<InsertSite>, loggedInUserId?: number): Promise<Site | undefined>;
   deleteSite(id: number, loggedInUserId?: number): Promise<boolean>;
   getDevicesBySite(siteId: number): Promise<Device[]>;
+  
+  // Department operations
+  getDepartments(): Promise<Department[]>;
+  getDepartmentById(id: number): Promise<Department | undefined>;
+  getDepartmentByName(name: string): Promise<Department | undefined>;
+  createDepartment(department: InsertDepartment, loggedInUserId?: number): Promise<Department>;
+  updateDepartment(id: number, department: Partial<InsertDepartment>, loggedInUserId?: number): Promise<Department | undefined>;
+  deleteDepartment(id: number, loggedInUserId?: number): Promise<boolean>;
+  getUsersByDepartmentId(departmentId: number): Promise<User[]>;
 }
 
 export class MemStorage implements IStorage {
