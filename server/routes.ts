@@ -1135,7 +1135,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const categoryDevices = devices.filter(device => device.categoryId === category.id);
         return {
           ...category,
-          deviceCount: categoryDevices.length
+          deviceCount: categoryDevices.length,
+          devices: categoryDevices.map(device => ({ id: device.id }))
         };
       });
       
