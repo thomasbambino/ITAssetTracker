@@ -28,7 +28,7 @@ import {
 
 // Define category groups
 const categoryGroups = {
-  main: ['/', '/users', '/devices', '/categories', '/sites'],
+  main: ['/', '/users', '/devices', '/categories', '/sites', '/departments'],
   management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune', '/management/status'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
