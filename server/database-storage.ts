@@ -3439,10 +3439,18 @@ export class DatabaseStorage implements IStorage {
   // Department CRUD operations
   async getDepartments(): Promise<Department[]> {
     try {
-      const departments = await this.client.query<Department>(`
-        SELECT * FROM departments ORDER BY name ASC
+      const departments = await db.manyOrNone(`
+        SELECT 
+          id, 
+          name, 
+          description, 
+          manager, 
+          budget, 
+          created_at as "createdAt"
+        FROM departments 
+        ORDER BY name ASC
       `);
-      return departments.rows;
+      return departments || [];
     } catch (error) {
       console.error('Error getting departments:', error);
       throw error;
@@ -3451,10 +3459,18 @@ export class DatabaseStorage implements IStorage {
   
   async getDepartmentById(id: number): Promise<Department | undefined> {
     try {
-      const [department] = await this.client.query<Department>(`
-        SELECT * FROM departments WHERE id = $1
+      const department = await db.oneOrNone(`
+        SELECT 
+          id, 
+          name, 
+          description, 
+          manager, 
+          budget, 
+          created_at as "createdAt"
+        FROM departments 
+        WHERE id = $1
       `, [id]);
-      return department;
+      return department || undefined;
     } catch (error) {
       console.error('Error getting department by ID:', error);
       throw error;
@@ -3463,10 +3479,18 @@ export class DatabaseStorage implements IStorage {
   
   async getDepartmentByName(name: string): Promise<Department | undefined> {
     try {
-      const [department] = await this.client.query<Department>(`
-        SELECT * FROM departments WHERE name = $1
+      const department = await db.oneOrNone(`
+        SELECT 
+          id, 
+          name, 
+          description, 
+          manager, 
+          budget, 
+          created_at as "createdAt"
+        FROM departments 
+        WHERE name = $1
       `, [name]);
-      return department;
+      return department || undefined;
     } catch (error) {
       console.error('Error getting department by name:', error);
       throw error;
@@ -3476,11 +3500,21 @@ export class DatabaseStorage implements IStorage {
   async createDepartment(department: InsertDepartment, loggedInUserId?: number): Promise<Department> {
     try {
       // Create the department
-      const [newDepartment] = await this.client.query<Department>(`
+      const newDepartment = await db.one(`
         INSERT INTO departments (
-          name, description, manager, budget
-        ) VALUES ($1, $2, $3, $4)
-        RETURNING *
+          name, 
+          description, 
+          manager, 
+          budget,
+          created_at
+        ) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+        RETURNING 
+          id, 
+          name, 
+          description, 
+          manager, 
+          budget, 
+          created_at as "createdAt"
       `, [
         department.name,
         department.description || null,
@@ -3545,15 +3579,21 @@ export class DatabaseStorage implements IStorage {
       values.push(id);
       
       // Execute the update
-      const [updatedDepartment] = await this.client.query<Department>(`
+      const updatedDepartment = await db.oneOrNone(`
         UPDATE departments
         SET ${updates.join(', ')}
         WHERE id = $${paramCount}
-        RETURNING *
+        RETURNING 
+          id, 
+          name, 
+          description, 
+          manager, 
+          budget, 
+          created_at as "createdAt"
       `, values);
       
       // Log the activity
-      if (loggedInUserId) {
+      if (loggedInUserId && updatedDepartment) {
         await this.createActivityLog({
           userId: loggedInUserId,
           actionType: 'department_updated',
@@ -3561,7 +3601,7 @@ export class DatabaseStorage implements IStorage {
         });
       }
       
-      return updatedDepartment;
+      return updatedDepartment || undefined;
     } catch (error) {
       console.error('Error updating department:', error);
       throw error;
@@ -3584,7 +3624,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Delete the department
-      await this.client.query(`
+      await db.none(`
         DELETE FROM departments WHERE id = $1
       `, [id]);
       
