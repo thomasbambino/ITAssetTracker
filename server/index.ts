@@ -11,6 +11,7 @@ import { addStatusField } from "./migrations/add-status-field";
 import { addSitesTableMigration } from "./migrations/add-sites-table";
 import { addNotesField } from "./migrations/add-notes-field";
 import { addDepartmentsTable } from "./migrations/add-departments-table";
+import { migrateDepartmentsData } from "./migrations/migrate-departments-data";
 
 const app = express();
 app.use(express.json());
@@ -84,6 +85,7 @@ app.use((req, res, next) => {
     await addSitesTableMigration();
     await addNotesField();
     await addDepartmentsTable();
+    await migrateDepartmentsData();
     log('Database migrations completed.');
     
     // Initialize direct mailgun service with settings from the database
