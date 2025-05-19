@@ -304,9 +304,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Received user update data:', req.body);
       
-      // Explicitly handle the role field as an enum
+      // Explicitly handle the role field as an enum and departmentId
       const schema = insertUserSchema.partial().extend({
-        role: z.enum(['user', 'admin']).optional()
+        role: z.enum(['user', 'admin']).optional(),
+        departmentId: z.union([
+          z.string().transform((str) => {
+            if (str === '0' || str === '' || str === null || str === undefined) return null;
+            const num = parseInt(str);
+            return isNaN(num) ? null : num;
+          }),
+          z.number(),
+          z.null()
+        ]).optional().nullable()
       });
       
       const validatedData = schema.parse(req.body);

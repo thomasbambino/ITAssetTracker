@@ -250,7 +250,9 @@ export class DatabaseStorage implements IStorage {
         last_name as "lastName", 
         email, 
         phone_number as "phoneNumber", 
-        department, 
+        department,
+        department_id as "departmentId",
+        role,
         created_at as "createdAt" 
       FROM users
       ORDER BY last_name, first_name
@@ -272,6 +274,7 @@ export class DatabaseStorage implements IStorage {
           email, 
           phone_number as "phoneNumber", 
           department,
+          department_id as "departmentId",
           password_hash as "passwordHash",
           password_salt as "passwordSalt",
           temp_password as "tempPassword",
@@ -330,6 +333,7 @@ export class DatabaseStorage implements IStorage {
           email, 
           phone_number as "phoneNumber", 
           department,
+          department_id as "departmentId",
           password_hash as "passwordHash",
           password_salt as "passwordSalt",
           temp_password as "tempPassword",
@@ -481,6 +485,7 @@ export class DatabaseStorage implements IStorage {
           email, 
           phone_number as "phoneNumber", 
           department,
+          department_id as "departmentId",
           password_hash as "passwordHash",
           password_salt as "passwordSalt",
           temp_password as "tempPassword",
