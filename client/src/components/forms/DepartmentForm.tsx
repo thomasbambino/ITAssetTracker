@@ -48,8 +48,9 @@ export function DepartmentForm({ isOpen, onClose, departmentToEdit }: Department
   const onSubmit = async (data: FormValues) => {
     try {
       if (isEditing) {
-        await apiRequest(`/api/departments/${departmentToEdit.id}`, {
+        await apiRequest({
           method: "PATCH",
+          url: `/api/departments/${departmentToEdit.id}`,
           data,
         });
         toast({
@@ -57,8 +58,10 @@ export function DepartmentForm({ isOpen, onClose, departmentToEdit }: Department
           description: `Department ${data.name} has been updated successfully.`,
         });
       } else {
-        await apiRequest("/api/departments", {
+        console.log("Creating department with data:", data);
+        await apiRequest({
           method: "POST",
+          url: "/api/departments",
           data,
         });
         toast({
