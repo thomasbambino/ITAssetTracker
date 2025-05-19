@@ -243,7 +243,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
               ) : (
                 <Select 
                   onValueChange={field.onChange} 
-                  defaultValue={field.value?.toString() || ""}
+                  defaultValue={field.value?.toString() || "0"}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -251,7 +251,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="0">None</SelectItem>
                     {departments?.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id.toString()}>
                         {dept.name}
