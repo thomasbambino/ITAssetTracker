@@ -300,6 +300,7 @@ export class DatabaseStorage implements IStorage {
           email, 
           phone_number as "phoneNumber", 
           department,
+          department_id as "departmentId",
           password_hash as "passwordHash",
           password_salt as "passwordSalt",
           temp_password as "tempPassword",
@@ -414,6 +415,11 @@ export class DatabaseStorage implements IStorage {
       if (user.department !== undefined) {
         updates.push(`department = $${paramCount++}`);
         values.push(user.department);
+      }
+      
+      if (user.departmentId !== undefined) {
+        updates.push(`department_id = $${paramCount++}`);
+        values.push(user.departmentId);
       }
       
       // Password-related fields
