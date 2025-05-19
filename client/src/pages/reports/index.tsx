@@ -669,7 +669,11 @@ export default function Reports() {
                       {devices
                         .filter((device: any) => {
                           // Apply year filter if selected and not "all"
-                          if (selectedYear && selectedYear !== "all" && device.purchaseDate) {
+                          if (selectedYear && selectedYear !== "all") {
+                            // If no purchase date, exclude this item when filtering by year
+                            if (!device.purchaseDate) {
+                              return false;
+                            }
                             const purchaseYear = new Date(device.purchaseDate).getFullYear();
                             if (purchaseYear.toString() !== selectedYear) {
                               return false;
@@ -677,7 +681,11 @@ export default function Reports() {
                           }
                           
                           // Apply site filter if selected and not "all"
-                          if (selectedSiteId && selectedSiteId !== "all" && device.siteId) {
+                          if (selectedSiteId && selectedSiteId !== "all") {
+                            // If no site ID, exclude this item when filtering by site
+                            if (!device.siteId) {
+                              return false;
+                            }
                             if (device.siteId.toString() !== selectedSiteId) {
                               return false;
                             }
