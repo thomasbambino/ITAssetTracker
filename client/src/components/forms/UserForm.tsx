@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 // Create a schema for user creation/update
 const formSchema = insertUserSchema.extend({
@@ -43,6 +44,18 @@ interface UserFormProps {
 export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
   const { toast } = useToast();
   const isUpdateMode = !!user;
+
+  // Fetch departments from API
+  const { data: departments, isLoading: isLoadingDepartments } = useQuery({
+    queryKey: ["/api/departments"],
+    queryFn: async () => {
+      const response = await fetch("/api/departments");
+      if (!response.ok) {
+        throw new Error("Failed to fetch departments");
+      }
+      return response.json();
+    },
+  });
 
   // Initialize form with default values
   const form = useForm<UserFormValues>({
@@ -204,9 +217,31 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Department</FormLabel>
-              <FormControl>
-                <Input placeholder="IT, Marketing, Sales, etc." {...field} />
-              </FormControl>
+              {isLoadingDepartments ? (
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">Loading departments...</span>
+                </div>
+              ) : (
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value?.toString() || ""}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a department" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {departments?.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.name}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <FormMessage />
             </FormItem>
           )}

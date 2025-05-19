@@ -2,6 +2,24 @@ import { pgTable, text, serial, integer, boolean, timestamp, unique, pgEnum, dat
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Departments Table (moved to the top to avoid circular dependencies)
+export const departments = pgTable("departments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  manager: text("manager"),
+  budget: integer("budget"),  // Store in cents
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDepartmentSchema = createInsertSchema(departments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+export type Department = typeof departments.$inferSelect;
+
 // User schema
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -9,7 +27,8 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
   phoneNumber: text("phone_number"),
-  department: text("department"),
+  department: text("department"),  // Legacy field, kept for backward compatibility
+  departmentId: integer("department_id").references(() => departments.id),  // New field for foreign key relationship
   passwordHash: text("password_hash"),
   passwordSalt: text("password_salt"),
   tempPassword: text("temp_password"),
@@ -398,20 +417,4 @@ export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit(
 export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
 export type EmailSettings = typeof emailSettings.$inferSelect;
 
-// Departments Table
-export const departments = pgTable("departments", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  description: text("description"),
-  manager: text("manager"),
-  budget: integer("budget"),  // Store in cents
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertDepartmentSchema = createInsertSchema(departments).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
-export type Department = typeof departments.$inferSelect;
+// Departments schema already defined at the top of the file
