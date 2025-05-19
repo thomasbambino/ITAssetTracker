@@ -31,6 +31,16 @@ const formSchema = insertUserSchema.extend({
   email: emailSchema,
   phoneNumber: phoneSchema.optional(),
   role: z.enum(['user', 'admin']).default('user'),
+  // Add support for departmentId
+  departmentId: z.union([
+    z.string().transform((str) => {
+      if (str === '' || str === null || str === undefined) return null;
+      const num = parseInt(str);
+      return isNaN(num) ? null : num;
+    }),
+    z.number(),
+    z.null()
+  ]).optional().nullable(),
 });
 
 type UserFormValues = z.infer<typeof formSchema>;
@@ -45,8 +55,15 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
   const { toast } = useToast();
   const isUpdateMode = !!user;
 
+  // Define department interface
+  interface Department {
+    id: number;
+    name: string;
+    description?: string;
+  }
+
   // Fetch departments from API
-  const { data: departments, isLoading: isLoadingDepartments } = useQuery({
+  const { data: departments, isLoading: isLoadingDepartments } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
     queryFn: async () => {
       const response = await fetch("/api/departments");
@@ -66,6 +83,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
       email: user?.email || "",
       phoneNumber: user?.phoneNumber || "",
       department: user?.department || "",
+      departmentId: user?.departmentId || null,
       role: user?.role || "user",
     },
   });
@@ -213,7 +231,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
 
         <FormField
           control={form.control}
-          name="department"
+          name="departmentId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Department</FormLabel>
@@ -235,7 +253,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
                   <SelectContent>
                     <SelectItem value="">None</SelectItem>
                     {departments?.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.name}>
+                      <SelectItem key={dept.id} value={dept.id.toString()}>
                         {dept.name}
                       </SelectItem>
                     ))}

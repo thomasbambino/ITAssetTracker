@@ -2,7 +2,7 @@ import { pgTable, text, serial, integer, boolean, timestamp, unique, pgEnum, dat
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Departments Table (moved to the top to avoid circular dependencies)
+// Departments Table
 export const departments = pgTable("departments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
@@ -10,11 +10,13 @@ export const departments = pgTable("departments", {
   manager: text("manager"),
   budget: integer("budget"),  // Store in cents
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
 });
 
 export const insertDepartmentSchema = createInsertSchema(departments).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
@@ -417,4 +419,4 @@ export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit(
 export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
 export type EmailSettings = typeof emailSettings.$inferSelect;
 
-// Departments schema already defined at the top of the file
+// Already defined above
