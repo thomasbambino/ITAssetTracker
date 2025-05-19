@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -87,6 +88,13 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
       role: user?.role || "user",
     },
   });
+  
+  // Set departmentId effect - needed to update the field when user data loads
+  React.useEffect(() => {
+    if (user?.departmentId) {
+      form.setValue('departmentId', user.departmentId);
+    }
+  }, [user, form]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -242,8 +250,21 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
                 </div>
               ) : (
                 <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value?.toString() || "0"}
+                  onValueChange={(value) => {
+                    // Update departmentId field
+                    field.onChange(value === "0" ? null : parseInt(value));
+                    
+                    // Also update department name field
+                    if (value === "0") {
+                      form.setValue("department", "");
+                    } else {
+                      const selectedDept = departments?.find(d => d.id.toString() === value);
+                      if (selectedDept) {
+                        form.setValue("department", selectedDept.name);
+                      }
+                    }
+                  }}
+                  value={field.value?.toString() || "0"}
                 >
                   <FormControl>
                     <SelectTrigger>
