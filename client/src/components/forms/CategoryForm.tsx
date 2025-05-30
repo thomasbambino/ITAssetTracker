@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,10 +46,15 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data: CategoryFormValues) => {
-      const response = await apiRequest("POST", "/api/categories", data);
-      return response.json();
+      const response = await apiRequest({
+        url: "/api/categories",
+        method: "POST",
+        data: data
+      });
+      return response;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
@@ -64,10 +69,15 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: CategoryFormValues) => {
-      const response = await apiRequest("PUT", `/api/categories/${category.id}`, data);
-      return response.json();
+      const response = await apiRequest({
+        url: `/api/categories/${category.id}`,
+        method: "PUT",
+        data: data
+      });
+      return response;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
