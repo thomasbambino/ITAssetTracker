@@ -126,15 +126,6 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
     ? categories.find((cat: any) => cat.id.toString() === selectedCategoryId)
     : null;
   const hasSpecsEnabled = selectedCategory?.hasSpecs === true;
-  
-  // Debug logging
-  console.log('DeviceForm debug:', {
-    selectedCategoryId,
-    selectedCategory,
-    hasSpecsEnabled,
-    categoriesType: typeof categories,
-    categoriesLength: Array.isArray(categories) ? categories.length : 'not array'
-  });
 
   // Create mutation
   const createMutation = useMutation({
