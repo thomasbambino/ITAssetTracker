@@ -772,6 +772,7 @@ export class DatabaseStorage implements IStorage {
           d.intune_last_sync as "intuneLastSync",
           d.status,
           d.notes,
+          d.specs,
           c.name as "categoryName"
         FROM devices d
         LEFT JOIN categories c ON d.category_id = c.id
@@ -928,6 +929,13 @@ export class DatabaseStorage implements IStorage {
         console.log(`Adding notes update: ${device.notes}`);
       }
       
+      // Handle specs field
+      if (device.specs !== undefined) {
+        updates.push(`specs = $${paramCount++}`);
+        values.push(device.specs);
+        console.log(`Adding specs update: ${device.specs}`);
+      }
+      
       // If no updates, return the device
       if (updates.length === 0) {
         return this.getDeviceById(id);
@@ -953,7 +961,8 @@ export class DatabaseStorage implements IStorage {
           warranty_eol as "warrantyEOL", 
           created_at as "createdAt", 
           user_id as "userId",
-          notes
+          notes,
+          specs
       `, values);
       
       // Get category name for the device
