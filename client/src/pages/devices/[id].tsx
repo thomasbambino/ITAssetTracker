@@ -750,6 +750,67 @@ export default function DeviceDetails() {
                       </div>
                     )}
                   </div>
+
+                  {/* Device Specifications Section */}
+                  {device.specs && (() => {
+                    try {
+                      const specs = JSON.parse(device.specs);
+                      const hasSpecs = Object.values(specs).some(value => value && value.toString().trim());
+                      
+                      if (!hasSpecs) return null;
+                      
+                      return (
+                        <div className="mt-6 pt-4 border-t">
+                          <h3 className="text-sm font-medium text-foreground mb-3">
+                            <div className="flex items-center">
+                              <LaptopIcon className="h-4 w-4 text-muted-foreground mr-1" />
+                              <span>Specifications</span>
+                            </div>
+                          </h3>
+                          <div className="grid grid-cols-1 gap-2">
+                            {specs.cpu && (
+                              <div className="flex items-center text-sm">
+                                <span className="font-medium text-foreground min-w-[80px]">CPU:</span>
+                                <span className="text-muted-foreground">{specs.cpu}</span>
+                              </div>
+                            )}
+                            {specs.ram && (
+                              <div className="flex items-center text-sm">
+                                <span className="font-medium text-foreground min-w-[80px]">RAM:</span>
+                                <span className="text-muted-foreground">{specs.ram}</span>
+                              </div>
+                            )}
+                            {specs.storage && (
+                              <div className="flex items-center text-sm">
+                                <span className="font-medium text-foreground min-w-[80px]">Storage:</span>
+                                <span className="text-muted-foreground">{specs.storage}</span>
+                              </div>
+                            )}
+                            {specs.graphics && (
+                              <div className="flex items-center text-sm">
+                                <span className="font-medium text-foreground min-w-[80px]">Graphics:</span>
+                                <span className="text-muted-foreground">{specs.graphics}</span>
+                              </div>
+                            )}
+                            {specs.os && (
+                              <div className="flex items-center text-sm">
+                                <span className="font-medium text-foreground min-w-[80px]">OS:</span>
+                                <span className="text-muted-foreground">{specs.os}</span>
+                              </div>
+                            )}
+                            {specs.display && (
+                              <div className="flex items-center text-sm">
+                                <span className="font-medium text-foreground min-w-[80px]">Display:</span>
+                                <span className="text-muted-foreground">{specs.display}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    } catch (e) {
+                      return null;
+                    }
+                  })()}
                   
                   {/* Comments Section */}
                   <div className="mt-6 pt-4 border-t">

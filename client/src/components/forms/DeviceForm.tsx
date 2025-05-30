@@ -116,8 +116,14 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
       warrantyEOL: device?.warrantyEOL ? new Date(device.warrantyEOL) : null,
       invoiceFileName: device?.invoiceFileName || "",
       invoiceFileType: device?.invoiceFileType || "",
+      specs: device?.specs || "",
     },
   });
+
+  // Get the selected category to check if specs are enabled
+  const selectedCategoryId = form.watch("categoryId");
+  const selectedCategory = categories?.find((cat: any) => cat.id.toString() === selectedCategoryId);
+  const hasSpecsEnabled = selectedCategory?.hasSpecs || false;
 
   // Create mutation
   const createMutation = useMutation({
@@ -779,6 +785,91 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
             </FormItem>
           )}
         />
+
+        {/* Device Specifications Section */}
+        {hasSpecsEnabled && (
+          <div className="border rounded-lg p-4 space-y-4">
+            <h3 className="text-lg font-medium">Device Specifications</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="specs"
+                render={({ field }) => {
+                  // Parse existing specs or initialize empty object
+                  let specs = {};
+                  try {
+                    specs = field.value ? JSON.parse(field.value) : {};
+                  } catch (e) {
+                    specs = {};
+                  }
+
+                  const updateSpecs = (key: string, value: string) => {
+                    const updatedSpecs = { ...specs, [key]: value };
+                    field.onChange(JSON.stringify(updatedSpecs));
+                  };
+
+                  return (
+                    <>
+                      <div>
+                        <label className="text-sm font-medium">CPU</label>
+                        <Input 
+                          placeholder="e.g., Intel Core i7-12700K"
+                          value={(specs as any).cpu || ""}
+                          onChange={(e) => updateSpecs('cpu', e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">RAM</label>
+                        <Input 
+                          placeholder="e.g., 16GB DDR4"
+                          value={(specs as any).ram || ""}
+                          onChange={(e) => updateSpecs('ram', e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Storage</label>
+                        <Input 
+                          placeholder="e.g., 512GB SSD"
+                          value={(specs as any).storage || ""}
+                          onChange={(e) => updateSpecs('storage', e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Graphics</label>
+                        <Input 
+                          placeholder="e.g., NVIDIA RTX 4070"
+                          value={(specs as any).graphics || ""}
+                          onChange={(e) => updateSpecs('graphics', e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Operating System</label>
+                        <Input 
+                          placeholder="e.g., Windows 11 Pro"
+                          value={(specs as any).os || ""}
+                          onChange={(e) => updateSpecs('os', e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Display</label>
+                        <Input 
+                          placeholder="e.g., 27-inch 4K IPS"
+                          value={(specs as any).display || ""}
+                          onChange={(e) => updateSpecs('display', e.target.value)}
+                        />
+                      </div>
+                    </>
+                  );
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end space-x-2">
           {onCancel && (

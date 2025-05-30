@@ -85,6 +85,7 @@ export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
+  hasSpecs: boolean("has_specs").default(false), // Enable specs for this category
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
@@ -138,6 +139,7 @@ export const devices = pgTable("devices", {
   intuneComplianceStatus: text("intune_compliance_status").default('unknown'), // Values: compliant, noncompliant, unknown
   intuneLastSync: timestamp("intune_last_sync"), // When device last synced with Intune
   notes: text("notes"), // Comments about the device
+  specs: text("specs"), // JSON string containing device specifications
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -219,6 +221,8 @@ export const insertDeviceSchema = baseDeviceSchema.extend({
   intuneComplianceStatus: z.string().optional().default('unknown'),
   // Notes field for device comments
   notes: z.string().optional().nullable(),
+  // Specs field for device specifications (JSON string)
+  specs: z.string().optional().nullable(),
 });
 
 export type InsertDevice = z.infer<typeof insertDeviceSchema>;
