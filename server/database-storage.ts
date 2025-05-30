@@ -584,7 +584,7 @@ export class DatabaseStorage implements IStorage {
   // Category operations
   async getCategories(): Promise<Category[]> {
     const categories = await db.any(`
-      SELECT id, name, description, has_specs
+      SELECT id, name, description, has_specs as "hasSpecs"
       FROM categories
       ORDER BY name
     `);
@@ -594,7 +594,7 @@ export class DatabaseStorage implements IStorage {
   async getCategoryById(id: number): Promise<Category | undefined> {
     try {
       const category = await db.one(`
-        SELECT id, name, description, has_specs
+        SELECT id, name, description, has_specs as "hasSpecs"
         FROM categories
         WHERE id = $1
       `, [id]);
@@ -661,7 +661,7 @@ export class DatabaseStorage implements IStorage {
         UPDATE categories SET
           ${updates.join(', ')}
         WHERE id = $${paramCount}
-        RETURNING id, name, description, has_specs
+        RETURNING id, name, description, has_specs as "hasSpecs"
       `, values);
       
       // Log activity

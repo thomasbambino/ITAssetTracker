@@ -1337,18 +1337,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
-      console.log('Category update request body:', req.body);
-      
       const validatedData = insertCategorySchema.partial().parse(req.body);
-      console.log('Category validated data:', validatedData);
-      
       const category = await storage.updateCategory(id, validatedData, loggedInUserId);
       
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
       }
-      
-      console.log('Category update result:', category);
       res.json(category);
     } catch (error) {
       if (error instanceof z.ZodError) {
