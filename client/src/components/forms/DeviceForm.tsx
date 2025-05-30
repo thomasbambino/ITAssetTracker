@@ -122,8 +122,19 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
 
   // Get the selected category to check if specs are enabled
   const selectedCategoryId = form.watch("categoryId");
-  const selectedCategory = categories?.find((cat: any) => cat.id.toString() === selectedCategoryId);
-  const hasSpecsEnabled = selectedCategory?.hasSpecs || false;
+  const selectedCategory = Array.isArray(categories) 
+    ? categories.find((cat: any) => cat.id.toString() === selectedCategoryId)
+    : null;
+  const hasSpecsEnabled = selectedCategory?.hasSpecs === true;
+  
+  // Debug logging
+  console.log('DeviceForm debug:', {
+    selectedCategoryId,
+    selectedCategory,
+    hasSpecsEnabled,
+    categoriesType: typeof categories,
+    categoriesLength: Array.isArray(categories) ? categories.length : 'not array'
+  });
 
   // Create mutation
   const createMutation = useMutation({
