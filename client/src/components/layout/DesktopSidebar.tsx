@@ -88,7 +88,7 @@ export function DesktopSidebar() {
     badge?: number;
   };
 
-  const routes: RouteType[] = [
+  const allRoutes: RouteType[] = [
     {
       href: '/',
       label: 'Dashboard',
@@ -192,6 +192,16 @@ export function DesktopSidebar() {
       category: 'system',
     },
   ];
+
+  // Filter routes based on user role
+  const routes = allRoutes.filter(route => {
+    // Regular users can only see the dashboard (which redirects to user dashboard)
+    if (currentUser?.role === 'user') {
+      return route.href === '/';
+    }
+    // Admins can see all routes
+    return true;
+  });
 
   const renderNavItem = (route: RouteType) => {
     const isActive = location === route.href;
