@@ -129,50 +129,29 @@ export default function Software() {
       header: "Seats",
       accessor: (software: Software) => {
         if (!software.seats) return "N/A";
+        
         const used = software.usedSeats || 0;
         const total = software.seats;
-        const isOverCapacity = used > total;
-        
-        return (
-          <span className={isOverCapacity ? "text-red-600 font-medium" : ""}>
-            {used}/{total}
-          </span>
-        );
-      }
-    },
-    {
-      header: "Used Seats",
-      accessor: (software: Software) => {
-        const used = software.usedSeats || 0;
-        const total = software.seats;
-        
-        if (!total) return used > 0 ? used.toString() : "0";
-        
         const percentage = Math.round((used / total) * 100);
         const isOverCapacity = used > total;
         const isNearCapacity = percentage >= 80 && !isOverCapacity;
         
         return (
-          <div className="flex items-center space-x-2">
-            <span className={
-              isOverCapacity ? "text-red-600 font-medium" : 
-              isNearCapacity ? "text-yellow-600 font-medium" : ""
-            }>
-              {used}
+          <div className="flex items-center space-x-3">
+            <span className={isOverCapacity ? "text-red-600 font-medium" : ""}>
+              {used}/{total}
             </span>
-            {total && (
-              <div className="w-16 bg-gray-200 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all ${
-                    isOverCapacity ? "bg-red-500" : 
-                    isNearCapacity ? "bg-yellow-500" : "bg-green-500"
-                  }`}
-                  style={{ 
-                    width: `${Math.min(percentage, 100)}%` 
-                  }}
-                />
-              </div>
-            )}
+            <div className="w-16 bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all ${
+                  isOverCapacity ? "bg-red-500" : 
+                  isNearCapacity ? "bg-yellow-500" : "bg-green-500"
+                }`}
+                style={{ 
+                  width: `${Math.min(percentage, 100)}%` 
+                }}
+              />
+            </div>
           </div>
         );
       }
