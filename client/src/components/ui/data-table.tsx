@@ -70,7 +70,8 @@ export function DataTable<T>({
   };
 
   // Filter and sort data
-  const filteredData = data
+  const safeData = Array.isArray(data) ? data : [];
+  const filteredData = safeData
     .filter((row) => {
       if (!searchTerm) return true;
       
