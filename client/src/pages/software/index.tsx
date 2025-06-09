@@ -137,10 +137,12 @@ export default function Software() {
         const isNearCapacity = percentage >= 80 && !isOverCapacity;
         
         return (
-          <div className="flex items-center space-x-3">
-            <span className={isOverCapacity ? "text-red-600 font-medium" : ""}>
-              {used}/{total}
-            </span>
+          <div className="flex items-center">
+            <div className="w-12 text-right mr-3">
+              <span className={isOverCapacity ? "text-red-600 font-medium" : ""}>
+                {used}/{total}
+              </span>
+            </div>
             <div className="w-16 bg-gray-200 rounded-full h-2">
               <div 
                 className={`h-2 rounded-full transition-all ${
