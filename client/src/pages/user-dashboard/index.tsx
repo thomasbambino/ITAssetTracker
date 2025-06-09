@@ -80,7 +80,7 @@ export default function UserDashboard() {
 
   if (devicesLoading || softwareLoading) {
     return (
-      <PageContainer>
+      <PageContainer title="My Dashboard" description="Loading your assignments...">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
@@ -92,18 +92,8 @@ export default function UserDashboard() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer title="My Dashboard" description="View your assigned devices and software licenses">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center space-x-2">
-          <User className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">My Dashboard</h1>
-            <p className="text-muted-foreground">
-              View your assigned devices and software licenses
-            </p>
-          </div>
-        </div>
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
