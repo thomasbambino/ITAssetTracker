@@ -1458,6 +1458,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Software status filtering routes
+  app.get('/api/software/status/:status', async (req: Request, res: Response) => {
+    try {
+      const status = req.params.status;
+      const software = await storage.getSoftwareByStatus(status);
+      res.json(software);
+    } catch (error) {
+      console.error("Error fetching software by status:", error);
+      res.status(500).json({ message: "Error fetching software by status" });
+    }
+  });
+
+  // Software expiring soon
+  app.get('/api/software/expiring/:days', async (req: Request, res: Response) => {
+    try {
+      const days = parseInt(req.params.days);
+      const software = await storage.getSoftwareExpiringSoon(days);
+      res.json(software);
+    } catch (error) {
+      console.error("Error fetching expiring software:", error);
+      res.status(500).json({ message: "Error fetching expiring software" });
+    }
+  });
+
   // Software assignments
   app.get('/api/software/:id/assignments', async (req: Request, res: Response) => {
     try {
