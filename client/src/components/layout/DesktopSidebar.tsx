@@ -195,8 +195,12 @@ export function DesktopSidebar() {
 
   // Filter routes based on user role
   const routes = allRoutes.filter(route => {
+    // If no user data, only show dashboard (for logout transition)
+    if (!currentUser) {
+      return route.href === '/';
+    }
     // Regular users can only see the dashboard (which redirects to user dashboard)
-    if (currentUser?.role === 'user') {
+    if (currentUser.role === 'user') {
       return route.href === '/';
     }
     // Admins can see all routes
