@@ -31,6 +31,7 @@ const activityStyles: Record<string, { bg: string, text: string }> = {
   'user_added': { bg: 'bg-purple-100', text: 'text-purple-800' },
   'user_updated': { bg: 'bg-purple-100', text: 'text-purple-800' },
   'user_deleted': { bg: 'bg-red-100', text: 'text-red-800' },
+  'password_reset': { bg: 'bg-orange-100', text: 'text-orange-800' },
   'category_added': { bg: 'bg-yellow-100', text: 'text-yellow-800' },
   'category_updated': { bg: 'bg-yellow-100', text: 'text-yellow-800' },
   'category_deleted': { bg: 'bg-red-100', text: 'text-red-800' },

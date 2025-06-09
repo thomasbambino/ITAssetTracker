@@ -161,6 +161,13 @@ export async function resetUserPassword(userId: number): Promise<{
       tempPasswordExpiry: expiry,
       passwordResetRequired: true
     });
+
+    // Log password reset activity separately (since updateUser also logs a generic "user updated")
+    await storage.createActivityLog({
+      userId: 1, // System admin
+      actionType: 'password_reset',
+      details: `Password reset for user: ${user.firstName} ${user.lastName}`
+    });
     
     // Try to send email notification with the temporary password
     let emailSent = false;
