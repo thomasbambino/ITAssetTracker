@@ -338,6 +338,9 @@ export function DesktopSidebar() {
             <button
               onClick={async () => {
                 try {
+                  // Clear user data immediately to prevent flash
+                  queryClient.removeQueries({ queryKey: ['/api/users/me'] });
+                  
                   await apiRequest({
                     url: '/api/auth/logout',
                     method: 'POST'
@@ -346,19 +349,11 @@ export function DesktopSidebar() {
                   // Clear all queries from cache
                   queryClient.clear();
                   
-                  // Show success message
-                  toast({
-                    title: "Logged out",
-                    description: "You have been successfully logged out."
-                  });
-                  
-                  // Redirect to login page
+                  // Redirect immediately without showing toast to prevent flash
                   navigate('/');
                   
                   // Reload the page to ensure clean state
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 300);
+                  window.location.reload();
                 } catch (error) {
                   console.error('Logout error:', error);
                   toast({
