@@ -1921,6 +1921,71 @@ export class DatabaseStorage implements IStorage {
     return software;
   }
 
+  async getSoftwareWithUsageCounts(): Promise<Software[]> {
+    const software = await db.any(`
+      SELECT 
+        s.id, 
+        s.name, 
+        s.vendor, 
+        s.license_type as "licenseType", 
+        s.purchase_cost as "purchaseCost", 
+        s.purchase_date as "purchaseDate", 
+        s.expiry_date as "expiryDate", 
+        s.license_key as "licenseKey", 
+        s.seats, 
+        s.notes, 
+        s.status, 
+        s.notification_email as "notificationEmail",
+        s.send_access_notifications as "sendAccessNotifications",
+        s.created_at as "createdAt",
+        COALESCE(assignment_counts.used_seats, 0) as "usedSeats"
+      FROM software s
+      LEFT JOIN (
+        SELECT 
+          software_id,
+          COUNT(*) as used_seats
+        FROM software_assignments
+        GROUP BY software_id
+      ) assignment_counts ON s.id = assignment_counts.software_id
+      ORDER BY s.name
+    `);
+    
+    return software;
+  }
+
+  async getSoftwareByStatusWithUsageCounts(status: string): Promise<Software[]> {
+    const software = await db.any(`
+      SELECT 
+        s.id, 
+        s.name, 
+        s.vendor, 
+        s.license_type as "licenseType", 
+        s.purchase_cost as "purchaseCost", 
+        s.purchase_date as "purchaseDate", 
+        s.expiry_date as "expiryDate", 
+        s.license_key as "licenseKey", 
+        s.seats, 
+        s.notes, 
+        s.status, 
+        s.notification_email as "notificationEmail",
+        s.send_access_notifications as "sendAccessNotifications",
+        s.created_at as "createdAt",
+        COALESCE(assignment_counts.used_seats, 0) as "usedSeats"
+      FROM software s
+      LEFT JOIN (
+        SELECT 
+          software_id,
+          COUNT(*) as used_seats
+        FROM software_assignments
+        GROUP BY software_id
+      ) assignment_counts ON s.id = assignment_counts.software_id
+      WHERE s.status = $1
+      ORDER BY s.name
+    `, [status]);
+    
+    return software;
+  }
+
   // Software assignment operations
   async getSoftwareAssignments(softwareId: number): Promise<SoftwareAssignment[]> {
     const assignments = await db.any(`

@@ -1375,7 +1375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Software routes
   app.get('/api/software', async (req: Request, res: Response) => {
     try {
-      const software = await storage.getSoftware();
+      const software = await storage.getSoftwareWithUsageCounts();
       res.json(software);
     } catch (error) {
       res.status(500).json({ message: "Error fetching software" });
@@ -1462,7 +1462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/software/status/:status', async (req: Request, res: Response) => {
     try {
       const status = req.params.status;
-      const software = await storage.getSoftwareByStatus(status);
+      const software = await storage.getSoftwareByStatusWithUsageCounts(status);
       res.json(software);
     } catch (error) {
       console.error("Error fetching software by status:", error);
