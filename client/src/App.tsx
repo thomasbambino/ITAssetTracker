@@ -24,6 +24,7 @@ import IntuneManagement from "@/pages/management/intune";
 import DeviceManagement from "@/pages/management/status";
 import Sites from "@/pages/sites";
 import Departments from "@/pages/departments";
+import UserDashboard from "@/pages/user-dashboard";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import LoginPage from "@/pages/auth/login";
 import ResetPasswordPage from "@/pages/auth/reset-password";
@@ -31,6 +32,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { BrandingProvider } from "@/components/branding/BrandingContext";
 import { FaviconManager } from "@/components/branding/FaviconManager";
+import { useAuth } from "@/hooks/use-auth";
 
 // Routes that require admin privileges
 const ADMIN_ROUTES = [
@@ -79,10 +81,25 @@ function AuthRouter() {
 
 function MainRouter() {
   const [location] = useLocation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const isAdminRoute = ADMIN_ROUTES.some(route => 
     location === route || location.startsWith(`${route}/`)
   );
 
+  // For non-admin users, show only the user dashboard
+  if (!isAdmin) {
+    return (
+      <Switch>
+        <Route path="/" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
+        <Route path="/notifications" component={() => <ProtectedPageWrapper component={Notifications} />} />
+        {/* Redirect all other routes to user dashboard */}
+        <Route component={() => <ProtectedPageWrapper component={UserDashboard} />} />
+      </Switch>
+    );
+  }
+
+  // For admin users, show the full admin interface
   return (
     <Switch>
       <Route path="/" component={() => <ProtectedPageWrapper component={Dashboard} />} />

@@ -405,6 +405,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get devices assigned to current user (for regular users)
+  app.get('/api/devices/assigned', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = (req.session as any).userId;
+      const devices = await storage.getDevicesByUser(userId);
+      
+      // Enrich with category and site information
+      const enrichedDevices = await Promise.all(
+        devices.map(async (device) => {
+          const category = device.categoryId ? await storage.getCategoryById(device.categoryId) : null;
+          const site = device.siteId ? await storage.getSiteById(device.siteId) : null;
+          
+          return {
+            ...device,
+            category: category ? { id: category.id, name: category.name } : null,
+            site: site ? { id: site.id, name: site.name } : null
+          };
+        })
+      );
+      
+      res.json(enrichedDevices);
+    } catch (error) {
+      console.error("Error fetching assigned devices:", error);
+      res.status(500).json({ message: "Error fetching assigned devices" });
+    }
+  });
+
   app.get('/api/devices/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
