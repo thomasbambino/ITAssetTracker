@@ -124,7 +124,7 @@ export default function UserDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {assignedDevices.filter(d => d.status.toLowerCase() === 'assigned').length}
+                {Array.isArray(assignedDevices) ? assignedDevices.filter(d => d.status?.toLowerCase() === 'assigned').length : 0}
               </div>
             </CardContent>
           </Card>
@@ -136,7 +136,7 @@ export default function UserDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {assignedSoftware.filter(s => s.software.status.toLowerCase() === 'active').length}
+                {Array.isArray(assignedSoftware) ? assignedSoftware.filter(s => s.software?.status?.toLowerCase() === 'active').length : 0}
               </div>
             </CardContent>
           </Card>
@@ -154,7 +154,7 @@ export default function UserDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {assignedDevices.length === 0 ? (
+            {!Array.isArray(assignedDevices) || assignedDevices.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Monitor className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No devices assigned to you</p>
@@ -248,7 +248,7 @@ export default function UserDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {assignedSoftware.length === 0 ? (
+            {!Array.isArray(assignedSoftware) || assignedSoftware.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No software licenses assigned to you</p>
