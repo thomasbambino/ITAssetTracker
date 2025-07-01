@@ -1194,6 +1194,7 @@ export class DatabaseStorage implements IStorage {
         d.user_id as "userId",
         d.status,
         d.notes,
+        d.specs,
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id

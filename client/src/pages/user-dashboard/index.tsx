@@ -122,6 +122,7 @@ export default function UserDashboard() {
   const { data: assignedDevices = [], isLoading: devicesLoading } = useQuery<AssignedDevice[]>({
     queryKey: ['/api/devices/assigned', user?.id],
     enabled: !!user?.id,
+    staleTime: 0, // Force fresh data to get specs
   });
 
   // Debug logging - Let's see exactly what we're getting from the API
