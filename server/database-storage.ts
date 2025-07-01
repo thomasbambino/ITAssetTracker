@@ -1572,7 +1572,8 @@ export class DatabaseStorage implements IStorage {
         al.user_id as "userId", 
         al.action_type as "actionType", 
         al.timestamp,
-        u.first_name || ' ' || u.last_name as "userName"
+        u.first_name || ' ' || u.last_name as "userName",
+        u.department
       FROM activity_log al
       LEFT JOIN users u ON al.user_id = u.id
       ORDER BY al.timestamp DESC
@@ -1583,7 +1584,28 @@ export class DatabaseStorage implements IStorage {
     }
     
     const logs = await db.any(query);
-    return logs;
+    
+    // Transform the data to match the expected frontend structure
+    return logs.map(log => {
+      console.log('Processing activity log:', {
+        id: log.id,
+        userId: log.userId,
+        userName: log.userName,
+        department: log.department
+      });
+      
+      return {
+        id: log.id,
+        actionType: log.actionType,
+        details: log.details,
+        timestamp: log.timestamp,
+        user: log.userId && log.userName ? {
+          id: log.userId,
+          name: log.userName,
+          department: log.department
+        } : null
+      };
+    });
   }
 
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {

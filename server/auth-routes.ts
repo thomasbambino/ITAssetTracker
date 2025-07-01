@@ -160,7 +160,7 @@ router.post('/reset-password/:userId', isAuthenticated, isAdmin, async (req: Req
       });
     }
     
-    const result = await resetUserPassword(userId);
+    const result = await resetUserPassword(userId, req.session.userId);
     
     if (result.success) {
       // Create a response with the temp password and email status

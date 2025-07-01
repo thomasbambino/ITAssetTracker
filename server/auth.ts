@@ -126,7 +126,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<{
 }
 
 // Reset user password (admin action)
-export async function resetUserPassword(userId: number): Promise<{ 
+export async function resetUserPassword(userId: number, loggedInUserId?: number): Promise<{ 
   success: boolean;
   message?: string;
   tempPassword?: string;
@@ -164,7 +164,7 @@ export async function resetUserPassword(userId: number): Promise<{
 
     // Log password reset activity
     await storage.createActivityLog({
-      userId: 1, // System admin
+      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
       actionType: 'password_reset',
       details: `Password reset for user: ${user.firstName} ${user.lastName}`
     });
