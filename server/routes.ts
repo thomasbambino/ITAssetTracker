@@ -411,16 +411,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.session as any).userId;
       const devices = await storage.getDevicesByUser(userId);
       
-      // Enrich with category and site information
+      // Enrich with category, site, and assignment information
       const enrichedDevices = await Promise.all(
         devices.map(async (device) => {
           const category = device.categoryId ? await storage.getCategoryById(device.categoryId) : null;
           const site = device.siteId ? await storage.getSiteById(device.siteId) : null;
           
+          // Get the most recent assignment history for this device and user
+          const history = await storage.getAssignmentHistory(device.id);
+          const currentAssignment = history.find(h => h.userId === userId && !h.unassignedAt);
+          
+          // Parse specs if they exist
+          let parsedSpecs = null;
+          if (device.specs) {
+            try {
+              parsedSpecs = JSON.parse(device.specs);
+            } catch (e) {
+              console.warn(`Invalid specs JSON for device ${device.id}`);
+            }
+          }
+          
           return {
             ...device,
             category: category ? { id: category.id, name: category.name } : null,
-            site: site ? { id: site.id, name: site.name } : null
+            site: site ? { id: site.id, name: site.name } : null,
+            assignedAt: currentAssignment?.assignedAt || null,
+            assignedBy: currentAssignment?.assignedBy || null,
+            assignmentNotes: currentAssignment?.notes || null,
+            specs: parsedSpecs
           };
         })
       );

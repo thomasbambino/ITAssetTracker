@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Monitor, Package, Calendar, Tag, User, Building2 } from "lucide-react";
+import { Monitor, Package, Calendar, Tag, User, Building2, Cpu, HardDrive, MemoryStick, DollarSign, Clock, UserCheck, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 interface AssignedDevice {
@@ -22,6 +24,12 @@ interface AssignedDevice {
   site: {
     name: string;
   } | null;
+  assignedAt: Date | null;
+  assignedBy: number | null;
+  assignmentNotes: string | null;
+  specs: Record<string, any> | null;
+  notes: string | null;
+  purchaseCost: number | null;
 }
 
 interface AssignedSoftware {
@@ -69,6 +77,25 @@ function getStatusColor(status: string | null | undefined): string {
 
 export default function UserDashboard() {
   const { user } = useAuth();
+  const [expandedDevices, setExpandedDevices] = useState<Set<number>>(new Set());
+
+  const toggleDeviceExpansion = (deviceId: number) => {
+    const newExpanded = new Set(expandedDevices);
+    if (newExpanded.has(deviceId)) {
+      newExpanded.delete(deviceId);
+    } else {
+      newExpanded.add(deviceId);
+    }
+    setExpandedDevices(newExpanded);
+  };
+
+  const formatCurrency = (cents: number | null) => {
+    if (!cents) return null;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(cents / 100);
+  };
 
   const { data: assignedDevices = [], isLoading: devicesLoading } = useQuery<AssignedDevice[]>({
     queryKey: ['/api/devices/assigned', user?.id],
@@ -163,76 +190,170 @@ export default function UserDashboard() {
               </div>
             ) : (
               <div className="space-y-4">
-                {assignedDevices.map((device) => (
-                  <div key={device.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="font-medium">{device.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {device.brand} {device.model}
-                        </p>
+                {assignedDevices.map((device) => {
+                  const isExpanded = expandedDevices.has(device.id);
+                  return (
+                    <div key={device.id} className="border rounded-lg p-4 space-y-3">
+                      {/* Device Header */}
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-medium">{device.name || `${device.brand} ${device.model}`}</h3>
+                            <Badge className={getStatusColor(device.status)}>
+                              {device.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {device.brand} {device.model}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleDeviceExpansion(device.id)}
+                          className="ml-2"
+                        >
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
                       </div>
-                      <Badge className={getStatusColor(device.status)}>
-                        {device.status}
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      {device.assetTag && (
-                        <div className="flex items-center space-x-2">
-                          <Tag className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Asset:</span>
-                          <span>{device.assetTag}</span>
-                        </div>
-                      )}
                       
-                      {device.serialNumber && (
-                        <div className="flex items-center space-x-2">
-                          <span className="text-muted-foreground">Serial:</span>
-                          <span className="font-mono text-xs">{device.serialNumber}</span>
+                      {/* Basic Info */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        {device.assetTag && (
+                          <div className="flex items-center space-x-2">
+                            <Tag className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Asset Tag:</span>
+                            <span className="font-medium">{device.assetTag}</span>
+                          </div>
+                        )}
+                        
+                        {device.serialNumber && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-muted-foreground">Serial:</span>
+                            <span className="font-mono text-xs bg-muted px-1 rounded">{device.serialNumber}</span>
+                          </div>
+                        )}
+                        
+                        {device.category && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-muted-foreground">Category:</span>
+                            <span>{device.category.name}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Assignment Information */}
+                      {device.assignedAt && (
+                        <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                          <div className="flex items-center space-x-2 text-sm">
+                            <UserCheck className="h-4 w-4 text-green-600" />
+                            <span className="text-green-700 dark:text-green-400 font-medium">
+                              Assigned to you on {formatDate(device.assignedAt)}
+                            </span>
+                          </div>
+                          {device.assignmentNotes && (
+                            <p className="text-sm text-muted-foreground mt-2 pl-6">
+                              {device.assignmentNotes}
+                            </p>
+                          )}
                         </div>
                       )}
-                      
-                      {device.category && (
-                        <div className="flex items-center space-x-2">
-                          <span className="text-muted-foreground">Category:</span>
-                          <span>{device.category.name}</span>
-                        </div>
-                      )}
-                      
-                      {device.site && (
-                        <div className="flex items-center space-x-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Site:</span>
-                          <span>{device.site.name}</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {(device.purchaseDate || device.warrantyEOL) && (
-                      <>
-                        <Separator />
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          {device.purchaseDate && (
-                            <div className="flex items-center space-x-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">Purchased:</span>
-                              <span>{formatDate(device.purchaseDate)}</span>
+
+                      {/* Expanded Details */}
+                      {isExpanded && (
+                        <div className="space-y-4 pt-2 border-t">
+                          {/* Technical Specifications */}
+                          {device.specs && (
+                            <div>
+                              <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                                <Cpu className="h-4 w-4" />
+                                <span>Technical Specifications</span>
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                {Object.entries(device.specs).map(([key, value]) => (
+                                  <div key={key} className="flex items-center space-x-2">
+                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                                    <span className="break-all">{value?.toString()}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
-                          
+
+                          {/* Location & Management */}
+                          <div>
+                            <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                              <Building2 className="h-4 w-4" />
+                              <span>Location & Management</span>
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                              {device.site && (
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-muted-foreground">Site:</span>
+                                  <span>{device.site.name}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Financial Information */}
+                          {(device.purchaseCost || device.purchaseDate) && (
+                            <div>
+                              <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                                <DollarSign className="h-4 w-4" />
+                                <span>Financial Information</span>
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                {device.purchaseCost && (
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-muted-foreground">Purchase Cost:</span>
+                                    <span className="font-medium">{formatCurrency(device.purchaseCost)}</span>
+                                  </div>
+                                )}
+                                {device.purchaseDate && (
+                                  <div className="flex items-center space-x-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Purchase Date:</span>
+                                    <span>{formatDate(device.purchaseDate)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Warranty & Support */}
                           {device.warrantyEOL && (
-                            <div className="flex items-center space-x-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">Warranty:</span>
-                              <span>{formatDate(device.warrantyEOL)}</span>
+                            <div>
+                              <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                                <Clock className="h-4 w-4" />
+                                <span>Warranty & Support</span>
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-muted-foreground">Warranty Expires:</span>
+                                  <span className={new Date(device.warrantyEOL) < new Date() ? 'text-red-600 font-medium' : ''}>{formatDate(device.warrantyEOL)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Notes */}
+                          {device.notes && (
+                            <div>
+                              <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                                <FileText className="h-4 w-4" />
+                                <span>Notes</span>
+                              </h4>
+                              <div className="bg-muted p-3 rounded text-sm">
+                                {device.notes}
+                              </div>
                             </div>
                           )}
                         </div>
-                      </>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>
