@@ -263,22 +263,99 @@ export default function UserDashboard() {
                       {isExpanded && (
                         <div className="space-y-4 pt-2 border-t">
                           {/* Technical Specifications */}
-                          {device.specs && (
-                            <div>
-                              <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
-                                <Cpu className="h-4 w-4" />
-                                <span>Technical Specifications</span>
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                {Object.entries(device.specs).map(([key, value]) => (
-                                  <div key={key} className="flex items-center space-x-2">
-                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                                    <span className="break-all">{value?.toString()}</span>
+                          {device.specs && (() => {
+                            try {
+                              const specs = typeof device.specs === 'string' ? JSON.parse(device.specs) : device.specs;
+                              const hasSpecs = specs && Object.values(specs).some(value => value && value.toString().trim());
+                              
+                              if (!hasSpecs) return null;
+                              
+                              return (
+                                <div>
+                                  <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                                    <Cpu className="h-4 w-4" />
+                                    <span>Technical Specifications</span>
+                                  </h4>
+                                  <div className="grid grid-cols-1 gap-3 text-sm">
+                                    {specs.processor && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Processor:</span>
+                                        <div className="text-foreground">{specs.processor}</div>
+                                      </div>
+                                    )}
+                                    {specs.memory && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Memory:</span>
+                                        <div className="text-foreground">{specs.memory}</div>
+                                      </div>
+                                    )}
+                                    {specs.storage && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Storage:</span>
+                                        <div className="text-foreground">{specs.storage}</div>
+                                      </div>
+                                    )}
+                                    {specs.graphics && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Graphics:</span>
+                                        <div className="text-foreground">{specs.graphics}</div>
+                                      </div>
+                                    )}
+                                    {specs.display && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Display:</span>
+                                        <div className="text-foreground">{specs.display}</div>
+                                      </div>
+                                    )}
+                                    {specs.connectivity && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Connectivity:</span>
+                                        <div className="text-foreground">{specs.connectivity}</div>
+                                      </div>
+                                    )}
+                                    {specs.ports && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Ports:</span>
+                                        <div className="text-foreground">{specs.ports}</div>
+                                      </div>
+                                    )}
+                                    {specs.battery && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Battery:</span>
+                                        <div className="text-foreground">{specs.battery}</div>
+                                      </div>
+                                    )}
+                                    {specs.weight && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Weight:</span>
+                                        <div className="text-foreground">{specs.weight}</div>
+                                      </div>
+                                    )}
+                                    {specs.features && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Features:</span>
+                                        <div className="text-foreground">{specs.features}</div>
+                                      </div>
+                                    )}
+                                    {specs.form_factor && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Form Factor:</span>
+                                        <div className="text-foreground">{specs.form_factor}</div>
+                                      </div>
+                                    )}
+                                    {specs.dimensions && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Dimensions:</span>
+                                        <div className="text-foreground">{specs.dimensions}</div>
+                                      </div>
+                                    )}
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                                </div>
+                              );
+                            } catch (e) {
+                              return null;
+                            }
+                          })()}
 
                           {/* Location & Management */}
                           <div>
