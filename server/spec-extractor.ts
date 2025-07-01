@@ -16,7 +16,7 @@ interface DeviceSpecs {
 
 // Database of device specifications based on brand/model combinations
 const DEVICE_SPEC_DATABASE: Record<string, DeviceSpecs> = {
-  // Apple devices
+  // Apple devices - exact matches from database
   'apple_macbook_pro_14-inch_2021': {
     processor: 'Apple M1 Pro',
     memory: '16GB Unified Memory',
@@ -27,6 +27,121 @@ const DEVICE_SPEC_DATABASE: Record<string, DeviceSpecs> = {
     ports: '3x Thunderbolt 4, HDMI, SD card slot',
     battery: '70Wh',
     weight: '3.5 lbs'
+  },
+  'apple_macbook_pro_14_m3': {
+    processor: 'Apple M3',
+    memory: '16GB Unified Memory',
+    storage: '512GB SSD',
+    graphics: '18-core GPU',
+    display: '14.2-inch Liquid Retina XDR',
+    connectivity: 'Wi-Fi 6E, Bluetooth 5.3',
+    ports: '3x Thunderbolt 4, HDMI, SD card slot',
+    battery: '70Wh',
+    weight: '3.5 lbs'
+  },
+  'apple_macbook_air_m2_2022': {
+    processor: 'Apple M2',
+    memory: '8GB Unified Memory',
+    storage: '256GB SSD',
+    graphics: '10-core GPU',
+    display: '13.6-inch Liquid Retina',
+    connectivity: 'Wi-Fi 6, Bluetooth 5.0',
+    ports: '2x Thunderbolt/USB 4, MagSafe 3',
+    battery: '52.6Wh',
+    weight: '2.7 lbs'
+  },
+  'apple_13-inmacbook_pro': {
+    processor: 'Intel Core i5',
+    memory: '8GB DDR3',
+    storage: '256GB SSD',
+    graphics: 'Intel Iris Pro Graphics',
+    display: '13.3-inch Retina',
+    connectivity: 'Wi-Fi 5, Bluetooth 4.0',
+    ports: '2x Thunderbolt 2, USB 3.0',
+    battery: '71.8Wh',
+    weight: '3.57 lbs'
+  },
+  'apple_macbook_pro': {
+    processor: 'Intel Core i7',
+    memory: '16GB DDR4',
+    storage: '512GB SSD',
+    graphics: 'Intel Iris Pro Graphics',
+    display: '13.3-inch Retina',
+    connectivity: 'Wi-Fi 5, Bluetooth 4.0',
+    ports: '2x Thunderbolt 3, USB 3.0',
+    battery: '58.2Wh',
+    weight: '3.02 lbs'
+  },
+  'apple_air': {
+    processor: 'Apple M1',
+    memory: '8GB Unified Memory',
+    storage: '256GB SSD',
+    graphics: '7-core GPU',
+    display: '13.3-inch Retina',
+    connectivity: 'Wi-Fi 6, Bluetooth 5.0',
+    ports: '2x Thunderbolt/USB 4',
+    battery: '49.9Wh',
+    weight: '2.8 lbs'
+  },
+  'apple_mac_mini_m1_2020': {
+    processor: 'Apple M1',
+    memory: '8GB Unified Memory',
+    storage: '256GB SSD',
+    graphics: '8-core GPU',
+    connectivity: 'Wi-Fi 6, Bluetooth 5.0, Gigabit Ethernet',
+    ports: '2x Thunderbolt/USB 4, 2x USB-A, HDMI 2.0',
+    form_factor: 'Desktop Mini',
+    dimensions: '7.7 x 7.7 x 1.4 inches'
+  },
+  'apple_mac_mini': {
+    processor: 'Apple M1',
+    memory: '8GB Unified Memory',
+    storage: '256GB SSD',
+    graphics: '8-core GPU',
+    connectivity: 'Wi-Fi 6, Bluetooth 5.0, Gigabit Ethernet',
+    ports: '2x Thunderbolt/USB 4, 2x USB-A, HDMI 2.0',
+    form_factor: 'Desktop Mini',
+    dimensions: '7.7 x 7.7 x 1.4 inches'
+  },
+  'apple_mini': {
+    processor: 'Apple M2',
+    memory: '8GB Unified Memory',
+    storage: '256GB SSD',
+    graphics: '10-core GPU',
+    connectivity: 'Wi-Fi 6E, Bluetooth 5.3, Gigabit Ethernet',
+    ports: '2x Thunderbolt 4, 2x USB-A, HDMI',
+    form_factor: 'Desktop Mini',
+    dimensions: '7.7 x 7.7 x 1.4 inches'
+  },
+  'apple_10.9_ipad_10th_gen_w/_wifi': {
+    processor: 'Apple A14 Bionic',
+    memory: '4GB RAM',
+    storage: '64GB',
+    display: '10.9-inch Liquid Retina',
+    connectivity: 'Wi-Fi 6, Bluetooth 5.2',
+    battery: '28.6Wh',
+    weight: '1.05 lbs',
+    features: 'Touch ID, Apple Pencil support'
+  },
+  'apple_11-inch_ipad_pro_wi-fi_256gb_-_space_gray': {
+    processor: 'Apple M2',
+    memory: '8GB RAM',
+    storage: '256GB',
+    display: '11-inch Liquid Retina',
+    connectivity: 'Wi-Fi 6E, Bluetooth 5.3',
+    battery: '28.65Wh',
+    weight: '1.03 lbs',
+    features: 'Face ID, Apple Pencil support, ProMotion'
+  },
+  'apple_apple_ipad': {
+    processor: 'Apple A12 Bionic',
+    memory: '3GB RAM',
+    storage: '32GB',
+    display: '10.2-inch Retina',
+    connectivity: 'Wi-Fi 5, Bluetooth 5.0',
+    battery: '32.4Wh',
+    weight: '1.07 lbs',
+    features: 'Touch ID, Apple Pencil support'
   },
   'apple_macbook_pro_14_m3': {
     processor: 'Apple M3',
