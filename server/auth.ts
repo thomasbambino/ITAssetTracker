@@ -154,15 +154,15 @@ export async function resetUserPassword(userId: number): Promise<{
     const expiry = new Date();
     expiry.setHours(expiry.getHours() + 24);
     
-    // Update user record
+    // Update user record without logging generic "user updated" activity
     await storage.updateUser(userId, {
       passwordHash: hash,
       tempPassword: tempPassword,  // Storing in plain text for admin to see
       tempPasswordExpiry: expiry,
       passwordResetRequired: true
-    });
+    }, 1, true); // Skip activity log since we'll log a specific password reset activity
 
-    // Log password reset activity separately (since updateUser also logs a generic "user updated")
+    // Log password reset activity
     await storage.createActivityLog({
       userId: 1, // System admin
       actionType: 'password_reset',

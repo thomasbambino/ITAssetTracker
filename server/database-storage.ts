@@ -389,7 +389,7 @@ export class DatabaseStorage implements IStorage {
     return newUser;
   }
 
-  async updateUser(id: number, user: any, loggedInUserId?: number): Promise<User | undefined> {
+  async updateUser(id: number, user: any, loggedInUserId?: number, skipActivityLog?: boolean): Promise<User | undefined> {
     try {
       // Build dynamic update query
       const updates: string[] = [];
@@ -497,12 +497,14 @@ export class DatabaseStorage implements IStorage {
           created_at as "createdAt"
       `, values);
       
-      // Log activity
-      await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
-        actionType: 'user_updated',
-        details: `User updated: ${updatedUser.firstName} ${updatedUser.lastName}`
-      });
+      // Log activity only if not skipped
+      if (!skipActivityLog) {
+        await this.createActivityLog({
+          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          actionType: 'user_updated',
+          details: `User updated: ${updatedUser.firstName} ${updatedUser.lastName}`
+        });
+      }
       
       return updatedUser;
     } catch (error) {
