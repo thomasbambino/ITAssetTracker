@@ -1,0 +1,105 @@
+=== DEVICE DEBUG INFO ===
+index.tsx:132 Device 1: 
+{id: 30, name: null, brand: 'Apple', model: 'Apple Pencil (2nd generation)', hasSpecs: false, …}
+index.tsx:132 Device 2: 
+{id: 31, name: null, brand: 'Apple', model: 'Airpods Pro 2nd Generation', hasSpecs: false, …}
+index.tsx:132 Device 3: 
+{id: 114, name: null, brand: '', model: 'Podcast Equipment', hasSpecs: false, …}
+index.tsx:132 Device 4: 
+{id: 32, name: null, brand: 'Apple', model: 'Macbook Pro', hasSpecs: false, …}
+index.tsx:132 Device 5: 
+{id: 33, name: null, brand: 'Apple', model: 'Magic Keyboard for iPad Pro 11-inch', hasSpecs: false, …}
+index.tsx:132 Device 6: 
+{id: 85, name: null, brand: 'Apple', model: 'MacBook Pro (14-inch, 2021)', hasSpecs: false, …}
+index.tsx:130 === DEVICE DEBUG INFO ===
+index.tsx:132 Device 1: 
+{id: 30, name: null, brand: 'Apple', model: 'Apple Pencil (2nd generation)', hasSpecs: false, …}
+index.tsx:132 Device 2: 
+{id: 31, name: null, brand: 'Apple', model: 'Airpods Pro 2nd Generation', hasSpecs: false, …}
+index.tsx:132 Device 3: 
+{id: 114, name: null, brand: '', model: 'Podcast Equipment', hasSpecs: false, …}
+index.tsx:132 Device 4: 
+{id: 32, name: null, brand: 'Apple', model: 'Macbook Pro', hasSpecs: false, …}
+index.tsx:132 Device 5: 
+{id: 33, name: null, brand: 'Apple', model: 'Magic Keyboard for iPad Pro 11-inch', hasSpecs: false, …}
+index.tsx:132 Device 6: 
+{id: 85, name: null, brand: 'Apple', model: 'MacBook Pro (14-inch, 2021)', hasSpecs: false, …}
+index.tsx:130 === DEVICE DEBUG INFO ===
+index.tsx:132 Device 1: 
+{id: 30, name: null, brand: 'Apple', model: 'Apple Pencil (2nd generation)', hasSpecs: false, …}
+index.tsx:132 Device 2: 
+{id: 31, name: null, brand: 'Apple', model: 'Airpods Pro 2nd Generation', hasSpecs: false, …}
+index.tsx:132 Device 3: 
+{id: 114, name: null, brand: '', model: 'Podcast Equipment', hasSpecs: false, …}
+index.tsx:132 Device 4: 
+{id: 32, name: null, brand: 'Apple', model: 'Macbook Pro', hasSpecs: false, …}
+index.tsx:132 Device 5: 
+{id: 33, name: null, brand: 'Apple', model: 'Magic Keyboard for iPad Pro 11-inch', hasSpecs: false, …}
+index.tsx:132 Device 6: 
+{id: 85, name: null, brand: 'Apple', model: 'MacBook Pro (14-inch, 2021)', hasSpecs: false, …}
+index.tsx:130 === DEVICE DEBUG INFO ===
+index.tsx:132 Device 1: 
+{id: 30, name: null, brand: 'Apple', model: 'Apple Pencil (2nd generation)', hasSpecs: false, …}
+index.tsx:132 Device 2: 
+{id: 31, name: null, brand: 'Apple', model: 'Airpods Pro 2nd Generation', hasSpecs: false, …}
+index.tsx:132 Device 3: 
+{id: 114, name: null, brand: '', model: 'Podcast Equipment', hasSpecs: false, …}
+index.tsx:132 Device 4: 
+{id: 32, name: null, brand: 'Apple', model: 'Macbook Pro', hasSpecs: false, …}
+index.tsx:132 Device 5: 
+{id: 33, name: null, brand: 'Apple', model: 'Magic Keyboard for iPad Pro 11-inch', hasSpecs: false, …}
+index.tsx:132 Device 6: 
+{id: 85, name: null, brand: 'Apple', model: 'MacBook Pro (14-inch, 2021)', hasSpecs: false, …}
+index.tsx:130 === DEVICE DEBUG INFO ===
+index.tsx:132 Device 1: 
+{id: 30, name: null, brand: 'Apple', model: 'Apple Pencil (2nd generation)', hasSpecs: false, …}
+index.tsx:132 Device 2: 
+{id: 31, name: null, brand: 'Apple', model: 'Airpods Pro 2nd Generation', hasSpecs: false, …}
+index.tsx:132 Device 3: 
+{id: 114, name: null, brand: '', model: 'Podcast Equipment', hasSpecs: false, …}
+index.tsx:132 Device 4: 
+{id: 32, name: null, brand: 'Apple', model: 'Macbook Pro', hasSpecs: false, …}
+index.tsx:132 Device 5: 
+{id: 33, name: null, brand: 'Apple', model: 'Magic Keyboard for iPad Pro 11-inch', hasSpecs: false, …}
+index.tsx:132 Device 6: 
+{id: 85, name: null, brand: 'Apple', model: 'MacBook Pro (14-inch, 2021)', hasSpecs: false, …}
+index.tsx:130 === DEVICE DEBUG INFO ===
+index.tsx:132 Device 1: 
+{id: 30, name: null, brand: 'Apple', model: 'Apple Pencil (2nd generation)', hasSpecs: false, …}
+index.tsx:132 Device 2: 
+{id: 31, name: null, brand: 'Apple', model: 'Airpods Pro 2nd Generation', hasSpecs: false, …}
+index.tsx:132 Device 3: 
+{id: 114, name: null, brand: '', model: 'Podcast Equipment', hasSpecs: false, …}
+index.tsx:132 Device 4: 
+{id: 32, name: null, brand: 'Apple', model: 'Macbook Pro', hasSpecs: false, …}
+index.tsx:132 Device 5: 
+{id: 33, name: null, brand: 'Apple', model: 'Magic Keyboard for iPad Pro 11-inch', hasSpecs: false, …}
+index.tsx:132 Device 6: 
+{id: 85, name: null, brand: 'Apple', model: 'MacBook Pro (14-inch, 2021)', hasSpecs: false, …}
+brand
+: 
+"Apple"
+fullDevice
+: 
+{id: 85, name: null, brand: 'Apple', model: 'MacBook Pro (14-inch, 2021)', serialNumber: 'MW9H6HTP9N', …}
+hasSpecs
+: 
+false
+id
+: 
+85
+model
+: 
+"MacBook Pro (14-inch, 2021)"
+name
+: 
+null
+specs
+: 
+null
+specsType
+: 
+"object"
+[[Prototype]]
+: 
+Object

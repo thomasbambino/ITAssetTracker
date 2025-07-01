@@ -427,9 +427,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (device.specs) {
             try {
               parsedSpecs = JSON.parse(device.specs);
+              console.log(`Device ${device.id} (${device.brand} ${device.model}) has specs:`, parsedSpecs);
             } catch (e) {
               console.warn(`Invalid specs JSON for device ${device.id}`);
             }
+          } else {
+            console.log(`Device ${device.id} (${device.brand} ${device.model}) has NO specs in database`);
           }
           
           return {

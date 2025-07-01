@@ -119,10 +119,11 @@ export default function UserDashboard() {
     }).format(cents / 100);
   };
 
-  const { data: assignedDevices = [], isLoading: devicesLoading } = useQuery<AssignedDevice[]>({
-    queryKey: ['/api/devices/assigned', user?.id],
+  const { data: assignedDevices = [], isLoading: devicesLoading, refetch } = useQuery<AssignedDevice[]>({
+    queryKey: ['/api/devices/assigned', user?.id, Date.now()], // Force cache bust
     enabled: !!user?.id,
-    staleTime: 0, // Force fresh data to get specs
+    staleTime: 0,
+    cacheTime: 0, // Don't cache at all for now
   });
 
   // Debug logging - Let's see exactly what we're getting from the API
