@@ -284,35 +284,39 @@ export function DesktopSidebar() {
           </div>
         </div>
 
-        <Separator className="mx-2" />
-        
-        {/* Management Group */}
-        <div>
-          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Management
-          </h3>
-          <div className="mt-1 space-y-1">
-            {routes
-              .filter(route => route.category === 'management')
-              .map(renderNavItem)
-            }
-          </div>
-        </div>
+        {currentUser?.role === 'admin' && (
+          <>
+            <Separator className="mx-2" />
+            
+            {/* Management Group */}
+            <div>
+              <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Management
+              </h3>
+              <div className="mt-1 space-y-1">
+                {routes
+                  .filter(route => route.category === 'management')
+                  .map(renderNavItem)
+                }
+              </div>
+            </div>
 
-        <Separator className="mx-2" />
-        
-        {/* System Group */}
-        <div>
-          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            System
-          </h3>
-          <div className="mt-1 space-y-1">
-            {routes
-              .filter(route => route.category === 'system')
-              .map(renderNavItem)
-            }
-          </div>
-        </div>
+            <Separator className="mx-2" />
+            
+            {/* System Group */}
+            <div>
+              <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                System
+              </h3>
+              <div className="mt-1 space-y-1">
+                {routes
+                  .filter(route => route.category === 'system')
+                  .map(renderNavItem)
+                }
+              </div>
+            </div>
+          </>
+        )}
       </div>
       
       <div className="flex-shrink-0 border-t border-border p-4 bg-muted">

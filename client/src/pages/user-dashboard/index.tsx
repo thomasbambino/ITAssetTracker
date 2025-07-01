@@ -45,7 +45,9 @@ function formatDate(date: Date | string | null): string {
   return dateObj.toLocaleDateString();
 }
 
-function getStatusColor(status: string): string {
+function getStatusColor(status: string | null | undefined): string {
+  if (!status) return "bg-gray-100 text-gray-800";
+  
   switch (status.toLowerCase()) {
     case "active":
     case "assigned":
@@ -74,7 +76,7 @@ export default function UserDashboard() {
   });
 
   const { data: assignedSoftware = [], isLoading: softwareLoading } = useQuery<AssignedSoftware[]>({
-    queryKey: ['/api/software-assignments/user', user?.id],
+    queryKey: [`/api/software-assignments/user/${user?.id}`],
     enabled: !!user?.id,
   });
 

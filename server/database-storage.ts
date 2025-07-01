@@ -1586,26 +1586,18 @@ export class DatabaseStorage implements IStorage {
     const logs = await db.any(query);
     
     // Transform the data to match the expected frontend structure
-    return logs.map(log => {
-      console.log('Processing activity log:', {
-        id: log.id,
-        userId: log.userId,
-        userName: log.userName,
+    return logs.map(log => ({
+      id: log.id,
+      actionType: log.actionType,
+      details: log.details,
+      timestamp: log.timestamp,
+      userId: log.userId,
+      user: log.userId && log.userName ? {
+        id: log.userId,
+        name: log.userName,
         department: log.department
-      });
-      
-      return {
-        id: log.id,
-        actionType: log.actionType,
-        details: log.details,
-        timestamp: log.timestamp,
-        user: log.userId && log.userName ? {
-          id: log.userId,
-          name: log.userName,
-          department: log.department
-        } : null
-      };
-    });
+      } : null
+    })) as any;
   }
 
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
