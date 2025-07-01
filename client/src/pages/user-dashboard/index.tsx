@@ -102,6 +102,15 @@ export default function UserDashboard() {
     enabled: !!user?.id,
   });
 
+  // Debug: Log device data to see what's being received
+  if (assignedDevices.length > 0) {
+    console.log('Assigned devices data:', assignedDevices);
+    assignedDevices.forEach((device, index) => {
+      console.log(`Device ${index + 1}:`, device);
+      console.log(`Device ${index + 1} specs:`, device.specs);
+    });
+  }
+
   const { data: assignedSoftware = [], isLoading: softwareLoading } = useQuery<AssignedSoftware[]>({
     queryKey: [`/api/software-assignments/user/${user?.id}`],
     enabled: !!user?.id,
@@ -264,13 +273,9 @@ export default function UserDashboard() {
                         <div className="space-y-4 pt-2 border-t">
                           {/* Technical Specifications */}
                           {device.specs && (() => {
-                            console.log('Device specs data:', device.specs);
-                            console.log('Device specs type:', typeof device.specs);
                             try {
                               const specs = typeof device.specs === 'string' ? JSON.parse(device.specs) : device.specs;
-                              console.log('Parsed specs:', specs);
-                              const hasSpecs = specs && Object.values(specs).some(value => value && value.toString().trim());
-                              console.log('Has specs:', hasSpecs);
+                              const hasSpecs = specs && typeof specs === 'object' && Object.keys(specs).length > 0;
                               
                               if (!hasSpecs) return null;
                               
