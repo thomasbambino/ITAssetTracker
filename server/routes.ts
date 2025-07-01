@@ -408,11 +408,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get devices assigned to current user (for regular users)
   app.get('/api/devices/assigned', isAuthenticated, async (req: Request, res: Response) => {
-    // Disable caching for this endpoint during debugging
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    
     try {
       const userId = (req.session as any).userId;
       console.log(`\n=== FETCHING DEVICES FOR USER ${userId} ===`);

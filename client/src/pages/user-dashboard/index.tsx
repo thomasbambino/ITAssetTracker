@@ -122,7 +122,25 @@ export default function UserDashboard() {
   const { data: assignedDevices = [], isLoading: devicesLoading, refetch } = useQuery<AssignedDevice[]>({
     queryKey: ['/api/devices/assigned', user?.id],
     enabled: !!user?.id,
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache query results
   });
+
+  // Debug logging for frontend
+  if (assignedDevices && assignedDevices.length > 0) {
+    console.log(`Frontend received ${assignedDevices.length} devices from API`);
+    assignedDevices.forEach((device, index) => {
+      console.log(`Device ${device.id} (${device.brand} ${device.model}) specs:`, device.specs);
+      if (device.specs) {
+        try {
+          const parsedSpecs = typeof device.specs === 'string' ? JSON.parse(device.specs) : device.specs;
+          console.log(`Device ${device.id} parsed specs:`, parsedSpecs);
+        } catch (e) {
+          console.error(`Failed to parse specs for device ${device.id}:`, e);
+        }
+      }
+    });
+  }
 
   // Debug logging - Let's see exactly what we're getting from the API
   if (assignedDevices.length > 0) {
@@ -337,6 +355,15 @@ export default function UserDashboard() {
                                         <div>
                                           <span className="text-muted-foreground font-medium">Memory</span>
                                           <div className="text-foreground">{specs.memory}</div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {specs.ram && (
+                                      <div className="flex items-start space-x-2">
+                                        <MemoryStick className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">RAM</span>
+                                          <div className="text-foreground">{specs.ram}</div>
                                         </div>
                                       </div>
                                     )}
