@@ -182,12 +182,7 @@ router.post('/reset-password/:userId', isAuthenticated, isAdmin, async (req: Req
         }
       }
       
-      // Add activity log
-      await storage.createActivityLog({
-        actionType: 'PASSWORD_RESET',
-        userId: req.session.userId || null,
-        details: `Password reset for user ID: ${userId}`
-      });
+      // Activity log is already created in resetUserPassword function
       
       return res.status(200).json(response);
     } else {
