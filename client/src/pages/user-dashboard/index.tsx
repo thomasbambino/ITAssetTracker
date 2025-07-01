@@ -120,7 +120,7 @@ export default function UserDashboard() {
   };
 
   const { data: assignedDevices = [], isLoading: devicesLoading, refetch } = useQuery<AssignedDevice[]>({
-    queryKey: ['/api/devices/assigned', user?.id],
+    queryKey: ['/api/devices/assigned', user?.id, Date.now()], // Force fresh cache
     enabled: !!user?.id,
     staleTime: 0, // Always consider data stale
     gcTime: 0, // Don't cache query results
