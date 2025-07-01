@@ -120,7 +120,7 @@ export default function UserDashboard() {
   };
 
   const { data: assignedDevices = [], isLoading: devicesLoading, refetch } = useQuery<AssignedDevice[]>({
-    queryKey: ['/api/devices/assigned-debug', user?.id], // Change endpoint temporarily
+    queryKey: ['/api/devices/assigned', user?.id],
     enabled: !!user?.id,
   });
 

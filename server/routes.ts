@@ -464,64 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Debug endpoint - same as above but with different URL to bypass cache
-  app.get('/api/devices/assigned-debug', isAuthenticated, async (req: Request, res: Response) => {
-    // Disable caching for this endpoint during debugging
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    
-    try {
-      const userId = (req.session as any).userId;
-      console.log(`\n=== DEBUG FETCHING DEVICES FOR USER ${userId} ===`);
-      const devices = await storage.getDevicesByUser(userId);
-      console.log(`Found ${devices.length} devices for user ${userId}`);
-      devices.forEach(device => {
-        console.log(`Raw device from DB: ID=${device.id}, Brand=${device.brand}, Model=${device.model}, Specs=${device.specs ? 'EXISTS' : 'NULL'}`);
-      });
-      
-      // Enrich with category, site, and assignment information
-      const enrichedDevices = await Promise.all(
-        devices.map(async (device) => {
-          const category = device.categoryId ? await storage.getCategoryById(device.categoryId) : null;
-          const site = device.siteId ? await storage.getSiteById(device.siteId) : null;
-          
-          // Get the most recent assignment history for this device and user
-          const history = await storage.getAssignmentHistory(device.id);
-          const currentAssignment = history.find(h => h.userId === userId && !h.unassignedAt);
-          
-          // Parse specs if they exist
-          let parsedSpecs = null;
-          if (device.specs) {
-            try {
-              parsedSpecs = JSON.parse(device.specs);
-              console.log(`Device ${device.id} (${device.brand} ${device.model}) parsed specs:`, parsedSpecs);
-            } catch (e) {
-              console.warn(`Invalid specs JSON for device ${device.id}`);
-            }
-          } else {
-            console.log(`Device ${device.id} (${device.brand} ${device.model}) has NO specs in database`);
-          }
-          
-          return {
-            ...device,
-            category: category ? { id: category.id, name: category.name } : null,
-            site: site ? { id: site.id, name: site.name } : null,
-            assignedAt: currentAssignment?.assignedAt || null,
-            assignedBy: currentAssignment?.assignedBy || null,
-            assignmentNotes: currentAssignment?.notes || null,
-            specs: parsedSpecs
-          };
-        })
-      );
-      
-      console.log(`Returning ${enrichedDevices.length} enriched devices to frontend`);
-      res.json(enrichedDevices);
-    } catch (error) {
-      console.error("Error fetching assigned devices (debug):", error);
-      res.status(500).json({ message: "Error fetching assigned devices" });
-    }
-  });
+
 
   app.get('/api/devices/:id', async (req: Request, res: Response) => {
     try {
