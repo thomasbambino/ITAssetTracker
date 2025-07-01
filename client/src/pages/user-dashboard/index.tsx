@@ -124,6 +124,23 @@ export default function UserDashboard() {
     enabled: !!user?.id,
   });
 
+  // Debug logging - Let's see exactly what we're getting from the API
+  if (assignedDevices.length > 0) {
+    console.log('=== DEVICE DEBUG INFO ===');
+    assignedDevices.forEach((device, index) => {
+      console.log(`Device ${index + 1}:`, {
+        id: device.id,
+        name: device.name,
+        brand: device.brand,
+        model: device.model,
+        hasSpecs: !!device.specs,
+        specsType: typeof device.specs,
+        specs: device.specs,
+        fullDevice: device
+      });
+    });
+  }
+
   const { data: assignedSoftware = [], isLoading: softwareLoading } = useQuery<AssignedSoftware[]>({
     queryKey: [`/api/software-assignments/user/${user?.id}`],
     enabled: !!user?.id,
