@@ -2,15 +2,31 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Monitor, Package, Calendar, Tag, User, Building2, Cpu, HardDrive, MemoryStick, DollarSign, Clock, UserCheck, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { 
+  Monitor, 
+  Package, 
+  Calendar, 
+  Tag, 
+  Building2, 
+  Cpu, 
+  DollarSign, 
+  UserCheck, 
+  ChevronDown, 
+  ChevronUp,
+  HardDrive,
+  MemoryStick,
+  Wifi,
+  Battery,
+  Weight,
+  Eye
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 interface AssignedDevice {
   id: number;
-  name: string;
+  name: string | null;
   brand: string;
   model: string;
   serialNumber: string | null;
@@ -19,9 +35,11 @@ interface AssignedDevice {
   purchaseDate: Date | null;
   warrantyEOL: Date | null;
   category: {
+    id: number;
     name: string;
   } | null;
   site: {
+    id: number;
     name: string;
   } | null;
   assignedAt: Date | null;
@@ -48,30 +66,34 @@ interface AssignedSoftware {
 }
 
 function formatDate(date: Date | string | null): string {
-  if (!date) return "N/A";
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return dateObj.toLocaleDateString();
+  if (!date) return "Not specified";
+  const d = new Date(date);
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
 }
 
 function getStatusColor(status: string | null | undefined): string {
-  if (!status) return "bg-gray-100 text-gray-800";
+  if (!status) return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
   
   switch (status.toLowerCase()) {
     case "active":
     case "assigned":
-      return "bg-green-100 text-green-800";
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
     case "inactive":
     case "unassigned":
-      return "bg-gray-100 text-gray-800";
+      return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
     case "maintenance":
-      return "bg-yellow-100 text-yellow-800";
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
     case "broken":
     case "lost":
-      return "bg-red-100 text-red-800";
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
     case "expired":
-      return "bg-orange-100 text-orange-800";
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
     default:
-      return "bg-blue-100 text-blue-800";
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
   }
 }
 
@@ -101,15 +123,6 @@ export default function UserDashboard() {
     queryKey: ['/api/devices/assigned', user?.id],
     enabled: !!user?.id,
   });
-
-  // Debug: Log device data to see what's being received
-  if (assignedDevices.length > 0) {
-    console.log('Assigned devices data:', assignedDevices);
-    assignedDevices.forEach((device, index) => {
-      console.log(`Device ${index + 1}:`, device);
-      console.log(`Device ${index + 1} specs:`, device.specs);
-    });
-  }
 
   const { data: assignedSoftware = [], isLoading: softwareLoading } = useQuery<AssignedSoftware[]>({
     queryKey: [`/api/software-assignments/user/${user?.id}`],
@@ -158,23 +171,29 @@ export default function UserDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Devices</CardTitle>
-              <Monitor className="h-4 w-4 text-muted-foreground" />
+              <Monitor className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {Array.isArray(assignedDevices) ? assignedDevices.filter(d => d.status?.toLowerCase() === 'assigned').length : 0}
+                {assignedDevices.filter(d => d.status?.toLowerCase() === 'active').length}
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Software</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
+              <Calendar className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {Array.isArray(assignedSoftware) ? assignedSoftware.filter(s => s.software?.status?.toLowerCase() === 'active').length : 0}
+                {assignedSoftware.filter(s => {
+                  if (!s.expiryDate) return false;
+                  const expiry = new Date(s.expiryDate);
+                  const thirtyDaysFromNow = new Date();
+                  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+                  return expiry <= thirtyDaysFromNow;
+                }).length}
               </div>
             </CardContent>
           </Card>
@@ -281,81 +300,90 @@ export default function UserDashboard() {
                               
                               return (
                                 <div>
-                                  <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                                  <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
                                     <Cpu className="h-4 w-4" />
                                     <span>Technical Specifications</span>
                                   </h4>
-                                  <div className="grid grid-cols-1 gap-3 text-sm">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                     {specs.processor && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Processor:</span>
-                                        <div className="text-foreground">{specs.processor}</div>
+                                      <div className="flex items-start space-x-2">
+                                        <Cpu className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Processor</span>
+                                          <div className="text-foreground">{specs.processor}</div>
+                                        </div>
                                       </div>
                                     )}
                                     {specs.memory && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Memory:</span>
-                                        <div className="text-foreground">{specs.memory}</div>
+                                      <div className="flex items-start space-x-2">
+                                        <MemoryStick className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Memory</span>
+                                          <div className="text-foreground">{specs.memory}</div>
+                                        </div>
                                       </div>
                                     )}
                                     {specs.storage && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Storage:</span>
-                                        <div className="text-foreground">{specs.storage}</div>
+                                      <div className="flex items-start space-x-2">
+                                        <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Storage</span>
+                                          <div className="text-foreground">{specs.storage}</div>
+                                        </div>
                                       </div>
                                     )}
                                     {specs.graphics && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Graphics:</span>
-                                        <div className="text-foreground">{specs.graphics}</div>
+                                      <div className="flex items-start space-x-2">
+                                        <Eye className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Graphics</span>
+                                          <div className="text-foreground">{specs.graphics}</div>
+                                        </div>
                                       </div>
                                     )}
                                     {specs.display && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Display:</span>
-                                        <div className="text-foreground">{specs.display}</div>
+                                      <div className="flex items-start space-x-2">
+                                        <Monitor className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Display</span>
+                                          <div className="text-foreground">{specs.display}</div>
+                                        </div>
                                       </div>
                                     )}
                                     {specs.connectivity && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Connectivity:</span>
-                                        <div className="text-foreground">{specs.connectivity}</div>
+                                      <div className="flex items-start space-x-2">
+                                        <Wifi className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Connectivity</span>
+                                          <div className="text-foreground">{specs.connectivity}</div>
+                                        </div>
                                       </div>
                                     )}
                                     {specs.ports && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Ports:</span>
-                                        <div className="text-foreground">{specs.ports}</div>
+                                      <div className="flex items-start space-x-2">
+                                        <div className="h-4 w-4 text-muted-foreground mt-0.5 bg-muted rounded-sm"></div>
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Ports</span>
+                                          <div className="text-foreground">{specs.ports}</div>
+                                        </div>
                                       </div>
                                     )}
                                     {specs.battery && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Battery:</span>
-                                        <div className="text-foreground">{specs.battery}</div>
+                                      <div className="flex items-start space-x-2">
+                                        <Battery className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Battery</span>
+                                          <div className="text-foreground">{specs.battery}</div>
+                                        </div>
                                       </div>
                                     )}
                                     {specs.weight && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Weight:</span>
-                                        <div className="text-foreground">{specs.weight}</div>
-                                      </div>
-                                    )}
-                                    {specs.features && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Features:</span>
-                                        <div className="text-foreground">{specs.features}</div>
-                                      </div>
-                                    )}
-                                    {specs.form_factor && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Form Factor:</span>
-                                        <div className="text-foreground">{specs.form_factor}</div>
-                                      </div>
-                                    )}
-                                    {specs.dimensions && (
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Dimensions:</span>
-                                        <div className="text-foreground">{specs.dimensions}</div>
+                                      <div className="flex items-start space-x-2">
+                                        <Weight className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Weight</span>
+                                          <div className="text-foreground">{specs.weight}</div>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -368,15 +396,21 @@ export default function UserDashboard() {
 
                           {/* Location & Management */}
                           <div>
-                            <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                            <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
                               <Building2 className="h-4 w-4" />
                               <span>Location & Management</span>
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                               {device.site && (
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-muted-foreground">Site:</span>
+                                  <span className="text-muted-foreground font-medium">Site:</span>
                                   <span>{device.site.name}</span>
+                                </div>
+                              )}
+                              {device.warrantyEOL && (
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-muted-foreground font-medium">Warranty:</span>
+                                  <span>Until {formatDate(device.warrantyEOL)}</span>
                                 </div>
                               )}
                             </div>
@@ -385,21 +419,20 @@ export default function UserDashboard() {
                           {/* Financial Information */}
                           {(device.purchaseCost || device.purchaseDate) && (
                             <div>
-                              <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                              <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
                                 <DollarSign className="h-4 w-4" />
                                 <span>Financial Information</span>
                               </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 {device.purchaseCost && (
                                   <div className="flex items-center space-x-2">
-                                    <span className="text-muted-foreground">Purchase Cost:</span>
+                                    <span className="text-muted-foreground font-medium">Purchase Cost:</span>
                                     <span className="font-medium">{formatCurrency(device.purchaseCost)}</span>
                                   </div>
                                 )}
                                 {device.purchaseDate && (
                                   <div className="flex items-center space-x-2">
-                                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-muted-foreground">Purchase Date:</span>
+                                    <span className="text-muted-foreground font-medium">Purchase Date:</span>
                                     <span>{formatDate(device.purchaseDate)}</span>
                                   </div>
                                 )}
@@ -407,32 +440,11 @@ export default function UserDashboard() {
                             </div>
                           )}
 
-                          {/* Warranty & Support */}
-                          {device.warrantyEOL && (
-                            <div>
-                              <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
-                                <Clock className="h-4 w-4" />
-                                <span>Warranty & Support</span>
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-muted-foreground">Warranty Expires:</span>
-                                  <span className={new Date(device.warrantyEOL) < new Date() ? 'text-red-600 font-medium' : ''}>{formatDate(device.warrantyEOL)}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
                           {/* Notes */}
                           {device.notes && (
                             <div>
-                              <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
-                                <FileText className="h-4 w-4" />
-                                <span>Notes</span>
-                              </h4>
-                              <div className="bg-muted p-3 rounded text-sm">
-                                {device.notes}
-                              </div>
+                              <h4 className="font-medium text-sm mb-2">Notes</h4>
+                              <p className="text-sm text-muted-foreground">{device.notes}</p>
                             </div>
                           )}
                         </div>
@@ -465,13 +477,12 @@ export default function UserDashboard() {
             ) : (
               <div className="space-y-4">
                 {assignedSoftware.map((assignment) => (
-                  <div key={assignment.id} className="border rounded-lg p-4 space-y-3">
+                  <div key={assignment.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <h3 className="font-medium">{assignment.software.name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {assignment.software.vendor}
-                          {assignment.software.version && ` v${assignment.software.version}`}
+                          {assignment.software.vendor} {assignment.software.version && `• ${assignment.software.version}`}
                         </p>
                       </div>
                       <Badge className={getStatusColor(assignment.software.status)}>
@@ -479,23 +490,19 @@ export default function UserDashboard() {
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-muted-foreground">License Type:</span>
-                        <span>{assignment.software.licenseType}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground font-medium">License Type:</span>
+                        <div>{assignment.software.licenseType}</div>
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Assigned:</span>
-                        <span>{formatDate(assignment.assignmentDate)}</span>
+                      <div>
+                        <span className="text-muted-foreground font-medium">Assigned:</span>
+                        <div>{formatDate(assignment.assignmentDate)}</div>
                       </div>
-                      
                       {assignment.expiryDate && (
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Expires:</span>
-                          <span>{formatDate(assignment.expiryDate)}</span>
+                        <div>
+                          <span className="text-muted-foreground font-medium">Expires:</span>
+                          <div>{formatDate(assignment.expiryDate)}</div>
                         </div>
                       )}
                     </div>
