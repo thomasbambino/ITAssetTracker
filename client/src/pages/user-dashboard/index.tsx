@@ -264,9 +264,13 @@ export default function UserDashboard() {
                         <div className="space-y-4 pt-2 border-t">
                           {/* Technical Specifications */}
                           {device.specs && (() => {
+                            console.log('Device specs data:', device.specs);
+                            console.log('Device specs type:', typeof device.specs);
                             try {
                               const specs = typeof device.specs === 'string' ? JSON.parse(device.specs) : device.specs;
+                              console.log('Parsed specs:', specs);
                               const hasSpecs = specs && Object.values(specs).some(value => value && value.toString().trim());
+                              console.log('Has specs:', hasSpecs);
                               
                               if (!hasSpecs) return null;
                               
