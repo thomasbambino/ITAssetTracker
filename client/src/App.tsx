@@ -127,6 +127,11 @@ function MainRouter() {
       <Route path="/sites" component={() => <ProtectedPageWrapper component={Sites} adminRequired />} />
       <Route path="/departments" component={() => <ProtectedPageWrapper component={Departments} adminRequired />} />
       
+      {/* Admin user account pages - admin viewing their own account */}
+      <Route path="/user-dashboard" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
+      <Route path="/guest-devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
+      <Route path="/guest-software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
+      
       {/* Fallback to 404 - this is still inside the protected wrapper */}
       <Route component={() => <ProtectedPageWrapper component={NotFound} />} />
     </Switch>
