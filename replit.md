@@ -110,6 +110,9 @@ The system uses a relational database with the following key entities:
 
 Preferred communication style: Simple, everyday language.
 
+### Critical Data Handling Requirements
+- **Device Specs Display**: NEVER modify how device specs are pulled from database. Specs are stored as JSON in PostgreSQL devices table and must display exactly as stored (RAM, Storage, Graphics, Display only - no additional fields like Processor, Memory, Connectivity). This is critical and must not break.
+
 ## Changelog
 
 Changelog:
