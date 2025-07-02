@@ -222,7 +222,7 @@ export function MobileNav() {
     },
   ];
 
-  // Filter routes based on user role
+  // Filter routes based on user role and customize labels
   const routes = allRoutes.filter(route => {
     // If no user data, only show dashboard (for logout transition)
     if (!currentUser) {
@@ -234,6 +234,34 @@ export function MobileNav() {
     }
     // Admins can see all routes
     return true;
+  }).map(route => {
+    // Customize labels for regular users to add "My" prefix
+    if (currentUser?.role === 'user') {
+      const userRouteLabels: Record<string, string> = {
+        '/': 'My Dashboard',
+        '/devices': 'My Devices',
+        '/software': 'My Software & Portals',
+        '/notifications': 'My Notifications'
+      };
+      return {
+        ...route,
+        label: userRouteLabels[route.href] || route.label
+      };
+    }
+    // For admin users, use original labels (without "My" prefix for main routes)
+    if (currentUser?.role === 'admin') {
+      const adminRouteLabels: Record<string, string> = {
+        '/': 'Dashboard',
+        '/devices': 'Devices',
+        '/software': 'Software & Portals',
+        '/notifications': 'Notifications'
+      };
+      return {
+        ...route,
+        label: adminRouteLabels[route.href] || route.label
+      };
+    }
+    return route;
   });
 
   const toggleMenu = () => {
