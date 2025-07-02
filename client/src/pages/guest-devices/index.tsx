@@ -220,10 +220,20 @@ export default function GuestDevices() {
                             const mainFields = ['ram', 'RAM', 'memory', 'storage', 'Storage', 'graphics', 'Graphics', 'display', 'Display', 'screen'];
                             if (mainFields.includes(key) || !value) return null;
                             
+                            // Format key with special handling for CPU and OS
+                            let displayKey = key.replace(/([A-Z])/g, ' $1').trim();
+                            if (key.toLowerCase() === 'cpu') {
+                              displayKey = 'CPU';
+                            } else if (key.toLowerCase() === 'os') {
+                              displayKey = 'OS';
+                            } else {
+                              displayKey = displayKey.charAt(0).toUpperCase() + displayKey.slice(1).toLowerCase();
+                            }
+                            
                             return (
                               <div key={key} className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-muted-foreground min-w-[60px] capitalize">
-                                  {key.replace(/([A-Z])/g, ' $1').trim()}:
+                                <span className="text-sm font-medium text-muted-foreground min-w-[60px]">
+                                  {displayKey}:
                                 </span>
                                 <span className="text-sm">{value}</span>
                               </div>
