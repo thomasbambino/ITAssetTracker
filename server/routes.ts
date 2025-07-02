@@ -1602,7 +1602,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               name: software.name,
               vendor: software.vendor,
               licenseType: software.licenseType,
-              expiryDate: software.expiryDate
+              expiryDate: software.expiryDate,
+              version: software.version,
+              status: software.status,
+              url: software.url
             } : null
           };
         })
