@@ -203,7 +203,7 @@ export default function UserDashboard() {
                       <div className="flex items-center space-x-3">
                         <CardTitle className="text-xl font-semibold">{device.name || `${device.brand} ${device.model}`}</CardTitle>
                         <Badge className={getStatusColor(device.status)}>
-                          {device.status}
+                          {device.status?.charAt(0).toUpperCase() + device.status?.slice(1).toLowerCase() || device.status}
                         </Badge>
                       </div>
                       <CardDescription className="text-base">
