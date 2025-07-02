@@ -96,6 +96,15 @@ function getStatusColor(status: string | null | undefined): string {
   }
 }
 
+function formatStatus(status: string | null | undefined): string {
+  if (!status) return 'Active';
+  
+  // Capitalize first letter of each word
+  return status.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export default function UserDashboard() {
   const { user } = useAuth();
 
@@ -442,7 +451,7 @@ export default function UserDashboard() {
                       </div>
                     </div>
                     <Badge className={getStatusColor(assignment.software.status || 'active')}>
-                      {assignment.software.status || 'Active'}
+                      {formatStatus(assignment.software.status)}
                     </Badge>
                   </div>
                 </Card>
