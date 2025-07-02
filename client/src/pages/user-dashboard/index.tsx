@@ -14,8 +14,13 @@ import {
   FileText, 
   Tag,
   ExternalLink,
-  Wifi
+  Wifi,
+  AlertTriangle
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ProblemReportForm } from '@/components/forms/ProblemReportForm';
+import { useState } from 'react';
 
 interface AssignedDevice {
   id: number;
@@ -107,6 +112,7 @@ function formatStatus(status: string | null | undefined): string {
 
 export default function UserDashboard() {
   const { user } = useAuth();
+  const [isProblemReportOpen, setIsProblemReportOpen] = useState(false);
 
   const { data: assignedDevices = [] } = useQuery<AssignedDevice[]>({
     queryKey: ['/api/devices/assigned'],
@@ -134,6 +140,24 @@ export default function UserDashboard() {
       description="Here's an overview of your assigned devices and software licenses."
     >
       <div className="space-y-8">
+        
+        {/* Problem Report Button */}
+        <div className="flex justify-end">
+          <Dialog open={isProblemReportOpen} onOpenChange={setIsProblemReportOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Report a Problem
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Report a Problem</DialogTitle>
+              </DialogHeader>
+              <ProblemReportForm onSuccess={() => setIsProblemReportOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

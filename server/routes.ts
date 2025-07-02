@@ -2311,6 +2311,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Problem report routes
+  app.post('/api/problem-reports', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { type, itemId, subject, description, priority } = req.body;
+      const sessionData = req.session as any;
+      const reportingUserId = sessionData.userId;
+
+      // Validate required fields
+      if (!type || !itemId || !subject || !description || !priority) {
+        return res.status(400).json({ 
+          message: "Missing required fields" 
+        });
+      }
+
+      // Get reporting user info
+      const reportingUser = await storage.getUserById(reportingUserId);
+      if (!reportingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get item details based on type
+      let itemName = "";
+      let itemDetails = "";
+      
+      if (type === "device") {
+        const device = await storage.getDeviceById(parseInt(itemId));
+        if (device) {
+          itemName = `${device.brand} ${device.model}`;
+          if (device.assetTag) {
+            itemName += ` (${device.assetTag})`;
+          }
+          itemDetails = itemName;
+        }
+      } else if (type === "software") {
+        const software = await storage.getSoftwareById(parseInt(itemId));
+        if (software) {
+          itemName = software.name;
+          itemDetails = `${software.name} (${software.vendor})`;
+        }
+      }
+
+      // Create notifications for all admin users
+      const adminUsers = await storage.getUsersByRole('admin');
+      
+      const priorityEmoji = {
+        low: "🔵",
+        medium: "🟡", 
+        high: "🟠",
+        urgent: "🔴"
+      };
+
+      const notificationTitle = `${priorityEmoji[priority as keyof typeof priorityEmoji]} Problem Report: ${itemDetails}`;
+      const notificationMessage = `${reportingUser.firstName} ${reportingUser.lastName} reported a ${priority} priority problem with ${itemDetails}: "${subject}"`;
+
+      // Create notification for each admin
+      for (const admin of adminUsers) {
+        await storage.createNotification({
+          userId: admin.id,
+          type: 'problem_report',
+          title: notificationTitle,
+          message: notificationMessage,
+          isRead: false,
+          relatedId: parseInt(itemId),
+          relatedType: type
+        });
+      }
+
+      // Log the problem report as an activity
+      await storage.createActivityLog({
+        userId: reportingUserId,
+        actionType: 'problem_reported',
+        details: `Problem reported for ${itemDetails}: ${subject} (Priority: ${priority})`
+      });
+
+      res.status(201).json({ 
+        success: true, 
+        message: "Problem report submitted successfully" 
+      });
+
+    } catch (error) {
+      console.error('Error creating problem report:', error);
+      res.status(500).json({ message: "Error submitting problem report" });
+    }
+  });
+
   // Start the server
   const server = createServer(app);
   return server;
