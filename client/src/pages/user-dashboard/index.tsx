@@ -20,7 +20,8 @@ import {
   Wifi,
   Battery,
   Weight,
-  Eye
+  Eye,
+  Settings
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -120,44 +121,13 @@ export default function UserDashboard() {
   };
 
   const { data: assignedDevices = [], isLoading: devicesLoading, refetch } = useQuery<AssignedDevice[]>({
-    queryKey: ['/api/devices/assigned', user?.id, Date.now()], // Force fresh cache
+    queryKey: ['/api/devices/assigned', user?.id],
     enabled: !!user?.id,
-    staleTime: 0, // Always consider data stale
-    gcTime: 0, // Don't cache query results
   });
 
-  // Debug logging for frontend
-  if (assignedDevices && assignedDevices.length > 0) {
-    console.log(`Frontend received ${assignedDevices.length} devices from API`);
-    assignedDevices.forEach((device, index) => {
-      console.log(`Device ${device.id} (${device.brand} ${device.model}) specs:`, device.specs);
-      if (device.specs) {
-        try {
-          const parsedSpecs = typeof device.specs === 'string' ? JSON.parse(device.specs) : device.specs;
-          console.log(`Device ${device.id} parsed specs:`, parsedSpecs);
-        } catch (e) {
-          console.error(`Failed to parse specs for device ${device.id}:`, e);
-        }
-      }
-    });
-  }
 
-  // Debug logging - Let's see exactly what we're getting from the API
-  if (assignedDevices.length > 0) {
-    console.log('=== DEVICE DEBUG INFO ===');
-    assignedDevices.forEach((device, index) => {
-      console.log(`Device ${index + 1}:`, {
-        id: device.id,
-        name: device.name,
-        brand: device.brand,
-        model: device.model,
-        hasSpecs: !!device.specs,
-        specsType: typeof device.specs,
-        specs: device.specs,
-        fullDevice: device
-      });
-    });
-  }
+
+
 
   const { data: assignedSoftware = [], isLoading: softwareLoading } = useQuery<AssignedSoftware[]>({
     queryKey: [`/api/software-assignments/user/${user?.id}`],
@@ -339,97 +309,37 @@ export default function UserDashboard() {
                                     <Cpu className="h-4 w-4" />
                                     <span>Technical Specifications</span>
                                   </h4>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    {specs.processor && (
-                                      <div className="flex items-start space-x-2">
-                                        <Cpu className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Processor</span>
-                                          <div className="text-foreground">{specs.processor}</div>
+                                  <div className="grid grid-cols-1 gap-2 text-sm">
+                                    {Object.entries(specs).map(([key, value]) => {
+                                      if (!value || value.toString().trim() === '') return null;
+                                      
+                                      // Get appropriate icon for the spec field
+                                      const getIconForField = (fieldName: string) => {
+                                        const field = fieldName.toLowerCase();
+                                        if (field.includes('processor') || field.includes('cpu')) return <Cpu className="h-4 w-4 text-muted-foreground mt-0.5" />;
+                                        if (field.includes('memory') || field.includes('ram')) return <MemoryStick className="h-4 w-4 text-muted-foreground mt-0.5" />;
+                                        if (field.includes('storage') || field.includes('disk')) return <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5" />;
+                                        if (field.includes('graphics') || field.includes('gpu')) return <Eye className="h-4 w-4 text-muted-foreground mt-0.5" />;
+                                        if (field.includes('display') || field.includes('screen')) return <Monitor className="h-4 w-4 text-muted-foreground mt-0.5" />;
+                                        if (field.includes('connectivity') || field.includes('wifi') || field.includes('network')) return <Wifi className="h-4 w-4 text-muted-foreground mt-0.5" />;
+                                        return <Settings className="h-4 w-4 text-muted-foreground mt-0.5" />;
+                                      };
+
+                                      // Format field name for display
+                                      const formatFieldName = (fieldName: string) => {
+                                        return fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace(/([A-Z])/g, ' $1');
+                                      };
+
+                                      return (
+                                        <div key={key} className="flex items-start space-x-2">
+                                          {getIconForField(key)}
+                                          <div>
+                                            <span className="text-muted-foreground font-medium">{formatFieldName(key)}</span>
+                                            <div className="text-foreground">{value.toString()}</div>
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
-                                    {specs.memory && (
-                                      <div className="flex items-start space-x-2">
-                                        <MemoryStick className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Memory</span>
-                                          <div className="text-foreground">{specs.memory}</div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {specs.ram && (
-                                      <div className="flex items-start space-x-2">
-                                        <MemoryStick className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">RAM</span>
-                                          <div className="text-foreground">{specs.ram}</div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {specs.storage && (
-                                      <div className="flex items-start space-x-2">
-                                        <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Storage</span>
-                                          <div className="text-foreground">{specs.storage}</div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {specs.graphics && (
-                                      <div className="flex items-start space-x-2">
-                                        <Eye className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Graphics</span>
-                                          <div className="text-foreground">{specs.graphics}</div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {specs.display && (
-                                      <div className="flex items-start space-x-2">
-                                        <Monitor className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Display</span>
-                                          <div className="text-foreground">{specs.display}</div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {specs.connectivity && (
-                                      <div className="flex items-start space-x-2">
-                                        <Wifi className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Connectivity</span>
-                                          <div className="text-foreground">{specs.connectivity}</div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {specs.ports && (
-                                      <div className="flex items-start space-x-2">
-                                        <div className="h-4 w-4 text-muted-foreground mt-0.5 bg-muted rounded-sm"></div>
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Ports</span>
-                                          <div className="text-foreground">{specs.ports}</div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {specs.battery && (
-                                      <div className="flex items-start space-x-2">
-                                        <Battery className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Battery</span>
-                                          <div className="text-foreground">{specs.battery}</div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {specs.weight && (
-                                      <div className="flex items-start space-x-2">
-                                        <Weight className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Weight</span>
-                                          <div className="text-foreground">{specs.weight}</div>
-                                        </div>
-                                      </div>
-                                    )}
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               );
