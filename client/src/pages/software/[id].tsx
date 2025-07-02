@@ -499,7 +499,7 @@ export default function SoftwareDetails() {
 
       {/* Edit Software Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Software</DialogTitle>
             <DialogDescription>
@@ -515,7 +515,7 @@ export default function SoftwareDetails() {
 
       {/* Assign Software Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assign Software</DialogTitle>
             <DialogDescription>

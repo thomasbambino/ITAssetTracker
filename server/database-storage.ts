@@ -1665,6 +1665,7 @@ export class DatabaseStorage implements IStorage {
         seats, 
         notes, 
         status, 
+        url,
         notification_email as "notificationEmail",
         send_access_notifications as "sendAccessNotifications",
         created_at as "createdAt"
@@ -1689,6 +1690,7 @@ export class DatabaseStorage implements IStorage {
           seats, 
           notes, 
           status, 
+          url,
           notification_email as "notificationEmail",
           send_access_notifications as "sendAccessNotifications",
           created_at as "createdAt"
@@ -1714,10 +1716,11 @@ export class DatabaseStorage implements IStorage {
         seats, 
         notes, 
         status,
+        url,
         notification_email,
         send_access_notifications
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
       ) RETURNING 
         id, 
         name, 
@@ -1730,6 +1733,7 @@ export class DatabaseStorage implements IStorage {
         seats, 
         notes, 
         status,
+        url,
         notification_email as "notificationEmail",
         send_access_notifications as "sendAccessNotifications", 
         created_at as "createdAt"
@@ -1744,6 +1748,7 @@ export class DatabaseStorage implements IStorage {
       software.seats || null, 
       software.notes || null, 
       software.status || 'active',
+      software.url || null,
       software.notificationEmail || null,
       software.sendAccessNotifications || false
     ]);
@@ -1826,6 +1831,12 @@ export class DatabaseStorage implements IStorage {
         values.push(software.sendAccessNotifications);
       }
       
+      // Add the URL field
+      if (software.url !== undefined) {
+        updates.push(`url = $${paramCount++}`);
+        values.push(software.url);
+      }
+      
       // If no updates, return the software
       if (updates.length === 0) {
         return this.getSoftwareById(id);
@@ -1849,6 +1860,7 @@ export class DatabaseStorage implements IStorage {
           seats, 
           notes, 
           status,
+          url,
           notification_email as "notificationEmail",
           send_access_notifications as "sendAccessNotifications",
           created_at as "createdAt"

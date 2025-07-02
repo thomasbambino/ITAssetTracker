@@ -210,7 +210,7 @@ export default function Software() {
       <DialogTrigger asChild>
         <Button><Plus className="h-4 w-4 mr-2" /> Add Software</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Software</DialogTitle>
           <DialogDescription>
@@ -417,7 +417,7 @@ export default function Software() {
       
       {/* Edit Software Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Software</DialogTitle>
             <DialogDescription>
