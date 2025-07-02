@@ -1,23 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { 
   Monitor, 
   Calendar, 
+  Cpu, 
+  HardDrive, 
   Building2, 
   DollarSign, 
-  Tag
+  FileText, 
+  Tag,
+  Wifi
 } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 interface AssignedDevice {
   id: number;
@@ -129,111 +125,181 @@ export default function GuestDevices() {
 
   return (
     <PageContainer title="My Devices">
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Device</TableHead>
-                <TableHead>Asset Tag</TableHead>
-                <TableHead>Specifications</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Assigned Date</TableHead>
-                <TableHead>Purchase Cost</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assignedDevices.map((device) => {
-                // Parse specs if available
-                let parsedSpecs: any = null;
-                if (device.specs) {
-                  try {
-                    parsedSpecs = JSON.parse(device.specs);
-                  } catch (e) {
-                    console.warn(`Failed to parse specs for device ${device.id}:`, e);
-                  }
-                }
+      <div className="space-y-6">
+        {assignedDevices.map((device) => {
+          // Parse specs if available
+          let parsedSpecs: any = null;
+          if (device.specs) {
+            try {
+              parsedSpecs = JSON.parse(device.specs);
+            } catch (e) {
+              console.warn(`Failed to parse specs for device ${device.id}:`, e);
+            }
+          }
 
-                return (
-                  <TableRow key={device.id} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium">{device.brand} {device.model}</div>
-                        {device.serialNumber && (
-                          <div className="text-xs text-muted-foreground font-mono">
-                            SN: {device.serialNumber}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell>
+          return (
+            <Card key={device.id} className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-xl font-bold">
+                      {device.brand} {device.model}
+                    </CardTitle>
+                    <CardDescription className="text-base mt-1">
                       {device.assetTag && (
-                        <div className="flex items-center gap-1">
-                          <Tag className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-mono text-sm">#{device.assetTag}</span>
-                        </div>
+                        <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                          #{device.assetTag}
+                        </span>
                       )}
-                    </TableCell>
+                    </CardDescription>
+                  </div>
+                  <Badge className={getStatusColor(device.status)}>
+                    {formatStatus(device.status)}
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  
+                  {/* Device Specifications */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                      <Cpu className="h-4 w-4" />
+                      Device Specifications
+                    </h3>
                     
-                    <TableCell>
+                    <div className="space-y-3">
                       {parsedSpecs ? (
-                        <div className="space-y-1 text-sm">
-                          {parsedSpecs.ram && <div><span className="text-muted-foreground">RAM:</span> {parsedSpecs.ram}</div>}
-                          {parsedSpecs.storage && <div><span className="text-muted-foreground">Storage:</span> {parsedSpecs.storage}</div>}
-                          {parsedSpecs.graphics && <div><span className="text-muted-foreground">Graphics:</span> {parsedSpecs.graphics}</div>}
-                          {parsedSpecs.display && <div><span className="text-muted-foreground">Display:</span> {parsedSpecs.display}</div>}
-                        </div>
+                        <>
+                          {parsedSpecs.ram && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">RAM:</span>
+                              <span className="text-sm">{parsedSpecs.ram}</span>
+                            </div>
+                          )}
+                          {parsedSpecs.storage && (
+                            <div className="flex items-center gap-2">
+                              <HardDrive className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Storage:</span>
+                              <span className="text-sm">{parsedSpecs.storage}</span>
+                            </div>
+                          )}
+                          {parsedSpecs.graphics && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Graphics:</span>
+                              <span className="text-sm">{parsedSpecs.graphics}</span>
+                            </div>
+                          )}
+                          {parsedSpecs.display && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Display:</span>
+                              <span className="text-sm">{parsedSpecs.display}</span>
+                            </div>
+                          )}
+                          {parsedSpecs.connectivity && (
+                            <div className="flex items-center gap-2">
+                              <Wifi className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Network:</span>
+                              <span className="text-sm">{parsedSpecs.connectivity}</span>
+                            </div>
+                          )}
+                        </>
                       ) : (
-                        <span className="text-muted-foreground text-sm">No specs available</span>
+                        <p className="text-sm text-muted-foreground">No specifications available</p>
                       )}
-                    </TableCell>
+                      
+                      {device.serialNumber && (
+                        <div className="flex items-center gap-2 pt-2 border-t">
+                          <Tag className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Serial:</span>
+                          <span className="text-sm font-mono">{device.serialNumber}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Location & Management */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      Location & Management
+                    </h3>
                     
-                    <TableCell>
-                      <div className="space-y-1 text-sm">
-                        {device.site && (
-                          <div className="flex items-center gap-1">
-                            <Building2 className="h-3 w-3 text-muted-foreground" />
-                            {device.site.name}
+                    <div className="space-y-3">
+                      {device.site && (
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Site:</span>
+                          <span className="text-sm">{device.site.name}</span>
+                        </div>
+                      )}
+                      
+                      {device.address && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-sm font-medium text-muted-foreground min-w-[60px] mt-0.5">Address:</span>
+                          <span className="text-sm">{device.address}</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Assigned:</span>
+                        <span className="text-sm">{formatDate(device.assignedAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Financial & Warranty */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Financial & Warranty
+                    </h3>
+                    
+                    <div className="space-y-3">
+                      {device.purchaseCost !== null && (
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Cost:</span>
+                          <span className="text-sm">{formatCurrency(device.purchaseCost)}</span>
+                        </div>
+                      )}
+                      
+                      {device.purchaseDate && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Purchased:</span>
+                          <span className="text-sm">{formatDate(device.purchaseDate)}</span>
+                        </div>
+                      )}
+                      
+                      {device.warrantyEOL && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Warranty:</span>
+                          <span className="text-sm">{formatDate(device.warrantyEOL)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {device.notes && (
+                      <div className="pt-3 border-t">
+                        <div className="flex items-start gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-muted-foreground">Notes:</span>
+                            <p className="text-sm mt-1 text-muted-foreground leading-relaxed">{device.notes}</p>
                           </div>
-                        )}
-                        {device.address && (
-                          <div className="text-muted-foreground text-xs">{device.address}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
-                        {formatDate(device.assignedAt)}
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell>
-                      {device.purchaseCost !== null ? (
-                        <div className="flex items-center gap-1 text-sm">
-                          <DollarSign className="h-3 w-3 text-muted-foreground" />
-                          {formatCurrency(device.purchaseCost)}
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Badge className={getStatusColor(device.status)}>
-                        {formatStatus(device.status)}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </PageContainer>
   );
 }
