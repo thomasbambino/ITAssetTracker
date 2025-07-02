@@ -127,15 +127,21 @@ export default function GuestDevices() {
     <PageContainer title="My Devices">
       <div className="space-y-6">
         {assignedDevices.map((device) => {
-          // Parse specs if available
+          // Specs are already parsed objects from the API, no need to JSON.parse
           let parsedSpecs: any = null;
           if (device.specs) {
-            try {
-              parsedSpecs = JSON.parse(device.specs);
-              console.log(`Device ${device.id} (${device.brand} ${device.model}) specs:`, parsedSpecs);
-            } catch (e) {
-              console.warn(`Failed to parse specs for device ${device.id}:`, e);
+            // If specs is already an object, use it directly
+            if (typeof device.specs === 'object') {
+              parsedSpecs = device.specs;
+            } else {
+              // If it's a string, try to parse it
+              try {
+                parsedSpecs = JSON.parse(device.specs);
+              } catch (e) {
+                console.warn(`Failed to parse specs for device ${device.id}:`, e);
+              }
             }
+            console.log(`Device ${device.id} (${device.brand} ${device.model}) specs:`, parsedSpecs);
           } else {
             console.log(`Device ${device.id} (${device.brand} ${device.model}) has no specs`);
           }
