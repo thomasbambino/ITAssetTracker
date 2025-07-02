@@ -237,7 +237,7 @@ export default function UserDashboard() {
                   <div className="flex items-start gap-8">
                     
                     {/* Left Side - Device Name and Serial */}
-                    <div className="flex-shrink-0 space-y-2">
+                    <div className="flex-shrink-0 space-y-2 w-80">
                       <div className="space-y-1">
                         <div className="flex items-center space-x-3">
                           <CardTitle className="text-lg font-semibold">{device.name || `${device.brand} ${device.model}`}</CardTitle>
@@ -245,9 +245,6 @@ export default function UserDashboard() {
                             {device.status?.charAt(0).toUpperCase() + device.status?.slice(1).toLowerCase() || device.status}
                           </Badge>
                         </div>
-                        <CardDescription className="text-sm text-muted-foreground">
-                          {device.brand} {device.model}
-                        </CardDescription>
                       </div>
                       
                       {/* Serial Number prominently displayed */}
@@ -260,9 +257,9 @@ export default function UserDashboard() {
                     </div>
 
                     {/* Right Side - Basic Info and Location */}
-                    <div className="flex-1 grid md:grid-cols-2 gap-6">
+                    <div className="flex-1 grid grid-cols-2 gap-6">
                       
-                      {/* Basic Information */}
+                      {/* Basic Information - Always in first column */}
                       <div>
                         <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
                           <Package className="h-4 w-4" />
@@ -286,35 +283,40 @@ export default function UserDashboard() {
                         </div>
                       </div>
 
-                      {/* Location & Management */}
-                      {(device.site || device.address || device.warrantyEOL) && (
-                        <div>
-                          <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
-                            <Building2 className="h-4 w-4" />
-                            <span>Location & Management</span>
-                          </h4>
-                          <div className="space-y-2 text-sm">
-                            {device.site && (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-muted-foreground font-medium">Site:</span>
-                                <span>{device.site.name}</span>
-                              </div>
-                            )}
-                            {device.address && (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-muted-foreground font-medium">Address:</span>
-                                <span>{device.address}</span>
-                              </div>
-                            )}
-                            {device.warrantyEOL && (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-muted-foreground font-medium">Warranty:</span>
-                                <span>Until {formatDate(device.warrantyEOL)}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      {/* Location & Management - Always in second column */}
+                      <div>
+                        {(device.site || device.address || device.warrantyEOL) ? (
+                          <>
+                            <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                              <Building2 className="h-4 w-4" />
+                              <span>Location & Management</span>
+                            </h4>
+                            <div className="space-y-2 text-sm">
+                              {device.site && (
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-muted-foreground font-medium">Site:</span>
+                                  <span>{device.site.name}</span>
+                                </div>
+                              )}
+                              {device.address && (
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-muted-foreground font-medium">Address:</span>
+                                  <span>{device.address}</span>
+                                </div>
+                              )}
+                              {device.warrantyEOL && (
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-muted-foreground font-medium">Warranty:</span>
+                                  <span>Until {formatDate(device.warrantyEOL)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          /* Empty placeholder to maintain grid structure */
+                          <div></div>
+                        )}
+                      </div>
 
                     </div>
                   </div>
