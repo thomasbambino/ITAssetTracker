@@ -127,7 +127,7 @@ export function DesktopSidebar() {
     },
     {
       href: '/software',
-      label: 'Software & Portals',
+      label: 'Software & Portals', 
       icon: BoxIcon,
       category: 'management',
     },
