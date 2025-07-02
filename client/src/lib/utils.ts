@@ -24,6 +24,11 @@ export function formatDate(date: Date | string | null | undefined): string {
   
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
+  // Check if the date is valid
+  if (isNaN(dateObj.getTime())) {
+    return '';
+  }
+  
   return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -36,6 +41,11 @@ export function formatDateTime(date: Date | string | null | undefined): string {
   if (!date) return '';
   
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if the date is valid
+  if (isNaN(dateObj.getTime())) {
+    return '';
+  }
   
   return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',

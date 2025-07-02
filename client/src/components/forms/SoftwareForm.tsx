@@ -45,6 +45,7 @@ const formSchema = z.object({
   status: z.enum(["active", "expired", "pending"]),
   notes: z.string().optional().nullable(),
   version: z.string().optional().nullable(),
+  url: z.string().url("Please enter a valid URL").optional().nullable().or(z.literal("")),
   notificationEmail: z.string().email("Please enter a valid email").optional().nullable(),
   sendAccessNotifications: z.boolean().default(false),
 });
@@ -95,6 +96,7 @@ export function SoftwareForm({ software, onSuccess, onCancel }: SoftwareFormProp
       status: software?.status || "active",
       notes: software?.notes || "",
       version: software?.version || "",
+      url: software?.url || "",
       notificationEmail: software?.notificationEmail || "",
       sendAccessNotifications: software?.sendAccessNotifications || false,
     },
@@ -255,6 +257,27 @@ export function SoftwareForm({ software, onSuccess, onCancel }: SoftwareFormProp
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Website URL</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="https://example.com"
+                  {...field}
+                  value={field.value || ""}
+                />
+              </FormControl>
+              <FormDescription>
+                Optional link to the software's website or documentation
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
