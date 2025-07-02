@@ -91,7 +91,7 @@ export function DesktopSidebar() {
   const allRoutes: RouteType[] = [
     {
       href: '/',
-      label: 'Dashboard',
+      label: 'My Dashboard',
       icon: LayoutDashboardIcon,
       category: 'main',
     },
@@ -103,7 +103,7 @@ export function DesktopSidebar() {
     },
     {
       href: '/devices',
-      label: 'Devices',
+      label: 'My Devices',
       icon: LaptopIcon,
       category: 'main',
     },
@@ -127,7 +127,7 @@ export function DesktopSidebar() {
     },
     {
       href: '/software',
-      label: 'Software & Portals', 
+      label: 'My Software & Portals', 
       icon: BoxIcon,
       category: 'main',
     },
@@ -182,7 +182,7 @@ export function DesktopSidebar() {
     },
     {
       href: '/notifications',
-      label: 'Notifications',
+      label: 'My Notifications',
       icon: BellIcon,
       category: 'system',
     },
