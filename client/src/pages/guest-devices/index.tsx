@@ -183,33 +183,32 @@ export default function GuestDevices() {
                         <>
                           {/* Display RAM - try multiple field names */}
                           {(parsedSpecs.ram || parsedSpecs.RAM || parsedSpecs.memory) && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">RAM:</span>
+                            <div className="flex items-start gap-3">
+                              <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">RAM:</span>
                               <span className="text-sm">{parsedSpecs.ram || parsedSpecs.RAM || parsedSpecs.memory}</span>
                             </div>
                           )}
                           
                           {/* Display Storage */}
                           {(parsedSpecs.storage || parsedSpecs.Storage) && (
-                            <div className="flex items-center gap-2">
-                              <HardDrive className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Storage:</span>
+                            <div className="flex items-start gap-3">
+                              <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Storage:</span>
                               <span className="text-sm">{parsedSpecs.storage || parsedSpecs.Storage}</span>
                             </div>
                           )}
                           
                           {/* Display Graphics */}
                           {(parsedSpecs.graphics || parsedSpecs.Graphics) && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Graphics:</span>
+                            <div className="flex items-start gap-3">
+                              <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Graphics:</span>
                               <span className="text-sm">{parsedSpecs.graphics || parsedSpecs.Graphics}</span>
                             </div>
                           )}
                           
                           {/* Display Display/Screen */}
                           {(parsedSpecs.display || parsedSpecs.Display || parsedSpecs.screen) && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Display:</span>
+                            <div className="flex items-start gap-3">
+                              <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Display:</span>
                               <span className="text-sm">{parsedSpecs.display || parsedSpecs.Display || parsedSpecs.screen}</span>
                             </div>
                           )}
@@ -231,8 +230,8 @@ export default function GuestDevices() {
                             }
                             
                             return (
-                              <div key={key} className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-muted-foreground min-w-[60px]">
+                              <div key={key} className="flex items-start gap-3">
+                                <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">
                                   {displayKey}:
                                 </span>
                                 <span className="text-sm">{value}</span>
@@ -245,9 +244,8 @@ export default function GuestDevices() {
                       )}
                       
                       {device.serialNumber && (
-                        <div className="flex items-center gap-2 pt-2 border-t">
-                          <Tag className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Serial:</span>
+                        <div className="flex items-start gap-3 pt-2 border-t">
+                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Serial:</span>
                           <span className="text-sm font-mono">{device.serialNumber}</span>
                         </div>
                       )}
@@ -263,23 +261,21 @@ export default function GuestDevices() {
                     
                     <div className="space-y-3">
                       {device.site && (
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Site:</span>
+                        <div className="flex items-start gap-3">
+                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Site:</span>
                           <span className="text-sm">{device.site.name}</span>
                         </div>
                       )}
                       
                       {device.address && (
-                        <div className="flex items-start gap-2">
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px] mt-0.5">Address:</span>
+                        <div className="flex items-start gap-3">
+                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Address:</span>
                           <span className="text-sm">{device.address}</span>
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Assigned:</span>
+                      <div className="flex items-start gap-3">
+                        <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Assigned:</span>
                         <span className="text-sm">{formatDate(device.assignedAt)}</span>
                       </div>
                     </div>
@@ -294,24 +290,22 @@ export default function GuestDevices() {
                     
                     <div className="space-y-3">
                       {device.purchaseCost !== null && (
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Cost:</span>
+                        <div className="flex items-start gap-3">
+                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Cost:</span>
                           <span className="text-sm">{formatCurrency(device.purchaseCost)}</span>
                         </div>
                       )}
                       
                       {device.purchaseDate && (
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Purchased:</span>
+                        <div className="flex items-start gap-3">
+                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Purchased:</span>
                           <span className="text-sm">{formatDate(device.purchaseDate)}</span>
                         </div>
                       )}
                       
                       {device.warrantyEOL && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Warranty:</span>
+                        <div className="flex items-start gap-3">
+                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Warranty:</span>
                           <span className="text-sm">{formatDate(device.warrantyEOL)}</span>
                         </div>
                       )}
@@ -319,12 +313,9 @@ export default function GuestDevices() {
 
                     {device.notes && (
                       <div className="pt-3 border-t">
-                        <div className="flex items-start gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                          <div className="flex-1">
-                            <span className="text-sm font-medium text-muted-foreground">Notes:</span>
-                            <p className="text-sm mt-1 text-muted-foreground leading-relaxed">{device.notes}</p>
-                          </div>
+                        <div className="flex items-start gap-3">
+                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Notes:</span>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{device.notes}</p>
                         </div>
                       </div>
                     )}
