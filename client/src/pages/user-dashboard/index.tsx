@@ -233,45 +233,47 @@ export default function UserDashboard() {
             <div className="grid grid-cols-1 gap-6">
               {assignedDevices.map((device) => (
                 <Card key={device.id} className="p-6">
-                  {/* Header Section */}
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center space-x-3">
-                        <CardTitle className="text-xl font-semibold">{device.name || `${device.brand} ${device.model}`}</CardTitle>
-                        <Badge className={getStatusColor(device.status)}>
-                          {device.status?.charAt(0).toUpperCase() + device.status?.slice(1).toLowerCase() || device.status}
-                        </Badge>
-                      </div>
-                      <CardDescription className="text-base">
-                        {device.brand} {device.model}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  
-                  {/* Main Content Grid - 3 columns on large screens */}
-                  <div className="grid lg:grid-cols-3 gap-6">
+                  {/* Horizontal Layout - Name/Serial on left, Info on right */}
+                  <div className="flex items-start gap-8">
                     
-                    {/* Column 1: Basic Info & Location */}
-                    <div className="space-y-6">
+                    {/* Left Side - Device Name and Serial */}
+                    <div className="flex-shrink-0 space-y-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-3">
+                          <CardTitle className="text-lg font-semibold">{device.name || `${device.brand} ${device.model}`}</CardTitle>
+                          <Badge className={getStatusColor(device.status)}>
+                            {device.status?.charAt(0).toUpperCase() + device.status?.slice(1).toLowerCase() || device.status}
+                          </Badge>
+                        </div>
+                        <CardDescription className="text-sm text-muted-foreground">
+                          {device.brand} {device.model}
+                        </CardDescription>
+                      </div>
+                      
+                      {/* Serial Number prominently displayed */}
+                      {device.serialNumber && (
+                        <div className="bg-muted/30 rounded-md px-3 py-2 mt-3">
+                          <div className="text-xs text-muted-foreground font-medium">Serial Number</div>
+                          <div className="font-mono text-sm font-medium">{device.serialNumber}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Side - Basic Info and Location */}
+                    <div className="flex-1 grid md:grid-cols-2 gap-6">
+                      
                       {/* Basic Information */}
                       <div>
                         <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
                           <Package className="h-4 w-4" />
                           <span>Basic Information</span>
                         </h4>
-                        <div className="space-y-3 text-sm">
+                        <div className="space-y-2 text-sm">
                           {device.assetTag && (
                             <div className="flex items-center space-x-2">
                               <Tag className="h-4 w-4 text-muted-foreground" />
                               <span className="text-muted-foreground font-medium">Asset Tag:</span>
                               <span>{device.assetTag}</span>
-                            </div>
-                          )}
-                          {device.serialNumber && (
-                            <div className="flex items-center space-x-2">
-                              <Package className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground font-medium">Serial:</span>
-                              <span className="font-mono text-xs">{device.serialNumber}</span>
                             </div>
                           )}
                           {device.assignedAt && (
@@ -313,112 +315,8 @@ export default function UserDashboard() {
                           </div>
                         </div>
                       )}
+
                     </div>
-
-                    {/* Column 2: Technical Specifications */}
-                    <div className="space-y-6">
-                      {device.specs && (() => {
-                        try {
-                          const specs = typeof device.specs === 'string' ? JSON.parse(device.specs) : device.specs;
-                          
-                          // Check if there are actual non-empty spec values
-                          const hasSpecs = specs && typeof specs === 'object' && 
-                            (specs.ram || specs.storage || specs.graphics || specs.display);
-                          
-                          if (!hasSpecs) return null;
-                          
-                          return (
-                            <div>
-                              <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
-                                <Cpu className="h-4 w-4" />
-                                <span>Technical Specifications</span>
-                              </h4>
-                              <div className="space-y-2 text-sm">
-                                {specs.ram && (
-                                  <div className="flex items-start space-x-2">
-                                    <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                    <div>
-                                      <span className="font-medium text-foreground">RAM:</span>
-                                      <div className="text-muted-foreground">{specs.ram}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.storage && (
-                                  <div className="flex items-start space-x-2">
-                                    <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                    <div>
-                                      <span className="font-medium text-foreground">Storage:</span>
-                                      <div className="text-muted-foreground">{specs.storage}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.graphics && (
-                                  <div className="flex items-start space-x-2">
-                                    <Monitor className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                    <div>
-                                      <span className="font-medium text-foreground">Graphics:</span>
-                                      <div className="text-muted-foreground">{specs.graphics}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.display && (
-                                  <div className="flex items-start space-x-2">
-                                    <Monitor className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                    <div>
-                                      <span className="font-medium text-foreground">Display:</span>
-                                      <div className="text-muted-foreground">{specs.display}</div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        } catch (e) {
-                          return null;
-                        }
-                      })()}
-                    </div>
-
-                    {/* Column 3: Financial Info & Notes */}
-                    <div className="space-y-6">
-                      {/* Financial Information */}
-                      {(device.purchaseCost || device.purchaseDate) && (
-                        <div>
-                          <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
-                            <DollarSign className="h-4 w-4" />
-                            <span>Financial Information</span>
-                          </h4>
-                          <div className="space-y-2 text-sm">
-                            {device.purchaseCost && (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-muted-foreground font-medium">Cost:</span>
-                                <span className="font-semibold">{formatCurrency(device.purchaseCost)}</span>
-                              </div>
-                            )}
-                            {device.purchaseDate && (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-muted-foreground font-medium">Purchase Date:</span>
-                                <span>{formatDate(device.purchaseDate)}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Additional Notes */}
-                      {device.notes && (
-                        <div>
-                          <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
-                            <FileText className="h-4 w-4" />
-                            <span>Notes</span>
-                          </h4>
-                          <p className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3">
-                            {device.notes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
                   </div>
                 </Card>
               ))}
