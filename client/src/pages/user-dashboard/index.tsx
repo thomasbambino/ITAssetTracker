@@ -100,17 +100,9 @@ function getStatusColor(status: string | null | undefined): string {
 
 export default function UserDashboard() {
   const { user } = useAuth();
-  const [expandedDevices, setExpandedDevices] = useState<Set<number>>(new Set());
+  
 
-  const toggleDeviceExpansion = (deviceId: number) => {
-    const newExpanded = new Set(expandedDevices);
-    if (newExpanded.has(deviceId)) {
-      newExpanded.delete(deviceId);
-    } else {
-      newExpanded.add(deviceId);
-    }
-    setExpandedDevices(newExpanded);
-  };
+
 
   const formatCurrency = (cents: number | null) => {
     if (!cents) return null;
@@ -205,27 +197,198 @@ export default function UserDashboard() {
         </div>
 
         {/* Assigned Devices */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold flex items-center space-x-2">
               <Monitor className="h-5 w-5" />
               <span>My Devices</span>
-            </CardTitle>
-            <CardDescription>
+            </h2>
+            <p className="text-muted-foreground mt-1">
               Devices currently assigned to you
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!Array.isArray(assignedDevices) || assignedDevices.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Monitor className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No devices assigned to you</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {assignedDevices.map((device) => {
-                  const isExpanded = expandedDevices.has(device.id);
-                  return (
+            </p>
+          
+          {!Array.isArray(assignedDevices) || assignedDevices.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Monitor className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No devices assigned to you</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {assignedDevices.map((device) => (
+                <Card key={device.id} className="p-0 overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <CardTitle className="text-lg">{device.name || `${device.brand} ${device.model}`}</CardTitle>
+                          <Badge className={getStatusColor(device.status)}>
+                            {device.status}
+                          </Badge>
+                        </div>
+                        <CardDescription>
+                          {device.brand} {device.model}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    {/* Basic Info */}
+                    <div className="grid grid-cols-1 gap-3 text-sm">
+                      {device.assetTag && (
+                        <div className="flex items-center space-x-2">
+                          <Tag className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground font-medium">Asset Tag:</span>
+                          <span>{device.assetTag}</span>
+                        </div>
+                      )}
+                      {device.serialNumber && (
+                        <div className="flex items-center space-x-2">
+                          <Package className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground font-medium">Serial:</span>
+                          <span className="font-mono text-xs">{device.serialNumber}</span>
+                        </div>
+                      )}
+                      {device.assignedAt && (
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground font-medium">Assigned:</span>
+                          <span>{formatDate(device.assignedAt)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Technical Specifications */}
+                    {device.specs && (() => {
+                      try {
+                        const specs = typeof device.specs === 'string' ? JSON.parse(device.specs) : device.specs;
+                        const hasSpecs = specs && typeof specs === 'object' && Object.keys(specs).length > 0;
+                        
+                        if (!hasSpecs) return null;
+                        
+                        return (
+                          <div>
+                            <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                              <Cpu className="h-4 w-4" />
+                              <span>Technical Specifications</span>
+                            </h4>
+                            <div className="grid grid-cols-1 gap-2">
+                              {specs.cpu && (
+                                <div className="flex items-center text-sm">
+                                  <Cpu className="h-4 w-4 text-muted-foreground mr-2" />
+                                  <span className="font-medium text-foreground min-w-[80px]">CPU:</span>
+                                  <span className="text-muted-foreground">{specs.cpu}</span>
+                                </div>
+                              )}
+                              {specs.ram && (
+                                <div className="flex items-center text-sm">
+                                  <MemoryStick className="h-4 w-4 text-muted-foreground mr-2" />
+                                  <span className="font-medium text-foreground min-w-[80px]">RAM:</span>
+                                  <span className="text-muted-foreground">{specs.ram}</span>
+                                </div>
+                              )}
+                              {specs.storage && (
+                                <div className="flex items-center text-sm">
+                                  <HardDrive className="h-4 w-4 text-muted-foreground mr-2" />
+                                  <span className="font-medium text-foreground min-w-[80px]">Storage:</span>
+                                  <span className="text-muted-foreground">{specs.storage}</span>
+                                </div>
+                              )}
+                              {specs.graphics && (
+                                <div className="flex items-center text-sm">
+                                  <Eye className="h-4 w-4 text-muted-foreground mr-2" />
+                                  <span className="font-medium text-foreground min-w-[80px]">Graphics:</span>
+                                  <span className="text-muted-foreground">{specs.graphics}</span>
+                                </div>
+                              )}
+                              {specs.os && (
+                                <div className="flex items-center text-sm">
+                                  <Settings className="h-4 w-4 text-muted-foreground mr-2" />
+                                  <span className="font-medium text-foreground min-w-[80px]">OS:</span>
+                                  <span className="text-muted-foreground">{specs.os}</span>
+                                </div>
+                              )}
+                              {specs.display && (
+                                <div className="flex items-center text-sm">
+                                  <Monitor className="h-4 w-4 text-muted-foreground mr-2" />
+                                  <span className="font-medium text-foreground min-w-[80px]">Display:</span>
+                                  <span className="text-muted-foreground">{specs.display}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      } catch (e) {
+                        return null;
+                      }
+                    })()}
+
+                    {/* Location & Management */}
+                    {(device.site || device.warrantyEOL) && (
+                      <div>
+                        <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                          <Building2 className="h-4 w-4" />
+                          <span>Location & Management</span>
+                        </h4>
+                        <div className="grid grid-cols-1 gap-2 text-sm">
+                          {device.site && (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-muted-foreground font-medium">Site:</span>
+                              <span>{device.site.name}</span>
+                            </div>
+                          )}
+                          {device.warrantyEOL && (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-muted-foreground font-medium">Warranty:</span>
+                              <span>Until {formatDate(device.warrantyEOL)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Financial Information */}
+                    {(device.purchaseCost || device.purchaseDate) && (
+                      <div>
+                        <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4" />
+                          <span>Financial Information</span>
+                        </h4>
+                        <div className="grid grid-cols-1 gap-2 text-sm">
+                          {device.purchaseCost && (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-muted-foreground font-medium">Cost:</span>
+                              <span>{formatCurrency(device.purchaseCost)}</span>
+                            </div>
+                          )}
+                          {device.purchaseDate && (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-muted-foreground font-medium">Purchased:</span>
+                              <span>{formatDate(device.purchaseDate)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {device.notes && (
+                      <div>
+                        <h4 className="font-medium text-sm mb-2 flex items-center space-x-2">
+                          <UserCheck className="h-4 w-4" />
+                          <span>Notes</span>
+                        </h4>
+                        <p className="text-sm text-muted-foreground bg-muted/50 rounded p-2">
+                          {device.notes}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
                     <div key={device.id} className="border rounded-lg p-4 space-y-3">
                       {/* Device Header */}
                       <div className="flex items-start justify-between">
