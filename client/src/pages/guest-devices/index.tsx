@@ -125,7 +125,7 @@ export default function GuestDevices() {
 
   return (
     <PageContainer title="My Devices">
-      <div className="space-y-6">
+      <div className="space-y-3">
         {assignedDevices.map((device) => {
           // Parse specs if available
           let parsedSpecs: any = null;
@@ -138,162 +138,120 @@ export default function GuestDevices() {
           }
 
           return (
-            <Card key={device.id} className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-xl font-bold">
-                      {device.brand} {device.model}
-                    </CardTitle>
-                    <CardDescription className="text-base mt-1">
-                      {device.assetTag && (
-                        <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                          #{device.assetTag}
-                        </span>
-                      )}
-                    </CardDescription>
-                  </div>
-                  <Badge className={getStatusColor(device.status)}>
-                    {formatStatus(device.status)}
-                  </Badge>
-                </div>
-              </CardHeader>
-
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card key={device.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 items-start">
                   
-                  {/* Device Specifications */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-                      <Cpu className="h-4 w-4" />
-                      Device Specifications
-                    </h3>
-                    
-                    <div className="space-y-3">
+                  {/* Device Info */}
+                  <div className="md:col-span-2 lg:col-span-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-base">
+                        {device.brand} {device.model}
+                      </h3>
+                      <Badge className={getStatusColor(device.status)}>
+                        {formatStatus(device.status)}
+                      </Badge>
+                    </div>
+                    {device.assetTag && (
+                      <div className="flex items-center gap-1">
+                        <Tag className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs font-mono text-muted-foreground">#{device.assetTag}</span>
+                      </div>
+                    )}
+                    {device.serialNumber && (
+                      <div className="text-xs text-muted-foreground font-mono">
+                        SN: {device.serialNumber}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Specifications */}
+                  <div className="lg:col-span-1 space-y-1">
+                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Specs</h4>
+                    <div className="space-y-1">
                       {parsedSpecs ? (
                         <>
                           {parsedSpecs.ram && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">RAM:</span>
-                              <span className="text-sm">{parsedSpecs.ram}</span>
+                            <div className="text-xs">
+                              <span className="text-muted-foreground">RAM:</span> {parsedSpecs.ram}
                             </div>
                           )}
                           {parsedSpecs.storage && (
-                            <div className="flex items-center gap-2">
-                              <HardDrive className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Storage:</span>
-                              <span className="text-sm">{parsedSpecs.storage}</span>
+                            <div className="text-xs">
+                              <span className="text-muted-foreground">Storage:</span> {parsedSpecs.storage}
                             </div>
                           )}
                           {parsedSpecs.graphics && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Graphics:</span>
-                              <span className="text-sm">{parsedSpecs.graphics}</span>
+                            <div className="text-xs">
+                              <span className="text-muted-foreground">Graphics:</span> {parsedSpecs.graphics}
                             </div>
                           )}
                           {parsedSpecs.display && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Display:</span>
-                              <span className="text-sm">{parsedSpecs.display}</span>
-                            </div>
-                          )}
-                          {parsedSpecs.connectivity && (
-                            <div className="flex items-center gap-2">
-                              <Wifi className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Network:</span>
-                              <span className="text-sm">{parsedSpecs.connectivity}</span>
+                            <div className="text-xs">
+                              <span className="text-muted-foreground">Display:</span> {parsedSpecs.display}
                             </div>
                           )}
                         </>
                       ) : (
-                        <p className="text-sm text-muted-foreground">No specifications available</p>
-                      )}
-                      
-                      {device.serialNumber && (
-                        <div className="flex items-center gap-2 pt-2 border-t">
-                          <Tag className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Serial:</span>
-                          <span className="text-sm font-mono">{device.serialNumber}</span>
-                        </div>
+                        <div className="text-xs text-muted-foreground">No specs available</div>
                       )}
                     </div>
                   </div>
 
-                  {/* Location & Management */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      Location & Management
-                    </h3>
-                    
-                    <div className="space-y-3">
+                  {/* Location */}
+                  <div className="lg:col-span-1 space-y-1">
+                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Location</h4>
+                    <div className="space-y-1">
                       {device.site && (
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Site:</span>
-                          <span className="text-sm">{device.site.name}</span>
+                        <div className="text-xs">
+                          <Building2 className="inline h-3 w-3 mr-1 text-muted-foreground" />
+                          {device.site.name}
                         </div>
                       )}
-                      
                       {device.address && (
-                        <div className="flex items-start gap-2">
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px] mt-0.5">Address:</span>
-                          <span className="text-sm">{device.address}</span>
+                        <div className="text-xs text-muted-foreground">
+                          {device.address}
                         </div>
                       )}
-                      
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Assigned:</span>
-                        <span className="text-sm">{formatDate(device.assignedAt)}</span>
+                      <div className="text-xs">
+                        <Calendar className="inline h-3 w-3 mr-1 text-muted-foreground" />
+                        <span className="text-muted-foreground">Assigned:</span> {formatDate(device.assignedAt)}
                       </div>
                     </div>
                   </div>
 
-                  {/* Financial & Warranty */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Financial & Warranty
-                    </h3>
-                    
-                    <div className="space-y-3">
+                  {/* Financial */}
+                  <div className="lg:col-span-1 space-y-1">
+                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Financial</h4>
+                    <div className="space-y-1">
                       {device.purchaseCost !== null && (
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Cost:</span>
-                          <span className="text-sm">{formatCurrency(device.purchaseCost)}</span>
+                        <div className="text-xs">
+                          <DollarSign className="inline h-3 w-3 mr-1 text-muted-foreground" />
+                          {formatCurrency(device.purchaseCost)}
                         </div>
                       )}
-                      
                       {device.purchaseDate && (
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Purchased:</span>
-                          <span className="text-sm">{formatDate(device.purchaseDate)}</span>
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Purchased:</span> {formatDate(device.purchaseDate)}
                         </div>
                       )}
-                      
                       {device.warrantyEOL && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Warranty:</span>
-                          <span className="text-sm">{formatDate(device.warrantyEOL)}</span>
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Warranty:</span> {formatDate(device.warrantyEOL)}
                         </div>
                       )}
                     </div>
-
-                    {device.notes && (
-                      <div className="pt-3 border-t">
-                        <div className="flex items-start gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                          <div className="flex-1">
-                            <span className="text-sm font-medium text-muted-foreground">Notes:</span>
-                            <p className="text-sm mt-1 text-muted-foreground leading-relaxed">{device.notes}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Notes */}
+                  {device.notes && (
+                    <div className="md:col-span-4 lg:col-span-1 space-y-1">
+                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Notes</h4>
+                      <div className="text-xs text-muted-foreground leading-relaxed">
+                        {device.notes}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
