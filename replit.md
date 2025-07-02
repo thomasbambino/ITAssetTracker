@@ -119,3 +119,4 @@ Changelog:
 - July 01, 2025. Initial setup
 - July 02, 2025. Successfully transformed user dashboard device display from expandable sections to static card layout. Removed dropdown toggles and now displays all device information (specs, location, financial, notes) in organized cards for better accessibility and immediate visibility. Updated layout to single column and fixed cost formatting to properly convert from cents to dollars.
 - July 02, 2025. Redesigned user dashboard with horizontal 3-column layout for better space utilization. Fixed device specs display to show only actual database fields (RAM, Storage, Graphics, Display) without extra fields. Specs are stored as JSON in PostgreSQL devices table and parsed for display.
+- July 02, 2025. Added Address field to devices for tracking physical street addresses. Field appears in device forms and user dashboard Location & Management section when populated.

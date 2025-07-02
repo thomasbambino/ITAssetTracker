@@ -48,6 +48,8 @@ const formSchema = insertDeviceSchema.extend({
   categoryId: z.coerce.number().nullable(),
   // Add site selection
   siteId: z.coerce.number().nullable(),
+  // Add address field
+  address: z.string().optional().nullable(),
   status: z.string().default('active'),
   purchaseDate: z.date().nullable().optional(),
   warrantyEOL: z.date().nullable().optional(),
@@ -546,6 +548,27 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
               </Select>
               <FormDescription>
                 Select the site/location for this device
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Address</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="123 Main Street, City, State ZIP" 
+                  {...field} 
+                  value={field.value || ""} 
+                />
+              </FormControl>
+              <FormDescription>
+                Physical street address where this device is located
               </FormDescription>
               <FormMessage />
             </FormItem>

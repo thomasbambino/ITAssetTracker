@@ -139,6 +139,7 @@ export const devices = pgTable("devices", {
   intuneComplianceStatus: text("intune_compliance_status").default('unknown'), // Values: compliant, noncompliant, unknown
   intuneLastSync: timestamp("intune_last_sync"), // When device last synced with Intune
   notes: text("notes"), // Comments about the device
+  address: text("address"), // Physical street address where device is located
   specs: text("specs"), // JSON string containing device specifications
   createdAt: timestamp("created_at").defaultNow(),
 });

@@ -30,6 +30,7 @@ interface AssignedDevice {
   purchaseDate: Date | null;
   warrantyEOL: Date | null;
   notes: string | null;
+  address: string | null;
   site: {
     id: number;
     name: string;
@@ -249,7 +250,7 @@ export default function UserDashboard() {
                       </div>
 
                       {/* Location & Management */}
-                      {(device.site || device.warrantyEOL) && (
+                      {(device.site || device.address || device.warrantyEOL) && (
                         <div>
                           <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
                             <Building2 className="h-4 w-4" />
@@ -260,6 +261,12 @@ export default function UserDashboard() {
                               <div className="flex items-center space-x-2">
                                 <span className="text-muted-foreground font-medium">Site:</span>
                                 <span>{device.site.name}</span>
+                              </div>
+                            )}
+                            {device.address && (
+                              <div className="flex items-center space-x-2">
+                                <span className="text-muted-foreground font-medium">Address:</span>
+                                <span>{device.address}</span>
                               </div>
                             )}
                             {device.warrantyEOL && (
