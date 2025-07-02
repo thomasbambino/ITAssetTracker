@@ -13,6 +13,7 @@ import {
   DollarSign, 
   FileText, 
   Tag,
+  ExternalLink,
   Wifi
 } from 'lucide-react';
 
@@ -54,6 +55,7 @@ interface AssignedSoftware {
     expiryDate: Date | null;
     version?: string | null;
     status?: string;
+    url?: string | null;
   };
 }
 
@@ -414,8 +416,19 @@ export default function UserDashboard() {
                 <Card key={assignment.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <h3 className="font-medium">
-                        {assignment.software.name} {assignment.software.version || ''}
+                      <h3 className="font-medium flex items-center gap-2">
+                        <span>{assignment.software.name} {assignment.software.version || ''}</span>
+                        {assignment.software.url && (
+                          <a 
+                            href={assignment.software.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                            title="Open software website"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         by {assignment.software.vendor}
