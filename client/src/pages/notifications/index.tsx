@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, Bell, CheckCircle, CalendarClock, Trash2 } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -193,7 +193,7 @@ export default function NotificationsPage() {
           </p>
           <div className="flex items-center mt-2 text-xs text-muted-foreground">
             <Clock className="h-3 w-3 mr-1" />
-            {notification.createdAt ? formatDate(notification.createdAt) : "Unknown date"}
+            {notification.createdAt ? formatDateTime(notification.createdAt) : "Unknown date"}
           </div>
         </div>
       </div>
@@ -296,7 +296,7 @@ export default function NotificationsPage() {
               <span className="ml-2">{selectedNotification?.title}</span>
             </DialogTitle>
             <DialogDescription>
-              {selectedNotification?.createdAt && formatDate(selectedNotification.createdAt)}
+              {selectedNotification?.createdAt && formatDateTime(selectedNotification.createdAt)}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

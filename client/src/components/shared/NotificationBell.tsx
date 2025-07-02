@@ -9,7 +9,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Notification {
@@ -117,7 +117,7 @@ export function NotificationBell() {
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {notification.createdAt ? formatDate(notification.createdAt) : "Unknown date"}
+                        {notification.createdAt ? formatDateTime(notification.createdAt) : "Unknown date"}
                       </p>
                     </div>
                   </div>
