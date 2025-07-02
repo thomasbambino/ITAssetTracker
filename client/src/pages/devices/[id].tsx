@@ -592,13 +592,7 @@ export default function DeviceDetails() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col items-center mb-6">
-                    <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mb-3">
-                      <LaptopIcon className="h-12 w-12 text-primary-600" />
-                    </div>
-                    {device.name && (
-                      <h2 className="text-xl font-semibold">{device.name}</h2>
-                    )}
-                    <h3 className="text-lg font-medium mt-1">{`${device.brand} ${device.model}`}</h3>
+                    <h2 className="text-xl font-semibold">{`${device.brand} ${device.model}`}</h2>
                     <div className="flex items-center mt-1">
                       <Badge variant="outline" className="mr-2">
                         {device.assetTag}
