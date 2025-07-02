@@ -47,15 +47,22 @@ interface AssignedDevice {
 interface AssignedSoftware {
   id: number;
   softwareId: number;
-  assignmentDate: Date;
-  expiryDate: Date | null;
+  userId: number;
+  deviceId: number | null;
+  assignedAt: Date;
+  assignedBy: number;
+  notes: string | null;
+  userName: string;
+  deviceAssetTag: string | null;
+  softwareName: string;
   software: {
     id: number;
     name: string;
     vendor: string;
-    version: string | null;
     licenseType: string;
-    status: string;
+    expiryDate: Date | null;
+    version?: string | null;
+    status?: string;
   };
 }
 
@@ -108,7 +115,7 @@ export default function UserDashboard() {
 
   if (!user) {
     return (
-      <PageContainer>
+      <PageContainer title="Dashboard">
         <div className="text-center py-8">
           <p>Please log in to access your dashboard.</p>
         </div>
@@ -117,16 +124,11 @@ export default function UserDashboard() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer 
+      title={`Welcome back, ${user.firstName} ${user.lastName}`}
+      description="Here's an overview of your assigned devices and software licenses."
+    >
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, {user.firstName} {user.lastName}
-          </h1>
-          <p className="text-muted-foreground">
-            Here's an overview of your assigned devices and software licenses.
-          </p>
-        </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -169,13 +171,13 @@ export default function UserDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {assignedSoftware.filter(s => {
-                  if (!s.expiryDate) return false;
-                  const expiry = new Date(s.expiryDate);
+                {Array.isArray(assignedSoftware) ? assignedSoftware.filter(s => {
+                  if (!s.software?.expiryDate) return false;
+                  const expiry = new Date(s.software.expiryDate);
                   const now = new Date();
                   const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
                   return expiry <= thirtyDaysFromNow;
-                }).length}
+                }).length : 0}
               </div>
             </CardContent>
           </Card>
@@ -400,21 +402,21 @@ export default function UserDashboard() {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <h3 className="font-medium">
-                          {assignment.software.name} {assignment.software.version}
+                          {assignment.software.name} {assignment.software.version || ''}
                         </h3>
                         <p className="text-sm text-muted-foreground">
                           by {assignment.software.vendor}
                         </p>
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <span>License: {assignment.software.licenseType}</span>
-                          <span>Assigned: {formatDate(assignment.assignmentDate)}</span>
-                          {assignment.expiryDate && (
-                            <span>Expires: {formatDate(assignment.expiryDate)}</span>
+                          <span>Assigned: {formatDate(assignment.assignedAt)}</span>
+                          {assignment.software.expiryDate && (
+                            <span>Expires: {formatDate(assignment.software.expiryDate)}</span>
                           )}
                         </div>
                       </div>
-                      <Badge className={getStatusColor(assignment.software.status)}>
-                        {assignment.software.status}
+                      <Badge className={getStatusColor(assignment.software.status || 'active')}>
+                        {assignment.software.status || 'Active'}
                       </Badge>
                     </div>
                   </div>
