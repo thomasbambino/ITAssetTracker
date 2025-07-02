@@ -426,7 +426,7 @@ export function MobileNav() {
           {/* Main Group */}
           <div>
             <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Main
+              {currentUser?.role === 'user' ? 'My Account' : 'Main'}
             </h3>
             <div className="mt-1 space-y-1">
               {routes
