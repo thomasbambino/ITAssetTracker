@@ -288,130 +288,58 @@ export default function UserDashboard() {
                                 <Cpu className="h-4 w-4" />
                                 <span>Technical Specifications</span>
                               </h4>
-                              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 text-sm">
+                              <div className="space-y-2 text-sm">
                                 {specs.processor && (
                                   <div className="flex items-start space-x-2">
-                                    <Cpu className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
+                                    <Cpu className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                    <div>
                                       <span className="font-medium text-foreground">Processor:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.processor}</div>
+                                      <div className="text-muted-foreground">{specs.processor}</div>
                                     </div>
                                   </div>
                                 )}
                                 {(specs.memory || specs.ram) && (
                                   <div className="flex items-start space-x-2">
-                                    <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
+                                    <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                    <div>
                                       <span className="font-medium text-foreground">Memory:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.memory || specs.ram}</div>
+                                      <div className="text-muted-foreground">{specs.memory || specs.ram}</div>
                                     </div>
                                   </div>
                                 )}
                                 {specs.storage && (
                                   <div className="flex items-start space-x-2">
-                                    <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
+                                    <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                    <div>
                                       <span className="font-medium text-foreground">Storage:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.storage}</div>
+                                      <div className="text-muted-foreground">{specs.storage}</div>
                                     </div>
                                   </div>
                                 )}
                                 {specs.graphics && (
                                   <div className="flex items-start space-x-2">
-                                    <Monitor className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
+                                    <Monitor className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                    <div>
                                       <span className="font-medium text-foreground">Graphics:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.graphics}</div>
+                                      <div className="text-muted-foreground">{specs.graphics}</div>
                                     </div>
                                   </div>
                                 )}
                                 {specs.display && (
                                   <div className="flex items-start space-x-2">
-                                    <Monitor className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
+                                    <Monitor className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                    <div>
                                       <span className="font-medium text-foreground">Display:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.display}</div>
+                                      <div className="text-muted-foreground">{specs.display}</div>
                                     </div>
                                   </div>
                                 )}
                                 {specs.connectivity && (
                                   <div className="flex items-start space-x-2">
-                                    <Wifi className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
+                                    <Wifi className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                    <div>
                                       <span className="font-medium text-foreground">Connectivity:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.connectivity}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.ports && (
-                                  <div className="flex items-start space-x-2">
-                                    <Package className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
-                                      <span className="font-medium text-foreground">Ports:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.ports}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.battery && (
-                                  <div className="flex items-start space-x-2">
-                                    <Package className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
-                                      <span className="font-medium text-foreground">Battery:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.battery}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.weight && (
-                                  <div className="flex items-start space-x-2">
-                                    <Package className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
-                                      <span className="font-medium text-foreground">Weight:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.weight}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.compatibility && (
-                                  <div className="flex items-start space-x-2">
-                                    <Package className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
-                                      <span className="font-medium text-foreground">Compatibility:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.compatibility}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.features && (
-                                  <div className="flex items-start space-x-2">
-                                    <Package className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
-                                      <span className="font-medium text-foreground">Features:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.features}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.layout && (
-                                  <div className="flex items-start space-x-2">
-                                    <Package className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
-                                      <span className="font-medium text-foreground">Layout:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.layout}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.keys && (
-                                  <div className="flex items-start space-x-2">
-                                    <Package className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
-                                      <span className="font-medium text-foreground">Keys:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.keys}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.power && (
-                                  <div className="flex items-start space-x-2">
-                                    <Package className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                                    <div className="min-w-0">
-                                      <span className="font-medium text-foreground">Power:</span>
-                                      <div className="text-muted-foreground text-xs leading-relaxed">{specs.power}</div>
+                                      <div className="text-muted-foreground">{specs.connectivity}</div>
                                     </div>
                                   </div>
                                 )}
