@@ -12,7 +12,7 @@ import authRoutes from "./auth-routes";
 import emailRoutes from "./email-routes";
 import { isAuthenticated, isAdmin } from "./auth";
 import mailgunService from "./direct-mailgun";
-import { extractDeviceSpecs } from "./spec-extractor";
+
 import { 
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
   insertSoftwareSchema, insertSoftwareAssignmentSchema, insertMaintenanceRecordSchema,
@@ -768,95 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Extract device specifications automatically
-  app.post('/api/devices/:id/extract-specs', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const device = await storage.getDeviceById(id);
-      
-      if (!device) {
-        return res.status(404).json({ message: "Device not found" });
-      }
 
-      if (!device.brand || !device.model) {
-        return res.status(400).json({ message: "Device must have brand and model to extract specifications" });
-      }
-
-      const specs = extractDeviceSpecs(device.brand, device.model);
-      
-      if (!specs) {
-        return res.status(404).json({ message: "No specifications found for this device model" });
-      }
-
-      // Get the currently logged in user's ID from the session
-      const sessionData = req.session as any;
-      const loggedInUserId = sessionData.userId;
-
-      // Update the device with extracted specs
-      const updatedDevice = await storage.updateDevice(id, { 
-        specs: JSON.stringify(specs) 
-      }, loggedInUserId);
-
-      if (!updatedDevice) {
-        return res.status(500).json({ message: "Failed to update device specifications" });
-      }
-
-      res.json({ 
-        success: true, 
-        message: "Device specifications extracted and updated", 
-        specs,
-        device: updatedDevice 
-      });
-    } catch (error) {
-      console.error("Error extracting device specifications:", error);
-      res.status(500).json({ message: "Error extracting device specifications" });
-    }
-  });
-
-  // Batch extract specifications for all devices
-  app.post('/api/devices/extract-all-specs', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
-    try {
-      const devices = await storage.getDevices();
-      let updatedCount = 0;
-      const results = [];
-
-      // Get the currently logged in user's ID from the session
-      const sessionData = req.session as any;
-      const loggedInUserId = sessionData.userId;
-
-      for (const device of devices) {
-        if (device.brand && device.model && (!device.specs || device.specs === '{}' || device.specs === '')) {
-          const specs = extractDeviceSpecs(device.brand, device.model);
-          
-          if (specs) {
-            const updated = await storage.updateDevice(device.id, { 
-              specs: JSON.stringify(specs) 
-            }, loggedInUserId);
-            
-            if (updated) {
-              updatedCount++;
-              results.push({
-                id: device.id,
-                brand: device.brand,
-                model: device.model,
-                specsAdded: Object.keys(specs).length
-              });
-            }
-          }
-        }
-      }
-
-      res.json({ 
-        success: true, 
-        message: `Extracted specifications for ${updatedCount} devices`, 
-        updatedCount,
-        results 
-      });
-    } catch (error) {
-      console.error("Error batch extracting device specifications:", error);
-      res.status(500).json({ message: "Error batch extracting device specifications" });
-    }
-  });
 
   // Create device
   app.post('/api/devices', isAuthenticated, upload.single('invoiceFile'), async (req: Request, res: Response) => {
@@ -943,13 +855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Now the insertDeviceSchema can validate the properly typed data
       const validatedData = insertDeviceSchema.parse(formData);
       
-      // Extract specifications if brand and model are provided
-      if (validatedData.brand && validatedData.model) {
-        const specs = extractDeviceSpecs(validatedData.brand, validatedData.model);
-        if (specs) {
-          validatedData.specs = JSON.stringify(specs);
-        }
-      }
+
       
       const device = await storage.createDevice(validatedData, loggedInUserId);
       res.status(201).json(device);

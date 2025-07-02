@@ -309,37 +309,49 @@ export default function UserDashboard() {
                                     <Cpu className="h-4 w-4" />
                                     <span>Technical Specifications</span>
                                   </h4>
-                                  <div className="grid grid-cols-1 gap-2 text-sm">
-                                    {Object.entries(specs).map(([key, value]) => {
-                                      if (!value || value.toString().trim() === '') return null;
-                                      
-                                      // Get appropriate icon for the spec field
-                                      const getIconForField = (fieldName: string) => {
-                                        const field = fieldName.toLowerCase();
-                                        if (field.includes('processor') || field.includes('cpu')) return <Cpu className="h-4 w-4 text-muted-foreground mt-0.5" />;
-                                        if (field.includes('memory') || field.includes('ram')) return <MemoryStick className="h-4 w-4 text-muted-foreground mt-0.5" />;
-                                        if (field.includes('storage') || field.includes('disk')) return <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5" />;
-                                        if (field.includes('graphics') || field.includes('gpu')) return <Eye className="h-4 w-4 text-muted-foreground mt-0.5" />;
-                                        if (field.includes('display') || field.includes('screen')) return <Monitor className="h-4 w-4 text-muted-foreground mt-0.5" />;
-                                        if (field.includes('connectivity') || field.includes('wifi') || field.includes('network')) return <Wifi className="h-4 w-4 text-muted-foreground mt-0.5" />;
-                                        return <Settings className="h-4 w-4 text-muted-foreground mt-0.5" />;
-                                      };
-
-                                      // Format field name for display
-                                      const formatFieldName = (fieldName: string) => {
-                                        return fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace(/([A-Z])/g, ' $1');
-                                      };
-
-                                      return (
-                                        <div key={key} className="flex items-start space-x-2">
-                                          {getIconForField(key)}
-                                          <div>
-                                            <span className="text-muted-foreground font-medium">{formatFieldName(key)}</span>
-                                            <div className="text-foreground">{value.toString()}</div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {specs.cpu && (
+                                      <div className="flex items-center text-sm">
+                                        <Cpu className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <span className="font-medium text-foreground min-w-[80px]">CPU:</span>
+                                        <span className="text-muted-foreground">{specs.cpu}</span>
+                                      </div>
+                                    )}
+                                    {specs.ram && (
+                                      <div className="flex items-center text-sm">
+                                        <MemoryStick className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <span className="font-medium text-foreground min-w-[80px]">RAM:</span>
+                                        <span className="text-muted-foreground">{specs.ram}</span>
+                                      </div>
+                                    )}
+                                    {specs.storage && (
+                                      <div className="flex items-center text-sm">
+                                        <HardDrive className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <span className="font-medium text-foreground min-w-[80px]">Storage:</span>
+                                        <span className="text-muted-foreground">{specs.storage}</span>
+                                      </div>
+                                    )}
+                                    {specs.graphics && (
+                                      <div className="flex items-center text-sm">
+                                        <Eye className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <span className="font-medium text-foreground min-w-[80px]">Graphics:</span>
+                                        <span className="text-muted-foreground">{specs.graphics}</span>
+                                      </div>
+                                    )}
+                                    {specs.os && (
+                                      <div className="flex items-center text-sm">
+                                        <Settings className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <span className="font-medium text-foreground min-w-[80px]">OS:</span>
+                                        <span className="text-muted-foreground">{specs.os}</span>
+                                      </div>
+                                    )}
+                                    {specs.display && (
+                                      <div className="flex items-center text-sm">
+                                        <Monitor className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <span className="font-medium text-foreground min-w-[80px]">Display:</span>
+                                        <span className="text-muted-foreground">{specs.display}</span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               );
