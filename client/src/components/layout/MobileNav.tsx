@@ -141,6 +141,25 @@ export function MobileNav() {
       icon: BoxIcon,
       category: 'main',
     },
+    // User Pages (for admin to view their own account)
+    {
+      href: '/user-dashboard',
+      label: 'My Dashboard',
+      icon: CircleUserIcon,
+      category: 'user',
+    },
+    {
+      href: '/guest-devices',
+      label: 'My Devices',
+      icon: LaptopIcon,
+      category: 'user',
+    },
+    {
+      href: '/guest-software',
+      label: 'My Software & Portals',
+      icon: BoxIcon,
+      category: 'user',
+    },
     {
       href: '/maintenance',
       label: 'Maintenance',
@@ -391,6 +410,21 @@ export function MobileNav() {
 
           {currentUser?.role === 'admin' && (
             <>
+              <Separator className="mx-2" />
+              
+              {/* User Pages Group - Admin viewing their own account */}
+              <div>
+                <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  My Account
+                </h3>
+                <div className="mt-1 space-y-1">
+                  {routes
+                    .filter(route => route.category === 'user')
+                    .map(renderNavItem)
+                  }
+                </div>
+              </div>
+
               <Separator className="mx-2" />
               
               {/* Management Group */}
