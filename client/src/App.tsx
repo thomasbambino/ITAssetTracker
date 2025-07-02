@@ -25,6 +25,8 @@ import DeviceManagement from "@/pages/management/status";
 import Sites from "@/pages/sites";
 import Departments from "@/pages/departments";
 import UserDashboard from "@/pages/user-dashboard";
+import GuestDevices from "@/pages/guest-devices";
+import GuestSoftware from "@/pages/guest-software";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import LoginPage from "@/pages/auth/login";
 import ResetPasswordPage from "@/pages/auth/reset-password";
@@ -87,11 +89,13 @@ function MainRouter() {
     location === route || location.startsWith(`${route}/`)
   );
 
-  // For non-admin users, show only the user dashboard
+  // For non-admin users, show only the user dashboard and guest pages
   if (!isAdmin) {
     return (
       <Switch>
         <Route path="/" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
+        <Route path="/devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
+        <Route path="/software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
         <Route path="/notifications" component={() => <ProtectedPageWrapper component={Notifications} />} />
         {/* Redirect all other routes to user dashboard */}
         <Route component={() => <ProtectedPageWrapper component={UserDashboard} />} />

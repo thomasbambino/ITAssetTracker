@@ -137,7 +137,7 @@ export function MobileNav() {
     },
     {
       href: '/software',
-      label: 'Software',
+      label: 'Software & Portals',
       icon: BoxIcon,
       category: 'management',
     },
@@ -209,9 +209,9 @@ export function MobileNav() {
     if (!currentUser) {
       return route.href === '/';
     }
-    // Regular users can only see the dashboard (which redirects to user dashboard)
+    // Regular users can see dashboard, devices, software, and notifications
     if (currentUser.role === 'user') {
-      return route.href === '/';
+      return ['/', '/devices', '/software', '/notifications'].includes(route.href);
     }
     // Admins can see all routes
     return true;

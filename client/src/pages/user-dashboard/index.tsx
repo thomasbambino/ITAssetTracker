@@ -149,7 +149,7 @@ export default function UserDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Software Licenses</CardTitle>
+              <CardTitle className="text-sm font-medium">Software & Portals</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -407,17 +407,17 @@ export default function UserDashboard() {
           <div>
             <h2 className="text-xl font-semibold flex items-center space-x-2">
               <Package className="h-5 w-5" />
-              <span>My Software Licenses</span>
+              <span>Software & Portals</span>
             </h2>
             <p className="text-muted-foreground mt-1">
-              Software licenses currently assigned to you
+              Software licenses and portal access currently assigned to you
             </p>
           </div>
           
           {!Array.isArray(assignedSoftware) || assignedSoftware.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No software licenses assigned to you</p>
+              <p>No software licenses or portal access assigned to you</p>
             </div>
           ) : (
             <div className="space-y-4">
