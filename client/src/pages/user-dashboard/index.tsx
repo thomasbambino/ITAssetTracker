@@ -289,21 +289,12 @@ export default function UserDashboard() {
                                 <span>Technical Specifications</span>
                               </h4>
                               <div className="space-y-2 text-sm">
-                                {specs.processor && (
-                                  <div className="flex items-start space-x-2">
-                                    <Cpu className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                    <div>
-                                      <span className="font-medium text-foreground">Processor:</span>
-                                      <div className="text-muted-foreground">{specs.processor}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {(specs.memory || specs.ram) && (
+                                {specs.ram && (
                                   <div className="flex items-start space-x-2">
                                     <HardDrive className="h-4 w-4 text-muted-foreground mt-0.5" />
                                     <div>
-                                      <span className="font-medium text-foreground">Memory:</span>
-                                      <div className="text-muted-foreground">{specs.memory || specs.ram}</div>
+                                      <span className="font-medium text-foreground">RAM:</span>
+                                      <div className="text-muted-foreground">{specs.ram}</div>
                                     </div>
                                   </div>
                                 )}
@@ -331,15 +322,6 @@ export default function UserDashboard() {
                                     <div>
                                       <span className="font-medium text-foreground">Display:</span>
                                       <div className="text-muted-foreground">{specs.display}</div>
-                                    </div>
-                                  </div>
-                                )}
-                                {specs.connectivity && (
-                                  <div className="flex items-start space-x-2">
-                                    <Wifi className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                    <div>
-                                      <span className="font-medium text-foreground">Connectivity:</span>
-                                      <div className="text-muted-foreground">{specs.connectivity}</div>
                                     </div>
                                   </div>
                                 )}
