@@ -281,7 +281,7 @@ export default function UserDetails() {
       label: "Edit",
       icon: <EditIcon className="h-4 w-4" />,
       onClick: (device: any) => {
-        navigate(`/devices/${device.id}`);
+        navigate(`/devices/${device.id}?from=user&userId=${id}`);
       },
     },
     {

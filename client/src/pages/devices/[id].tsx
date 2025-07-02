@@ -68,8 +68,30 @@ import { QrCodeDisplay } from '@/components/qrcodes/QrCodeDisplay';
 
 export default function DeviceDetails() {
   const { id } = useParams();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
+  
+  // Determine the back navigation path based on query parameters or referrer
+  const getBackPath = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const from = urlParams.get('from');
+    const userId = urlParams.get('userId');
+    
+    if (from === 'user' && userId) {
+      return `/users/${userId}`;
+    }
+    return '/devices';
+  };
+  
+  const getBackButtonText = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const from = urlParams.get('from');
+    
+    if (from === 'user') {
+      return 'Back to User';
+    }
+    return 'Back to Devices';
+  };
   const [isEditing, setIsEditing] = useState(false);
   const [isCommentsEditing, setIsCommentsEditing] = useState(false);
   const [commentsValue, setCommentsValue] = useState("");
@@ -526,10 +548,10 @@ export default function DeviceDetails() {
           variant="ghost"
           size="sm"
           className="mb-2"
-          onClick={() => navigate('/devices')}
+          onClick={() => navigate(getBackPath())}
         >
           <ChevronLeftIcon className="mr-2 h-4 w-4" />
-          Back to Devices
+          {getBackButtonText()}
         </Button>
         <h1 className="text-2xl font-semibold text-foreground">
           {isNewDevice ? 'Add New Device' : isEditing ? 'Edit Device' : 'Device Details'}
