@@ -1,0 +1,84 @@
+User data loaded: Object
+ProtectedRoute.tsx:33 User data loaded: Object
+index.tsx:140 Device 66 (Blue Yeti Nano) has no specs
+index.tsx:140 Device 30 (Apple Apple Pencil (2nd generation)) has no specs
+index.tsx:140 Device 31 (Apple Airpods Pro 2nd Generation) has no specs
+index.tsx:140 Device 114 ( Podcast Equipment) has no specs
+index.tsx:137  Failed to parse specs for device 32: SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at index.tsx:134:34
+    at Array.map (<anonymous>)
+    at GuestDevices (index.tsx:129:26)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at updateFunctionComponent (react-dom.development.js:19617:20)
+    at beginWork (react-dom.development.js:21640:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+(anonymous) @ index.tsx:137
+index.tsx:137  Failed to parse specs for device 33: SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at index.tsx:134:34
+    at Array.map (<anonymous>)
+    at GuestDevices (index.tsx:129:26)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at updateFunctionComponent (react-dom.development.js:19617:20)
+    at beginWork (react-dom.development.js:21640:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+(anonymous) @ index.tsx:137
+index.tsx:137  Failed to parse specs for device 85: SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at index.tsx:134:34
+    at Array.map (<anonymous>)
+    at GuestDevices (index.tsx:129:26)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at updateFunctionComponent (react-dom.development.js:19617:20)
+    at beginWork (react-dom.development.js:21640:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+(anonymous) @ index.tsx:137
+ProtectedRoute.tsx:33 User data loaded: Object
+index.tsx:140 Device 66 (Blue Yeti Nano) has no specs
+index.tsx:140 Device 30 (Apple Apple Pencil (2nd generation)) has no specs
+index.tsx:140 Device 31 (Apple Airpods Pro 2nd Generation) has no specs
+index.tsx:140 Device 114 ( Podcast Equipment) has no specs
+index.tsx:137  Failed to parse specs for device 32: SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at index.tsx:134:34
+    at Array.map (<anonymous>)
+    at GuestDevices (index.tsx:129:26)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+(anonymous) @ index.tsx:137
+index.tsx:137  Failed to parse specs for device 33: SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at index.tsx:134:34
+    at Array.map (<anonymous>)
+    at GuestDevices (index.tsx:129:26)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+(anonymous) @ index.tsx:137
+index.tsx:137  Failed to parse specs for device 85: SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at index.tsx:134:34
+    at Array.map (<anonymous>)
+    at GuestDevices (index.tsx:129:26)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+(anonymous) @ index.tsx:137
+ProtectedRoute.tsx:33 User data loaded: Object
