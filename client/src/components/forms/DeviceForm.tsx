@@ -111,6 +111,7 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
       assetTag: device?.assetTag || "",
       categoryId: device?.categoryId?.toString() || "",
       siteId: device?.siteId?.toString() || "",
+      address: device?.address || "",
       status: device?.status || "active",
       purchaseCost: device?.purchaseCost ? Number(device.purchaseCost) : null,
       purchaseDate: device?.purchaseDate ? new Date(device.purchaseDate) : null,

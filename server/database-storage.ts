@@ -803,9 +803,13 @@ export class DatabaseStorage implements IStorage {
         purchase_date, 
         purchased_by, 
         warranty_eol,
-        user_id
+        user_id,
+        address,
+        status,
+        notes,
+        specs
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
       ) RETURNING 
         id, 
         name,
@@ -820,7 +824,11 @@ export class DatabaseStorage implements IStorage {
         purchased_by as "purchasedBy", 
         warranty_eol as "warrantyEOL", 
         created_at as "createdAt", 
-        user_id as "userId"
+        user_id as "userId",
+        address,
+        status,
+        notes,
+        specs
     `, [
       device.name || null,
       device.brand, 
@@ -833,7 +841,11 @@ export class DatabaseStorage implements IStorage {
       device.purchaseDate || null, 
       device.purchasedBy || null, 
       device.warrantyEOL || null,
-      device.userId || null
+      device.userId || null,
+      device.address || null,
+      device.status || 'active',
+      device.notes || null,
+      device.specs || null
     ]);
     
     // Get category name for the device
@@ -934,6 +946,13 @@ export class DatabaseStorage implements IStorage {
         console.log(`Adding notes update: ${device.notes}`);
       }
       
+      // Handle address field
+      if (device.address !== undefined) {
+        updates.push(`address = $${paramCount++}`);
+        values.push(device.address);
+        console.log(`Adding address update: ${device.address}`);
+      }
+      
       // Handle specs field
       if (device.specs !== undefined) {
         updates.push(`specs = $${paramCount++}`);
@@ -960,13 +979,16 @@ export class DatabaseStorage implements IStorage {
           serial_number as "serialNumber", 
           asset_tag as "assetTag", 
           category_id as "categoryId", 
+          site_id as "siteId",
           purchase_cost as "purchaseCost", 
           purchase_date as "purchaseDate", 
           purchased_by as "purchasedBy", 
           warranty_eol as "warrantyEOL", 
           created_at as "createdAt", 
           user_id as "userId",
+          status,
           notes,
+          address,
           specs
       `, values);
       
