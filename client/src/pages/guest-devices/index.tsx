@@ -132,9 +132,12 @@ export default function GuestDevices() {
           if (device.specs) {
             try {
               parsedSpecs = JSON.parse(device.specs);
+              console.log(`Device ${device.id} (${device.brand} ${device.model}) specs:`, parsedSpecs);
             } catch (e) {
               console.warn(`Failed to parse specs for device ${device.id}:`, e);
             }
+          } else {
+            console.log(`Device ${device.id} (${device.brand} ${device.model}) has no specs`);
           }
 
           return (
@@ -170,40 +173,56 @@ export default function GuestDevices() {
                     </h3>
                     
                     <div className="space-y-3">
-                      {parsedSpecs ? (
+                      {parsedSpecs && Object.keys(parsedSpecs).length > 0 ? (
                         <>
-                          {parsedSpecs.ram && (
+                          {/* Display RAM - try multiple field names */}
+                          {(parsedSpecs.ram || parsedSpecs.RAM || parsedSpecs.memory) && (
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-muted-foreground min-w-[60px]">RAM:</span>
-                              <span className="text-sm">{parsedSpecs.ram}</span>
+                              <span className="text-sm">{parsedSpecs.ram || parsedSpecs.RAM || parsedSpecs.memory}</span>
                             </div>
                           )}
-                          {parsedSpecs.storage && (
+                          
+                          {/* Display Storage */}
+                          {(parsedSpecs.storage || parsedSpecs.Storage) && (
                             <div className="flex items-center gap-2">
                               <HardDrive className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Storage:</span>
-                              <span className="text-sm">{parsedSpecs.storage}</span>
+                              <span className="text-sm">{parsedSpecs.storage || parsedSpecs.Storage}</span>
                             </div>
                           )}
-                          {parsedSpecs.graphics && (
+                          
+                          {/* Display Graphics */}
+                          {(parsedSpecs.graphics || parsedSpecs.Graphics) && (
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Graphics:</span>
-                              <span className="text-sm">{parsedSpecs.graphics}</span>
+                              <span className="text-sm">{parsedSpecs.graphics || parsedSpecs.Graphics}</span>
                             </div>
                           )}
-                          {parsedSpecs.display && (
+                          
+                          {/* Display Display/Screen */}
+                          {(parsedSpecs.display || parsedSpecs.Display || parsedSpecs.screen) && (
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Display:</span>
-                              <span className="text-sm">{parsedSpecs.display}</span>
+                              <span className="text-sm">{parsedSpecs.display || parsedSpecs.Display || parsedSpecs.screen}</span>
                             </div>
                           )}
-                          {parsedSpecs.connectivity && (
-                            <div className="flex items-center gap-2">
-                              <Wifi className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Network:</span>
-                              <span className="text-sm">{parsedSpecs.connectivity}</span>
-                            </div>
-                          )}
+                          
+                          {/* Show other specs that don't fit the main categories */}
+                          {Object.entries(parsedSpecs).map(([key, value]) => {
+                            // Skip the main spec fields we already displayed
+                            const mainFields = ['ram', 'RAM', 'memory', 'storage', 'Storage', 'graphics', 'Graphics', 'display', 'Display', 'screen'];
+                            if (mainFields.includes(key) || !value) return null;
+                            
+                            return (
+                              <div key={key} className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-muted-foreground min-w-[60px] capitalize">
+                                  {key.replace(/([A-Z])/g, ' $1').trim()}:
+                                </span>
+                                <span className="text-sm">{value}</span>
+                              </div>
+                            );
+                          })}
                         </>
                       ) : (
                         <p className="text-sm text-muted-foreground">No specifications available</p>
