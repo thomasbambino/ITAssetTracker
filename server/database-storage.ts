@@ -1691,6 +1691,7 @@ export class DatabaseStorage implements IStorage {
           notes, 
           status, 
           url,
+          icon,
           notification_email as "notificationEmail",
           send_access_notifications as "sendAccessNotifications",
           created_at as "createdAt"
@@ -1717,10 +1718,11 @@ export class DatabaseStorage implements IStorage {
         notes, 
         status,
         url,
+        icon,
         notification_email,
         send_access_notifications
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
       ) RETURNING 
         id, 
         name, 
@@ -1734,6 +1736,7 @@ export class DatabaseStorage implements IStorage {
         notes, 
         status,
         url,
+        icon,
         notification_email as "notificationEmail",
         send_access_notifications as "sendAccessNotifications", 
         created_at as "createdAt"
@@ -1749,6 +1752,7 @@ export class DatabaseStorage implements IStorage {
       software.notes || null, 
       software.status || 'active',
       software.url || null,
+      software.icon || null,
       software.notificationEmail || null,
       software.sendAccessNotifications || false
     ]);
@@ -1837,6 +1841,12 @@ export class DatabaseStorage implements IStorage {
         values.push(software.url);
       }
       
+      // Add the icon field
+      if (software.icon !== undefined) {
+        updates.push(`icon = $${paramCount++}`);
+        values.push(software.icon);
+      }
+      
       // If no updates, return the software
       if (updates.length === 0) {
         return this.getSoftwareById(id);
@@ -1861,6 +1871,7 @@ export class DatabaseStorage implements IStorage {
           notes, 
           status,
           url,
+          icon,
           notification_email as "notificationEmail",
           send_access_notifications as "sendAccessNotifications",
           created_at as "createdAt"
@@ -1990,6 +2001,8 @@ export class DatabaseStorage implements IStorage {
         s.seats, 
         s.notes, 
         s.status, 
+        s.url,
+        s.icon,
         s.notification_email as "notificationEmail",
         s.send_access_notifications as "sendAccessNotifications",
         s.created_at as "createdAt",
@@ -2022,6 +2035,8 @@ export class DatabaseStorage implements IStorage {
         s.seats, 
         s.notes, 
         s.status, 
+        s.url,
+        s.icon,
         s.notification_email as "notificationEmail",
         s.send_access_notifications as "sendAccessNotifications",
         s.created_at as "createdAt",

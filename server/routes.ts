@@ -1603,9 +1603,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               vendor: software.vendor,
               licenseType: software.licenseType,
               expiryDate: software.expiryDate,
-              version: software.version,
               status: software.status,
-              url: software.url
+              url: software.url,
+              icon: software.icon
             } : null
           };
         })
