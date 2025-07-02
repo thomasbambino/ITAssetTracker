@@ -31,6 +31,7 @@ interface AssignedSoftware {
     version?: string | null;
     status?: string;
     url?: string | null;
+    icon?: string | null;
   };
 }
 
@@ -118,7 +119,15 @@ export default function GuestSoftware() {
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-xl font-bold flex items-center gap-2">
-                    <Package className="h-5 w-5 text-primary" />
+                    {assignment.software.icon ? (
+                      <img
+                        src={assignment.software.icon}
+                        alt={`${assignment.software.name} icon`}
+                        className="h-5 w-5 rounded object-cover"
+                      />
+                    ) : (
+                      <Package className="h-5 w-5 text-primary" />
+                    )}
                     {assignment.software.name}
                     {assignment.software.url && (
                       <a

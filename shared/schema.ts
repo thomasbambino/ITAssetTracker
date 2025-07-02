@@ -280,6 +280,7 @@ export const software = pgTable("software", {
   url: text("url"), // Website URL for the software
   notificationEmail: text("notification_email"), // Email address for access request notifications
   sendAccessNotifications: boolean("send_access_notifications").default(false), // Whether to send notifications
+  icon: text("icon"), // Base64 encoded icon image or file path
   createdAt: timestamp("created_at").defaultNow(),
 });
 

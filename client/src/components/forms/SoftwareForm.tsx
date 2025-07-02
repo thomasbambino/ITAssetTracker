@@ -27,7 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Mail, Bell } from "lucide-react";
+import { CalendarIcon, Mail, Bell, Upload, X } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { Switch } from "@/components/ui/switch";
@@ -48,6 +48,7 @@ const formSchema = z.object({
   url: z.string().url("Please enter a valid URL").optional().nullable().or(z.literal("")),
   notificationEmail: z.string().email("Please enter a valid email").optional().nullable(),
   sendAccessNotifications: z.boolean().default(false),
+  icon: z.string().optional().nullable(),
 });
 
 // Define the props for the form
@@ -80,6 +81,40 @@ const STATUS_OPTIONS = [
 
 export function SoftwareForm({ software, onSuccess, onCancel }: SoftwareFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [iconPreview, setIconPreview] = useState<string | null>(software?.icon || null);
+
+  // Handle file upload
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+      }
+      
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File size must be less than 2MB.');
+        return;
+      }
+
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target?.result as string;
+        setIconPreview(base64String);
+        form.setValue('icon', base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove icon
+  const removeIcon = () => {
+    setIconPreview(null);
+    form.setValue('icon', '');
+  };
 
   // Create form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -99,6 +134,7 @@ export function SoftwareForm({ software, onSuccess, onCancel }: SoftwareFormProp
       url: software?.url || "",
       notificationEmail: software?.notificationEmail || "",
       sendAccessNotifications: software?.sendAccessNotifications || false,
+      icon: software?.icon || "",
     },
   });
 
@@ -273,6 +309,61 @@ export function SoftwareForm({ software, onSuccess, onCancel }: SoftwareFormProp
               </FormControl>
               <FormDescription>
                 Optional link to the software's website or documentation
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Icon upload field */}
+        <FormField
+          control={form.control}
+          name="icon"
+          render={() => (
+            <FormItem>
+              <FormLabel>Software Icon</FormLabel>
+              <FormControl>
+                <div className="space-y-3">
+                  {iconPreview ? (
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        <img
+                          src={iconPreview}
+                          alt="Software icon preview"
+                          className="h-12 w-12 rounded-md object-cover border"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={removeIcon}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Remove Icon
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-3">
+                      <label className="cursor-pointer">
+                        <div className="flex items-center space-x-2 px-4 py-2 border border-input rounded-md hover:bg-accent hover:text-accent-foreground">
+                          <Upload className="h-4 w-4" />
+                          <span>Upload Icon</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </FormControl>
+              <FormDescription>
+                Upload a custom icon for this software (PNG, JPG, GIF - max 2MB)
               </FormDescription>
               <FormMessage />
             </FormItem>
