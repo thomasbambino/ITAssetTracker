@@ -12,6 +12,7 @@ import authRoutes from "./auth-routes";
 import emailRoutes from "./email-routes";
 import { isAuthenticated, isAdmin } from "./auth";
 import mailgunService from "./direct-mailgun";
+import { specGenerator } from "./spec-generator";
 
 import { 
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
@@ -2305,6 +2306,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error exporting warranties:", error);
       res.status(500).json({ message: "Error exporting warranties" });
+    }
+  });
+
+  // Generate device specifications
+  app.post("/api/devices/generate-specs", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { brand, model, category } = req.body;
+      
+      if (!brand || !model) {
+        return res.status(400).json({ message: "Brand and model are required" });
+      }
+
+      console.log(`Generating specs for: ${brand} ${model} (${category})`);
+      
+      const generatedSpecs = await specGenerator.generateSpecs({
+        brand,
+        model,
+        category: category || 'general'
+      });
+
+      if (!generatedSpecs) {
+        return res.status(404).json({ 
+          message: "Could not generate specifications for this device",
+          specs: {}
+        });
+      }
+
+      console.log(`Generated specs:`, generatedSpecs);
+      
+      res.json({
+        success: true,
+        specs: generatedSpecs
+      });
+    } catch (error) {
+      console.error("Error generating device specs:", error);
+      res.status(500).json({ message: "Error generating device specifications" });
     }
   });
 

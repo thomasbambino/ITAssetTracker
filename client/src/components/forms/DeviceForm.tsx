@@ -346,7 +346,74 @@ export function DeviceForm({ device, onSuccess, onCancel }: DeviceFormProps) {
         {/* Device Specifications Section */}
         {hasSpecsEnabled && (
           <div className="border rounded-lg p-4 space-y-4">
-            <h3 className="text-lg font-medium">Device Specifications</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Device Specifications</h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const brand = form.getValues("brand");
+                  const model = form.getValues("model");
+                  const categoryId = form.getValues("categoryId");
+                  
+                  if (!brand || !model) {
+                    toast({
+                      title: "Missing Information",
+                      description: "Please enter brand and model first",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+
+                  const category = Array.isArray(categories) 
+                    ? categories.find((cat: any) => cat.id.toString() === categoryId)?.name || 'general'
+                    : 'general';
+
+                  try {
+                    const response = await fetch("/api/devices/generate-specs", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      credentials: "include",
+                      body: JSON.stringify({ brand, model, category }),
+                    });
+
+                    if (response.ok) {
+                      const data = await response.json();
+                      if (data.success && data.specs) {
+                        form.setValue("specs", JSON.stringify(data.specs));
+                        toast({
+                          title: "Success",
+                          description: "Device specifications generated successfully",
+                        });
+                      } else {
+                        toast({
+                          title: "No Specs Found",
+                          description: "Could not generate specifications for this device",
+                          variant: "destructive"
+                        });
+                      }
+                    } else {
+                      toast({
+                        title: "Error",
+                        description: "Failed to generate specifications",
+                        variant: "destructive"
+                      });
+                    }
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to generate specifications",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                Generate Specs
+              </Button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
