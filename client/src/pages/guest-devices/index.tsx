@@ -142,14 +142,12 @@ export default function GuestDevices() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-xl font-bold flex items-center gap-2">
-                      <Monitor className="h-5 w-5 text-primary" />
-                      {device.name || `${device.brand} ${device.model}`}
+                    <CardTitle className="text-xl font-bold">
+                      {device.brand} {device.model}
                     </CardTitle>
                     <CardDescription className="text-base mt-1">
-                      {device.brand} {device.model}
                       {device.assetTag && (
-                        <span className="ml-2 font-mono text-xs bg-muted px-2 py-1 rounded">
+                        <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
                           #{device.assetTag}
                         </span>
                       )}
