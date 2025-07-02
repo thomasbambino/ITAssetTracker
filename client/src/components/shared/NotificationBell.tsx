@@ -17,9 +17,9 @@ interface Notification {
   userId: number;
   title: string;
   message: string;
-  type: "warranty_expiry" | "maintenance_due" | "license_expiry" | "device_assigned";
+  type: "warranty_expiry" | "maintenance_due" | "license_expiry" | "device_assigned" | "problem_report";
   isRead: boolean;
-  timestamp: Date | null;
+  createdAt: Date | null;
   link?: string | null;
 }
 
@@ -55,6 +55,8 @@ export function NotificationBell() {
         return "📄";
       case "device_assigned":
         return "✅";
+      case "problem_report":
+        return "🚨";
       default:
         return "🔔";
     }
@@ -115,7 +117,7 @@ export function NotificationBell() {
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {notification.timestamp ? formatDate(notification.timestamp) : "Unknown date"}
+                        {notification.createdAt ? formatDate(notification.createdAt) : "Unknown date"}
                       </p>
                     </div>
                   </div>

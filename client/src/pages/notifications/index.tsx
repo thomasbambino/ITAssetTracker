@@ -23,9 +23,9 @@ interface Notification {
   userId: number;
   title: string;
   message: string;
-  type: "warranty_expiry" | "maintenance_due" | "license_expiry" | "device_assigned";
+  type: "warranty_expiry" | "maintenance_due" | "license_expiry" | "device_assigned" | "problem_report";
   isRead: boolean;
-  timestamp: Date | null;
+  createdAt: Date | null;
   link?: string | null;
 }
 
@@ -126,6 +126,8 @@ export default function NotificationsPage() {
         return <AlertTriangle className="h-5 w-5 text-red-500" />;
       case "device_assigned":
         return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case "problem_report":
+        return <AlertTriangle className="h-5 w-5 text-orange-500" />;
       default:
         return <Bell className="h-5 w-5 text-primary" />;
     }
@@ -144,6 +146,8 @@ export default function NotificationsPage() {
         return `${baseClass} ${isRead ? "" : "border-l-4 border-red-500"}`;
       case "device_assigned":
         return `${baseClass} ${isRead ? "" : "border-l-4 border-green-500"}`;
+      case "problem_report":
+        return `${baseClass} ${isRead ? "" : "border-l-4 border-orange-500"}`;
       default:
         return `${baseClass} ${isRead ? "" : "border-l-4 border-primary"}`;
     }
@@ -189,7 +193,7 @@ export default function NotificationsPage() {
           </p>
           <div className="flex items-center mt-2 text-xs text-muted-foreground">
             <Clock className="h-3 w-3 mr-1" />
-            {notification.timestamp ? formatDate(notification.timestamp) : "Unknown date"}
+            {notification.createdAt ? formatDate(notification.createdAt) : "Unknown date"}
           </div>
         </div>
       </div>
@@ -292,7 +296,7 @@ export default function NotificationsPage() {
               <span className="ml-2">{selectedNotification?.title}</span>
             </DialogTitle>
             <DialogDescription>
-              {selectedNotification?.timestamp && formatDate(selectedNotification.timestamp)}
+              {selectedNotification?.createdAt && formatDate(selectedNotification.createdAt)}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
