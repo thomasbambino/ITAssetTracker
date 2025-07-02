@@ -302,6 +302,13 @@ export class DeviceSpecGenerator {
       return null;
     }
 
+    // Don't generate specs for laptops and desktops - they use database specs
+    const normalizedCategory = category.toLowerCase();
+    if (normalizedCategory.includes('laptop') || normalizedCategory.includes('desktop') || normalizedCategory.includes('computer')) {
+      console.log(`Skipping spec generation for ${category} - using database specs instead`);
+      return null;
+    }
+
     return await this.searchDeviceSpecs(brand, model, category);
   }
 }

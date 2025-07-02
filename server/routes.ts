@@ -2327,6 +2327,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!generatedSpecs) {
+        // Check if it's a laptop/desktop category
+        if (category.toLowerCase().includes('laptop') || category.toLowerCase().includes('desktop') || category.toLowerCase().includes('computer')) {
+          return res.status(400).json({ 
+            message: "Laptops and desktops use database specifications. The spec generator is for accessories, tablets, phones, and other devices.",
+            isLaptopDesktop: true,
+            specs: {}
+          });
+        }
+        
         return res.status(404).json({ 
           message: "Could not generate specifications for this device",
           specs: {}
