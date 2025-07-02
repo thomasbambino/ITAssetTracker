@@ -589,7 +589,7 @@ export default function UserDetails() {
                       data={user.devices}
                       columns={deviceColumns}
                       keyField="id"
-                      onRowClick={(device) => navigate(`/devices/${device.id}`)}
+                      onRowClick={(device) => navigate(`/devices/${device.id}?from=user&userId=${id}`)}
                       actions={deviceActions}
                       emptyState={
                         <div className="text-center py-6">
