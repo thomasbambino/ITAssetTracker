@@ -278,7 +278,10 @@ export default function UserDashboard() {
                       {device.specs && (() => {
                         try {
                           const specs = typeof device.specs === 'string' ? JSON.parse(device.specs) : device.specs;
-                          const hasSpecs = specs && typeof specs === 'object' && Object.keys(specs).length > 0;
+                          
+                          // Check if there are actual non-empty spec values
+                          const hasSpecs = specs && typeof specs === 'object' && 
+                            (specs.ram || specs.storage || specs.graphics || specs.display);
                           
                           if (!hasSpecs) return null;
                           
