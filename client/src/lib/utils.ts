@@ -36,7 +36,7 @@ export function formatDate(date: Date | string | null | undefined): string {
   });
 }
 
-// Format date with time
+// Format date with time (automatically adjusts to user's timezone and locale)
 export function formatDateTime(date: Date | string | null | undefined): string {
   if (!date) return '';
   
@@ -47,7 +47,8 @@ export function formatDateTime(date: Date | string | null | undefined): string {
     return '';
   }
   
-  return dateObj.toLocaleDateString('en-US', {
+  // Use user's locale and timezone automatically
+  return dateObj.toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
