@@ -201,7 +201,9 @@ export function DesktopSidebar() {
     }
     // Regular users can see dashboard, devices, software, and notifications
     if (currentUser.role === 'user') {
-      return ['/', '/devices', '/software', '/notifications'].includes(route.href);
+      const allowedRoutes = ['/', '/devices', '/software', '/notifications'];
+      console.log('User role is user, filtering routes. Route:', route.href, 'Allowed:', allowedRoutes.includes(route.href));
+      return allowedRoutes.includes(route.href);
     }
     // Admins can see all routes
     return true;
