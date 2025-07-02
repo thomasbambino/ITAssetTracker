@@ -257,9 +257,12 @@ export default function UserDashboard() {
                     </div>
 
                     {/* Right Side - Basic Info and Location */}
-                    <div className="flex-1 grid grid-cols-2 gap-6">
+                    <div className="flex-1 grid grid-cols-3 gap-6">
                       
-                      {/* Basic Information - Always in first column */}
+                      {/* Empty spacer column */}
+                      <div></div>
+                      
+                      {/* Basic Information - Now in second column */}
                       <div>
                         <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
                           <Package className="h-4 w-4" />
@@ -283,7 +286,7 @@ export default function UserDashboard() {
                         </div>
                       </div>
 
-                      {/* Location & Management - Always in second column */}
+                      {/* Location & Management - Now in third column */}
                       <div>
                         {(device.site || device.address || device.warrantyEOL) ? (
                           <>
