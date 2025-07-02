@@ -742,6 +742,8 @@ export class DatabaseStorage implements IStorage {
         d.intune_last_sync as "intuneLastSync",
         d.status,
         d.notes,
+        d.address,
+        d.specs,
         c.name as "categoryName"
       FROM devices d
       LEFT JOIN categories c ON d.category_id = c.id
@@ -774,6 +776,7 @@ export class DatabaseStorage implements IStorage {
           d.intune_last_sync as "intuneLastSync",
           d.status,
           d.notes,
+          d.address,
           d.specs,
           c.name as "categoryName"
         FROM devices d
@@ -1194,6 +1197,7 @@ export class DatabaseStorage implements IStorage {
         d.user_id as "userId",
         d.status,
         d.notes,
+        d.address,
         d.specs,
         c.name as "categoryName"
       FROM devices d
