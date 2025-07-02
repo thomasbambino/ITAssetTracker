@@ -103,7 +103,7 @@ export default function UserDashboard() {
   });
 
   const { data: assignedSoftware = [] } = useQuery<AssignedSoftware[]>({
-    queryKey: ['/api/software-assignments/user', user?.id],
+    queryKey: [`/api/software-assignments/user/${user?.id}`],
     enabled: !!user?.id,
   });
 
