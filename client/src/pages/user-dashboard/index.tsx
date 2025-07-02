@@ -72,11 +72,14 @@ function formatDate(date: Date | string | null): string {
   return dateObj.toLocaleDateString();
 }
 
-function formatCurrency(amount: number): string {
+function formatCurrency(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined) return 'N/A';
+  // Convert cents to dollars
+  const dollars = amount / 100;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD'
-  }).format(amount);
+  }).format(dollars);
 }
 
 function getStatusColor(status: string | null | undefined): string {
@@ -201,7 +204,7 @@ export default function UserDashboard() {
               <p>No devices assigned to you</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {assignedDevices.map((device) => (
                 <Card key={device.id} className="p-0 overflow-hidden">
                   <CardHeader className="pb-3">

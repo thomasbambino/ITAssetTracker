@@ -114,4 +114,4 @@ Preferred communication style: Simple, everyday language.
 
 Changelog:
 - July 01, 2025. Initial setup
-- July 02, 2025. Successfully transformed user dashboard device display from expandable sections to static card layout. Removed dropdown toggles and now displays all device information (specs, location, financial, notes) in organized cards for better accessibility and immediate visibility.
+- July 02, 2025. Successfully transformed user dashboard device display from expandable sections to static card layout. Removed dropdown toggles and now displays all device information (specs, location, financial, notes) in organized cards for better accessibility and immediate visibility. Updated layout to single column and fixed cost formatting to properly convert from cents to dollars.
