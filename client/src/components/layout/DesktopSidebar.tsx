@@ -129,7 +129,7 @@ export function DesktopSidebar() {
       href: '/software',
       label: 'Software & Portals', 
       icon: BoxIcon,
-      category: 'management',
+      category: 'main',
     },
     {
       href: '/maintenance',
@@ -201,9 +201,7 @@ export function DesktopSidebar() {
     }
     // Regular users can see dashboard, devices, software, and notifications
     if (currentUser.role === 'user') {
-      const allowedRoutes = ['/', '/devices', '/software', '/notifications'];
-      console.log('User role is user, filtering routes. Route:', route.href, 'Allowed:', allowedRoutes.includes(route.href));
-      return allowedRoutes.includes(route.href);
+      return ['/', '/devices', '/software', '/notifications'].includes(route.href);
     }
     // Admins can see all routes
     return true;

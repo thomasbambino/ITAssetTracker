@@ -139,7 +139,7 @@ export function MobileNav() {
       href: '/software',
       label: 'Software & Portals',
       icon: BoxIcon,
-      category: 'management',
+      category: 'main',
     },
     {
       href: '/maintenance',
