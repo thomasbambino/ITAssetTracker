@@ -138,26 +138,24 @@ export default function UserDashboard() {
     <PageContainer 
       title={`Welcome back, ${user.firstName} ${user.lastName}`}
       description="Here's an overview of your assigned devices and software licenses."
+      actions={
+        <Dialog open={isProblemReportOpen} onOpenChange={setIsProblemReportOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Report a Problem
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Report a Problem</DialogTitle>
+            </DialogHeader>
+            <ProblemReportForm onSuccess={() => setIsProblemReportOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      }
     >
       <div className="space-y-8">
-        
-        {/* Problem Report Button */}
-        <div className="flex justify-end">
-          <Dialog open={isProblemReportOpen} onOpenChange={setIsProblemReportOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Report a Problem
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Report a Problem</DialogTitle>
-              </DialogHeader>
-              <ProblemReportForm onSuccess={() => setIsProblemReportOpen(false)} />
-            </DialogContent>
-          </Dialog>
-        </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
