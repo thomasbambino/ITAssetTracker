@@ -28,6 +28,7 @@ import Departments from "@/pages/departments";
 import UserDashboard from "@/pages/user-dashboard";
 import GuestDevices from "@/pages/guest-devices";
 import GuestSoftware from "@/pages/guest-software";
+import UserSettings from "@/pages/user-settings";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import LoginPage from "@/pages/auth/login";
 import ResetPasswordPage from "@/pages/auth/reset-password";
@@ -98,6 +99,7 @@ function MainRouter() {
         <Route path="/devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
         <Route path="/software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
         <Route path="/notifications" component={() => <ProtectedPageWrapper component={Notifications} />} />
+        <Route path="/user-settings" component={() => <ProtectedPageWrapper component={UserSettings} />} />
         <Route path="/settings/two-factor" component={() => <ProtectedPageWrapper component={TwoFactorSettings} />} />
         {/* Redirect all other routes to user dashboard */}
         <Route component={() => <ProtectedPageWrapper component={UserDashboard} />} />
@@ -134,6 +136,7 @@ function MainRouter() {
       <Route path="/user-dashboard" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
       <Route path="/guest-devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
       <Route path="/guest-software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
+      <Route path="/user-settings" component={() => <ProtectedPageWrapper component={UserSettings} />} />
       
       {/* Fallback to 404 - this is still inside the protected wrapper */}
       <Route component={() => <ProtectedPageWrapper component={NotFound} />} />

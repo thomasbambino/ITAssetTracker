@@ -210,6 +210,12 @@ export function DesktopSidebar() {
       icon: SettingsIcon,
       category: 'system',
     },
+    {
+      href: '/user-settings',
+      label: 'My Settings',
+      icon: SettingsIcon,
+      category: 'main',
+    },
   ];
 
   // Filter routes based on user role and customize labels
@@ -218,9 +224,9 @@ export function DesktopSidebar() {
     if (!currentUser) {
       return route.href === '/';
     }
-    // Regular users can see dashboard, devices, software, and notifications
+    // Regular users can see dashboard, devices, software, notifications, and user settings
     if (currentUser.role === 'user') {
-      return ['/', '/devices', '/software', '/notifications'].includes(route.href);
+      return ['/', '/devices', '/software', '/notifications', '/user-settings'].includes(route.href);
     }
     // Admins can see all routes
     return true;
