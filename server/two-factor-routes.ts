@@ -56,12 +56,22 @@ router.get('/setup', isAuthenticated, async (req: AuthenticatedRequest, res: Res
     
     // Store the secret temporarily in the user record for verification
     // We'll use a temporary field that gets cleared after successful setup
-    await storage.updateUser(
+    console.log('Storing secret during setup:');
+    console.log('- User ID:', user.id);
+    console.log('- Secret to store:', secret ? 'EXISTS' : 'MISSING');
+    
+    const updateResult = await storage.updateUser(
       user.id,
       { twoFactorSecret: secret }, // Temporarily store the secret
       user.id,
       true // Skip activity log
     );
+    
+    console.log('- Update result:', updateResult ? 'SUCCESS' : 'FAILED');
+    
+    // Verify the secret was stored
+    const verifyUser = await storage.getUserById(user.id);
+    console.log('- Verification - secret stored:', verifyUser?.twoFactorSecret ? 'EXISTS' : 'MISSING');
     
     const qrCodeDataUrl = await TwoFactorService.generateQRCode(otpauthUrl);
 
