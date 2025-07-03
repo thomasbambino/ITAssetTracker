@@ -112,16 +112,28 @@ router.post('/verify-setup', isAuthenticated, async (req: AuthenticatedRequest, 
     }
 
     // Get the temporary secret from the session
+    console.log('2FA Verify-Setup Debug:');
+    console.log('- Session keys:', Object.keys(req.session));
+    console.log('- Session data:', req.session);
+    
     const secret = (req.session as any).tempTwoFactorSecret;
+    console.log('- Retrieved secret:', secret ? 'EXISTS' : 'MISSING');
+    
     if (!secret) {
+      console.log('- ERROR: No secret found in session');
       return res.status(400).json({
         success: false,
         message: 'No 2FA setup session found. Please start the setup process again.'
       });
     }
 
+    console.log('- Token from request:', token);
+    console.log('- Secret length:', secret.length);
+
     // Verify the token
     const isValidToken = TwoFactorService.verifyToken(token, secret);
+    console.log('- Verification result:', isValidToken);
+    
     if (!isValidToken) {
       return res.status(400).json({
         success: false,
