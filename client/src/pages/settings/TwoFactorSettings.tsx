@@ -43,9 +43,14 @@ export default function TwoFactorSettings() {
   const queryClient = useQueryClient();
 
   // Get 2FA status
-  const { data: status, isLoading } = useQuery<TwoFactorStatus>({
+  const { data: status, isLoading } = useQuery({
     queryKey: ['/api/2fa/status'],
+    staleTime: 0, // Force fresh data
+    gcTime: 0, // Don't cache (updated from cacheTime)
   });
+
+  // Extract data from nested response
+  const statusData = status?.data || status;
 
   // Setup form
   const setupForm = useForm({
@@ -235,12 +240,12 @@ export default function TwoFactorSettings() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span>Status:</span>
-              <Badge variant={status?.enabled ? 'default' : 'secondary'}>
-                {status?.enabled ? 'Enabled' : 'Disabled'}
+              <Badge variant={statusData?.enabled ? 'default' : 'secondary'}>
+                {statusData?.enabled ? 'Enabled' : 'Disabled'}
               </Badge>
             </div>
             
-            {status?.enabled ? (
+            {statusData?.enabled ? (
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -268,10 +273,10 @@ export default function TwoFactorSettings() {
             )}
           </div>
 
-          {status?.enabled && (
+          {statusData?.enabled && (
             <div className="bg-muted p-4 rounded-lg">
               <p className="text-sm text-muted-foreground">
-                You have <strong>{status.backupCodesCount}</strong> backup codes remaining.
+                You have <strong>{statusData.backupCodesCount}</strong> backup codes remaining.
                 Backup codes can be used to access your account if you lose your authenticator device.
               </p>
             </div>
