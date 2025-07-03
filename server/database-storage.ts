@@ -309,6 +309,9 @@ export class DatabaseStorage implements IStorage {
           temp_password as "tempPassword",
           temp_password_expiry as "tempPasswordExpiry",
           password_reset_required as "passwordResetRequired",
+          two_factor_secret as "twoFactorSecret",
+          two_factor_enabled as "twoFactorEnabled",
+          two_factor_backup_codes as "twoFactorBackupCodes",
           role,
           active,
           last_login as "lastLogin",
@@ -467,6 +470,22 @@ export class DatabaseStorage implements IStorage {
         values.push(user.lastLogin);
       }
       
+      // 2FA fields
+      if (user.twoFactorSecret !== undefined) {
+        updates.push(`two_factor_secret = $${paramCount++}`);
+        values.push(user.twoFactorSecret);
+      }
+      
+      if (user.twoFactorEnabled !== undefined) {
+        updates.push(`two_factor_enabled = $${paramCount++}`);
+        values.push(user.twoFactorEnabled);
+      }
+      
+      if (user.twoFactorBackupCodes !== undefined) {
+        updates.push(`two_factor_backup_codes = $${paramCount++}`);
+        values.push(user.twoFactorBackupCodes);
+      }
+      
       // If no updates, return the user
       if (updates.length === 0) {
         return this.getUserById(id);
@@ -491,6 +510,9 @@ export class DatabaseStorage implements IStorage {
           temp_password as "tempPassword",
           temp_password_expiry as "tempPasswordExpiry",
           password_reset_required as "passwordResetRequired",
+          two_factor_secret as "twoFactorSecret",
+          two_factor_enabled as "twoFactorEnabled",
+          two_factor_backup_codes as "twoFactorBackupCodes",
           role,
           active,
           last_login as "lastLogin",
