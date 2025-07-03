@@ -2326,7 +2326,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Problem report routes
+  // Enhanced Problem report routes
+  app.get('/api/problem-reports', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const { status, userId } = req.query;
+      
+      // Non-admin users can only see their own reports
+      let filterUserId = userId;
+      if (sessionData.userRole !== 'admin') {
+        filterUserId = sessionData.userId.toString();
+      }
+      
+      const reports = await storage.getProblemReports(status as string, filterUserId ? parseInt(filterUserId) : undefined);
+      res.json(reports);
+    } catch (error) {
+      console.error('Error getting problem reports:', error);
+      res.status(500).json({ message: "Error retrieving problem reports" });
+    }
+  });
+
+  app.get('/api/problem-reports/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      
+      const report = await storage.getProblemReportById(parseInt(id));
+      if (!report) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      // Non-admin users can only see their own reports
+      if (sessionData.userRole !== 'admin' && report.userId !== sessionData.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(report);
+    } catch (error) {
+      console.error('Error getting problem report:', error);
+      res.status(500).json({ message: "Error retrieving problem report" });
+    }
+  });
+
   app.post('/api/problem-reports', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { type, itemId, subject, description, priority } = req.body;
@@ -2340,7 +2381,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get reporting user info
+      // Create the problem report in database
+      const reportData = {
+        userId: reportingUserId,
+        type,
+        itemId: parseInt(itemId),
+        subject,
+        description,
+        priority,
+        status: 'open'
+      };
+
+      const newReport = await storage.createProblemReport(reportData, reportingUserId);
+
+      // Get reporting user info for notifications
       const reportingUser = await storage.getUserById(reportingUserId);
       if (!reportingUser) {
         return res.status(404).json({ message: "User not found" });
@@ -2388,26 +2442,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: notificationTitle,
           message: notificationMessage,
           isRead: false,
-          relatedId: parseInt(itemId),
-          relatedType: type
+          relatedId: newReport.id, // Use the problem report ID instead of item ID
+          relatedType: 'problem_report'
         });
       }
 
-      // Log the problem report as an activity
-      await storage.createActivityLog({
-        userId: reportingUserId,
-        actionType: 'problem_reported',
-        details: `Problem reported for ${itemDetails}: ${subject} (Priority: ${priority})`
-      });
-
       res.status(201).json({ 
         success: true, 
-        message: "Problem report submitted successfully" 
+        message: "Problem report submitted successfully",
+        report: newReport
       });
 
     } catch (error) {
       console.error('Error creating problem report:', error);
       res.status(500).json({ message: "Error submitting problem report" });
+    }
+  });
+
+  app.put('/api/problem-reports/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      const updates = req.body;
+      
+      // Check if report exists and access permissions
+      const existingReport = await storage.getProblemReportById(parseInt(id));
+      if (!existingReport) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      // Only admins can update reports (or the original reporter for basic fields)
+      if (sessionData.userRole !== 'admin' && existingReport.userId !== sessionData.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Non-admin users can only update description, not status or assignment
+      if (sessionData.userRole !== 'admin') {
+        updates = { description: updates.description };
+      }
+      
+      const updatedReport = await storage.updateProblemReport(parseInt(id), updates, sessionData.userId);
+      
+      if (!updatedReport) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      res.json(updatedReport);
+    } catch (error) {
+      console.error('Error updating problem report:', error);
+      res.status(500).json({ message: "Error updating problem report" });
+    }
+  });
+
+  app.post('/api/problem-reports/:id/complete', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      
+      const completedReport = await storage.completeProblemReport(parseInt(id), sessionData.userId);
+      
+      if (!completedReport) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      res.json(completedReport);
+    } catch (error) {
+      console.error('Error completing problem report:', error);
+      res.status(500).json({ message: "Error completing problem report" });
+    }
+  });
+
+  app.post('/api/problem-reports/:id/archive', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      
+      const archivedReport = await storage.archiveProblemReport(parseInt(id), sessionData.userId);
+      
+      if (!archivedReport) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      res.json(archivedReport);
+    } catch (error) {
+      console.error('Error archiving problem report:', error);
+      res.status(500).json({ message: "Error archiving problem report" });
+    }
+  });
+
+  // Problem Report Messages routes
+  app.get('/api/problem-reports/:id/messages', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      
+      // Check if user has access to this problem report
+      const report = await storage.getProblemReportById(parseInt(id));
+      if (!report) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      // Non-admin users can only see messages for their own reports
+      if (sessionData.userRole !== 'admin' && report.userId !== sessionData.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const messages = await storage.getProblemReportMessages(parseInt(id));
+      
+      // Filter out internal messages for non-admin users
+      if (sessionData.userRole !== 'admin') {
+        const filteredMessages = messages.filter(msg => !msg.isInternal);
+        return res.json(filteredMessages);
+      }
+      
+      res.json(messages);
+    } catch (error) {
+      console.error('Error getting problem report messages:', error);
+      res.status(500).json({ message: "Error retrieving messages" });
+    }
+  });
+
+  app.post('/api/problem-reports/:id/messages', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { message, isInternal } = req.body;
+      const sessionData = req.session as any;
+      
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ message: "Message cannot be empty" });
+      }
+      
+      // Check if user has access to this problem report
+      const report = await storage.getProblemReportById(parseInt(id));
+      if (!report) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      // Non-admin users can only add messages to their own reports and cannot create internal messages
+      if (sessionData.userRole !== 'admin' && report.userId !== sessionData.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const messageData = {
+        problemReportId: parseInt(id),
+        userId: sessionData.userId,
+        message: message.trim(),
+        isInternal: sessionData.userRole === 'admin' && isInternal === true
+      };
+      
+      const newMessage = await storage.createProblemReportMessage(messageData, sessionData.userId);
+      
+      // Create notification for relevant users when a new message is added
+      if (!messageData.isInternal) {
+        // If admin replied, notify the original reporter
+        if (sessionData.userRole === 'admin' && sessionData.userId !== report.userId) {
+          await storage.createNotification({
+            userId: report.userId,
+            type: 'problem_report',
+            title: `Response to your problem report: ${report.subject}`,
+            message: `An administrator has responded to your problem report.`,
+            isRead: false,
+            relatedId: report.id,
+            relatedType: 'problem_report'
+          });
+        }
+        // If user replied, notify all admins
+        else if (sessionData.userRole !== 'admin') {
+          const adminUsers = await storage.getUsersByRole('admin');
+          const reportingUser = await storage.getUserById(sessionData.userId);
+          
+          for (const admin of adminUsers) {
+            await storage.createNotification({
+              userId: admin.id,
+              type: 'problem_report',
+              title: `New message on problem report: ${report.subject}`,
+              message: `${reportingUser?.firstName} ${reportingUser?.lastName} added a message to their problem report.`,
+              isRead: false,
+              relatedId: report.id,
+              relatedType: 'problem_report'
+            });
+          }
+        }
+      }
+      
+      res.status(201).json(newMessage);
+    } catch (error) {
+      console.error('Error creating problem report message:', error);
+      res.status(500).json({ message: "Error creating message" });
     }
   });
 

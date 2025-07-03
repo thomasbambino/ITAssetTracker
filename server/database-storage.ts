@@ -3843,4 +3843,333 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Problem Report Methods
+  async getProblemReports(status?: string, userId?: number): Promise<any[]> {
+    try {
+      let query = `
+        SELECT pr.*, 
+               u.first_name as user_first_name, u.last_name as user_last_name,
+               a.first_name as assigned_to_first_name, a.last_name as assigned_to_last_name,
+               c.first_name as completed_by_first_name, c.last_name as completed_by_last_name
+        FROM problem_reports pr
+        LEFT JOIN users u ON pr.user_id = u.id
+        LEFT JOIN users a ON pr.assigned_to_id = a.id
+        LEFT JOIN users c ON pr.completed_by_id = c.id
+        WHERE 1=1
+      `;
+      
+      const params: any[] = [];
+      
+      if (status) {
+        query += ` AND pr.status = $${params.length + 1}`;
+        params.push(status);
+      }
+      
+      if (userId) {
+        query += ` AND pr.user_id = $${params.length + 1}`;
+        params.push(userId);
+      }
+      
+      query += ` ORDER BY pr.created_at DESC`;
+      
+      const result = await db.any(query, params);
+      return result.map(this.transformProblemReport);
+    } catch (error) {
+      console.error('Error getting problem reports:', error);
+      throw error;
+    }
+  }
+
+  async getProblemReportById(id: number): Promise<any | undefined> {
+    try {
+      const query = `
+        SELECT pr.*, 
+               u.first_name as user_first_name, u.last_name as user_last_name,
+               a.first_name as assigned_to_first_name, a.last_name as assigned_to_last_name,
+               c.first_name as completed_by_first_name, c.last_name as completed_by_last_name
+        FROM problem_reports pr
+        LEFT JOIN users u ON pr.user_id = u.id
+        LEFT JOIN users a ON pr.assigned_to_id = a.id
+        LEFT JOIN users c ON pr.completed_by_id = c.id
+        WHERE pr.id = $1
+      `;
+      
+      const result = await db.oneOrNone(query, [id]);
+      return result ? this.transformProblemReport(result) : undefined;
+    } catch (error) {
+      console.error('Error getting problem report by ID:', error);
+      return undefined;
+    }
+  }
+
+  async createProblemReport(report: any, loggedInUserId?: number): Promise<any> {
+    try {
+      const query = `
+        INSERT INTO problem_reports (user_id, type, item_id, subject, description, priority, status, assigned_to_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *
+      `;
+      
+      const result = await db.one(query, [
+        report.userId,
+        report.type,
+        report.itemId,
+        report.subject,
+        report.description,
+        report.priority || 'medium',
+        report.status || 'open',
+        report.assignedToId || null
+      ]);
+      
+      const newReport = this.transformProblemReport(result);
+      
+      if (loggedInUserId) {
+        await this.createActivityLog({
+          userId: loggedInUserId,
+          actionType: 'problem_report_created',
+          details: `Problem report created: ${report.subject} (Priority: ${report.priority})`
+        });
+      }
+      
+      return newReport;
+    } catch (error) {
+      console.error('Error creating problem report:', error);
+      throw error;
+    }
+  }
+
+  async updateProblemReport(id: number, report: any, loggedInUserId?: number): Promise<any | undefined> {
+    try {
+      const fields = [];
+      const values = [];
+      let paramCount = 1;
+      
+      if (report.subject !== undefined) {
+        fields.push(`subject = $${paramCount}`);
+        values.push(report.subject);
+        paramCount++;
+      }
+      
+      if (report.description !== undefined) {
+        fields.push(`description = $${paramCount}`);
+        values.push(report.description);
+        paramCount++;
+      }
+      
+      if (report.priority !== undefined) {
+        fields.push(`priority = $${paramCount}`);
+        values.push(report.priority);
+        paramCount++;
+      }
+      
+      if (report.status !== undefined) {
+        fields.push(`status = $${paramCount}`);
+        values.push(report.status);
+        paramCount++;
+      }
+      
+      if (report.assignedToId !== undefined) {
+        fields.push(`assigned_to_id = $${paramCount}`);
+        values.push(report.assignedToId);
+        paramCount++;
+      }
+      
+      if (fields.length === 0) {
+        return this.getProblemReportById(id);
+      }
+      
+      fields.push(`updated_at = NOW()`);
+      values.push(id);
+      
+      const query = `
+        UPDATE problem_reports 
+        SET ${fields.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING *
+      `;
+      
+      const result = await db.oneOrNone(query, values);
+      
+      if (!result) {
+        return undefined;
+      }
+      
+      const updatedReport = this.transformProblemReport(result);
+      
+      if (loggedInUserId) {
+        await this.createActivityLog({
+          userId: loggedInUserId,
+          actionType: 'problem_report_updated',
+          details: `Problem report updated: ${updatedReport.subject}`
+        });
+      }
+      
+      return updatedReport;
+    } catch (error) {
+      console.error('Error updating problem report:', error);
+      return undefined;
+    }
+  }
+
+  async completeProblemReport(id: number, loggedInUserId: number): Promise<any | undefined> {
+    try {
+      const query = `
+        UPDATE problem_reports 
+        SET status = 'completed', completed_at = NOW(), completed_by_id = $1, updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `;
+      
+      const result = await db.oneOrNone(query, [loggedInUserId, id]);
+      
+      if (!result) {
+        return undefined;
+      }
+      
+      const completedReport = this.transformProblemReport(result);
+      
+      await this.createActivityLog({
+        userId: loggedInUserId,
+        actionType: 'problem_report_completed',
+        details: `Problem report completed: ${completedReport.subject}`
+      });
+      
+      return completedReport;
+    } catch (error) {
+      console.error('Error completing problem report:', error);
+      return undefined;
+    }
+  }
+
+  async archiveProblemReport(id: number, loggedInUserId?: number): Promise<any | undefined> {
+    try {
+      const query = `
+        UPDATE problem_reports 
+        SET status = 'archived', updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `;
+      
+      const result = await db.oneOrNone(query, [id]);
+      
+      if (!result) {
+        return undefined;
+      }
+      
+      const archivedReport = this.transformProblemReport(result);
+      
+      if (loggedInUserId) {
+        await this.createActivityLog({
+          userId: loggedInUserId,
+          actionType: 'problem_report_archived',
+          details: `Problem report archived: ${archivedReport.subject}`
+        });
+      }
+      
+      return archivedReport;
+    } catch (error) {
+      console.error('Error archiving problem report:', error);
+      return undefined;
+    }
+  }
+
+  // Problem Report Messages Methods
+  async getProblemReportMessages(problemReportId: number): Promise<any[]> {
+    try {
+      const query = `
+        SELECT prm.*, 
+               u.first_name as user_first_name, u.last_name as user_last_name,
+               u.role as user_role
+        FROM problem_report_messages prm
+        LEFT JOIN users u ON prm.user_id = u.id
+        WHERE prm.problem_report_id = $1
+        ORDER BY prm.created_at ASC
+      `;
+      
+      const result = await db.any(query, [problemReportId]);
+      return result.map(this.transformProblemReportMessage);
+    } catch (error) {
+      console.error('Error getting problem report messages:', error);
+      throw error;
+    }
+  }
+
+  async createProblemReportMessage(message: any, loggedInUserId?: number): Promise<any> {
+    try {
+      const query = `
+        INSERT INTO problem_report_messages (problem_report_id, user_id, message, is_internal)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `;
+      
+      const result = await db.one(query, [
+        message.problemReportId,
+        message.userId,
+        message.message,
+        message.isInternal || false
+      ]);
+      
+      const newMessage = this.transformProblemReportMessage(result);
+      
+      // Update the problem report's updated_at timestamp
+      await db.none(
+        'UPDATE problem_reports SET updated_at = NOW() WHERE id = $1',
+        [message.problemReportId]
+      );
+      
+      if (loggedInUserId) {
+        await this.createActivityLog({
+          userId: loggedInUserId,
+          actionType: 'problem_report_message_added',
+          details: `Message added to problem report #${message.problemReportId}`
+        });
+      }
+      
+      return newMessage;
+    } catch (error) {
+      console.error('Error creating problem report message:', error);
+      throw error;
+    }
+  }
+
+  private transformProblemReport(row: any): any {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      type: row.type,
+      itemId: row.item_id,
+      subject: row.subject,
+      description: row.description,
+      priority: row.priority,
+      status: row.status,
+      assignedToId: row.assigned_to_id,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      completedAt: row.completed_at,
+      completedById: row.completed_by_id,
+      // Additional fields from joins
+      userFirstName: row.user_first_name,
+      userLastName: row.user_last_name,
+      assignedToFirstName: row.assigned_to_first_name,
+      assignedToLastName: row.assigned_to_last_name,
+      completedByFirstName: row.completed_by_first_name,
+      completedByLastName: row.completed_by_last_name
+    };
+  }
+
+  private transformProblemReportMessage(row: any): any {
+    return {
+      id: row.id,
+      problemReportId: row.problem_report_id,
+      userId: row.user_id,
+      message: row.message,
+      isInternal: row.is_internal,
+      createdAt: row.created_at,
+      // Additional fields from joins
+      userFirstName: row.user_first_name,
+      userLastName: row.user_last_name,
+      userRole: row.user_role
+    };
+  }
 }

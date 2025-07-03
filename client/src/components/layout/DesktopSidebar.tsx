@@ -24,6 +24,7 @@ import {
   ShieldIcon,
   CloudIcon,
   AlertCircleIcon,
+  AlertTriangleIcon,
 } from 'lucide-react';
 
 // Define category groups
@@ -178,6 +179,12 @@ export function DesktopSidebar() {
       href: '/management/status',
       label: 'Device Management',
       icon: AlertCircleIcon,
+      category: 'management',
+    },
+    {
+      href: '/problem-reports',
+      label: 'Problem Reports',
+      icon: AlertTriangleIcon,
       category: 'management',
     },
     {

@@ -429,4 +429,49 @@ export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit(
 export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
 export type EmailSettings = typeof emailSettings.$inferSelect;
 
-// Already defined above
+// Problem Reports and Messages System
+export const problemReportStatusEnum = pgEnum("problem_report_status", ["open", "in_progress", "completed", "archived"]);
+export const problemReportPriorityEnum = pgEnum("problem_report_priority", ["low", "medium", "high", "urgent"]);
+
+export const problemReports = pgTable("problem_reports", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // 'device' or 'software'
+  itemId: integer("item_id").notNull(),
+  subject: text("subject").notNull(),
+  description: text("description").notNull(),
+  priority: problemReportPriorityEnum("priority").default("medium"),
+  status: problemReportStatusEnum("status").default("open"),
+  assignedToId: integer("assigned_to_id").references(() => users.id), // Admin assigned to handle this
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  completedById: integer("completed_by_id").references(() => users.id),
+});
+
+export const problemReportMessages = pgTable("problem_report_messages", {
+  id: serial("id").primaryKey(),
+  problemReportId: integer("problem_report_id").references(() => problemReports.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  message: text("message").notNull(),
+  isInternal: boolean("is_internal").default(false), // For admin-only notes
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertProblemReportSchema = createInsertSchema(problemReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+  completedById: true,
+});
+
+export const insertProblemReportMessageSchema = createInsertSchema(problemReportMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProblemReport = z.infer<typeof insertProblemReportSchema>;
+export type ProblemReport = typeof problemReports.$inferSelect;
+export type InsertProblemReportMessage = z.infer<typeof insertProblemReportMessageSchema>;
+export type ProblemReportMessage = typeof problemReportMessages.$inferSelect;

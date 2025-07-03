@@ -25,6 +25,7 @@ import IntuneManagement from "@/pages/management/intune";
 import DeviceManagement from "@/pages/management/status";
 import Sites from "@/pages/sites";
 import Departments from "@/pages/departments";
+import ProblemReports from "@/pages/problem-reports";
 import UserDashboard from "@/pages/user-dashboard";
 import GuestDevices from "@/pages/guest-devices";
 import GuestSoftware from "@/pages/guest-software";
@@ -131,6 +132,7 @@ function MainRouter() {
       <Route path="/management/status" component={() => <ProtectedPageWrapper component={DeviceManagement} adminRequired />} />
       <Route path="/sites" component={() => <ProtectedPageWrapper component={Sites} adminRequired />} />
       <Route path="/departments" component={() => <ProtectedPageWrapper component={Departments} adminRequired />} />
+      <Route path="/problem-reports" component={() => <ProtectedPageWrapper component={ProblemReports} adminRequired />} />
       
       {/* Admin user account pages - admin viewing their own account */}
       <Route path="/user-dashboard" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
