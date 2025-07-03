@@ -54,6 +54,9 @@ router.get('/setup', isAuthenticated, async (req: AuthenticatedRequest, res: Res
       companyName
     );
     
+    // Store the secret temporarily in the session for verification
+    (req.session as any).tempTwoFactorSecret = secret;
+    
     const qrCodeDataUrl = await TwoFactorService.generateQRCode(otpauthUrl);
 
     res.json({
@@ -108,12 +111,14 @@ router.post('/verify-setup', isAuthenticated, async (req: AuthenticatedRequest, 
       });
     }
 
-    // Get the temporary secret from the previous setup call
-    // Note: In a production system, you'd store this temporarily in session or cache
-    // For simplicity, we'll generate a new secret and store it
-    const branding = await storage.getBrandingSettings();
-    const companyName = branding?.companyName || 'AssetTrack';
-    const { secret } = TwoFactorService.generateSecret(user.email, companyName);
+    // Get the temporary secret from the session
+    const secret = (req.session as any).tempTwoFactorSecret;
+    if (!secret) {
+      return res.status(400).json({
+        success: false,
+        message: 'No 2FA setup session found. Please start the setup process again.'
+      });
+    }
 
     // Verify the token
     const isValidToken = TwoFactorService.verifyToken(token, secret);
@@ -145,6 +150,9 @@ router.post('/verify-setup', isAuthenticated, async (req: AuthenticatedRequest, 
         message: 'Failed to enable 2FA'
       });
     }
+
+    // Clean up the temporary secret from session
+    delete (req.session as any).tempTwoFactorSecret;
 
     res.json({
       success: true,
