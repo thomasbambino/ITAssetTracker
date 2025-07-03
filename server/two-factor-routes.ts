@@ -54,8 +54,14 @@ router.get('/setup', isAuthenticated, async (req: AuthenticatedRequest, res: Res
       companyName
     );
     
-    // Store the secret temporarily in the session for verification
-    (req.session as any).tempTwoFactorSecret = secret;
+    // Store the secret temporarily in the user record for verification
+    // We'll use a temporary field that gets cleared after successful setup
+    await storage.updateUser(
+      user.id,
+      { twoFactorSecret: secret }, // Temporarily store the secret
+      user.id,
+      true // Skip activity log
+    );
     
     const qrCodeDataUrl = await TwoFactorService.generateQRCode(otpauthUrl);
 
@@ -84,17 +90,25 @@ router.get('/setup', isAuthenticated, async (req: AuthenticatedRequest, res: Res
  */
 router.post('/verify-setup', isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    console.log('=== 2FA VERIFY-SETUP ROUTE START ===');
+    console.log('- Request body:', req.body);
+    
     const user = req.user;
     if (!user) {
+      console.log('- ERROR: No user in request');
       return res.status(401).json({ 
         success: false, 
         message: 'Authentication required' 
       });
     }
 
+    console.log('- User ID:', user.id);
+    console.log('- User email:', user.email);
+
     // Validate request body
     const validation = setup2FASchema.safeParse(req.body);
     if (!validation.success) {
+      console.log('- VALIDATION ERROR:', validation.error.errors);
       return res.status(400).json({
         success: false,
         message: validation.error.errors[0].message
@@ -102,6 +116,7 @@ router.post('/verify-setup', isAuthenticated, async (req: AuthenticatedRequest, 
     }
 
     const { token } = validation.data;
+    console.log('- Validation passed, token received:', token);
 
     // Check if 2FA is already enabled
     if (user.twoFactorEnabled) {
@@ -111,21 +126,20 @@ router.post('/verify-setup', isAuthenticated, async (req: AuthenticatedRequest, 
       });
     }
 
-    // Get the temporary secret from the session
+    // Get the secret from the user's database record (stored during setup)
     console.log('2FA Verify-Setup Debug:');
-    console.log('- Session keys:', Object.keys(req.session));
-    console.log('- Session data:', req.session);
+    const currentUser = await storage.getUserById(user.id);
     
-    const secret = (req.session as any).tempTwoFactorSecret;
-    console.log('- Retrieved secret:', secret ? 'EXISTS' : 'MISSING');
-    
-    if (!secret) {
-      console.log('- ERROR: No secret found in session');
+    if (!currentUser || !currentUser.twoFactorSecret) {
+      console.log('- ERROR: No secret found in user record');
       return res.status(400).json({
         success: false,
-        message: 'No 2FA setup session found. Please start the setup process again.'
+        message: 'No 2FA setup found. Please start the setup process again.'
       });
     }
+    
+    const secret = currentUser.twoFactorSecret;
+    console.log('- Retrieved secret from user record:', secret ? 'EXISTS' : 'MISSING');
 
     console.log('- Token from request:', token);
     console.log('- Secret length:', secret.length);
