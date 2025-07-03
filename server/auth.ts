@@ -125,7 +125,14 @@ export async function loginUser(credentials: LoginCredentials): Promise<{
     }
     
     // Check if 2FA is enabled for this user
+    console.log('Login 2FA Check Debug:');
+    console.log('- User ID:', user.id);
+    console.log('- User email:', user.email);
+    console.log('- twoFactorEnabled:', user.twoFactorEnabled);
+    console.log('- twoFactorSecret exists:', user.twoFactorSecret ? 'YES' : 'NO');
+    
     if (user.twoFactorEnabled && user.twoFactorSecret) {
+      console.log('- 2FA REQUIRED: Returning requiresTwoFactor=true');
       // Don't update last login yet - wait for 2FA verification
       // Check if password reset is required
       const passwordResetRequired = user.passwordResetRequired || false;
@@ -137,6 +144,8 @@ export async function loginUser(credentials: LoginCredentials): Promise<{
         message: '2FA verification required'
       };
     }
+    
+    console.log('- 2FA NOT REQUIRED: Proceeding with normal login');
     
     // Update last login time without creating activity log entry
     await storage.updateUserLastLogin(user.id, new Date());
