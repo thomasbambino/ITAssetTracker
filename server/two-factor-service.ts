@@ -16,6 +16,13 @@ export class TwoFactorService {
       length: 32
     });
 
+    console.log('2FA Secret Generation Debug:');
+    console.log('- User Email:', userEmail);
+    console.log('- Company:', companyName);
+    console.log('- Generated secret (base32):', secret.base32);
+    console.log('- Secret length:', secret.base32?.length);
+    console.log('- OTP Auth URL:', secret.otpauth_url);
+
     return {
       secret: secret.base32,
       otpauthUrl: secret.otpauth_url || ''
@@ -39,12 +46,33 @@ export class TwoFactorService {
    */
   static verifyToken(token: string, secret: string, window: number = 1): boolean {
     try {
-      return speakeasy.totp.verify({
+      console.log('2FA Verification Debug:');
+      console.log('- Token received:', token);
+      console.log('- Secret length:', secret.length);
+      console.log('- Window:', window);
+      
+      const result = speakeasy.totp.verify({
         secret,
         encoding: 'base32',
         token,
         window // Allow some time drift
       });
+      
+      console.log('- Verification result:', result);
+      
+      // Also try with a larger window for debugging
+      if (!result) {
+        console.log('Trying with larger window (5)...');
+        const resultLargeWindow = speakeasy.totp.verify({
+          secret,
+          encoding: 'base32',
+          token,
+          window: 5
+        });
+        console.log('- Large window result:', resultLargeWindow);
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error verifying token:', error);
       return false;
