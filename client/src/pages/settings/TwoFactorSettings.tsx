@@ -106,7 +106,9 @@ export default function TwoFactorSettings() {
       setBackupCodes(data.data.backupCodes);
       setShowBackupCodes(true);
       setIsSetupDialogOpen(false);
+      // Invalidate both 2FA status and user data to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['/api/2fa/status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
       toast({
         title: 'Two-Factor Authentication Enabled',
         description: 'Your account is now protected with 2FA.',
