@@ -401,14 +401,32 @@ router.get('/status', isAuthenticated, async (req: AuthenticatedRequest, res: Re
       });
     }
 
-    const backupCodes = user.twoFactorBackupCodes 
-      ? JSON.parse(user.twoFactorBackupCodes) 
+    console.log('2FA Status Debug:');
+    console.log('- User ID:', user.id);
+    console.log('- Session user twoFactorEnabled:', user.twoFactorEnabled);
+    
+    // Get fresh user data from database to ensure we have the latest info
+    const freshUser = await storage.getUserById(user.id);
+    console.log('- Fresh user twoFactorEnabled:', freshUser?.twoFactorEnabled);
+    
+    if (!freshUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    const backupCodes = freshUser.twoFactorBackupCodes 
+      ? JSON.parse(freshUser.twoFactorBackupCodes) 
       : [];
+
+    console.log('- Backup codes count:', backupCodes.length);
+    console.log('- Final enabled status:', freshUser.twoFactorEnabled || false);
 
     res.json({
       success: true,
       data: {
-        enabled: user.twoFactorEnabled || false,
+        enabled: freshUser.twoFactorEnabled || false,
         backupCodesCount: backupCodes.length
       }
     });
