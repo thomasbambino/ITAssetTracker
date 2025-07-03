@@ -8,11 +8,12 @@ import { Separator } from "@/components/ui/separator";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Shield } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { EmailSettingsForm } from "@/components/forms/EmailSettingsForm";
+import { Link } from "wouter";
 
 export default function Settings() {
   const { toast } = useToast();
@@ -64,6 +65,7 @@ export default function Settings() {
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="import">Import/Export</TabsTrigger>
@@ -98,6 +100,38 @@ export default function Settings() {
               <Button className="mt-4">Save Changes</Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="mt-0">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Security Settings
+                </CardTitle>
+                <CardDescription>
+                  Manage your account security and authentication settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-medium">Two-Factor Authentication</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Add an extra layer of security to your account with 2FA
+                    </p>
+                  </div>
+                  <Link href="/settings/two-factor">
+                    <Button variant="outline">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Configure 2FA
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="email" className="mt-0">

@@ -10,6 +10,7 @@ import path from 'path';
 import session from "express-session";
 import authRoutes from "./auth-routes";
 import emailRoutes from "./email-routes";
+import twoFactorRoutes from "./two-factor-routes";
 import { isAuthenticated, isAdmin } from "./auth";
 import mailgunService from "./direct-mailgun";
 
@@ -25,6 +26,17 @@ interface SessionData {
   userId: number;
   userRole: 'admin' | 'user';
   passwordResetRequired: boolean;
+  pendingTwoFactorUserId?: number; // For 2FA verification flow
+}
+
+// Extend Express session to include our data
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    userRole?: 'admin' | 'user';
+    passwordResetRequired?: boolean;
+    pendingTwoFactorUserId?: number;
+  }
 }
 
 // Configure session types
@@ -48,6 +60,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register email routes
   app.use('/api', emailRoutes);
+  
+  // Register 2FA routes
+  app.use('/api/2fa', twoFactorRoutes);
   
   // Initialize API routes
   const apiRouter = app.route('/api');

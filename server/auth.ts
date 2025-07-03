@@ -27,17 +27,35 @@ export function generateTempPassword(length: number = 8): string {
   return result;
 }
 
-// Middleware: Check if user is authenticated
-export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
-  // @ts-ignore - session is added by express-session
-  if (req.session && req.session.userId) {
-    return next();
+// Extended Request interface to include user property
+export interface AuthenticatedRequest extends Request {
+  user?: User;
+}
+
+// Middleware: Check if user is authenticated and attach user to request
+export async function isAuthenticated(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    // @ts-ignore - session is added by express-session
+    if (req.session && req.session.userId) {
+      // Load user data and attach to request
+      const user = await storage.getUserById(req.session.userId);
+      if (user) {
+        req.user = user;
+        return next();
+      }
+    }
+    
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
+  } catch (error) {
+    console.error('Authentication middleware error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Authentication error'
+    });
   }
-  
-  return res.status(401).json({
-    success: false,
-    message: 'Authentication required'
-  });
 }
 
 // Middleware: Check if user is admin
@@ -73,6 +91,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<{
   message?: string;
   user?: User;
   passwordResetRequired?: boolean;
+  requiresTwoFactor?: boolean;
 }> {
   try {
     // Find user by email
@@ -102,6 +121,20 @@ export async function loginUser(credentials: LoginCredentials): Promise<{
       return {
         success: false,
         message: 'Invalid email or password'
+      };
+    }
+    
+    // Check if 2FA is enabled for this user
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
+      // Don't update last login yet - wait for 2FA verification
+      // Check if password reset is required
+      const passwordResetRequired = user.passwordResetRequired || false;
+      
+      return {
+        success: true,
+        requiresTwoFactor: true,
+        passwordResetRequired,
+        message: '2FA verification required'
       };
     }
     

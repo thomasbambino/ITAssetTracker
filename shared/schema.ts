@@ -39,6 +39,9 @@ export const users = pgTable("users", {
   role: text("role").default('user'),
   active: boolean("active").default(true),
   lastLogin: timestamp("last_login"),
+  twoFactorSecret: text("two_factor_secret"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  twoFactorBackupCodes: text("two_factor_backup_codes"), // JSON array of backup codes
   createdAt: timestamp("created_at").defaultNow(),
 });
 

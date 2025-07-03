@@ -12,32 +12,49 @@ router.post('/login', async (req: Request, res: Response) => {
     const credentials = req.body as LoginCredentials;
     const result = await loginUser(credentials);
 
-    if (result.success && result.user) {
-      // Store user info in session
-      req.session.userId = result.user.id;
-      req.session.userRole = result.user.role;
-      req.session.passwordResetRequired = result.passwordResetRequired;
-      
-      // Don't send password-related fields to the client
-      const { 
-        passwordHash, 
-        passwordSalt, 
-        tempPassword, 
-        tempPasswordExpiry, 
-        ...safeUserData 
-      } = result.user;
-      
-      return res.status(200).json({
-        success: true,
-        user: safeUserData,
-        passwordResetRequired: result.passwordResetRequired
-      });
-    } else {
-      return res.status(401).json({
-        success: false,
-        message: result.message || 'Invalid credentials'
-      });
+    if (result.success) {
+      if (result.requiresTwoFactor) {
+        // Store user ID temporarily for 2FA verification
+        const user = await storage.getUserByEmail(credentials.email);
+        if (user) {
+          req.session.pendingTwoFactorUserId = user.id;
+        }
+        
+        return res.status(200).json({
+          success: true,
+          requiresTwoFactor: true,
+          message: result.message,
+          passwordResetRequired: result.passwordResetRequired
+        });
+      } else if (result.user) {
+        // Store user info in session for completed login
+        req.session.userId = result.user.id;
+        req.session.userRole = (result.user.role || 'user') as 'user' | 'admin';
+        req.session.passwordResetRequired = Boolean(result.passwordResetRequired);
+        
+        // Don't send password-related fields to the client
+        const { 
+          passwordHash, 
+          passwordSalt, 
+          tempPassword, 
+          tempPasswordExpiry, 
+          twoFactorSecret,
+          twoFactorBackupCodes,
+          ...safeUserData 
+        } = result.user;
+        
+        return res.status(200).json({
+          success: true,
+          user: safeUserData,
+          passwordResetRequired: result.passwordResetRequired
+        });
+      }
     }
+    
+    return res.status(401).json({
+      success: false,
+      message: result.message || 'Invalid credentials'
+    });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({

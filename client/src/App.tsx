@@ -15,6 +15,7 @@ import SoftwareDetails from "@/pages/software/[id]";
 import History from "@/pages/history";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import TwoFactorSettings from "@/pages/settings/TwoFactorSettings";
 import Maintenance from "@/pages/maintenance";
 import Notifications from "@/pages/notifications";
 import QrCodes from "@/pages/qrcodes";
@@ -97,6 +98,7 @@ function MainRouter() {
         <Route path="/devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
         <Route path="/software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
         <Route path="/notifications" component={() => <ProtectedPageWrapper component={Notifications} />} />
+        <Route path="/settings/two-factor" component={() => <ProtectedPageWrapper component={TwoFactorSettings} />} />
         {/* Redirect all other routes to user dashboard */}
         <Route component={() => <ProtectedPageWrapper component={UserDashboard} />} />
       </Switch>
@@ -122,6 +124,7 @@ function MainRouter() {
       <Route path="/history" component={() => <ProtectedPageWrapper component={History} adminRequired />} />
       <Route path="/reports" component={() => <ProtectedPageWrapper component={Reports} adminRequired />} />
       <Route path="/settings" component={() => <ProtectedPageWrapper component={Settings} adminRequired />} />
+      <Route path="/settings/two-factor" component={() => <ProtectedPageWrapper component={TwoFactorSettings} />} />
       <Route path="/management/intune" component={() => <ProtectedPageWrapper component={IntuneManagement} adminRequired />} />
       <Route path="/management/status" component={() => <ProtectedPageWrapper component={DeviceManagement} adminRequired />} />
       <Route path="/sites" component={() => <ProtectedPageWrapper component={Sites} adminRequired />} />

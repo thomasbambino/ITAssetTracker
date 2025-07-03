@@ -11,6 +11,7 @@ import { loginSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Loader2, ServerIcon } from "lucide-react";
+import TwoFactorVerification from "@/components/auth/TwoFactorVerification";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,8 @@ interface BrandingSettings {
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false);
   const { toast } = useToast();
   const [_, navigate] = useLocation();
   
@@ -71,16 +74,21 @@ export default function LoginPage() {
       console.log("Login response:", data);
 
       if (data.success) {
-        // No toast notification on login success
-        
-        // Add a small delay to allow session to be properly established
-        setTimeout(() => {
-          if (data.passwordResetRequired) {
-            navigate("/auth/reset-password");
-          } else {
-            navigate("/");
-          }
-        }, 300);
+        if (data.requiresTwoFactor) {
+          // Show 2FA verification form
+          setRequiresTwoFactor(true);
+        } else {
+          // Complete login - No toast notification on login success
+          
+          // Add a small delay to allow session to be properly established
+          setTimeout(() => {
+            if (data.passwordResetRequired) {
+              navigate("/auth/reset-password");
+            } else {
+              navigate("/");
+            }
+          }, 300);
+        }
       } else {
         toast({
           title: "Login failed",
@@ -104,6 +112,39 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  const handleTwoFactorSuccess = (result: any) => {
+    setTwoFactorLoading(false);
+    
+    // Complete login
+    setTimeout(() => {
+      if (result.data?.user?.passwordResetRequired) {
+        navigate("/auth/reset-password");
+      } else {
+        navigate("/");
+      }
+    }, 300);
+  };
+
+  const handleTwoFactorError = (error: string) => {
+    setTwoFactorLoading(false);
+    toast({
+      title: "Verification failed",
+      description: error,
+      variant: "destructive",
+    });
+  };
+
+  // Show 2FA verification form if required
+  if (requiresTwoFactor) {
+    return (
+      <TwoFactorVerification
+        onSuccess={handleTwoFactorSuccess}
+        onError={handleTwoFactorError}
+        isLoading={twoFactorLoading}
+      />
+    );
   }
 
   // Show loading animation when branding data is loading
