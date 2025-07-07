@@ -49,13 +49,11 @@ export default function NotificationsPage() {
   
   const currentUserId = currentUser?.id;
   
-  // Group problem report notifications by thread for regular users
+  // Group problem report notifications by thread for all users
   const processNotifications = (notifs: Notification[]) => {
-    if (!currentUser || currentUser.role === 'admin') {
-      return notifs; // Admins see all notifications individually
-    }
+    if (!currentUser) return notifs;
     
-    // For regular users, group problem reports by relatedId to show as threads
+    // For all users, group problem reports by relatedId to show as threads
     const problemReportThreads = new Map();
     const otherNotifications: Notification[] = [];
     
@@ -65,7 +63,7 @@ export default function NotificationsPage() {
           problemReportThreads.set(notif.relatedId, {
             ...notif,
             title: notif.title.replace('Problem Report: ', 'Issue Thread: '),
-            message: 'Click to view conversation and reply to messages'
+            message: currentUser.role === 'admin' ? 'Click to view conversation and manage ticket' : 'Click to view conversation and reply to messages'
           });
         }
         // Update to show unread if any message in the thread is unread
@@ -113,13 +111,16 @@ export default function NotificationsPage() {
     }
   };
 
-  // Delete notification
+  // Delete notification or archive problem report
   const deleteNotification = async (notification: Notification) => {
     try {
-      await apiRequest(
-        "DELETE",
-        `/api/notifications/${notification.id}`
-      );
+      if (notification.type === 'problem_report' && notification.relatedId && currentUser?.role === 'admin') {
+        // For admin problem reports, archive the problem report
+        await apiRequest("POST", `/api/problem-reports/${notification.relatedId}/archive`);
+      } else {
+        // For regular notifications, delete the notification
+        await apiRequest("DELETE", `/api/notifications/${notification.id}`);
+      }
       
       // Invalidate queries to refresh the list
       queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}/notifications`] });

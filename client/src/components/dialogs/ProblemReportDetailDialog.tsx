@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   Dialog,
@@ -79,6 +79,8 @@ interface ProblemReportMessage {
 export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: ProblemReportDetailDialogProps) {
   const [newMessage, setNewMessage] = useState("");
   const [isInternalMessage, setIsInternalMessage] = useState(false);
+  const [previousMessageCount, setPreviousMessageCount] = useState(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -95,6 +97,36 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
     refetchInterval: isOpen ? 5000 : false, // Refresh every 5 seconds when dialog is open
     refetchOnWindowFocus: true, // Refresh when window regains focus
   });
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      // Check if we have new messages
+      if (messages.length > previousMessageCount && previousMessageCount > 0) {
+        // Play notification sound
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBzg=');
+        audio.volume = 0.3;
+        audio.play().catch(() => {
+          // Silently fail if audio can't be played
+        });
+      }
+      
+      // Update message count
+      setPreviousMessageCount(messages.length);
+      
+      // Scroll to bottom
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages.length, previousMessageCount]);
+
+  // Initial scroll to bottom when dialog opens
+  useEffect(() => {
+    if (isOpen && messages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [isOpen, messages.length]);
 
   const { data: adminUsers = [] } = useQuery<any[]>({
     queryKey: ['/api/users'],
@@ -427,6 +459,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                     </div>
                   ))
                 )}
+                <div ref={messagesEndRef} />
               </div>
 
               <Separator className="my-4" />
