@@ -238,7 +238,7 @@ export default function NotificationsPage() {
 
   // Get class based on notification type
   const getNotificationClass = (type: string, isRead: boolean) => {
-    const baseClass = isRead ? "bg-muted/50" : "bg-white";
+    const baseClass = isRead ? "bg-muted/50" : "bg-card dark:bg-card";
     
     switch (type) {
       case "warranty_expiry":

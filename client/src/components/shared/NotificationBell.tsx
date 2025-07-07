@@ -48,52 +48,41 @@ export function NotificationBell() {
     refetchOnWindowFocus: true, // Refresh when window regains focus
   });
 
-  // Initialize audio element for notification sound
+  // Initialize audio for notification sound
   useEffect(() => {
-    // Create a simple beep sound using AudioContext for better browser compatibility
-    const createNotificationSound = () => {
-      try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        
-        // Resume context if it's suspended (Chrome autoplay policy)
-        if (audioContext.state === 'suspended') {
-          audioContext.resume();
-        }
-        
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.08, audioContext.currentTime + 0.01);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.4);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.4);
-      } catch (error) {
-        console.log('AudioContext not supported:', error);
-      }
-    };
+    // Use a simple Audio element approach for better compatibility
+    const audio = new Audio();
+    audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjMZ4/K+diMFDILO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFKIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMF';
+    audio.volume = 0.15;
+    audio.preload = 'auto';
     
-    audioRef.current = { play: createNotificationSound };
+    audioRef.current = audio;
   }, []);
 
   // Play notification sound when new notifications arrive
   useEffect(() => {
     if (unreadNotifications.length > previousNotificationCount && previousNotificationCount > 0) {
       // New notification arrived, play sound
-      if (audioRef.current && audioRef.current.play) {
+      console.log('New notification detected, attempting to play sound');
+      if (audioRef.current) {
         try {
-          audioRef.current.play();
+          // Reset the audio to beginning and play
+          audioRef.current.currentTime = 0;
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log('Audio notification played successfully');
+              })
+              .catch((error) => {
+                console.log('Audio notification not played:', error);
+              });
+          }
         } catch (error) {
-          // Ignore errors if audio can't play (e.g., user hasn't interacted with page)
-          console.log('Audio notification not played:', error);
+          console.log('Audio notification error:', error);
         }
+      } else {
+        console.log('Audio ref not available');
       }
     }
     setPreviousNotificationCount(unreadNotifications.length);
