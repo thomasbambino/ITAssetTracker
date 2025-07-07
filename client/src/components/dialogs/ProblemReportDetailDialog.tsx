@@ -130,6 +130,51 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
     }
   }, [isOpen, messages.length]);
 
+  // Mark problem report notifications as read when dialog opens
+  useEffect(() => {
+    if (isOpen && user && problemReportId) {
+      // Mark related problem report notifications as read
+      const markNotificationsAsRead = async () => {
+        try {
+          // Get user's notifications to find problem report ones
+          const notifications = await apiRequest({ 
+            url: `/api/users/${user.id}/notifications`, 
+            method: 'GET' 
+          });
+          
+          // Find notifications related to this problem report
+          const problemReportNotifications = notifications.filter((notif: any) => 
+            notif.type === 'problem_report' && 
+            notif.relatedId === problemReportId && 
+            !notif.isRead
+          );
+          
+          // Mark each as read
+          for (const notif of problemReportNotifications) {
+            await apiRequest({ 
+              url: `/api/notifications/${notif.id}/read`, 
+              method: 'POST' 
+            });
+          }
+          
+          // Invalidate notifications cache to update UI
+          if (problemReportNotifications.length > 0) {
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/users/${user.id}/notifications`] 
+            });
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/users/${user.id}/notifications/unread`] 
+            });
+          }
+        } catch (error) {
+          console.error('Error marking notifications as read:', error);
+        }
+      };
+      
+      markNotificationsAsRead();
+    }
+  }, [isOpen, user, problemReportId]);
+
   const { data: adminUsers = [] } = useQuery<any[]>({
     queryKey: ['/api/users'],
     select: (users) => users.filter(user => user.role === 'admin'),
