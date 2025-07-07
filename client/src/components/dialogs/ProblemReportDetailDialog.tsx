@@ -298,7 +298,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
@@ -417,7 +417,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
 
           {/* Right Side - Messages */}
           <div className="lg:col-span-2 flex flex-col min-h-0">
-            <Card className="flex-1 flex flex-col">
+            <Card className="flex-1 flex flex-col max-h-full">
             <CardHeader className="flex-shrink-0">
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
@@ -425,7 +425,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col min-h-0">
-              <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
+              <div className="space-y-4 flex-1 overflow-y-auto max-h-[calc(90vh-240px)]">
                 {messagesLoading ? (
                   <div className="text-center py-4">Loading messages...</div>
                 ) : messages.length === 0 ? (
