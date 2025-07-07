@@ -1,318 +1,273 @@
-import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  User, 
-  Calendar, 
-  MessageSquare, 
-  Send, 
-  AlertTriangle, 
-  Clock, 
-  CheckCircle, 
-  Archive,
-  EyeOff,
-  Users
-} from "lucide-react";
-import { formatDateTime } from "@/lib/utils";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-
-interface ProblemReportDetailDialogProps {
-  problemReportId: number;
-  isOpen: boolean;
-  onClose: () => void;
-}
+} from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertTriangle, User, Calendar, MessageSquare, Send, Archive, Users } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { formatDateTime } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProblemReport {
   id: number;
-  userId: number;
-  type: string;
-  itemId: number;
   subject: string;
   description: string;
-  priority: "low" | "medium" | "high" | "urgent";
-  status: "open" | "in_progress" | "completed" | "archived";
-  assignedToId?: number;
-  createdAt: string;
-  updatedAt: string;
-  completedAt?: string;
-  completedById?: number;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'open' | 'in_progress' | 'completed' | 'archived';
+  userId: number;
   userFirstName: string;
   userLastName: string;
+  assignedToId?: number;
   assignedToFirstName?: string;
   assignedToLastName?: string;
+  completedAt?: string;
   completedByFirstName?: string;
   completedByLastName?: string;
+  createdAt: string;
 }
 
 interface ProblemReportMessage {
   id: number;
   problemReportId: number;
   userId: number;
+  userFirstName: string;
+  userLastName: string;
   message: string;
   isInternal: boolean;
   createdAt: string;
-  userFirstName: string;
-  userLastName: string;
-  userRole: string;
 }
 
-export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: ProblemReportDetailDialogProps) {
-  const [newMessage, setNewMessage] = useState("");
-  const [isInternalMessage, setIsInternalMessage] = useState(false);
+interface User {
+  id: number;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+interface ProblemReportDetailDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  reportId: number;
+  user: User | null;
+}
+
+export function ProblemReportDetailDialog({
+  open,
+  onOpenChange,
+  reportId,
+  user,
+}: ProblemReportDetailDialogProps) {
+  const [message, setMessage] = useState('');
+  const [isInternal, setIsInternal] = useState(false);
   const [previousMessageCount, setPreviousMessageCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: report, isLoading } = useQuery<ProblemReport>({
-    queryKey: ['/api/problem-reports', problemReportId],
-    queryFn: () => apiRequest({ url: `/api/problem-reports/${problemReportId}`, method: 'GET' }),
-    enabled: !!problemReportId && isOpen
+  // Fetch problem report
+  const { data: report, isLoading: reportLoading } = useQuery<ProblemReport>({
+    queryKey: [`/api/problem-reports/${reportId}`],
+    enabled: open && !!reportId,
   });
 
+  // Fetch messages
   const { data: messages = [], isLoading: messagesLoading } = useQuery<ProblemReportMessage[]>({
-    queryKey: ['/api/problem-reports', problemReportId, 'messages'],
-    queryFn: () => apiRequest({ url: `/api/problem-reports/${problemReportId}/messages`, method: 'GET' }),
-    enabled: !!problemReportId && isOpen,
-    refetchInterval: isOpen ? 5000 : false, // Refresh every 5 seconds when dialog is open
-    refetchOnWindowFocus: true, // Refresh when window regains focus
+    queryKey: [`/api/problem-reports/${reportId}/messages`],
+    enabled: open && !!reportId,
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 
-  // Auto-scroll to bottom when new messages arrive
+  // Fetch admin users
+  const { data: adminUsers = [] } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    select: (users) => users.filter(u => u.role === 'admin'),
+    enabled: open && user?.role === 'admin',
+  });
+
+  // Auto-scroll and sound notification when new messages arrive
   useEffect(() => {
     if (messages.length > 0) {
-      // Check if we have new messages
       if (messages.length > previousMessageCount && previousMessageCount > 0) {
-        // Play notification sound
+        // Simple beep notification
         try {
-          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAZBSuTze/LgyQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCrfD7pGUaFjmXz+/GgiQELYDT8+CJOwgOY7bt6KNPFAuCurqOjbEVE=');
-          audio.volume = 0.1;
-          audio.play().catch(console.error);
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          gainNode.gain.value = 0.1;
+          oscillator.frequency.value = 800;
+          oscillator.type = 'sine';
+          
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.1);
         } catch (error) {
-          console.error('Audio playback failed:', error);
+          console.log('Audio not available');
         }
       }
-      
-      // Update message count
       setPreviousMessageCount(messages.length);
       
-      // Scroll to bottom
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages.length, previousMessageCount]);
-
-  // Initial scroll to bottom when dialog opens
-  useEffect(() => {
-    if (isOpen && messages.length > 0) {
+      // Smooth scroll to bottom
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     }
-  }, [isOpen, messages.length]);
+  }, [messages.length, previousMessageCount]);
 
-  const { data: adminUsers = [] } = useQuery<any[]>({
-    queryKey: ['/api/users'],
-    select: (users) => users.filter(user => user.role === 'admin'),
-    enabled: user?.role === 'admin'
-  });
-
+  // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string; isInternal: boolean }) => {
-      return apiRequest({
-        url: `/api/problem-reports/${problemReportId}/messages`,
+      return apiRequest(`/api/problem-reports/${reportId}/messages`, {
         method: 'POST',
-        data
+        body: JSON.stringify(data),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId, 'messages'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
-      setNewMessage("");
-      setIsInternalMessage(false);
-      toast({
-        title: "Message Sent",
-        description: "Your message has been added to the conversation.",
-      });
+      setMessage('');
+      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}/messages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}`] });
     },
     onError: (error: any) => {
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: error?.message || "Failed to send message.",
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to send message',
       });
     },
   });
 
-  const updateReportMutation = useMutation({
-    mutationFn: async (updates: any) => {
-      return apiRequest({
-        url: `/api/problem-reports/${problemReportId}`,
-        method: 'PUT',
-        data: updates
+  // Update assignment mutation
+  const updateAssignmentMutation = useMutation({
+    mutationFn: async (assignedToId: number | null) => {
+      return apiRequest(`/api/problem-reports/${reportId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ assignedToId }),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}`] });
       toast({
-        title: "Report Updated",
-        description: "The problem report has been updated successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error?.message || "Failed to update report.",
+        title: 'Success',
+        description: 'Assignment updated successfully',
       });
     },
   });
 
-  const completeReportMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest({
-        url: `/api/problem-reports/${problemReportId}/complete`,
-        method: 'POST'
+  // Update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async (status: string) => {
+      return apiRequest(`/api/problem-reports/${reportId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}`] });
       toast({
-        title: "Report Completed",
-        description: "The problem report has been marked as completed.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error?.message || "Failed to complete report.",
+        title: 'Success',
+        description: 'Status updated successfully',
       });
     },
   });
 
+  // Archive report mutation
   const archiveReportMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest({
-        url: `/api/problem-reports/${problemReportId}/archive`,
-        method: 'POST'
+      return apiRequest(`/api/problem-reports/${reportId}/archive`, {
+        method: 'POST',
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
-      onClose();
+      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}`] });
+      onOpenChange(false);
       toast({
-        title: "Report Archived",
-        description: "The problem report has been archived.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error?.message || "Failed to archive report.",
+        title: 'Success',
+        description: 'Problem report archived successfully',
       });
     },
   });
+
+  const handleSendMessage = () => {
+    if (!message.trim()) return;
+    sendMessageMutation.mutate({ message: message.trim(), isInternal });
+  };
+
+  const handleAssignmentChange = (value: string) => {
+    const assignedToId = value === 'unassigned' ? null : parseInt(value);
+    updateAssignmentMutation.mutate(assignedToId);
+  };
+
+  const handleStatusChange = (status: string) => {
+    updateStatusMutation.mutate(status);
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "low": return "bg-blue-100 text-blue-800";
-      case "medium": return "bg-yellow-100 text-yellow-800";
-      case "high": return "bg-orange-100 text-orange-800";
-      case "urgent": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case 'urgent': return 'bg-red-500 text-white';
+      case 'high': return 'bg-orange-500 text-white';
+      case 'medium': return 'bg-yellow-500 text-black';
+      case 'low': return 'bg-green-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "open": return "bg-red-100 text-red-800";
-      case "in_progress": return "bg-yellow-100 text-yellow-800";
-      case "completed": return "bg-green-100 text-green-800";
-      case "archived": return "bg-gray-100 text-gray-800";
-      default: return "bg-gray-100 text-gray-800";
+      case 'open': return 'border-blue-500 text-blue-600';
+      case 'in_progress': return 'border-yellow-500 text-yellow-600';
+      case 'completed': return 'border-green-500 text-green-600';
+      case 'archived': return 'border-gray-500 text-gray-600';
+      default: return 'border-gray-500 text-gray-600';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "open": return <AlertTriangle className="h-4 w-4" />;
-      case "in_progress": return <Clock className="h-4 w-4" />;
-      case "completed": return <CheckCircle className="h-4 w-4" />;
-      case "archived": return <Archive className="h-4 w-4" />;
-      default: return <AlertTriangle className="h-4 w-4" />;
+      case 'open': return '🔵';
+      case 'in_progress': return '🟡';
+      case 'completed': return '✅';
+      case 'archived': return '📦';
+      default: return '⚪';
     }
   };
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    
-    sendMessageMutation.mutate({
-      message: newMessage.trim(),
-      isInternal: isInternalMessage
-    });
-  };
-
-  const handleAssignmentChange = (userId: string) => {
-    updateReportMutation.mutate({
-      assignedToId: userId === "unassigned" ? null : parseInt(userId)
-    });
-  };
-
-  const handleStatusChange = (status: string) => {
-    updateReportMutation.mutate({ status });
-  };
-
-  if (isLoading || !report) {
+  if (reportLoading || !report) {
     return (
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="text-center py-8">Loading problem report...</div>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-[95vw] w-full h-[95vh] flex flex-col">
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">Loading...</div>
+          </div>
         </DialogContent>
       </Dialog>
     );
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            {report.subject}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[95vw] w-full h-[95vh] flex flex-col p-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-xl font-semibold">
+            Problem Report Details
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Side - Report Details */}
-          <div className="lg:col-span-1 space-y-4">
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Panel - Report Details (1/3 width) */}
+          <div className="w-1/3 border-r overflow-y-auto p-4 space-y-4">
             <Card>
-              <CardHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
+              <CardHeader className="pb-3">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Badge className={getPriorityColor(report.priority)}>
                       {report.priority.toUpperCase()}
@@ -325,7 +280,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                   <CardTitle className="text-lg leading-tight">{report.subject}</CardTitle>
                 </div>
 
-                <div className="space-y-3 text-sm text-muted-foreground">
+                <div className="space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 flex-shrink-0" />
                     <span>{report.userFirstName} {report.userLastName}</span>
@@ -343,7 +298,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                 </div>
 
                 {user?.role === 'admin' && report.status !== 'archived' && (
-                  <div className="space-y-3 pt-2 border-t">
+                  <div className="space-y-3 pt-3 border-t">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-muted-foreground">Assigned To</label>
                       <Select
@@ -391,144 +346,118 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                     )}
                   </div>
                 )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2 text-sm">Description</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{report.description}</p>
-                </div>
-                {report.completedAt && (
-                  <div className="pt-2 border-t">
-                    <h4 className="font-medium mb-2 text-sm">Completed</h4>
-                    <p className="text-xs text-muted-foreground">
-                      Completed on {formatDateTime(report.completedAt)}
-                      {report.completedByFirstName && (
-                        <span> by {report.completedByFirstName} {report.completedByLastName}</span>
-                      )}
-                    </p>
+              </CardHeader>
+              
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium mb-2 text-sm">Description</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{report.description}</p>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  {report.completedAt && (
+                    <div className="pt-2 border-t">
+                      <h4 className="font-medium mb-2 text-sm">Completed</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Completed on {formatDateTime(report.completedAt)}
+                        {report.completedByFirstName && (
+                          <span> by {report.completedByFirstName} {report.completedByLastName}</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Right Side - Messages */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Conversation ({messages.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                {messagesLoading ? (
-                  <div className="text-center py-4">Loading messages...</div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center py-4 text-muted-foreground">
-                    No messages yet. Start the conversation!
-                  </div>
-                ) : (
-                  messages
-                    .filter(message => user?.role === 'admin' || !message.isInternal) // Show all messages to admins, only non-internal to users
-                    .map((message) => (
-                    <div key={message.id} className="space-y-2">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm">
-                              {message.userFirstName} {message.userLastName}
-                            </span>
-                            <Badge 
-                              variant={message.userRole === 'admin' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {message.userRole === 'admin' ? 'Admin' : 'User'}
-                            </Badge>
-                            {message.isInternal && (
-                              <Badge variant="outline" className="text-xs">
-                                <EyeOff className="h-3 w-3 mr-1" />
-                                Internal
-                              </Badge>
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              {formatDateTime(message.createdAt)}
-                            </span>
-                          </div>
-                          <div className={`p-3 rounded-lg ${
-                            message.userRole === 'admin' 
-                              ? message.isInternal 
-                                ? 'bg-orange-50 border border-orange-200' 
-                                : 'bg-blue-50 border border-blue-200'
-                              : 'bg-gray-50 border border-gray-200'
-                          }`}>
-                            <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                          </div>
-                        </div>
-                      </div>
+          {/* Right Panel - Conversation (2/3 width) */}
+          <div className="flex-1 flex flex-col">
+            <Card className="flex-1 flex flex-col m-4 mb-0">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MessageSquare className="h-5 w-5" />
+                  Conversation ({messages.length})
+                </CardTitle>
+              </CardHeader>
+              
+              <CardContent className="flex-1 flex flex-col p-0">
+                {/* Messages Area - Scrollable */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {messagesLoading ? (
+                    <div className="text-center py-4">Loading messages...</div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No messages yet. Start the conversation!
                     </div>
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              <Separator className="my-4" />
-
-              {/* Message Input - Show for admins or original reporter if not archived */}
-              {report.status !== 'archived' && (user?.role === 'admin' || report.userId === user?.id) && (
-                <div className="space-y-3">
-                  <Textarea
-                    placeholder="Type your message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    className="min-h-[100px]"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.ctrlKey) {
-                        handleSendMessage();
-                      }
-                    }}
-                  />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {user?.role === 'admin' && (
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="internal"
-                            checked={isInternalMessage}
-                            onCheckedChange={setIsInternalMessage}
-                          />
-                          <label
-                            htmlFor="internal"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1"
-                          >
-                            <EyeOff className="h-3 w-3" />
-                            Internal message (admin only)
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Ctrl+Enter to send</span>
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                        size="sm"
+                  ) : (
+                    messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`p-3 rounded-lg ${
+                          msg.userId === user?.id
+                            ? 'bg-blue-100 ml-auto max-w-[80%]'
+                            : 'bg-gray-100 mr-auto max-w-[80%]'
+                        }`}
                       >
-                        <Send className="h-4 w-4 mr-1" />
-                        Send
-                      </Button>
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-medium text-sm">
+                            {msg.userFirstName} {msg.userLastName}
+                          </span>
+                          {msg.isInternal && user?.role === 'admin' && (
+                            <Badge variant="secondary" className="text-xs ml-2">Internal</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm">{msg.message}</p>
+                        <span className="text-xs text-muted-foreground mt-1 block">
+                          {formatDateTime(msg.createdAt)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Message Input - Fixed at bottom */}
+                <div className="border-t p-4 space-y-3">
+                  {user?.role === 'admin' && (
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium">Message Type:</label>
+                      <Select value={isInternal ? 'internal' : 'external'} onValueChange={(value) => setIsInternal(value === 'internal')}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="external">External</SelectItem>
+                          <SelectItem value="internal">Internal</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+                  )}
+                  
+                  <div className="flex gap-2">
+                    <Textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Type your message..."
+                      className="flex-1 min-h-[80px] resize-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!message.trim() || sendMessageMutation.isPending}
+                      className="self-end"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </DialogContent>
