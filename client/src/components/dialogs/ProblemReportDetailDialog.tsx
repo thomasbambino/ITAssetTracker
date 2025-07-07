@@ -129,17 +129,26 @@ export function ProblemReportDetailDialog({
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string; isInternal: boolean }) => {
-      return apiRequest(`/api/problem-reports/${reportId}/messages`, {
+      console.log('Mutation function called with:', data, 'reportId:', reportId);
+      const response = await apiRequest(`/api/problem-reports/${reportId}/messages`, {
         method: 'POST',
         body: JSON.stringify(data),
       });
+      console.log('Mutation response:', response);
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Message sent successfully:', data);
       setMessage('');
       queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId, 'messages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId] });
+      toast({
+        title: 'Message sent',
+        description: 'Your message has been sent successfully',
+      });
     },
     onError: (error: any) => {
+      console.error('Message sending error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -247,7 +256,7 @@ export function ProblemReportDetailDialog({
   if (reportLoading || !report) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col">
+        <DialogContent className="w-[95vw] max-w-none h-[85vh] flex flex-col p-0 m-4">
           <DialogTitle className="sr-only">Problem Report Details</DialogTitle>
           <div className="flex items-center justify-center h-full">
             <div className="text-center">Loading...</div>
@@ -259,16 +268,16 @@ export function ProblemReportDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col p-0">
+      <DialogContent className="w-[95vw] max-w-none h-[85vh] flex flex-col p-0 m-4">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-xl font-semibold">
             Problem Report Details
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden min-h-0">
           {/* Left Panel - Report Details (1/3 width) */}
-          <div className="w-1/3 border-r overflow-y-auto p-4 space-y-4">
+          <div className="w-1/3 border-r overflow-y-auto p-4 space-y-4 flex-shrink-0">
             <Card>
               <CardHeader className="pb-3">
                 <div className="space-y-3">
@@ -375,7 +384,7 @@ export function ProblemReportDetailDialog({
           </div>
 
           {/* Right Panel - Conversation (2/3 width) */}
-          <div className="flex-1 flex flex-col">
+          <div className="w-2/3 flex flex-col min-w-0 flex-shrink-0">
             <Card className="flex-1 flex flex-col m-4 mb-0">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -384,9 +393,9 @@ export function ProblemReportDetailDialog({
                 </CardTitle>
               </CardHeader>
               
-              <CardContent className="flex-1 flex flex-col p-0">
+              <CardContent className="flex-1 flex flex-col p-0 min-h-0">
                 {/* Messages Area - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                   {messagesLoading ? (
                     <div className="text-center py-4">Loading messages...</div>
                   ) : messages.length === 0 ? (
