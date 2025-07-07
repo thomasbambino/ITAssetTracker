@@ -2463,7 +2463,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const sessionData = req.session as any;
-      const updates = req.body;
+      let updates = req.body;
       
       // Check if report exists and access permissions
       const existingReport = await storage.getProblemReportById(parseInt(id));
