@@ -74,13 +74,15 @@ export function ProblemReportDetailDialog({
 
   // Fetch problem report
   const { data: report, isLoading: reportLoading } = useQuery<ProblemReport>({
-    queryKey: [`/api/problem-reports/${reportId}`],
+    queryKey: ['/api/problem-reports', reportId],
+    queryFn: () => fetch(`/api/problem-reports/${reportId}`, { credentials: 'include' }).then(res => res.json()),
     enabled: open && !!reportId && !isNaN(reportId) && reportId > 0,
   });
 
   // Fetch messages
   const { data: messages = [], isLoading: messagesLoading } = useQuery<ProblemReportMessage[]>({
-    queryKey: [`/api/problem-reports/${reportId}/messages`],
+    queryKey: ['/api/problem-reports', reportId, 'messages'],
+    queryFn: () => fetch(`/api/problem-reports/${reportId}/messages`, { credentials: 'include' }).then(res => res.json()),
     enabled: open && !!reportId && !isNaN(reportId) && reportId > 0,
     refetchInterval: 5000, // Refresh every 5 seconds
   });
@@ -245,6 +247,7 @@ export function ProblemReportDetailDialog({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-[95vw] w-full h-[95vh] flex flex-col">
+          <DialogTitle className="sr-only">Problem Report Details</DialogTitle>
           <div className="flex items-center justify-center h-full">
             <div className="text-center">Loading...</div>
           </div>
