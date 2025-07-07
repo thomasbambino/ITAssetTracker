@@ -438,12 +438,12 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Badge className={getPriorityColor(report.priority)}>
-                      {report.priority.toUpperCase()}
+                    <Badge className={getPriorityColor(report.priority || 'medium')}>
+                      {(report.priority || 'medium').toUpperCase()}
                     </Badge>
-                    <Badge className={getStatusColor(report.status)} variant="outline">
-                      {getStatusIcon(report.status)}
-                      <span className="ml-1 capitalize">{report.status.replace('_', ' ')}</span>
+                    <Badge className={getStatusColor(report.status || 'open')} variant="outline">
+                      {getStatusIcon(report.status || 'open')}
+                      <span className="ml-1 capitalize">{(report.status || 'open').replace('_', ' ')}</span>
                     </Badge>
                   </div>
                   <CardTitle className="text-lg leading-tight">{report.subject}</CardTitle>
