@@ -23,9 +23,13 @@ export async function apiRequest({
   data?: any;
 }): Promise<any> {
   try {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json'
-    };
+    const headers: HeadersInit = {};
+    
+    // Don't set Content-Type for FormData, let the browser set it automatically
+    const isFormData = data instanceof FormData;
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
     
     const options: RequestInit = {
       method,
@@ -34,7 +38,7 @@ export async function apiRequest({
     };
     
     if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      options.body = JSON.stringify(data);
+      options.body = isFormData ? data : JSON.stringify(data);
     }
     
     console.log(`Making ${method} request to ${url}`, options);

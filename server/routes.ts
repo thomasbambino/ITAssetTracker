@@ -2673,7 +2673,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const files = req.files as Express.Multer.File[];
       
+      console.log('Attachment upload request received for problem report:', id);
+      console.log('Files received:', files?.length || 0);
+      console.log('Request body:', req.body);
+      console.log('Request files:', req.files);
+      
       if (!files || files.length === 0) {
+        console.log('No files found in request');
         return res.status(400).json({ message: "No files uploaded" });
       }
       
