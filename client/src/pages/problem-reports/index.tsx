@@ -369,9 +369,9 @@ export default function ProblemReportsPage() {
       {/* Problem Report Detail Dialog */}
       {selectedReportId && (
         <ProblemReportDetailDialog
-          reportId={selectedReportId}
-          open={!!selectedReportId}
-          onOpenChange={(open) => !open && setSelectedReportId(null)}
+          problemReportId={selectedReportId}
+          isOpen={!!selectedReportId}
+          onClose={() => setSelectedReportId(null)}
         />
       )}
     </PageContainer>
