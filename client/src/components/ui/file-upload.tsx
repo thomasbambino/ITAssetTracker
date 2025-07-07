@@ -11,6 +11,7 @@ interface FileUploadProps {
   maxSize?: number; // in bytes
   accept?: string;
   className?: string;
+  compact?: boolean;
 }
 
 export function FileUpload({ 
@@ -19,7 +20,8 @@ export function FileUpload({
   maxFiles = 5, 
   maxSize = 10 * 1024 * 1024, // 10MB
   accept = ".jpg,.jpeg,.png,.gif,.pdf",
-  className 
+  className,
+  compact = false
 }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -88,13 +90,14 @@ export function FileUpload({
     handleFiles(e.dataTransfer.files);
   };
 
-  const getFileIcon = (file: File) => {
+  const getFileIcon = (file: File, isCompact = false) => {
+    const size = isCompact ? "h-3 w-3" : "h-5 w-5";
     if (file.type.startsWith('image/')) {
-      return <Image className="h-5 w-5 text-blue-500" />;
+      return <Image className={`${size} text-blue-500`} />;
     } else if (file.type === 'application/pdf') {
-      return <FileText className="h-5 w-5 text-red-500" />;
+      return <FileText className={`${size} text-red-500`} />;
     }
-    return <FileText className="h-5 w-5 text-gray-500" />;
+    return <FileText className={`${size} text-gray-500`} />;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -106,11 +109,12 @@ export function FileUpload({
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn(compact ? "space-y-2" : "space-y-4", className)}>
       {/* Upload Area */}
       <div
         className={cn(
-          "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+          "border-2 border-dashed rounded-lg text-center cursor-pointer transition-colors",
+          compact ? "p-3" : "p-6",
           dragActive 
             ? "border-primary bg-primary/5" 
             : "border-muted-foreground/25 hover:border-primary/50",
@@ -122,16 +126,27 @@ export function FileUpload({
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
       >
-        <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-4" />
-        <p className="text-sm font-medium mb-2">
-          Drop files here or click to upload
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Images (JPEG, PNG, GIF) and PDFs up to {Math.round(maxSize / (1024 * 1024))}MB
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Maximum {maxFiles} files
-        </p>
+        {compact ? (
+          <div className="flex items-center justify-center gap-2">
+            <Upload className="h-4 w-4 text-muted-foreground" />
+            <p className="text-xs font-medium">
+              Drop files or click to upload
+            </p>
+          </div>
+        ) : (
+          <>
+            <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-4" />
+            <p className="text-sm font-medium mb-2">
+              Drop files here or click to upload
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Images (JPEG, PNG, GIF) and PDFs up to {Math.round(maxSize / (1024 * 1024))}MB
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Maximum {maxFiles} files
+            </p>
+          </>
+        )}
       </div>
 
       <input
@@ -154,32 +169,50 @@ export function FileUpload({
 
       {/* File List */}
       {files.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Selected Files:</h4>
+        <div className={cn(compact ? "space-y-1" : "space-y-2")}>
+          {!compact && <h4 className="text-sm font-medium">Selected Files:</h4>}
           {files.map((file, index) => (
-            <Card key={index} className="p-3">
-              <CardContent className="p-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {getFileIcon(file)}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(file.size)}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(index)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+            compact ? (
+              <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded text-xs">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {getFileIcon(file, true)}
+                  <span className="truncate font-medium">{file.name}</span>
+                  <span className="text-muted-foreground">({formatFileSize(file.size)})</span>
                 </div>
-              </CardContent>
-            </Card>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeFile(index)}
+                  className="h-6 w-6 p-0 ml-2"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <Card key={index} className="p-3">
+                <CardContent className="p-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {getFileIcon(file)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatFileSize(file.size)}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
           ))}
         </div>
       )}

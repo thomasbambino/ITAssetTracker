@@ -627,11 +627,16 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                     }}
                   />
                   
-                  {/* File Upload for new attachments */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Paperclip className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Add attachments</span>
+                  {/* Compact File Upload Section */}
+                  <div className="border rounded-lg p-2 bg-muted/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Paperclip className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Attachments</span>
+                      {attachments.length > 0 && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                          {attachments.length} file{attachments.length !== 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
                     <FileUpload 
                       files={attachments} 
@@ -639,7 +644,8 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                       maxFiles={3}
                       maxSize={10 * 1024 * 1024} // 10MB
                       accept=".jpg,.jpeg,.png,.gif,.pdf"
-                      className="text-sm"
+                      className="text-xs"
+                      compact={true}
                     />
                   </div>
                   
