@@ -4194,6 +4194,25 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getProblemReportAttachmentById(id: number): Promise<any | undefined> {
+    try {
+      const query = `
+        SELECT pra.*, 
+               u.first_name as uploaded_by_first_name, 
+               u.last_name as uploaded_by_last_name
+        FROM problem_report_attachments pra
+        LEFT JOIN users u ON pra.uploaded_by = u.id
+        WHERE pra.id = $1
+      `;
+      
+      const result = await db.oneOrNone(query, [id]);
+      return result ? this.transformProblemReportAttachment(result) : undefined;
+    } catch (error) {
+      console.error('Error getting problem report attachment by ID:', error);
+      throw error;
+    }
+  }
+
   async createProblemReportAttachment(attachment: any): Promise<any> {
     try {
       const query = `

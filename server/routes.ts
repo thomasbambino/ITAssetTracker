@@ -2736,10 +2736,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const sessionData = req.session as any;
+      const attachmentId = parseInt(id);
       
-      // Get attachment info
-      const attachments = await storage.getProblemReportAttachments(parseInt(id));
-      const attachment = attachments.find(a => a.id === parseInt(id));
+      console.log('Download request for attachment ID:', attachmentId);
+      
+      // Get attachment by ID
+      const attachment = await storage.getProblemReportAttachmentById(attachmentId);
+      
+      console.log('Found attachment:', attachment);
       
       if (!attachment) {
         return res.status(404).json({ message: "Attachment not found" });
@@ -2775,10 +2779,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const sessionData = req.session as any;
+      const attachmentId = parseInt(id);
       
       // Get attachment info
-      const attachments = await storage.getProblemReportAttachments(parseInt(id));
-      const attachment = attachments.find(a => a.id === parseInt(id));
+      const attachment = await storage.getProblemReportAttachmentById(attachmentId);
       
       if (!attachment) {
         return res.status(404).json({ message: "Attachment not found" });
