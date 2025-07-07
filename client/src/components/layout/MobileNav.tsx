@@ -229,9 +229,9 @@ export function MobileNav() {
     },
     {
       href: '/user-settings',
-      label: 'My Settings',
+      label: 'Settings',
       icon: SettingsIcon,
-      category: 'main',
+      category: 'system',
     },
   ];
 
@@ -448,6 +448,25 @@ export function MobileNav() {
               }
             </div>
           </div>
+
+          {/* System Group for regular users */}
+          {currentUser?.role === 'user' && (
+            <>
+              <Separator className="mx-2" />
+              
+              <div>
+                <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  System
+                </h3>
+                <div className="mt-1 space-y-1">
+                  {routes
+                    .filter(route => route.category === 'system')
+                    .map(renderNavItem)
+                  }
+                </div>
+              </div>
+            </>
+          )}
 
           {currentUser?.role === 'admin' && (
             <>
