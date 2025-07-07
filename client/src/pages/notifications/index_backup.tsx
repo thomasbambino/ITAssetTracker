@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ProblemReportDetailDialog } from "@/components/dialogs/ProblemReportDetailDialog";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/components/auth/ProtectedRoute";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
@@ -46,30 +46,60 @@ export default function NotificationsPage() {
   const { toast } = useToast();
   
   // Fetch the current user's data
-  const { data: currentUser } = useQuery<{ id: number; role?: string } | null>({
+  const { data: currentUser } = useQuery<{ id: number } | null>({
     queryKey: ['/api/users/me'],
-    staleTime: 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: true
   });
   
   const currentUserId = currentUser?.id;
   
+  // Group problem report notifications by thread for all users
+  const processNotifications = (notifs: Notification[]) => {
+    if (!currentUser) return notifs;
+    
+    // For all users, group problem reports by relatedId to show as threads
+    const problemReportThreads = new Map();
+    const otherNotifications: Notification[] = [];
+    
+    notifs.forEach(notif => {
+      if (notif.type === 'problem_report' && notif.relatedId) {
+        if (!problemReportThreads.has(notif.relatedId)) {
+          problemReportThreads.set(notif.relatedId, {
+            ...notif,
+            title: notif.title.replace('Problem Report: ', 'Issue Thread: '),
+            message: currentUser.role === 'admin' ? 'Click to view conversation and manage ticket' : 'Click to view conversation and reply to messages'
+          });
+        }
+        // Update to show unread if any message in the thread is unread
+        else if (!notif.isRead) {
+          const existing = problemReportThreads.get(notif.relatedId);
+          problemReportThreads.set(notif.relatedId, { ...existing, isRead: false });
+        }
+      } else {
+        otherNotifications.push(notif);
+      }
+    });
+    
+    return [...Array.from(problemReportThreads.values()), ...otherNotifications];
+  };
+  
   // Query for fetching all notifications with automatic refresh
   const { data: notifications = [], isLoading: isNotificationsLoading, refetch } = useQuery({
     queryKey: [`/api/users/${currentUserId}/notifications`],
-    enabled: !!currentUserId,
-    refetchInterval: 30000,
-    refetchOnWindowFocus: true,
+    enabled: !!currentUserId, // Only run query if currentUserId is available
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true, // Refresh when window regains focus
   });
   
   // Query for fetching unread notifications with automatic refresh
   const { data: unreadNotifications = [], isLoading: isUnreadLoading } = useQuery({
     queryKey: [`/api/users/${currentUserId}/notifications/unread`],
-    enabled: !!currentUserId,
-    refetchInterval: 30000,
-    refetchOnWindowFocus: true,
+    enabled: !!currentUserId, // Only run query if currentUserId is available
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true, // Refresh when window regains focus
   });
 
   // Query for problem reports to get status information for filtering
@@ -83,11 +113,13 @@ export default function NotificationsPage() {
   const archiveNotificationMutation = useMutation({
     mutationFn: async (notification: Notification) => {
       if (notification.type === 'problem_report' && notification.relatedId && user?.role === 'admin') {
+        // For admin problem reports, archive the problem report
         return await apiRequest({ 
           url: `/api/problem-reports/${notification.relatedId}/archive`, 
           method: 'POST' 
         });
       } else {
+        // For regular notifications, delete the notification
         return await apiRequest({ 
           url: `/api/notifications/${notification.id}`, 
           method: 'DELETE' 
@@ -95,6 +127,7 @@ export default function NotificationsPage() {
       }
     },
     onSuccess: () => {
+      // Invalidate queries to refresh the list
       queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}/notifications`] });
       queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}/notifications/unread`] });
       queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
@@ -113,34 +146,6 @@ export default function NotificationsPage() {
     },
   });
 
-  // Group problem report notifications by thread for all users
-  const processNotifications = (notifs: Notification[]) => {
-    if (!currentUser) return notifs;
-    
-    const problemReportThreads = new Map();
-    const otherNotifications: Notification[] = [];
-    
-    notifs.forEach(notif => {
-      if (notif.type === 'problem_report' && notif.relatedId) {
-        if (!problemReportThreads.has(notif.relatedId)) {
-          problemReportThreads.set(notif.relatedId, {
-            ...notif,
-            title: notif.title.replace('Problem Report: ', 'Issue Thread: '),
-            message: currentUser.role === 'admin' ? 'Click to view conversation and manage ticket' : 'Click to view conversation and reply to messages'
-          });
-        }
-        else if (!notif.isRead) {
-          const existing = problemReportThreads.get(notif.relatedId);
-          problemReportThreads.set(notif.relatedId, { ...existing, isRead: false });
-        }
-      } else {
-        otherNotifications.push(notif);
-      }
-    });
-    
-    return [...Array.from(problemReportThreads.values()), ...otherNotifications];
-  };
-
   // Filter notifications based on status and problem report status
   const getFilteredNotifications = () => {
     const processed = processNotifications(notifications);
@@ -151,9 +156,10 @@ export default function NotificationsPage() {
     
     return processed.filter(notif => {
       if (notif.type === 'problem_report' && notif.relatedId) {
-        const problemReport = problemReports.find((pr: any) => pr.id === notif.relatedId);
+        const problemReport = problemReports.find(pr => pr.id === notif.relatedId);
         return problemReport?.status === statusFilter;
       }
+      // For non-problem report notifications, show based on read status
       if (statusFilter === 'unread') {
         return !notif.isRead;
       } else if (statusFilter === 'read') {
@@ -171,6 +177,7 @@ export default function NotificationsPage() {
         method: 'POST'
       });
       
+      // Invalidate queries to refresh the list
       queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}/notifications`] });
       queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}/notifications/unread`] });
     } catch (error) {
@@ -181,6 +188,8 @@ export default function NotificationsPage() {
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
+      // In a real implementation, this would call a batch endpoint
+      // For now, we'll mark each notification individually
       const promises = unreadNotifications.map((notification: Notification) => 
         markAsRead(notification)
       );
@@ -194,6 +203,7 @@ export default function NotificationsPage() {
 
   // Open notification details dialog
   const openNotificationDetails = (notification: Notification) => {
+    // If it's a problem report notification, open the problem report dialog
     if (notification.type === "problem_report" && notification.relatedId) {
       setSelectedProblemReportId(notification.relatedId);
       setIsProblemReportDialogOpen(true);
@@ -202,30 +212,31 @@ export default function NotificationsPage() {
       setIsDialogOpen(true);
     }
     
+    // Mark as read if it's not already
     if (!notification.isRead) {
       markAsRead(notification);
     }
   };
 
-  // Get notification icon
+  // Get icon based on notification type
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "warranty_expiry":
         return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
       case "maintenance_due":
-        return <Clock className="h-5 w-5 text-blue-500" />;
+        return <CalendarClock className="h-5 w-5 text-blue-500" />;
       case "license_expiry":
         return <AlertTriangle className="h-5 w-5 text-red-500" />;
       case "device_assigned":
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case "problem_report":
-        return <MessageSquare className="h-5 w-5 text-orange-500" />;
+        return <AlertTriangle className="h-5 w-5 text-orange-500" />;
       default:
         return <Bell className="h-5 w-5 text-primary" />;
     }
   };
 
-  // Get notification CSS class
+  // Get class based on notification type
   const getNotificationClass = (type: string, isRead: boolean) => {
     const baseClass = isRead ? "bg-muted/50" : "bg-white";
     
@@ -293,17 +304,32 @@ export default function NotificationsPage() {
                   New
                 </Badge>
               )}
+              {currentUser?.role === 'admin' && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNotification(notification);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              )}
             </div>
           </div>
-          <p className={`text-sm mt-1 ${notification.isRead ? "text-muted-foreground" : "text-muted-foreground"}`}>
+          <p className={`text-sm mt-1 ${notification.isRead ? "text-muted-foreground" : ""}`}>
             {notification.message}
           </p>
           <div className="flex items-center justify-between mt-2">
-            <p className="text-xs text-muted-foreground">
-              {notification.createdAt && formatDateTime(notification.createdAt)}
-            </p>
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Clock className="h-3 w-3 mr-1" />
+              {notification.createdAt ? formatDateTime(notification.createdAt) : "Unknown date"}
+            </div>
             {notification.type === "problem_report" && (
-              <div className="text-xs text-blue-600 font-medium">
+              <div className="flex items-center text-xs text-blue-600">
+                <MessageSquare className="h-3 w-3 mr-1" />
                 Click to view conversation
               </div>
             )}
@@ -424,8 +450,8 @@ export default function NotificationsPage() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Notification Detail Dialog */}
+      
+      {/* Notification Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
