@@ -298,17 +298,17 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
             {report.subject}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
           {/* Left Side - Report Details */}
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-1 space-y-4 overflow-y-auto">
             <Card>
               <CardHeader>
               <div className="space-y-4">
@@ -416,16 +416,16 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
           </div>
 
           {/* Right Side - Messages */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card>
-            <CardHeader>
+          <div className="lg:col-span-2 flex flex-col min-h-0">
+            <Card className="flex-1 flex flex-col">
+            <CardHeader className="flex-shrink-0">
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
                 Conversation ({messages.length})
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+            <CardContent className="flex-1 flex flex-col min-h-0">
+              <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
                 {messagesLoading ? (
                   <div className="text-center py-4">Loading messages...</div>
                 ) : messages.length === 0 ? (
@@ -475,17 +475,17 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                 )}
                 <div ref={messagesEndRef} />
               </div>
-
-              <Separator className="my-4" />
-
-              {/* Message Input - Show for admins or original reporter if not archived */}
-              {report.status !== 'archived' && (user?.role === 'admin' || report.userId === user?.id) && (
+            </CardContent>
+            
+            {/* Message Input - Show for admins or original reporter if not archived */}
+            {report.status !== 'archived' && (user?.role === 'admin' || report.userId === user?.id) && (
+              <div className="border-t p-4 flex-shrink-0">
                 <div className="space-y-3">
                   <Textarea
                     placeholder="Type your message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    className="min-h-[100px]"
+                    className="min-h-[80px]"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && e.ctrlKey) {
                         handleSendMessage();
@@ -526,8 +526,8 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                     </div>
                   </div>
                 </div>
-              )}
-            </CardContent>
+              </div>
+            )}
           </Card>
           </div>
         </div>
