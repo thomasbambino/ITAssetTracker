@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -26,6 +26,8 @@ interface Notification {
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [, setLocation] = useLocation();
+  const [previousNotificationCount, setPreviousNotificationCount] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Fetch the current user's data
   const { data: currentUser } = useQuery<{ id: number } | null>({
@@ -38,11 +40,32 @@ export function NotificationBell() {
   
   const currentUserId = currentUser?.id;
   
-  // Query for fetching unread notifications
+  // Query for fetching unread notifications with real-time polling
   const { data: unreadNotifications = [] } = useQuery({
     queryKey: [`/api/users/${currentUserId}/notifications/unread`],
     enabled: !!currentUserId, // Only run query if currentUserId is available
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
+    refetchOnWindowFocus: true, // Refresh when window regains focus
   });
+
+  // Initialize audio element for notification sound
+  useEffect(() => {
+    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjOZ4/K+diMFl4sAAEVHjjrIcKJMaD5rO5Q3XEJL/O8');
+  }, []);
+
+  // Play notification sound when new notifications arrive
+  useEffect(() => {
+    if (unreadNotifications.length > previousNotificationCount && previousNotificationCount > 0) {
+      // New notification arrived, play sound
+      if (audioRef.current) {
+        audioRef.current.volume = 0.1; // Quiet notification sound
+        audioRef.current.play().catch(() => {
+          // Ignore errors if audio can't play (e.g., user hasn't interacted with page)
+        });
+      }
+    }
+    setPreviousNotificationCount(unreadNotifications.length);
+  }, [unreadNotifications.length, previousNotificationCount]);
 
   // Get notification icon based on notification type
   const getNotificationIcon = (type: string) => {
