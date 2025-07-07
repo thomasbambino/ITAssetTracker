@@ -2424,14 +2424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create notifications for all admin users
       const adminUsers = await storage.getUsersByRole('admin');
       
-      const priorityEmoji = {
-        low: "🔵",
-        medium: "🟡", 
-        high: "🟠",
-        urgent: "🔴"
-      };
-
-      const notificationTitle = `${priorityEmoji[priority as keyof typeof priorityEmoji]} Problem Report: ${itemDetails}`;
+      const notificationTitle = `Problem Report: ${itemDetails}`;
       const notificationMessage = `${reportingUser.firstName} ${reportingUser.lastName} reported a ${priority} priority problem with ${itemDetails}: "${subject}"`;
 
       // Create notification for each admin

@@ -49,16 +49,20 @@ export default function NotificationsPage() {
   
   const currentUserId = currentUser?.id;
   
-  // Query for fetching all notifications
+  // Query for fetching all notifications with automatic refresh
   const { data: notifications = [], isLoading: isNotificationsLoading, refetch } = useQuery({
     queryKey: [`/api/users/${currentUserId}/notifications`],
     enabled: !!currentUserId, // Only run query if currentUserId is available
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true, // Refresh when window regains focus
   });
   
-  // Query for fetching unread notifications
+  // Query for fetching unread notifications with automatic refresh
   const { data: unreadNotifications = [], isLoading: isUnreadLoading } = useQuery({
     queryKey: [`/api/users/${currentUserId}/notifications/unread`],
     enabled: !!currentUserId, // Only run query if currentUserId is available
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true, // Refresh when window regains focus
   });
 
   // Mark notification as read

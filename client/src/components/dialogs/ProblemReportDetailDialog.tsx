@@ -91,7 +91,9 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
   const { data: messages = [], isLoading: messagesLoading } = useQuery<ProblemReportMessage[]>({
     queryKey: ['/api/problem-reports', problemReportId, 'messages'],
     queryFn: () => apiRequest({ url: `/api/problem-reports/${problemReportId}/messages`, method: 'GET' }),
-    enabled: !!problemReportId && isOpen
+    enabled: !!problemReportId && isOpen,
+    refetchInterval: isOpen ? 5000 : false, // Refresh every 5 seconds when dialog is open
+    refetchOnWindowFocus: true, // Refresh when window regains focus
   });
 
   const { data: adminUsers = [] } = useQuery<any[]>({
