@@ -229,9 +229,9 @@ export function MobileNav() {
     },
     {
       href: '/user-settings',
-      label: 'Settings',
+      label: 'My Settings',
       icon: SettingsIcon,
-      category: 'system',
+      category: 'user',
     },
   ];
 

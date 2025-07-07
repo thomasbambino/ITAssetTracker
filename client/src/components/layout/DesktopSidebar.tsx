@@ -219,9 +219,9 @@ export function DesktopSidebar() {
     },
     {
       href: '/user-settings',
-      label: 'Settings',
+      label: 'My Settings',
       icon: SettingsIcon,
-      category: 'system',
+      category: 'user',
     },
   ];
 
