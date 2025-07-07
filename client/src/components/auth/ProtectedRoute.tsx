@@ -20,8 +20,8 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
   const { data: user, isLoading, isError, error } = useQuery<User>({
     queryKey: ['/api/users/me'],
-    retry: 3, // Retry up to 3 times
-    retryDelay: 1000, // Wait 1 second between retries
+    retry: false, // Don't retry on auth failures
+    staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
   });
 
   // For debugging
