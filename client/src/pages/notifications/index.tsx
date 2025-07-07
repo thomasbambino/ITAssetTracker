@@ -49,6 +49,38 @@ export default function NotificationsPage() {
   
   const currentUserId = currentUser?.id;
   
+  // Group problem report notifications by thread for regular users
+  const processNotifications = (notifs: Notification[]) => {
+    if (!currentUser || currentUser.role === 'admin') {
+      return notifs; // Admins see all notifications individually
+    }
+    
+    // For regular users, group problem reports by relatedId to show as threads
+    const problemReportThreads = new Map();
+    const otherNotifications: Notification[] = [];
+    
+    notifs.forEach(notif => {
+      if (notif.type === 'problem_report' && notif.relatedId) {
+        if (!problemReportThreads.has(notif.relatedId)) {
+          problemReportThreads.set(notif.relatedId, {
+            ...notif,
+            title: notif.title.replace('Problem Report: ', 'Issue Thread: '),
+            message: 'Click to view conversation and reply to messages'
+          });
+        }
+        // Update to show unread if any message in the thread is unread
+        else if (!notif.isRead) {
+          const existing = problemReportThreads.get(notif.relatedId);
+          problemReportThreads.set(notif.relatedId, { ...existing, isRead: false });
+        }
+      } else {
+        otherNotifications.push(notif);
+      }
+    });
+    
+    return [...Array.from(problemReportThreads.values()), ...otherNotifications];
+  };
+  
   // Query for fetching all notifications with automatic refresh
   const { data: notifications = [], isLoading: isNotificationsLoading, refetch } = useQuery({
     queryKey: [`/api/users/${currentUserId}/notifications`],
@@ -203,17 +235,19 @@ export default function NotificationsPage() {
                   New
                 </Badge>
               )}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-6 w-6"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteNotification(notification);
-                }}
-              >
-                <Trash2 className="h-4 w-4 text-muted-foreground" />
-              </Button>
+              {currentUser?.role === 'admin' && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNotification(notification);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              )}
             </div>
           </div>
           <p className={`text-sm mt-1 ${notification.isRead ? "text-muted-foreground" : ""}`}>
@@ -284,7 +318,7 @@ export default function NotificationsPage() {
                 </div>
               ) : (
                 <div>
-                  {notifications.map((notification: Notification) => 
+                  {processNotifications(notifications).map((notification: Notification) => 
                     renderNotificationItem(notification)
                   )}
                 </div>
@@ -303,7 +337,7 @@ export default function NotificationsPage() {
                 <div className="text-center py-10">
                   <p className="text-muted-foreground">Loading notifications...</p>
                 </div>
-              ) : unreadNotifications.length === 0 ? (
+              ) : processNotifications(unreadNotifications).length === 0 ? (
                 <div className="text-center py-10">
                   <CheckCircle className="mx-auto h-10 w-10 text-green-500 mb-4" />
                   <h3 className="text-lg font-medium mb-2">All Caught Up!</h3>
@@ -313,7 +347,7 @@ export default function NotificationsPage() {
                 </div>
               ) : (
                 <div>
-                  {unreadNotifications.map((notification: Notification) => 
+                  {processNotifications(unreadNotifications).map((notification: Notification) => 
                     renderNotificationItem(notification)
                   )}
                 </div>
