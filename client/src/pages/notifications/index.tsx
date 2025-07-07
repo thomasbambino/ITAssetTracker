@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Clock, Bell, CheckCircle, CalendarClock, Trash2 } from "lucide-react";
+import { AlertTriangle, Clock, Bell, CheckCircle, CalendarClock, Trash2, MessageSquare, Reply } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { ProblemReportDetailDialog } from "@/components/dialogs/ProblemReportDetailDialog";
 
 // Define notification type based on our schema
 interface Notification {
@@ -27,11 +28,15 @@ interface Notification {
   isRead: boolean;
   createdAt: Date | null;
   link?: string | null;
+  relatedId?: number | null;
+  relatedType?: string | null;
 }
 
 export default function NotificationsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [isProblemReportDialogOpen, setIsProblemReportDialogOpen] = useState(false);
+  const [selectedProblemReportId, setSelectedProblemReportId] = useState<number | null>(null);
   
   // Fetch the current user's data
   const { data: currentUser } = useQuery<{ id: number } | null>({
@@ -106,8 +111,14 @@ export default function NotificationsPage() {
 
   // Open notification details dialog
   const openNotificationDetails = (notification: Notification) => {
-    setSelectedNotification(notification);
-    setIsDialogOpen(true);
+    // If it's a problem report notification, open the problem report dialog
+    if (notification.type === "problem_report" && notification.relatedId) {
+      setSelectedProblemReportId(notification.relatedId);
+      setIsProblemReportDialogOpen(true);
+    } else {
+      setSelectedNotification(notification);
+      setIsDialogOpen(true);
+    }
     
     // Mark as read if it's not already
     if (!notification.isRead) {
@@ -157,7 +168,7 @@ export default function NotificationsPage() {
   const renderNotificationItem = (notification: Notification) => (
     <div 
       key={notification.id} 
-      className={`p-4 mb-2 rounded-md shadow-sm ${getNotificationClass(notification.type, notification.isRead)}`}
+      className={`p-4 mb-2 rounded-md shadow-sm cursor-pointer hover:bg-muted/50 ${getNotificationClass(notification.type, notification.isRead)}`}
       onClick={() => openNotificationDetails(notification)}
     >
       <div className="flex items-start">
@@ -170,6 +181,19 @@ export default function NotificationsPage() {
               {notification.title}
             </h3>
             <div className="flex space-x-2">
+              {notification.type === "problem_report" && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openNotificationDetails(notification);
+                  }}
+                >
+                  <Reply className="h-4 w-4 text-blue-500" />
+                </Button>
+              )}
               {!notification.isRead && (
                 <Badge variant="outline" className="bg-primary/10 text-primary">
                   New
@@ -191,9 +215,17 @@ export default function NotificationsPage() {
           <p className={`text-sm mt-1 ${notification.isRead ? "text-muted-foreground" : ""}`}>
             {notification.message}
           </p>
-          <div className="flex items-center mt-2 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3 mr-1" />
-            {notification.createdAt ? formatDateTime(notification.createdAt) : "Unknown date"}
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Clock className="h-3 w-3 mr-1" />
+              {notification.createdAt ? formatDateTime(notification.createdAt) : "Unknown date"}
+            </div>
+            {notification.type === "problem_report" && (
+              <div className="flex items-center text-xs text-blue-600">
+                <MessageSquare className="h-3 w-3 mr-1" />
+                Click to view conversation
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -323,6 +355,18 @@ export default function NotificationsPage() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Problem Report Detail Dialog */}
+      {selectedProblemReportId && (
+        <ProblemReportDetailDialog
+          isOpen={isProblemReportDialogOpen}
+          onClose={() => {
+            setIsProblemReportDialogOpen(false);
+            setSelectedProblemReportId(null);
+          }}
+          problemReportId={selectedProblemReportId}
+        />
+      )}
     </PageContainer>
   );
 }

@@ -37,9 +37,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
 interface ProblemReportDetailDialogProps {
-  reportId: number;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  problemReportId: number;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 interface ProblemReport {
@@ -76,22 +76,22 @@ interface ProblemReportMessage {
   userRole: string;
 }
 
-export function ProblemReportDetailDialog({ reportId, open, onOpenChange }: ProblemReportDetailDialogProps) {
+export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: ProblemReportDetailDialogProps) {
   const [newMessage, setNewMessage] = useState("");
   const [isInternalMessage, setIsInternalMessage] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
   const { data: report, isLoading } = useQuery<ProblemReport>({
-    queryKey: ['/api/problem-reports', reportId],
-    queryFn: () => apiRequest({ url: `/api/problem-reports/${reportId}`, method: 'GET' }),
-    enabled: !!reportId && open
+    queryKey: ['/api/problem-reports', problemReportId],
+    queryFn: () => apiRequest({ url: `/api/problem-reports/${problemReportId}`, method: 'GET' }),
+    enabled: !!problemReportId && isOpen
   });
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery<ProblemReportMessage[]>({
-    queryKey: ['/api/problem-reports', reportId, 'messages'],
-    queryFn: () => apiRequest({ url: `/api/problem-reports/${reportId}/messages`, method: 'GET' }),
-    enabled: !!reportId && open
+    queryKey: ['/api/problem-reports', problemReportId, 'messages'],
+    queryFn: () => apiRequest({ url: `/api/problem-reports/${problemReportId}/messages`, method: 'GET' }),
+    enabled: !!problemReportId && isOpen
   });
 
   const { data: adminUsers = [] } = useQuery<any[]>({
@@ -103,13 +103,13 @@ export function ProblemReportDetailDialog({ reportId, open, onOpenChange }: Prob
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string; isInternal: boolean }) => {
       return apiRequest({
-        url: `/api/problem-reports/${reportId}/messages`,
+        url: `/api/problem-reports/${problemReportId}/messages`,
         method: 'POST',
         data
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId, 'messages'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId, 'messages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
       setNewMessage("");
       setIsInternalMessage(false);
@@ -130,13 +130,13 @@ export function ProblemReportDetailDialog({ reportId, open, onOpenChange }: Prob
   const updateReportMutation = useMutation({
     mutationFn: async (updates: any) => {
       return apiRequest({
-        url: `/api/problem-reports/${reportId}`,
+        url: `/api/problem-reports/${problemReportId}`,
         method: 'PUT',
         data: updates
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId] });
       queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
       toast({
         title: "Report Updated",
@@ -155,12 +155,12 @@ export function ProblemReportDetailDialog({ reportId, open, onOpenChange }: Prob
   const completeReportMutation = useMutation({
     mutationFn: async () => {
       return apiRequest({
-        url: `/api/problem-reports/${reportId}/complete`,
+        url: `/api/problem-reports/${problemReportId}/complete`,
         method: 'POST'
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId] });
       queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
       toast({
         title: "Report Completed",
@@ -179,14 +179,14 @@ export function ProblemReportDetailDialog({ reportId, open, onOpenChange }: Prob
   const archiveReportMutation = useMutation({
     mutationFn: async () => {
       return apiRequest({
-        url: `/api/problem-reports/${reportId}/archive`,
+        url: `/api/problem-reports/${problemReportId}/archive`,
         method: 'POST'
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId] });
       queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
-      onOpenChange(false);
+      onClose();
       toast({
         title: "Report Archived",
         description: "The problem report has been archived.",
@@ -252,7 +252,7 @@ export function ProblemReportDetailDialog({ reportId, open, onOpenChange }: Prob
 
   if (isLoading || !report) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <div className="text-center py-8">Loading problem report...</div>
         </DialogContent>
@@ -261,7 +261,7 @@ export function ProblemReportDetailDialog({ reportId, open, onOpenChange }: Prob
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -385,7 +385,9 @@ export function ProblemReportDetailDialog({ reportId, open, onOpenChange }: Prob
                     No messages yet. Start the conversation!
                   </div>
                 ) : (
-                  messages.map((message) => (
+                  messages
+                    .filter(message => user?.role === 'admin' || !message.isInternal) // Show all messages to admins, only non-internal to users
+                    .map((message) => (
                     <div key={message.id} className="space-y-2">
                       <div className="flex items-start gap-3">
                         <div className="flex-1">
@@ -427,8 +429,8 @@ export function ProblemReportDetailDialog({ reportId, open, onOpenChange }: Prob
 
               <Separator className="my-4" />
 
-              {/* Message Input */}
-              {report.status !== 'archived' && (
+              {/* Message Input - Show for admins or original reporter if not archived */}
+              {report.status !== 'archived' && (user?.role === 'admin' || report.userId === user?.id) && (
                 <div className="space-y-3">
                   <Textarea
                     placeholder="Type your message..."
