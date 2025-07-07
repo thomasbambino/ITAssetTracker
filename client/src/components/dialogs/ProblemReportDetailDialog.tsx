@@ -601,12 +601,14 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                             <span className="font-medium text-sm">
                               {message.userFirstName} {message.userLastName}
                             </span>
-                            <Badge 
-                              variant={message.userRole === 'admin' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {message.userRole === 'admin' ? 'Admin' : 'User'}
-                            </Badge>
+                            {message.userRole === 'admin' && (
+                              <Badge 
+                                variant="default"
+                                className="text-xs"
+                              >
+                                Admin
+                              </Badge>
+                            )}
                             {message.isInternal && (
                               <Badge variant="outline" className="text-xs">
                                 <EyeOff className="h-3 w-3 mr-1" />
