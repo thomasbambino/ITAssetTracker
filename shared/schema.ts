@@ -458,6 +458,19 @@ export const problemReportMessages = pgTable("problem_report_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Problem Report Attachments Table
+export const problemReportAttachments = pgTable("problem_report_attachments", {
+  id: serial("id").primaryKey(),
+  problemReportId: integer("problem_report_id").references(() => problemReports.id).notNull(),
+  fileName: text("file_name").notNull(),
+  originalName: text("original_name").notNull(),
+  fileType: text("file_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  filePath: text("file_path").notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertProblemReportSchema = createInsertSchema(problemReports).omit({
   id: true,
   createdAt: true,
@@ -471,7 +484,14 @@ export const insertProblemReportMessageSchema = createInsertSchema(problemReport
   createdAt: true,
 });
 
+export const insertProblemReportAttachmentSchema = createInsertSchema(problemReportAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertProblemReport = z.infer<typeof insertProblemReportSchema>;
 export type ProblemReport = typeof problemReports.$inferSelect;
 export type InsertProblemReportMessage = z.infer<typeof insertProblemReportMessageSchema>;
 export type ProblemReportMessage = typeof problemReportMessages.$inferSelect;
+export type InsertProblemReportAttachment = z.infer<typeof insertProblemReportAttachmentSchema>;
+export type ProblemReportAttachment = typeof problemReportAttachments.$inferSelect;

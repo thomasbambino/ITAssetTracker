@@ -26,6 +26,7 @@ import { LoaderIcon } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery as useAuthQuery } from "@tanstack/react-query";
+import { FileUpload } from "@/components/ui/file-upload";
 
 // Define the form schema
 const problemReportSchema = z.object({
@@ -62,6 +63,7 @@ interface ProblemReportFormProps {
 
 export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
   const [reportType, setReportType] = useState<"device" | "software" | "">("");
+  const [attachments, setAttachments] = useState<File[]>([]);
   const { toast } = useToast();
 
   // Get current user from API
@@ -97,11 +99,31 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
   // Submit mutation
   const submitMutation = useMutation({
     mutationFn: async (data: ProblemReportFormData) => {
-      return apiRequest({
+      // First create the problem report
+      const response = await apiRequest({
         url: '/api/problem-reports',
         method: 'POST',
         data: data,
       });
+      
+      // If there are attachments, upload them
+      if (attachments.length > 0) {
+        const formData = new FormData();
+        attachments.forEach((file) => {
+          formData.append('files', file);
+        });
+        
+        await apiRequest({
+          url: `/api/problem-reports/${response.id}/attachments`,
+          method: "POST",
+          data: formData,
+          headers: {
+            // Don't set Content-Type header - let the browser set it for FormData
+          },
+        });
+      }
+      
+      return response;
     },
     onSuccess: () => {
       toast({
@@ -110,6 +132,7 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
       });
       form.reset();
       setReportType("");
+      setAttachments([]);
       onSuccess?.();
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
@@ -287,6 +310,21 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
             </FormItem>
           )}
         />
+
+        {/* File Attachments */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Attachments (optional)</label>
+          <p className="text-sm text-muted-foreground">
+            Upload screenshots, photos, or PDF documents that help explain the problem
+          </p>
+          <FileUpload 
+            files={attachments} 
+            onChange={setAttachments} 
+            maxFiles={5}
+            maxSize={10 * 1024 * 1024} // 10MB
+            accept=".jpg,.jpeg,.png,.gif,.pdf"
+          />
+        </div>
 
         {/* Submit Button */}
         <div className="flex justify-end space-x-2">

@@ -54,6 +54,23 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
+// Configure multer for problem report attachments with file validation
+const attachmentUpload = multer({
+  dest: 'uploads/attachments/',
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images and PDFs
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images (JPEG, PNG, GIF) and PDF files are allowed'));
+    }
+  }
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register authentication routes
   app.use('/api/auth', authRoutes);
@@ -2622,6 +2639,172 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error creating problem report message:', error);
       res.status(500).json({ message: "Error creating message" });
+    }
+  });
+
+  // Problem Report Attachments routes
+  app.get('/api/problem-reports/:id/attachments', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      
+      // Check if user has access to this problem report
+      const report = await storage.getProblemReportById(parseInt(id));
+      if (!report) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      // Non-admin users can only see attachments for their own reports
+      if (sessionData.userRole !== 'admin' && report.userId !== sessionData.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const attachments = await storage.getProblemReportAttachments(parseInt(id));
+      res.json(attachments);
+    } catch (error) {
+      console.error('Error getting problem report attachments:', error);
+      res.status(500).json({ message: "Error retrieving attachments" });
+    }
+  });
+
+  app.post('/api/problem-reports/:id/attachments', isAuthenticated, attachmentUpload.array('files', 5), async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+      
+      // Check if user has access to this problem report
+      const report = await storage.getProblemReportById(parseInt(id));
+      if (!report) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      // Users can only upload to their own reports, admins can upload to any
+      if (sessionData.userRole !== 'admin' && report.userId !== sessionData.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Create attachments directory if it doesn't exist
+      const attachmentsDir = path.join(process.cwd(), 'uploads', 'attachments');
+      if (!fs.existsSync(attachmentsDir)) {
+        fs.mkdirSync(attachmentsDir, { recursive: true });
+      }
+      
+      const attachments = [];
+      
+      for (const file of files) {
+        // Generate unique filename
+        const fileExtension = path.extname(file.originalname);
+        const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(2)}${fileExtension}`;
+        const finalPath = path.join(attachmentsDir, uniqueFileName);
+        
+        // Move file to final location
+        fs.renameSync(file.path, finalPath);
+        
+        // Save attachment record to database
+        const attachment = await storage.createProblemReportAttachment({
+          problemReportId: parseInt(id),
+          fileName: uniqueFileName,
+          originalName: file.originalname,
+          fileType: file.mimetype,
+          fileSize: file.size,
+          filePath: finalPath,
+          uploadedBy: sessionData.userId
+        });
+        
+        attachments.push(attachment);
+      }
+      
+      res.status(201).json({ message: "Files uploaded successfully", attachments });
+    } catch (error) {
+      console.error('Error uploading attachments:', error);
+      res.status(500).json({ message: "Error uploading files" });
+    }
+  });
+
+  app.get('/api/attachments/:id/download', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      
+      // Get attachment info
+      const attachments = await storage.getProblemReportAttachments(parseInt(id));
+      const attachment = attachments.find(a => a.id === parseInt(id));
+      
+      if (!attachment) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+      
+      // Check if user has access to this attachment's problem report
+      const report = await storage.getProblemReportById(attachment.problemReportId);
+      if (!report) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      // Non-admin users can only download attachments from their own reports
+      if (sessionData.userRole !== 'admin' && report.userId !== sessionData.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Check if file exists
+      if (!fs.existsSync(attachment.filePath)) {
+        return res.status(404).json({ message: "File not found on server" });
+      }
+      
+      // Set appropriate headers and send file
+      res.setHeader('Content-Type', attachment.fileType);
+      res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
+      res.sendFile(path.resolve(attachment.filePath));
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+      res.status(500).json({ message: "Error downloading file" });
+    }
+  });
+
+  app.delete('/api/attachments/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      
+      // Get attachment info
+      const attachments = await storage.getProblemReportAttachments(parseInt(id));
+      const attachment = attachments.find(a => a.id === parseInt(id));
+      
+      if (!attachment) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+      
+      // Check if user has access to this attachment's problem report
+      const report = await storage.getProblemReportById(attachment.problemReportId);
+      if (!report) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      // Only attachment uploader or admin can delete
+      if (sessionData.userRole !== 'admin' && attachment.uploadedBy !== sessionData.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Delete file from filesystem
+      if (fs.existsSync(attachment.filePath)) {
+        fs.unlinkSync(attachment.filePath);
+      }
+      
+      // Delete attachment record from database
+      const success = await storage.deleteProblemReportAttachment(parseInt(id));
+      
+      if (!success) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+      res.status(500).json({ message: "Error deleting attachment" });
     }
   });
 

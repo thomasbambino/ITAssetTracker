@@ -29,12 +29,15 @@ import {
   CheckCircle, 
   Archive,
   EyeOff,
-  Users
+  Users,
+  Paperclip
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { AttachmentList } from "@/components/ui/attachment-list";
+import { FileUpload } from "@/components/ui/file-upload";
 
 interface ProblemReportDetailDialogProps {
   problemReportId: number;
@@ -80,6 +83,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
   const [newMessage, setNewMessage] = useState("");
   const [isInternalMessage, setIsInternalMessage] = useState(false);
   const [previousMessageCount, setPreviousMessageCount] = useState(0);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -96,6 +100,12 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
     enabled: !!problemReportId && isOpen,
     refetchInterval: isOpen ? 5000 : false, // Refresh every 5 seconds when dialog is open
     refetchOnWindowFocus: true, // Refresh when window regains focus
+  });
+
+  const { data: reportAttachments = [], isLoading: attachmentsLoading } = useQuery<any[]>({
+    queryKey: ['/api/problem-reports', problemReportId, 'attachments'],
+    queryFn: () => apiRequest({ url: `/api/problem-reports/${problemReportId}/attachments`, method: 'GET' }),
+    enabled: !!problemReportId && isOpen,
   });
 
   // Auto-scroll to bottom when new messages arrive
@@ -183,17 +193,35 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
 
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string; isInternal: boolean }) => {
-      return apiRequest({
+      const response = await apiRequest({
         url: `/api/problem-reports/${problemReportId}/messages`,
         method: 'POST',
         data
       });
+      
+      // If there are attachments, upload them
+      if (attachments.length > 0) {
+        const formData = new FormData();
+        attachments.forEach((file) => {
+          formData.append('files', file);
+        });
+        
+        await apiRequest({
+          url: `/api/problem-reports/${problemReportId}/attachments`,
+          method: "POST",
+          data: formData,
+        });
+      }
+      
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId, 'messages'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId, 'attachments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/problem-reports'] });
       setNewMessage("");
       setIsInternalMessage(false);
+      setAttachments([]);
       toast({
         title: "Message Sent",
         description: "Your message has been added to the conversation.",
@@ -320,6 +348,57 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
       isInternal: isInternalMessage
     });
   };
+
+  const handleDownloadAttachment = async (attachment: any) => {
+    try {
+      const response = await fetch(`/api/attachments/${attachment.id}/download`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = attachment.originalName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: async (attachmentId: number) => {
+      return apiRequest({
+        url: `/api/attachments/${attachmentId}`,
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId, 'attachments'] });
+      toast({
+        title: "Attachment deleted",
+        description: "The attachment has been removed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete attachment",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleAssignmentChange = (userId: string) => {
     updateReportMutation.mutate({
@@ -455,6 +534,16 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                     </p>
                   </div>
                 )}
+                
+                {/* Attachments Section */}
+                <div className="pt-2 border-t">
+                  <AttachmentList
+                    attachments={reportAttachments}
+                    onDownload={handleDownloadAttachment}
+                    onDelete={(attachment) => deleteAttachmentMutation.mutate(attachment.id)}
+                    canDelete={user?.role === 'admin' || reportAttachments.some(a => a.uploadedBy === user?.id)}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -537,6 +626,24 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                       }
                     }}
                   />
+                  
+                  {/* File Upload for new attachments */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Add attachments</span>
+                    </div>
+                    <FileUpload 
+                      files={attachments} 
+                      onChange={setAttachments} 
+                      maxFiles={3}
+                      maxSize={10 * 1024 * 1024} // 10MB
+                      accept=".jpg,.jpeg,.png,.gif,.pdf"
+                      className="text-sm"
+                    />
+                  </div>
+                  
+
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

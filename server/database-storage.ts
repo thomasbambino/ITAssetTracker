@@ -4172,4 +4172,82 @@ export class DatabaseStorage implements IStorage {
       userRole: row.user_role
     };
   }
+
+  // Problem Report Attachments Methods
+  async getProblemReportAttachments(problemReportId: number): Promise<any[]> {
+    try {
+      const query = `
+        SELECT pra.*, 
+               u.first_name as uploaded_by_first_name, 
+               u.last_name as uploaded_by_last_name
+        FROM problem_report_attachments pra
+        LEFT JOIN users u ON pra.uploaded_by = u.id
+        WHERE pra.problem_report_id = $1
+        ORDER BY pra.created_at ASC
+      `;
+      
+      const result = await db.any(query, [problemReportId]);
+      return result.map(this.transformProblemReportAttachment);
+    } catch (error) {
+      console.error('Error getting problem report attachments:', error);
+      throw error;
+    }
+  }
+
+  async createProblemReportAttachment(attachment: any): Promise<any> {
+    try {
+      const query = `
+        INSERT INTO problem_report_attachments 
+        (problem_report_id, file_name, original_name, file_type, file_size, file_path, uploaded_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `;
+      
+      const result = await db.one(query, [
+        attachment.problemReportId,
+        attachment.fileName,
+        attachment.originalName,
+        attachment.fileType,
+        attachment.fileSize,
+        attachment.filePath,
+        attachment.uploadedBy
+      ]);
+      
+      return this.transformProblemReportAttachment(result);
+    } catch (error) {
+      console.error('Error creating problem report attachment:', error);
+      throw error;
+    }
+  }
+
+  async deleteProblemReportAttachment(id: number): Promise<boolean> {
+    try {
+      const result = await db.result(`
+        DELETE FROM problem_report_attachments
+        WHERE id = $1
+      `, [id]);
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting problem report attachment:', error);
+      return false;
+    }
+  }
+
+  private transformProblemReportAttachment(row: any): any {
+    return {
+      id: row.id,
+      problemReportId: row.problem_report_id,
+      fileName: row.file_name,
+      originalName: row.original_name,
+      fileType: row.file_type,
+      fileSize: row.file_size,
+      filePath: row.file_path,
+      uploadedBy: row.uploaded_by,
+      createdAt: row.created_at,
+      // Additional fields from joins
+      uploadedByFirstName: row.uploaded_by_first_name,
+      uploadedByLastName: row.uploaded_by_last_name
+    };
+  }
 }
