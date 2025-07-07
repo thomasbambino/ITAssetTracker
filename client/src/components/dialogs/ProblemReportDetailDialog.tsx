@@ -104,8 +104,8 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
       // Check if we have new messages
       if (messages.length > previousMessageCount && previousMessageCount > 0) {
         // Play notification sound
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBzg=');
-        audio.volume = 0.3;
+        const audio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+        audio.volume = 0.1;
         audio.play().catch(() => {
           // Silently fail if audio can't be played
         });
@@ -296,18 +296,19 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Problem Report #{report.id}
+            <AlertTriangle className="h-5 w-5" />
+            {report.subject}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Report Details */}
-          <Card>
-            <CardHeader>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Side - Report Details */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -401,9 +402,11 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
               </div>
             </CardContent>
           </Card>
+          </div>
 
-          {/* Messages */}
-          <Card>
+          {/* Right Side - Messages */}
+          <div className="space-y-4">
+            <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
@@ -515,6 +518,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
               )}
             </CardContent>
           </Card>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
