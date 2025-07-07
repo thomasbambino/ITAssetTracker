@@ -136,8 +136,8 @@ export function ProblemReportDetailDialog({
     },
     onSuccess: () => {
       setMessage('');
-      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}/messages`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId, 'messages'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId] });
     },
     onError: (error: any) => {
       toast({
@@ -157,7 +157,7 @@ export function ProblemReportDetailDialog({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId] });
       toast({
         title: 'Success',
         description: 'Assignment updated successfully',
@@ -174,7 +174,7 @@ export function ProblemReportDetailDialog({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId] });
       toast({
         title: 'Success',
         description: 'Status updated successfully',
@@ -190,7 +190,7 @@ export function ProblemReportDetailDialog({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/problem-reports/${reportId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', reportId] });
       onOpenChange(false);
       toast({
         title: 'Success',
@@ -201,6 +201,7 @@ export function ProblemReportDetailDialog({
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
+    console.log('Sending message:', { message: message.trim(), isInternal, reportId });
     sendMessageMutation.mutate({ message: message.trim(), isInternal });
   };
 
@@ -235,18 +236,18 @@ export function ProblemReportDetailDialog({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'open': return '🔵';
-      case 'in_progress': return '🟡';
-      case 'completed': return '✅';
-      case 'archived': return '📦';
-      default: return '⚪';
+      case 'open': return '•';
+      case 'in_progress': return '•';
+      case 'completed': return '•';
+      case 'archived': return '•';
+      default: return '•';
     }
   };
 
   if (reportLoading || !report) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[95vw] w-full h-[95vh] flex flex-col">
+        <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col">
           <DialogTitle className="sr-only">Problem Report Details</DialogTitle>
           <div className="flex items-center justify-center h-full">
             <div className="text-center">Loading...</div>
@@ -258,7 +259,7 @@ export function ProblemReportDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] w-full h-[95vh] flex flex-col p-0">
+      <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-xl font-semibold">
             Problem Report Details
