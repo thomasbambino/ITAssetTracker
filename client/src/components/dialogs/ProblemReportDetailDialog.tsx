@@ -551,7 +551,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                         <Paperclip className="h-3 w-3 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground">Add attachments</span>
                         {attachments.length > 0 && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded">
                             {attachments.length} file{attachments.length !== 1 ? 's' : ''}
                           </span>
                         )}
@@ -620,9 +620,9 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                           <div className={`p-3 rounded-lg ${
                             message.userRole === 'admin' 
                               ? message.isInternal 
-                                ? 'bg-orange-50 border border-orange-200' 
-                                : 'bg-blue-50 border border-blue-200'
-                              : 'bg-gray-50 border border-gray-200'
+                                ? 'bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/30' 
+                                : 'bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30'
+                              : 'bg-muted/50 border border-border'
                           }`}>
                             <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                           </div>
