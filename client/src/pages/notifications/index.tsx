@@ -148,9 +148,14 @@ export default function NotificationsPage() {
 
   // Open notification details dialog
   const openNotificationDetails = (notification: Notification) => {
+    console.log('Opening notification details:', notification);
+    console.log('RelatedId type:', typeof notification.relatedId, 'Value:', notification.relatedId);
+    
     // If it's a problem report notification, open the problem report dialog
-    if (notification.type === "problem_report" && notification.relatedId) {
-      setSelectedProblemReportId(notification.relatedId);
+    if (notification.type === "problem_report" && notification.relatedId && !isNaN(Number(notification.relatedId))) {
+      const reportId = Number(notification.relatedId);
+      console.log('Setting problem report ID:', reportId);
+      setSelectedProblemReportId(reportId);
       setIsProblemReportDialogOpen(true);
     } else {
       setSelectedNotification(notification);
@@ -398,12 +403,15 @@ export default function NotificationsPage() {
       {/* Problem Report Detail Dialog */}
       {selectedProblemReportId && (
         <ProblemReportDetailDialog
-          isOpen={isProblemReportDialogOpen}
-          onClose={() => {
-            setIsProblemReportDialogOpen(false);
-            setSelectedProblemReportId(null);
+          open={isProblemReportDialogOpen}
+          onOpenChange={(open) => {
+            setIsProblemReportDialogOpen(open);
+            if (!open) {
+              setSelectedProblemReportId(null);
+            }
           }}
-          problemReportId={selectedProblemReportId}
+          reportId={selectedProblemReportId}
+          user={currentUser}
         />
       )}
     </PageContainer>

@@ -75,13 +75,13 @@ export function ProblemReportDetailDialog({
   // Fetch problem report
   const { data: report, isLoading: reportLoading } = useQuery<ProblemReport>({
     queryKey: [`/api/problem-reports/${reportId}`],
-    enabled: open && !!reportId,
+    enabled: open && !!reportId && !isNaN(reportId) && reportId > 0,
   });
 
   // Fetch messages
   const { data: messages = [], isLoading: messagesLoading } = useQuery<ProblemReportMessage[]>({
     queryKey: [`/api/problem-reports/${reportId}/messages`],
-    enabled: open && !!reportId,
+    enabled: open && !!reportId && !isNaN(reportId) && reportId > 0,
     refetchInterval: 5000, // Refresh every 5 seconds
   });
 
