@@ -355,7 +355,7 @@ export function DesktopSidebar() {
               </h3>
               <div className="mt-1 space-y-1">
                 {routes
-                  .filter(route => route.category === 'system')
+                  .filter(route => route.category === 'system' || (route.category === 'user' && currentUser?.role === 'user'))
                   .map(renderNavItem)
                 }
               </div>
