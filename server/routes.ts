@@ -2142,46 +2142,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const categoryName = record.Category || record.category;
                 let categories = await storage.getCategories();
                 
-                // Create a mapping of CSV category names to standardized categories
-                const categoryMapping = {
-                  'desktop': 'Desktop',
-                  'laptop': 'Laptop',
-                  'monitor': 'Monitor',
-                  'av': 'AV Equipment',
-                  'apple': 'Apple Devices',
-                  'phone': 'Phone',
-                  'desk phone': 'Phone',
-                  'router': 'Networking',
-                  'switch': 'Networking',
-                  'firewall': 'Networking',
-                  'server': 'Server',
-                  'printer': 'Printer',
-                  'tablet': 'Tablet'
-                };
-                
                 // First try exact match
                 let category = categories.find(c => 
                   c.name.toLowerCase() === categoryName.toLowerCase()
                 );
                 
-                // If no exact match, try mapped category
+                // If no exact match, create new category with exact name from CSV
                 if (!category) {
-                  const mappedCategoryName = categoryMapping[categoryName.toLowerCase()];
-                  if (mappedCategoryName) {
-                    category = categories.find(c => 
-                      c.name.toLowerCase() === mappedCategoryName.toLowerCase()
-                    );
-                  }
-                }
-                
-                // If still no match, create new category
-                if (!category) {
-                  const newCategoryName = categoryMapping[categoryName.toLowerCase()] || categoryName;
-                  console.log(`Creating new category: ${newCategoryName}`);
+                  console.log(`Creating new category: ${categoryName}`);
                   category = await storage.createCategory({
-                    name: newCategoryName,
+                    name: categoryName,
                     description: `Auto-created from CSV import`
                   }, loggedInUserId);
+                  // Refresh categories list for subsequent rows
+                  categories = await storage.getCategories();
                 }
                 
                 if (category) {
@@ -2197,22 +2171,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   s.name.toLowerCase() === siteName.toLowerCase()
                 );
                 
-                // If site doesn't exist, create it
+                // If site doesn't exist, create it with exact name from CSV
                 if (!site) {
                   console.log(`Creating new site: ${siteName}`);
-                  // Create site name mappings for common abbreviations
-                  const siteNameMapping = {
-                    'BRD': 'Broward Office',
-                    'SAN': 'San Antonio Office', 
-                    'MI6': 'Miami Office',
-                    'Remote': 'Remote/Home Office'
-                  };
-                  
-                  const fullSiteName = siteNameMapping[siteName] || siteName;
                   site = await storage.createSite({
-                    name: fullSiteName,
+                    name: siteName,
                     description: `Auto-created from CSV import`
                   }, loggedInUserId);
+                  // Refresh sites list for subsequent rows
+                  sites = await storage.getSites();
                 }
                 
                 if (site) {
