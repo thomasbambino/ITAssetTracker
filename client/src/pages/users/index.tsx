@@ -43,25 +43,10 @@ export default function Users() {
   // Export CSV
   const { exportCsv, isExporting } = useCsvExport('/api/export/users');
   
-  // Enhanced export function with authentication check
+  // Enhanced export function 
   const handleExport = async () => {
     try {
-      // First check if user is authenticated
-      const authCheck = await fetch('/api/users/me', {
-        credentials: 'include',
-      });
-      
-      if (!authCheck.ok) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to export data",
-          variant: "destructive",
-        });
-        window.location.href = '/login';
-        return;
-      }
-      
-      // User is authenticated, proceed with export
+      // Direct export using the improved iframe method
       await exportCsv();
     } catch (error) {
       console.error('Export error:', error);

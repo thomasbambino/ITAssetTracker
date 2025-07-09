@@ -19,18 +19,19 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Set up session middleware
+// Set up session middleware with memory store
 app.use(session({
   secret: process.env.SESSION_SECRET || 'itassetmanagement-secret-key',
-  resave: true,
-  saveUninitialized: true,
+  resave: false,
+  saveUninitialized: false,
   name: 'asset.sid', // Custom name to avoid default name collisions
   cookie: {
-    secure: false, // Set to false even in production for now to debug
+    secure: false, // Set to false for development
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     sameSite: 'lax' // Allow cookies in same-site context
-  }
+  },
+  rolling: true // Reset expiration on each request
 }));
 
 // Debug middleware for logging and session tracking
