@@ -267,31 +267,25 @@ export function BulkSoftwareAssignmentForm({
           <FormField
             control={form.control}
             name="userIds"
-            render={({ field }) => {
-              console.log('User field value:', field.value);
-              return (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Select Users</FormLabel>
-                  <FormControl>
-                    <MultiSelectDropdown
-                      options={userOptions}
-                      value={field.value || []}
-                      onChange={(value) => {
-                        console.log('Form field onChange called with:', value);
-                        field.onChange(value);
-                      }}
-                      placeholder="Select users to assign software to..."
-                      searchPlaceholder="Search users..."
-                      maxHeight="max-h-48"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Select multiple users to assign this software to. You can search by name or email.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Select Users</FormLabel>
+                <FormControl>
+                  <MultiSelectDropdown
+                    options={userOptions}
+                    value={field.value || []}
+                    onChange={(value) => field.onChange(value)}
+                    placeholder="Select users to assign software to..."
+                    searchPlaceholder="Search users..."
+                    maxHeight="max-h-48"
+                  />
+                </FormControl>
+                <FormDescription>
+                  Select multiple users to assign this software to. You can search by name or email.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         ) : (
           <FormField

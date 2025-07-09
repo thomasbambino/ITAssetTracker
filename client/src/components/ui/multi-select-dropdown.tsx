@@ -97,18 +97,12 @@ export function MultiSelectDropdown({
       event.stopPropagation();
     }
     
-    console.log('Toggle option:', optionId, 'Current value:', value);
-    
     if (value.includes(optionId)) {
       // Remove from selection
-      const newValue = value.filter(id => id !== optionId);
-      console.log('Removing, new value:', newValue);
-      onChange(newValue);
+      onChange(value.filter(id => id !== optionId));
     } else {
       // Add to selection
-      const newValue = [...value, optionId];
-      console.log('Adding, new value:', newValue);
-      onChange(newValue);
+      onChange([...value, optionId]);
     }
   };
 
