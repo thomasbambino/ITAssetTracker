@@ -11,21 +11,25 @@ export class TwoFactorService {
     otpauthUrl: string;
   } {
     const secret = speakeasy.generateSecret({
-      name: userEmail,
+      name: `${companyName}:${userEmail}`,
       issuer: companyName,
       length: 32
     });
+
+    // Manually construct the OTP Auth URL to ensure proper formatting
+    const otpauthUrl = `otpauth://totp/${encodeURIComponent(companyName)}:${encodeURIComponent(userEmail)}?secret=${secret.base32}&issuer=${encodeURIComponent(companyName)}`;
 
     console.log('2FA Secret Generation Debug:');
     console.log('- User Email:', userEmail);
     console.log('- Company:', companyName);
     console.log('- Generated secret (base32):', secret.base32);
     console.log('- Secret length:', secret.base32?.length);
-    console.log('- OTP Auth URL:', secret.otpauth_url);
+    console.log('- Manual OTP Auth URL:', otpauthUrl);
+    console.log('- Library OTP Auth URL:', secret.otpauth_url);
 
     return {
       secret: secret.base32,
-      otpauthUrl: secret.otpauth_url || ''
+      otpauthUrl: otpauthUrl
     };
   }
 
