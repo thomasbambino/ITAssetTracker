@@ -114,6 +114,8 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
   // Submit handler
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
+    console.log('Form values before formatting:', values);
+    
     try {
       // Format data to ensure dates are properly handled
       const formattedData = {
@@ -123,6 +125,8 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
         cost: values.cost ? Math.round(values.cost * 100) : null, // Convert dollars to cents
         deviceId: values.deviceId ? parseInt(values.deviceId.toString()) : null,
       };
+      
+      console.log('Formatted data being sent:', formattedData);
       
       if (record?.id) {
         // Update existing record

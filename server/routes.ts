@@ -1800,8 +1800,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(record);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('Maintenance record validation error:', error.errors);
         return res.status(400).json({ message: "Invalid maintenance record data", errors: error.errors });
       }
+      console.error('Error updating maintenance record:', error);
       res.status(500).json({ message: "Error updating maintenance record" });
     }
   });

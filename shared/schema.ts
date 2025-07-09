@@ -338,6 +338,23 @@ export const maintenanceRecords = pgTable("maintenance_records", {
 export const insertMaintenanceRecordSchema = createInsertSchema(maintenanceRecords).omit({
   id: true,
   createdAt: true,
+}).extend({
+  // Override the date fields to accept strings, dates, or null
+  scheduledDate: z.union([
+    z.string().transform((str) => new Date(str)), 
+    z.date(),
+    z.null()
+  ]).optional().nullable(),
+  completedDate: z.union([
+    z.string().transform((str) => new Date(str)), 
+    z.date(),
+    z.null()
+  ]).optional().nullable(),
+  // Override cost to accept number or null
+  cost: z.union([
+    z.number(),
+    z.null()
+  ]).optional().nullable(),
 });
 
 export type InsertMaintenanceRecord = z.infer<typeof insertMaintenanceRecordSchema>;
