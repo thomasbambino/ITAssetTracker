@@ -87,7 +87,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+      userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
       actionType: 'site_added',
       details: `Site created: ${site.name}`
     });
@@ -162,7 +162,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType: 'site_updated',
         details: `Site updated: ${updatedSite.name}`
       });
@@ -199,7 +199,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
           actionType: 'site_deleted',
           details: `Site deleted: ${site.name}`
         });
@@ -387,7 +387,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+      userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
       actionType: 'user_added',
       details: `User created: ${user.firstName} ${user.lastName}`
     });
@@ -525,7 +525,7 @@ export class DatabaseStorage implements IStorage {
       // Log activity only if not skipped
       if (!skipActivityLog) {
         await this.createActivityLog({
-          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
           actionType: 'user_updated',
           details: `User updated: ${updatedUser.firstName} ${updatedUser.lastName}`
         });
@@ -559,7 +559,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
           actionType: 'user_deleted',
           details: `User deleted: ${user.firstName} ${user.lastName}`
         });
@@ -647,7 +647,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+      userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
       actionType: 'category_added',
       details: `Category created: ${category.name}`
     });
@@ -693,7 +693,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType: 'category_updated',
         details: `Category updated: ${updatedCategory.name}`
       });
@@ -730,7 +730,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
           actionType: 'category_deleted',
           details: `Category deleted: ${category.name}`
         });
@@ -887,7 +887,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+      userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
       actionType: 'device_added',
       details: `Device added: ${device.name ? device.name : `${device.brand} ${device.model}`} (${device.assetTag})`
     });
@@ -1031,7 +1031,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType: 'device_updated',
         details: `Device updated: ${updatedDevice.name ? updatedDevice.name : `${updatedDevice.brand} ${updatedDevice.model}`} (${updatedDevice.assetTag})`
       });
@@ -1060,7 +1060,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
           actionType: 'device_deleted',
           details: `Device deleted: ${device.name ? device.name : `${device.brand} ${device.model}`} (${device.assetTag})`
         });
@@ -1213,7 +1213,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType: 'device_intune_updated',
         details: `Intune status updated for device: ${updatedDevice.name ? updatedDevice.name : `${updatedDevice.brand} ${updatedDevice.model}`} (${updatedDevice.assetTag})`
       });
@@ -1447,7 +1447,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType: 'device_unassigned',
         details: previousUser 
           ? `Device ${device.name ? device.name : `${device.brand} ${device.model}`} (ID: ${device.id}) (${device.assetTag || ''}) unassigned from ${previousUser.firstName} ${previousUser.lastName}`
@@ -1784,7 +1784,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+      userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
       actionType: 'software_added',
       details: `Software added: ${software.name} (${software.vendor})`
     });
@@ -1904,7 +1904,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType: 'software_updated',
         details: `Software updated: ${updatedSoftware.name} (${updatedSoftware.vendor})`
       });
@@ -1942,7 +1942,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
           actionType: 'software_deleted',
           details: `Software deleted: ${software.name} (${software.vendor})`
         });
@@ -2299,7 +2299,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType: 'software_assignment_updated',
         details: `Software assignment updated: ID ${id}`
       });
@@ -2360,7 +2360,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
           actionType: 'software_assignment_deleted',
           details: `Software assignment deleted: ${assignment.softwareName} from ${assignment.userName || 'device'}`
         });
@@ -2517,7 +2517,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+      userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
       actionType: 'maintenance_scheduled',
       details: `Maintenance ${record.maintenanceType} scheduled for device ${device ? device.assetTag : record.deviceId}`
     });
@@ -2632,7 +2632,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType,
         details
       });
@@ -2659,7 +2659,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
           actionType: 'maintenance_deleted',
           details: `Maintenance record deleted: ${record.maintenanceType} for device ${record.deviceAssetTag || record.deviceId}`
         });
@@ -2899,7 +2899,7 @@ export class DatabaseStorage implements IStorage {
     
     // Log activity
     await this.createActivityLog({
-      userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+      userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
       actionType: 'qr_code_generated',
       details: newQrCode.deviceId && device
         ? `QR code generated for device ${device.assetTag || newQrCode.deviceId}`
@@ -2973,7 +2973,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType: 'qr_code_updated',
         details: `QR code updated: ${updatedQrCode.code}`
       });
@@ -3011,7 +3011,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount > 0) {
         // Log activity
         await this.createActivityLog({
-          userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+          userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
           actionType: 'qr_code_deleted',
           details: qrCode.deviceId && qrCode.device
             ? `QR code deleted for device ${qrCode.device.assetTag || qrCode.deviceId}`
@@ -3060,7 +3060,7 @@ export class DatabaseStorage implements IStorage {
       
       // Log activity
       await this.createActivityLog({
-        userId: loggedInUserId || 1, // Use logged-in user ID if provided, otherwise default to admin
+        userId: loggedInUserId || 41, // Use logged-in user ID if provided, otherwise default to current admin (Tommy)
         actionType: 'qr_code_scanned',
         details: updatedQrCode.deviceId && device
           ? `QR code scanned for device ${device.assetTag || updatedQrCode.deviceId}`

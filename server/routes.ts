@@ -2906,6 +2906,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CSV Import/Export routes
+  app.post('/api/import/users', isAuthenticated, isAdmin, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+
+      // Parse CSV data
+      const csvData = req.file.buffer.toString('utf8');
+      const records: any[] = [];
+
+      parse(csvData, { 
+        columns: true, 
+        skip_empty_lines: true 
+      }, async (err, data) => {
+        if (err) {
+          console.error('CSV parsing error:', err);
+          return res.status(400).json({ message: "Invalid CSV format" });
+        }
+
+        try {
+          let importedCount = 0;
+          let skippedCount = 0;
+          const errors: string[] = [];
+
+          for (const record of data) {
+            try {
+              // Map CSV columns to database fields
+              const userData = {
+                firstName: record.FirstName || record.first_name || '',
+                lastName: record.LastName || record.last_name || '',
+                email: record.Email || record.email || '',
+                phoneNumber: record.PhoneNumber || record.phone_number || record.Phone || '',
+                department: record.Department || record.department || '',
+                role: record.Role || record.role || 'user',
+                active: record.Status === 'inactive' ? false : true,
+                passwordResetRequired: true,
+                twoFactorEnabled: (record.TwoFactorEnabled || record.two_factor_enabled) === 'Yes'
+              };
+
+              // Validate required fields
+              if (!userData.firstName || !userData.lastName || !userData.email) {
+                skippedCount++;
+                errors.push(`Row skipped: Missing required fields for ${userData.firstName} ${userData.lastName} (${userData.email})`);
+                continue;
+              }
+
+              // Check if user already exists
+              const existingUser = await storage.getUserByEmail(userData.email);
+              if (existingUser) {
+                skippedCount++;
+                errors.push(`User ${userData.email} already exists`);
+                continue;
+              }
+
+              // Create user with temporary password
+              const tempPassword = 'TempPass123!';
+              const hashedPassword = await import('bcrypt').then(bcrypt => bcrypt.hash(tempPassword, 10));
+              
+              const userToCreate = {
+                ...userData,
+                passwordHash: hashedPassword,
+                passwordResetRequired: true
+              };
+
+              // Create user
+              await storage.createUser(userToCreate, loggedInUserId);
+              importedCount++;
+
+            } catch (error) {
+              console.error('Error processing user record:', error);
+              skippedCount++;
+              errors.push(`Error processing ${record.FirstName} ${record.LastName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+          }
+
+          // Log import activity
+          await storage.createActivityLog({
+            actionType: 'BULK_IMPORT',
+            userId: loggedInUserId,
+            details: `Imported ${importedCount} users from CSV (${skippedCount} skipped)`
+          });
+
+          res.json({
+            message: `Successfully imported ${importedCount} users. ${skippedCount} records skipped.`,
+            imported: importedCount,
+            skipped: skippedCount,
+            errors: errors.length > 0 ? errors : undefined
+          });
+
+        } catch (error) {
+          console.error('Error processing CSV import:', error);
+          res.status(500).json({ message: "Error processing CSV import" });
+        }
+      });
+
+    } catch (error) {
+      console.error('Error importing users:', error);
+      res.status(500).json({ message: "Error importing users" });
+    }
+  });
+
+  // Export users to CSV
+  app.get('/api/export/users', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getUsers();
+      
+      // Transform data for CSV export
+      const exportData = users.map(user => ({
+        ID: user.id,
+        FirstName: user.firstName,
+        LastName: user.lastName,
+        Email: user.email,
+        Role: user.role,
+        Department: user.department,
+        PhoneNumber: user.phoneNumber || '',
+        Status: user.active ? 'active' : 'inactive',
+        LastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : '',
+        CreatedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '',
+        TwoFactorEnabled: user.twoFactorEnabled ? 'Yes' : 'No'
+      }));
+      
+      // Convert to CSV
+      stringify(exportData, { header: true }, (err, output) => {
+        if (err) {
+          console.error("Error generating CSV:", err);
+          return res.status(500).json({ message: "Error generating CSV" });
+        }
+        
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="users-export-${new Date().toISOString().slice(0, 10)}_${Date.now()}.csv"`);
+        
+        // Send the CSV data
+        res.send(output);
+      });
+    } catch (error) {
+      console.error("Error exporting users:", error);
+      res.status(500).json({ message: "Error exporting users" });
+    }
+  });
+
   // Start the server
   const server = createServer(app);
   return server;
