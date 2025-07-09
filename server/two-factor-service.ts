@@ -6,7 +6,7 @@ export class TwoFactorService {
   /**
    * Generate a new secret for 2FA setup
    */
-  static generateSecret(userEmail: string, companyName: string = 'AssetTrack'): {
+  static generateSecret(userEmail: string, companyName: string = 'Connecta'): {
     secret: string;
     otpauthUrl: string;
   } {

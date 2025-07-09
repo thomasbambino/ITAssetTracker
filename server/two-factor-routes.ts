@@ -46,7 +46,7 @@ router.get('/setup', isAuthenticated, async (req: AuthenticatedRequest, res: Res
 
     // Get branding settings for company name
     const branding = await storage.getBrandingSettings();
-    const companyName = branding?.companyName || 'AssetTrack';
+    const companyName = branding?.companyName || 'Connecta';
 
     // Generate secret and QR code
     const { secret, otpauthUrl } = TwoFactorService.generateSecret(
