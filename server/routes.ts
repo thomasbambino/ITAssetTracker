@@ -2299,6 +2299,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export users to CSV
+  app.get('/api/export/users', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getUsers();
+      
+      // Transform data for CSV export
+      const exportData = await Promise.all(users.map(async (user) => {
+        // Get department name
+        const department = user.departmentId 
+          ? await storage.getDepartmentById(user.departmentId)
+          : null;
+          
+        return {
+          ID: user.id,
+          FirstName: user.firstName || "",
+          LastName: user.lastName || "",
+          Email: user.email || "",
+          Role: user.role || "",
+          Department: department ? department.name : (user.department || ""),
+          PhoneNumber: user.phoneNumber || "",
+          Status: user.status || "active",
+          LastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "",
+          CreatedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "",
+          TwoFactorEnabled: user.twoFactorEnabled ? "Yes" : "No",
+        };
+      }));
+      
+      // Convert to CSV
+      stringify(exportData, { header: true }, (err, output) => {
+        if (err) {
+          console.error("Error generating CSV:", err);
+          return res.status(500).json({ message: "Error generating CSV" });
+        }
+        
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="users-export-${new Date().toISOString().slice(0, 10)}.csv"`);
+        
+        // Send the CSV data
+        res.send(output);
+      });
+    } catch (error) {
+      console.error("Error exporting users:", error);
+      res.status(500).json({ message: "Error exporting users" });
+    }
+  });
+
   // Export Tangible Personal Property report to CSV
   app.get('/api/export/tangible-property', isAuthenticated, async (req: Request, res: Response) => {
     try {
