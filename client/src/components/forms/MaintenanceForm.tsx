@@ -95,7 +95,7 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
       scheduledDate: record?.scheduledDate ? new Date(record.scheduledDate) : null,
       completedDate: record?.completedDate ? new Date(record.completedDate) : null,
       status: record?.status || "scheduled",
-      cost: record?.cost || null,
+      cost: record?.cost ? (record.cost / 100) : null, // Convert cents to dollars for display
       performedBy: record?.performedBy || "",
       notes: record?.notes || "",
     },
@@ -120,7 +120,7 @@ export function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceForm
         ...values,
         scheduledDate: values.scheduledDate ? new Date(values.scheduledDate) : null,
         completedDate: values.completedDate ? new Date(values.completedDate) : null,
-        cost: values.cost ? parseInt(values.cost.toString()) : null,
+        cost: values.cost ? Math.round(values.cost * 100) : null, // Convert dollars to cents
         deviceId: values.deviceId ? parseInt(values.deviceId.toString()) : null,
       };
       
