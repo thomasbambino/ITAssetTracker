@@ -2114,10 +2114,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Handle common variations in column names
               const deviceData = {
                 name: record.Name || record.name || record.DeviceName || record.deviceName || null,
-                brand: record.Brand || record.brand || record.Manufacturer || record.manufacturer || "",
-                model: record.Model || record.model || "",
-                serialNumber: record.SerialNumber || record['Serial Number'] || record.serial || record.Serial || "",
-                assetTag: record.AssetTag || record['Asset Tag'] || record.Tag || record.tag || "",
+                brand: record.Brand || record.brand || record.Manufacturer || record.manufacturer || "Unknown",
+                model: record.Model || record.model || "Unknown",
+                serialNumber: (record.SerialNumber || record['Serial Number'] || record.serial || record.Serial || '').trim() || null,
+                assetTag: (record.AssetTag || record['Asset Tag'] || record.Tag || record.tag || '').trim() || null,
                 // Convert purchase cost from dollars to cents if present
                 purchaseCost: parseCurrency(record.PurchaseCost || record['Purchase Cost'] || record.Cost || record.cost),
                 purchaseDate: parseDate(record.PurchaseDate || record['Purchase Date'] || record.Date || record.date),
@@ -2132,9 +2132,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (record.Category || record.category) {
                 const categoryName = record.Category || record.category;
                 const categories = await storage.getCategories();
-                const category = categories.find(c => 
+                
+                // Create a mapping of CSV category names to database categories
+                const categoryMapping = {
+                  'desktop': 'Desktop',
+                  'laptop': 'Laptop',
+                  'monitor': 'Monitor',
+                  'av': 'Other',
+                  'apple': 'Laptop',
+                  'phone': 'Phone',
+                  'desk phone': 'Phone',
+                  'router': 'Networking',
+                  'switch': 'Networking',
+                  'firewall': 'Networking',
+                  'server': 'Server',
+                  'printer': 'Printer',
+                  'tablet': 'Tablet'
+                };
+                
+                // First try exact match
+                let category = categories.find(c => 
                   c.name.toLowerCase() === categoryName.toLowerCase()
                 );
+                
+                // If no exact match, try mapped category
+                if (!category) {
+                  const mappedCategoryName = categoryMapping[categoryName.toLowerCase()];
+                  if (mappedCategoryName) {
+                    category = categories.find(c => 
+                      c.name.toLowerCase() === mappedCategoryName.toLowerCase()
+                    );
+                  }
+                }
+                
+                // If still no match, use "Other" as fallback
+                if (!category) {
+                  category = categories.find(c => 
+                    c.name.toLowerCase() === 'other'
+                  );
+                }
                 
                 if (category) {
                   deviceData.categoryId = category.id;
