@@ -139,12 +139,12 @@ export default function LoginPage() {
   // Show loading skeleton when branding data is loading
   if (isBrandingLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
         <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
           <CardHeader className="space-y-6 pb-8">
             <div className="flex flex-col items-center space-y-4">
               <div className="flex items-center space-x-3">
-                <Skeleton className="w-12 h-12 rounded-xl" />
+                <Skeleton className="w-12 h-12 rounded-lg" />
                 <Skeleton className="h-8 w-48" />
               </div>
               <Skeleton className="h-4 w-64" />
@@ -172,17 +172,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
       <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
         <CardHeader className="space-y-6 pb-8">
           <div className="flex flex-col items-center space-y-4">
             <div className="flex items-center space-x-3">
               {branding?.logo ? (
-                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl shadow-lg flex items-center justify-center">
+                <div className="w-12 h-12 flex items-center justify-center">
                   <img 
                     src={branding.logo} 
                     alt="Company logo"
-                    className="h-8 w-8 object-contain" 
+                    className="h-12 w-12 object-contain" 
                   />
                 </div>
               ) : (
