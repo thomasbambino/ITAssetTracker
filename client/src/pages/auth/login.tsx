@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TwoFactorVerification from "@/components/auth/TwoFactorVerification";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface BrandingSettings {
   id?: number;
@@ -140,6 +141,9 @@ export default function LoginPage() {
   if (isBrandingLoading) {
     return (
       <div className="fixed inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
+        <div className="absolute top-6 right-6 z-10">
+          <ThemeToggle />
+        </div>
         <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
           <CardHeader className="space-y-6 pb-8">
             <div className="flex flex-col items-center space-y-4">
@@ -173,6 +177,9 @@ export default function LoginPage() {
 
   return (
     <div className="fixed inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
+      <div className="absolute top-6 right-6 z-10">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
         <CardHeader className="space-y-6 pb-8">
           <div className="flex flex-col items-center space-y-4">
