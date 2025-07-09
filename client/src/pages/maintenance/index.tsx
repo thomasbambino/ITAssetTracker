@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, CheckCircle, Clock, Plus, Wrench, AlertTriangle, Calendar } from "lucide-react";
+import { CalendarClock, CheckCircle, Clock, Plus, Wrench, AlertTriangle, Calendar, ExternalLink } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { MaintenanceForm } from "@/components/forms/MaintenanceForm";
 import { queryClient } from "@/lib/queryClient";
@@ -117,6 +117,12 @@ export default function Maintenance() {
     setIsAddDialogOpen(true);
   };
 
+  const handleGoToDevice = (record: MaintenanceRecord) => {
+    if (record.deviceId && record.device) {
+      navigate(`/devices/${record.deviceId}`);
+    }
+  };
+
   const getDueMaintenanceCount = () => {
     if (!scheduledMaintenance.length) return 0;
     
@@ -138,7 +144,7 @@ export default function Maintenance() {
       <DialogTrigger asChild>
         <Button><Plus className="h-4 w-4 mr-2" /> New Maintenance Record</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{selectedRecord ? "Edit Maintenance Record" : "New Maintenance Record"}</DialogTitle>
           <DialogDescription>
@@ -239,6 +245,11 @@ export default function Maintenance() {
                     label: "Edit",
                     onClick: handleEditClick,
                     icon: <Wrench className="h-4 w-4" />
+                  },
+                  {
+                    label: "Go to Device",
+                    onClick: handleGoToDevice,
+                    icon: <ExternalLink className="h-4 w-4" />
                   }
                 ]}
                 emptyState={
@@ -281,6 +292,11 @@ export default function Maintenance() {
                     label: "Edit",
                     onClick: handleEditClick,
                     icon: <Wrench className="h-4 w-4" />
+                  },
+                  {
+                    label: "Go to Device",
+                    onClick: handleGoToDevice,
+                    icon: <ExternalLink className="h-4 w-4" />
                   }
                 ]}
               />
@@ -310,6 +326,11 @@ export default function Maintenance() {
                     label: "View",
                     onClick: handleEditClick,
                     icon: <Wrench className="h-4 w-4" />
+                  },
+                  {
+                    label: "Go to Device",
+                    onClick: handleGoToDevice,
+                    icon: <ExternalLink className="h-4 w-4" />
                   }
                 ]}
               />
