@@ -48,6 +48,8 @@ export default function Software() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [assignmentType, setAssignmentType] = useState<'single' | 'bulk'>('single');
+  
+  console.log('Assignment type state:', assignmentType);
   const [selectedSoftware, setSelectedSoftware] = useState<Software | null>(null);
   const [, setLocation] = useLocation();
   
@@ -415,24 +417,26 @@ export default function Software() {
             </DialogDescription>
           </DialogHeader>
           {selectedSoftware && (
-            <Tabs value={assignmentType} onValueChange={(value) => setAssignmentType(value as 'single' | 'bulk')} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="single">Single Assignment</TabsTrigger>
-                <TabsTrigger value="bulk">Multiple Users</TabsTrigger>
-              </TabsList>
-              <TabsContent value="single" className="mt-4">
-                <SoftwareAssignmentForm 
-                  softwareId={selectedSoftware.id} 
-                  onSuccess={handleAssignmentSuccess} 
-                />
-              </TabsContent>
-              <TabsContent value="bulk" className="mt-4">
-                <BulkSoftwareAssignmentForm 
-                  softwareId={selectedSoftware.id} 
-                  onSuccess={handleAssignmentSuccess} 
-                />
-              </TabsContent>
-            </Tabs>
+            <div className="w-full">
+              <Tabs value={assignmentType} onValueChange={(value) => setAssignmentType(value as 'single' | 'bulk')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="single">Single Assignment</TabsTrigger>
+                  <TabsTrigger value="bulk">Multiple Users</TabsTrigger>
+                </TabsList>
+                <TabsContent value="single" className="mt-4">
+                  <SoftwareAssignmentForm 
+                    softwareId={selectedSoftware.id} 
+                    onSuccess={handleAssignmentSuccess} 
+                  />
+                </TabsContent>
+                <TabsContent value="bulk" className="mt-4">
+                  <BulkSoftwareAssignmentForm 
+                    softwareId={selectedSoftware.id} 
+                    onSuccess={handleAssignmentSuccess} 
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
           )}
         </DialogContent>
       </Dialog>
