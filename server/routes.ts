@@ -2070,8 +2070,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
             errors: [] as string[]
           };
           
-          for (const record of records) {
+          console.log(`Processing ${records.length} records from CSV`);
+          
+          for (let i = 0; i < records.length; i++) {
+            const record = records[i];
             try {
+              // Helper function to parse currency values
+              const parseCurrency = (value: string) => {
+                if (!value) return null;
+                // Remove currency symbols, commas, and spaces
+                const cleaned = value.replace(/[$,\s]/g, '');
+                const parsed = parseFloat(cleaned);
+                return isNaN(parsed) ? null : Math.round(parsed * 100); // Convert to cents
+              };
+
+              // Helper function to parse dates safely
+              const parseDate = (value: string) => {
+                if (!value) return null;
+                // Fix common date format issues
+                let dateStr = value.toString().trim();
+                
+                // Handle the specific "1/27/1023" format - assume it's 2023
+                if (dateStr.includes('/1023')) {
+                  dateStr = dateStr.replace('/1023', '/2023');
+                }
+                
+                try {
+                  const date = new Date(dateStr);
+                  return isNaN(date.getTime()) ? null : date;
+                } catch (e) {
+                  return null;
+                }
+              };
+
+              // Helper function to parse boolean values
+              const parseBoolean = (value: string) => {
+                if (!value) return false;
+                const str = value.toString().toLowerCase();
+                return str === 'yes' || str === 'true' || str === '1';
+              };
+
               // Map CSV columns to device fields
               // Handle common variations in column names
               const deviceData = {
@@ -2081,18 +2119,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 serialNumber: record.SerialNumber || record['Serial Number'] || record.serial || record.Serial || "",
                 assetTag: record.AssetTag || record['Asset Tag'] || record.Tag || record.tag || "",
                 // Convert purchase cost from dollars to cents if present
-                purchaseCost: record.PurchaseCost || record['Purchase Cost'] || record.Cost || record.cost
-                  ? Math.round(parseFloat(record.PurchaseCost || record['Purchase Cost'] || record.Cost || record.cost) * 100)
-                  : null,
-                purchaseDate: record.PurchaseDate || record['Purchase Date'] || record.Date || record.date
-                  ? new Date(record.PurchaseDate || record['Purchase Date'] || record.Date || record.date)
-                  : null,
+                purchaseCost: parseCurrency(record.PurchaseCost || record['Purchase Cost'] || record.Cost || record.cost),
+                purchaseDate: parseDate(record.PurchaseDate || record['Purchase Date'] || record.Date || record.date),
                 purchasedBy: record.PurchasedBy || record['Purchased By'] || record.Purchaser || record.purchaser || "",
-                warrantyEOL: record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty
-                  ? new Date(record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty)
-                  : null,
+                warrantyEOL: parseDate(record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty),
                 status: record.Status || record.status || 'active',
-                isIntuneOnboarded: record.IntuneOnboarded || record.intuneOnboarded || false,
+                isIntuneOnboarded: parseBoolean(record.IntuneOnboarded || record.intuneOnboarded),
                 intuneComplianceStatus: record.IntuneStatus || record.intuneStatus || 'unknown',
               };
               
@@ -2121,20 +2153,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   deviceData.siteId = site.id;
                 }
               }
+
+              // Find user by name if provided (for device assignment)
+              if (record.AssignedTo || record.assignedTo) {
+                const assignedToName = record.AssignedTo || record.assignedTo;
+                const users = await storage.getUsers();
+                const user = users.find(u => {
+                  const fullName = `${u.firstName} ${u.lastName}`;
+                  return fullName.toLowerCase() === assignedToName.toLowerCase();
+                });
+                
+                if (user) {
+                  deviceData.userId = user.id;
+                }
+              }
               
               // Validate and create device
               const validatedData = insertDeviceSchema.parse(deviceData);
               await storage.createDevice(validatedData, loggedInUserId);
               results.success++;
             } catch (error) {
-              console.error("Error importing device:", error);
+              console.error(`Error importing device (row ${i + 2}):`, error); // +2 because CSV has header row
               results.failed++;
+              const rowNumber = i + 2; // +2 because CSV has header row
               if (error instanceof z.ZodError) {
-                results.errors.push(`Row ${results.success + results.failed}: Validation error - ${error.errors.map(e => e.message).join(', ')}`);
+                results.errors.push(`Row ${rowNumber}: Validation error - ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
               } else {
-                results.errors.push(`Row ${results.success + results.failed}: ${error.message || 'Unknown error'}`);
+                results.errors.push(`Row ${rowNumber}: ${error.message || 'Unknown error'}`);
               }
             }
+          }
+          
+          console.log(`CSV Import Results: ${results.success} successful, ${results.failed} failed`);
+          if (results.errors.length > 0) {
+            console.log("Import errors:", results.errors);
           }
           
           res.json(results);
