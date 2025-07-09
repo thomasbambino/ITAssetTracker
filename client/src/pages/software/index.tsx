@@ -10,6 +10,7 @@ import { AlertCircle, CheckCircle, Clock, Plus, AlertTriangle, Edit as EditIcon 
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { SoftwareForm } from "@/components/forms/SoftwareForm";
 import { SoftwareAssignmentForm } from "@/components/forms/SoftwareAssignmentForm";
+import { BulkSoftwareAssignmentForm } from "@/components/forms/BulkSoftwareAssignmentForm";
 import { queryClient } from "@/lib/queryClient";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useLocation } from "wouter";
@@ -46,6 +47,7 @@ export default function Software() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [assignmentType, setAssignmentType] = useState<'single' | 'bulk'>('single');
   const [selectedSoftware, setSelectedSoftware] = useState<Software | null>(null);
   const [, setLocation] = useLocation();
   
@@ -186,6 +188,7 @@ export default function Software() {
 
   const handleAssignmentSuccess = () => {
     setIsAssignDialogOpen(false);
+    setAssignmentType('single'); // Reset to single assignment type
     // Invalidate queries to refresh assignments
     if (selectedSoftware) {
       queryClient.invalidateQueries({ queryKey: ['/api/software', selectedSoftware.id] });
@@ -398,19 +401,38 @@ export default function Software() {
       </Tabs>
       
       {/* Software Assignment Dialog */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+      <Dialog open={isAssignDialogOpen} onOpenChange={(open) => {
+        setIsAssignDialogOpen(open);
+        if (!open) {
+          setAssignmentType('single'); // Reset to single assignment type when dialog closes
+        }
+      }}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assign Software</DialogTitle>
             <DialogDescription>
-              {selectedSoftware && `Assign ${selectedSoftware.name} to a user or device.`}
+              {selectedSoftware && `Assign ${selectedSoftware.name} to users or devices.`}
             </DialogDescription>
           </DialogHeader>
           {selectedSoftware && (
-            <SoftwareAssignmentForm 
-              softwareId={selectedSoftware.id} 
-              onSuccess={handleAssignmentSuccess} 
-            />
+            <Tabs value={assignmentType} onValueChange={(value) => setAssignmentType(value as 'single' | 'bulk')} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="single">Single Assignment</TabsTrigger>
+                <TabsTrigger value="bulk">Multiple Users</TabsTrigger>
+              </TabsList>
+              <TabsContent value="single" className="mt-4">
+                <SoftwareAssignmentForm 
+                  softwareId={selectedSoftware.id} 
+                  onSuccess={handleAssignmentSuccess} 
+                />
+              </TabsContent>
+              <TabsContent value="bulk" className="mt-4">
+                <BulkSoftwareAssignmentForm 
+                  softwareId={selectedSoftware.id} 
+                  onSuccess={handleAssignmentSuccess} 
+                />
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
