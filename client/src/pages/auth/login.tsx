@@ -139,28 +139,31 @@ export default function LoginPage() {
   // Show loading skeleton when branding data is loading
   if (isBrandingLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <div className="flex items-center justify-center mb-2">
-              <Skeleton className="w-10 h-10 rounded-md mr-2" />
-              <Skeleton className="h-8 w-48" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
+        <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+          <CardHeader className="space-y-6 pb-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center space-x-3">
+                <Skeleton className="w-12 h-12 rounded-xl" />
+                <Skeleton className="h-8 w-48" />
+              </div>
+              <Skeleton className="h-4 w-64" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-12" />
-                <Skeleton className="h-10 w-full" />
-              </div>
+          <CardContent className="px-8 pb-8">
+            <div className="space-y-6">
               <div className="space-y-2">
                 <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-12 w-full rounded-lg" />
               </div>
-              <Skeleton className="h-10 w-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+              </div>
+              <Skeleton className="h-12 w-full rounded-lg" />
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="px-8 pb-8">
             <Skeleton className="h-4 w-full" />
           </CardFooter>
         </Card>
@@ -169,51 +172,61 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-2">
-            {branding?.logo ? (
-              <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center mr-2">
-                <img 
-                  src={branding.logo} 
-                  alt="Company logo"
-                  className="h-8 w-8 object-contain" 
-                />
-              </div>
-            ) : (
-              <div className="bg-primary p-1.5 rounded-md mr-2">
-                <ServerIcon className="h-7 w-7 text-white" />
-              </div>
-            )}
-            {branding && (
-              <h2 
-                className="text-2xl font-bold text-foreground" 
-                style={{
-                  color: branding.siteNameGradient ? 'transparent' : 'var(--foreground)',
-                  backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
-                    ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
-                    : 'none',
-                  backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
-                  WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
-                }}
-              >
-                {branding.companyName}
-              </h2>
-            )}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+        <CardHeader className="space-y-6 pb-8">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="flex items-center space-x-3">
+              {branding?.logo ? (
+                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl shadow-lg flex items-center justify-center">
+                  <img 
+                    src={branding.logo} 
+                    alt="Company logo"
+                    className="h-8 w-8 object-contain" 
+                  />
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-primary to-primary/80 p-3 rounded-xl shadow-lg">
+                  <ServerIcon className="h-6 w-6 text-white" />
+                </div>
+              )}
+              {branding && (
+                <h1 
+                  className="text-2xl font-bold text-foreground" 
+                  style={{
+                    color: branding.siteNameGradient ? 'transparent' : 'var(--foreground)',
+                    backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
+                      ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
+                      : 'none',
+                    backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
+                    WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
+                  }}
+                >
+                  {branding.companyName}
+                </h1>
+              )}
+            </div>
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-foreground">Welcome back</h2>
+              <p className="text-sm text-muted-foreground mt-1">Sign in to your account to continue</p>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-8 pb-8">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-sm font-medium text-foreground">Email Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your email" {...field} />
+                      <Input 
+                        placeholder="Enter your email" 
+                        {...field} 
+                        className="h-12 px-4 rounded-lg border-2 border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -224,15 +237,24 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-sm font-medium text-foreground">Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Enter your password" {...field} />
+                      <Input 
+                        type="password" 
+                        placeholder="Enter your password" 
+                        {...field} 
+                        className="h-12 px-4 rounded-lg border-2 border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button 
+                type="submit" 
+                className="w-full h-12 rounded-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]" 
+                disabled={loading}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -245,9 +267,11 @@ export default function LoginPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <div className="text-sm text-center text-muted-foreground">
-            Contact your administrator if you are unable to access your account
+        <CardFooter className="px-8 pb-8">
+          <div className="w-full text-center">
+            <p className="text-sm text-muted-foreground">
+              Need help? Contact your administrator if you are unable to access your account
+            </p>
           </div>
         </CardFooter>
       </Card>

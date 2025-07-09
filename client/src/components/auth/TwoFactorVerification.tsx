@@ -66,107 +66,96 @@ export default function TwoFactorVerification({ onSuccess, onError, isLoading }:
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <Shield className="mx-auto h-12 w-12 text-primary" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Two-Factor Authentication
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {useBackupCode
-              ? 'Enter one of your backup codes'
-              : 'Enter the 6-digit code from your authenticator app'
-            }
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+        <CardHeader className="space-y-6 pb-8">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="bg-gradient-to-br from-primary to-primary/80 p-4 rounded-2xl shadow-lg">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-foreground">Two-Factor Authentication</h1>
+              <p className="text-sm text-muted-foreground mt-2">
+                {useBackupCode
+                  ? 'Enter one of your backup codes to continue'
+                  : 'Enter the 6-digit code from your authenticator app'
+                }
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="px-8 pb-8">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="token"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-foreground">
+                      {useBackupCode ? 'Backup Code' : 'Verification Code'}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder={useBackupCode ? 'Enter backup code' : 'Enter 6-digit code'}
+                        maxLength={useBackupCode ? 8 : 6}
+                        className="h-12 px-4 text-center font-mono text-lg rounded-lg border-2 border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        autoComplete="one-time-code"
+                        autoFocus
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {useBackupCode ? <Key className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
-              {useBackupCode ? 'Backup Code' : 'Verification Code'}
-            </CardTitle>
-            <CardDescription>
-              {useBackupCode
-                ? 'Enter one of your saved backup codes to access your account.'
-                : 'Open your authenticator app and enter the current 6-digit code.'
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="token"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {useBackupCode ? 'Backup Code' : 'Verification Code'}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={useBackupCode ? 'Enter backup code' : 'Enter 6-digit code'}
-                          maxLength={useBackupCode ? 8 : 6}
-                          className="text-center font-mono text-lg"
-                          autoComplete="one-time-code"
-                          autoFocus
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <Button
+                type="submit"
+                className="w-full h-12 rounded-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Verifying...' : 'Verify'}
+              </Button>
 
+              <div className="text-center">
                 <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading}
+                  type="button"
+                  variant="link"
+                  onClick={() => {
+                    setUseBackupCode(!useBackupCode);
+                    form.reset();
+                  }}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  {isLoading ? 'Verifying...' : 'Verify'}
+                  {useBackupCode
+                    ? 'Use authenticator app instead'
+                    : 'Use backup code instead'
+                  }
                 </Button>
+              </div>
+            </form>
+          </Form>
 
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => {
-                      setUseBackupCode(!useBackupCode);
-                      form.reset();
-                    }}
-                    className="text-sm"
-                  >
-                    {useBackupCode
-                      ? 'Use authenticator app instead'
-                      : 'Use backup code instead'
-                    }
-                  </Button>
-                </div>
-              </form>
-            </Form>
-
-            {useBackupCode && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                  <div className="text-sm text-yellow-800">
-                    <p className="font-medium">Important:</p>
-                    <p>Each backup code can only be used once. After using this code, you'll have one fewer backup code available.</p>
-                  </div>
+          {useBackupCode && (
+            <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-amber-800 dark:text-amber-300">
+                  <p className="font-medium mb-1">Important:</p>
+                  <p>Each backup code can only be used once. After using this code, you'll have one fewer backup code available.</p>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="text-center">
-          <p className="text-xs text-gray-500">
+            </div>
+          )}
+        </CardContent>
+        
+        <div className="px-8 pb-8">
+          <p className="text-sm text-center text-muted-foreground">
             Having trouble? Contact your administrator for assistance.
           </p>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
