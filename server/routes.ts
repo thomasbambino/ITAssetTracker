@@ -2078,8 +2078,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Helper function to parse currency values
               const parseCurrency = (value: string) => {
                 if (!value) return null;
-                // Remove currency symbols, commas, and spaces
-                const cleaned = value.replace(/[$,\s]/g, '');
+                // Remove currency symbols, commas, quotes, and extra spaces
+                const cleaned = value.replace(/[$,"\s]/g, '');
                 const parsed = parseFloat(cleaned);
                 return isNaN(parsed) ? null : Math.round(parsed * 100); // Convert to cents
               };
@@ -2093,6 +2093,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Handle the specific "1/27/1023" format - assume it's 2023
                 if (dateStr.includes('/1023')) {
                   dateStr = dateStr.replace('/1023', '/2023');
+                }
+                
+                // Handle MM/DD/YY format by converting to full year
+                if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{2}$/)) {
+                  const parts = dateStr.split('/');
+                  const year = parseInt(parts[2]);
+                  // Assume years 00-30 are 2000s, 31-99 are 1900s
+                  const fullYear = year <= 30 ? 2000 + year : 1900 + year;
+                  dateStr = `${parts[0]}/${parts[1]}/${fullYear}`;
                 }
                 
                 try {
@@ -2122,24 +2131,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 purchaseCost: parseCurrency(record.PurchaseCost || record['Purchase Cost'] || record.Cost || record.cost),
                 purchaseDate: parseDate(record.PurchaseDate || record['Purchase Date'] || record.Date || record.date),
                 purchasedBy: record.PurchasedBy || record['Purchased By'] || record.Purchaser || record.purchaser || "",
-                warrantyEOL: parseDate(record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty),
+                warrantyEOL: parseDate(record.WarrantyEnd || record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty),
                 status: record.Status || record.status || 'active',
                 isIntuneOnboarded: parseBoolean(record.IntuneOnboarded || record.intuneOnboarded),
                 intuneComplianceStatus: record.IntuneStatus || record.intuneStatus || 'unknown',
               };
               
-              // Find category by name if provided
+              // Find or create category by name if provided
               if (record.Category || record.category) {
                 const categoryName = record.Category || record.category;
-                const categories = await storage.getCategories();
+                let categories = await storage.getCategories();
                 
-                // Create a mapping of CSV category names to database categories
+                // Create a mapping of CSV category names to standardized categories
                 const categoryMapping = {
                   'desktop': 'Desktop',
                   'laptop': 'Laptop',
                   'monitor': 'Monitor',
-                  'av': 'Other',
-                  'apple': 'Laptop',
+                  'av': 'AV Equipment',
+                  'apple': 'Apple Devices',
                   'phone': 'Phone',
                   'desk phone': 'Phone',
                   'router': 'Networking',
@@ -2165,11 +2174,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   }
                 }
                 
-                // If still no match, use "Other" as fallback
+                // If still no match, create new category
                 if (!category) {
-                  category = categories.find(c => 
-                    c.name.toLowerCase() === 'other'
-                  );
+                  const newCategoryName = categoryMapping[categoryName.toLowerCase()] || categoryName;
+                  console.log(`Creating new category: ${newCategoryName}`);
+                  category = await storage.createCategory({
+                    name: newCategoryName,
+                    description: `Auto-created from CSV import`
+                  }, loggedInUserId);
                 }
                 
                 if (category) {
@@ -2177,13 +2189,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
               
-              // Find site by name if provided
+              // Find or create site by name if provided
               if (record.Site || record.site) {
                 const siteName = record.Site || record.site;
-                const sites = await storage.getSites();
-                const site = sites.find(s => 
+                let sites = await storage.getSites();
+                let site = sites.find(s => 
                   s.name.toLowerCase() === siteName.toLowerCase()
                 );
+                
+                // If site doesn't exist, create it
+                if (!site) {
+                  console.log(`Creating new site: ${siteName}`);
+                  // Create site name mappings for common abbreviations
+                  const siteNameMapping = {
+                    'BRD': 'Broward Office',
+                    'SAN': 'San Antonio Office', 
+                    'MI6': 'Miami Office',
+                    'Remote': 'Remote/Home Office'
+                  };
+                  
+                  const fullSiteName = siteNameMapping[siteName] || siteName;
+                  site = await storage.createSite({
+                    name: fullSiteName,
+                    description: `Auto-created from CSV import`
+                  }, loggedInUserId);
+                }
                 
                 if (site) {
                   deviceData.siteId = site.id;
