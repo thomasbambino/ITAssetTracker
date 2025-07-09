@@ -2070,6 +2070,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             errors: [] as string[]
           };
           
+          // Cache for created categories and sites to avoid duplicate creation
+          const createdCategories = new Map<string, any>();
+          const createdSites = new Map<string, any>();
+          
           console.log(`Processing ${records.length} records from CSV`);
           
           for (let i = 0; i < records.length; i++) {
@@ -2140,22 +2144,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Find or create category by name if provided
               if (record.Category || record.category) {
                 const categoryName = record.Category || record.category;
-                let categories = await storage.getCategories();
                 
-                // First try exact match
-                let category = categories.find(c => 
-                  c.name.toLowerCase() === categoryName.toLowerCase()
-                );
+                // Check cache first
+                let category = createdCategories.get(categoryName.toLowerCase());
                 
-                // If no exact match, create new category with exact name from CSV
                 if (!category) {
-                  console.log(`Creating new category: ${categoryName}`);
-                  category = await storage.createCategory({
-                    name: categoryName,
-                    description: `Auto-created from CSV import`
-                  }, loggedInUserId);
-                  // Refresh categories list for subsequent rows
-                  categories = await storage.getCategories();
+                  // Try to find existing category
+                  const categories = await storage.getCategories();
+                  category = categories.find(c => 
+                    c.name.toLowerCase() === categoryName.toLowerCase()
+                  );
+                  
+                  // If no exact match, create new category with exact name from CSV
+                  if (!category) {
+                    try {
+                      console.log(`Creating new category: ${categoryName}`);
+                      category = await storage.createCategory({
+                        name: categoryName,
+                        description: `Auto-created from CSV import`
+                      }, loggedInUserId);
+                      // Cache the created category
+                      createdCategories.set(categoryName.toLowerCase(), category);
+                    } catch (error) {
+                      console.error(`Error creating category ${categoryName}:`, error);
+                      // If creation fails, try to find it again (might have been created by another process)
+                      const refreshedCategories = await storage.getCategories();
+                      category = refreshedCategories.find(c => 
+                        c.name.toLowerCase() === categoryName.toLowerCase()
+                      );
+                    }
+                  } else {
+                    // Cache existing category
+                    createdCategories.set(categoryName.toLowerCase(), category);
+                  }
                 }
                 
                 if (category) {
@@ -2166,20 +2187,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Find or create site by name if provided
               if (record.Site || record.site) {
                 const siteName = record.Site || record.site;
-                let sites = await storage.getSites();
-                let site = sites.find(s => 
-                  s.name.toLowerCase() === siteName.toLowerCase()
-                );
                 
-                // If site doesn't exist, create it with exact name from CSV
+                // Check cache first
+                let site = createdSites.get(siteName.toLowerCase());
+                
                 if (!site) {
-                  console.log(`Creating new site: ${siteName}`);
-                  site = await storage.createSite({
-                    name: siteName,
-                    description: `Auto-created from CSV import`
-                  }, loggedInUserId);
-                  // Refresh sites list for subsequent rows
-                  sites = await storage.getSites();
+                  // Try to find existing site
+                  const sites = await storage.getSites();
+                  site = sites.find(s => 
+                    s.name.toLowerCase() === siteName.toLowerCase()
+                  );
+                  
+                  // If site doesn't exist, create it with exact name from CSV
+                  if (!site) {
+                    try {
+                      console.log(`Creating new site: ${siteName}`);
+                      site = await storage.createSite({
+                        name: siteName,
+                        description: `Auto-created from CSV import`
+                      }, loggedInUserId);
+                      // Cache the created site
+                      createdSites.set(siteName.toLowerCase(), site);
+                    } catch (error) {
+                      console.error(`Error creating site ${siteName}:`, error);
+                      // If creation fails, try to find it again (might have been created by another process)
+                      const refreshedSites = await storage.getSites();
+                      site = refreshedSites.find(s => 
+                        s.name.toLowerCase() === siteName.toLowerCase()
+                      );
+                    }
+                  } else {
+                    // Cache existing site
+                    createdSites.set(siteName.toLowerCase(), site);
+                  }
                 }
                 
                 if (site) {
