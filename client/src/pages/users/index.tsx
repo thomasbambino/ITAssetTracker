@@ -43,8 +43,6 @@ export default function Users() {
   // Export CSV
   const { exportCsv, isExporting } = useCsvExport('/api/export/users');
   
-
-  
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {

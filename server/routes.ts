@@ -2070,10 +2070,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             errors: [] as string[]
           };
           
-          // Cache for created categories and sites to avoid duplicate creation
-          const createdCategories = new Map<string, any>();
-          const createdSites = new Map<string, any>();
-          
           console.log(`Processing ${records.length} records from CSV`);
           
           for (let i = 0; i < records.length; i++) {
@@ -2082,8 +2078,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Helper function to parse currency values
               const parseCurrency = (value: string) => {
                 if (!value) return null;
-                // Remove currency symbols, commas, quotes, and extra spaces
-                const cleaned = value.replace(/[$,"\s]/g, '');
+                // Remove currency symbols, commas, and spaces
+                const cleaned = value.replace(/[$,\s]/g, '');
                 const parsed = parseFloat(cleaned);
                 return isNaN(parsed) ? null : Math.round(parsed * 100); // Convert to cents
               };
@@ -2097,15 +2093,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Handle the specific "1/27/1023" format - assume it's 2023
                 if (dateStr.includes('/1023')) {
                   dateStr = dateStr.replace('/1023', '/2023');
-                }
-                
-                // Handle MM/DD/YY format by converting to full year
-                if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{2}$/)) {
-                  const parts = dateStr.split('/');
-                  const year = parseInt(parts[2]);
-                  // Assume years 00-30 are 2000s, 31-99 are 1900s
-                  const fullYear = year <= 30 ? 2000 + year : 1900 + year;
-                  dateStr = `${parts[0]}/${parts[1]}/${fullYear}`;
                 }
                 
                 try {
@@ -2135,48 +2122,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 purchaseCost: parseCurrency(record.PurchaseCost || record['Purchase Cost'] || record.Cost || record.cost),
                 purchaseDate: parseDate(record.PurchaseDate || record['Purchase Date'] || record.Date || record.date),
                 purchasedBy: record.PurchasedBy || record['Purchased By'] || record.Purchaser || record.purchaser || "",
-                warrantyEOL: parseDate(record.WarrantyEnd || record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty),
+                warrantyEOL: parseDate(record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty),
                 status: record.Status || record.status || 'active',
                 isIntuneOnboarded: parseBoolean(record.IntuneOnboarded || record.intuneOnboarded),
                 intuneComplianceStatus: record.IntuneStatus || record.intuneStatus || 'unknown',
               };
               
-              // Find or create category by name if provided
+              // Find category by name if provided
               if (record.Category || record.category) {
                 const categoryName = record.Category || record.category;
+                const categories = await storage.getCategories();
                 
-                // Check cache first
-                let category = createdCategories.get(categoryName.toLowerCase());
+                // Create a mapping of CSV category names to database categories
+                const categoryMapping = {
+                  'desktop': 'Desktop',
+                  'laptop': 'Laptop',
+                  'monitor': 'Monitor',
+                  'av': 'Other',
+                  'apple': 'Laptop',
+                  'phone': 'Phone',
+                  'desk phone': 'Phone',
+                  'router': 'Networking',
+                  'switch': 'Networking',
+                  'firewall': 'Networking',
+                  'server': 'Server',
+                  'printer': 'Printer',
+                  'tablet': 'Tablet'
+                };
                 
+                // First try exact match
+                let category = categories.find(c => 
+                  c.name.toLowerCase() === categoryName.toLowerCase()
+                );
+                
+                // If no exact match, try mapped category
                 if (!category) {
-                  // Try to find existing category
-                  const categories = await storage.getCategories();
-                  category = categories.find(c => 
-                    c.name.toLowerCase() === categoryName.toLowerCase()
-                  );
-                  
-                  // If no exact match, create new category with exact name from CSV
-                  if (!category) {
-                    try {
-                      console.log(`Creating new category: ${categoryName}`);
-                      category = await storage.createCategory({
-                        name: categoryName,
-                        description: `Auto-created from CSV import`
-                      }, loggedInUserId);
-                      // Cache the created category
-                      createdCategories.set(categoryName.toLowerCase(), category);
-                    } catch (error) {
-                      console.error(`Error creating category ${categoryName}:`, error);
-                      // If creation fails, try to find it again (might have been created by another process)
-                      const refreshedCategories = await storage.getCategories();
-                      category = refreshedCategories.find(c => 
-                        c.name.toLowerCase() === categoryName.toLowerCase()
-                      );
-                    }
-                  } else {
-                    // Cache existing category
-                    createdCategories.set(categoryName.toLowerCase(), category);
+                  const mappedCategoryName = categoryMapping[categoryName.toLowerCase()];
+                  if (mappedCategoryName) {
+                    category = categories.find(c => 
+                      c.name.toLowerCase() === mappedCategoryName.toLowerCase()
+                    );
                   }
+                }
+                
+                // If still no match, use "Other" as fallback
+                if (!category) {
+                  category = categories.find(c => 
+                    c.name.toLowerCase() === 'other'
+                  );
                 }
                 
                 if (category) {
@@ -2184,43 +2177,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
               
-              // Find or create site by name if provided
+              // Find site by name if provided
               if (record.Site || record.site) {
                 const siteName = record.Site || record.site;
-                
-                // Check cache first
-                let site = createdSites.get(siteName.toLowerCase());
-                
-                if (!site) {
-                  // Try to find existing site
-                  const sites = await storage.getSites();
-                  site = sites.find(s => 
-                    s.name.toLowerCase() === siteName.toLowerCase()
-                  );
-                  
-                  // If site doesn't exist, create it with exact name from CSV
-                  if (!site) {
-                    try {
-                      console.log(`Creating new site: ${siteName}`);
-                      site = await storage.createSite({
-                        name: siteName,
-                        description: `Auto-created from CSV import`
-                      }, loggedInUserId);
-                      // Cache the created site
-                      createdSites.set(siteName.toLowerCase(), site);
-                    } catch (error) {
-                      console.error(`Error creating site ${siteName}:`, error);
-                      // If creation fails, try to find it again (might have been created by another process)
-                      const refreshedSites = await storage.getSites();
-                      site = refreshedSites.find(s => 
-                        s.name.toLowerCase() === siteName.toLowerCase()
-                      );
-                    }
-                  } else {
-                    // Cache existing site
-                    createdSites.set(siteName.toLowerCase(), site);
-                  }
-                }
+                const sites = await storage.getSites();
+                const site = sites.find(s => 
+                  s.name.toLowerCase() === siteName.toLowerCase()
+                );
                 
                 if (site) {
                   deviceData.siteId = site.id;
@@ -2333,59 +2296,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error exporting devices:", error);
       res.status(500).json({ message: "Error exporting devices" });
-    }
-  });
-
-  // Export users to CSV
-  app.get('/api/export/users', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      console.log('User export request - User ID:', (req.session as any)?.userId);
-      console.log('User export request - User Role:', (req.session as any)?.userRole);
-      
-      const users = await storage.getUsers();
-      
-      // Transform data for CSV export
-      const exportData = await Promise.all(users.map(async (user) => {
-        // Get department name
-        const department = user.departmentId 
-          ? await storage.getDepartmentById(user.departmentId)
-          : null;
-          
-        return {
-          ID: user.id,
-          FirstName: user.firstName || "",
-          LastName: user.lastName || "",
-          Email: user.email || "",
-          Role: user.role || "",
-          Department: department ? department.name : (user.department || ""),
-          PhoneNumber: user.phoneNumber || "",
-          Status: user.status || "active",
-          LastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "",
-          CreatedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "",
-          TwoFactorEnabled: user.twoFactorEnabled ? "Yes" : "No",
-        };
-      }));
-      
-      // Convert to CSV
-      stringify(exportData, { header: true }, (err, output) => {
-        if (err) {
-          console.error("Error generating CSV:", err);
-          return res.status(500).json({ message: "Error generating CSV" });
-        }
-        
-        // Set headers for file download with explicit charset
-        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="users-export-${new Date().toISOString().slice(0, 10)}.csv"`);
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        
-        // Send the CSV data
-        res.send(output);
-      });
-    } catch (error) {
-      console.error("Error exporting users:", error);
-      res.status(500).json({ message: "Error exporting users" });
     }
   });
 

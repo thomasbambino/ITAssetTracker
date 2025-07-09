@@ -89,19 +89,37 @@ export function useCsvExport(url: string) {
     setIsExporting(true);
     
     try {
-      // Create a hidden form that will trigger the download
-      // This preserves the session cookies properly
-      const form = document.createElement('form');
-      form.method = 'GET';
-      form.action = url;
-      form.style.display = 'none';
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+      });
       
-      // Add form to document and submit it
-      document.body.appendChild(form);
-      form.submit();
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
       
-      // Clean up
-      document.body.removeChild(form);
+      // Create a download link
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      
+      // Extract filename from Content-Disposition header if available
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'export.csv';
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
       
       toast({
         title: "Success",
