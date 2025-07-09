@@ -43,6 +43,36 @@ export default function Users() {
   // Export CSV
   const { exportCsv, isExporting } = useCsvExport('/api/export/users');
   
+  // Enhanced export function with authentication check
+  const handleExport = async () => {
+    try {
+      // First check if user is authenticated
+      const authCheck = await fetch('/api/users/me', {
+        credentials: 'include',
+      });
+      
+      if (!authCheck.ok) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to export data",
+          variant: "destructive",
+        });
+        window.location.href = '/login';
+        return;
+      }
+      
+      // User is authenticated, proceed with export
+      await exportCsv();
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export Error",
+        description: "Failed to export users. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -131,7 +161,7 @@ export default function Users() {
       <ActionButton
         icon={<FileOutput className="h-4 w-4" />}
         label="Export CSV"
-        onClick={exportCsv}
+        onClick={handleExport}
         variant="secondary"
         disabled={isExporting}
       />

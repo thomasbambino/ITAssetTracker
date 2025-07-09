@@ -105,7 +105,11 @@ export function useCsvExport(url: string) {
           window.location.href = '/login';
           return false;
         }
-        throw new Error(`Error: ${response.status}`);
+        
+        // Handle other error cases
+        const errorText = await response.text();
+        console.error('Export error:', response.status, errorText);
+        throw new Error(`Export failed: ${response.status} ${errorText}`);
       }
       
       // Check if response is actually CSV
@@ -114,6 +118,18 @@ export function useCsvExport(url: string) {
         console.error('Expected CSV but got:', contentType);
         const responseText = await response.text();
         console.error('Response body:', responseText.substring(0, 500));
+        
+        // If we get HTML, it means the request was intercepted by the frontend router
+        if (responseText.includes('<!DOCTYPE html>')) {
+          toast({
+            title: "Export Error",
+            description: "Request was intercepted by frontend router. Please try logging in again.",
+            variant: "destructive",
+          });
+          window.location.href = '/login';
+          return false;
+        }
+        
         throw new Error('Server returned invalid response format');
       }
       

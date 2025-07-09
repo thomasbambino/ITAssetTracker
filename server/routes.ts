@@ -2302,6 +2302,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Export users to CSV
   app.get('/api/export/users', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      console.log('User export request - User ID:', (req.session as any)?.userId);
+      console.log('User export request - User Role:', (req.session as any)?.userRole);
+      
       const users = await storage.getUsers();
       
       // Transform data for CSV export
@@ -2333,9 +2336,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ message: "Error generating CSV" });
         }
         
-        // Set headers for file download
-        res.setHeader('Content-Type', 'text/csv');
+        // Set headers for file download with explicit charset
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="users-export-${new Date().toISOString().slice(0, 10)}.csv"`);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         
         // Send the CSV data
         res.send(output);
