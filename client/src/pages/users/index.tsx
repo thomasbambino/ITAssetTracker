@@ -43,20 +43,7 @@ export default function Users() {
   // Export CSV
   const { exportCsv, isExporting } = useCsvExport('/api/export/users');
   
-  // Enhanced export function 
-  const handleExport = async () => {
-    try {
-      // Direct export using the improved iframe method
-      await exportCsv();
-    } catch (error) {
-      console.error('Export error:', error);
-      toast({
-        title: "Export Error",
-        description: "Failed to export users. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+
   
   // Delete user mutation
   const deleteUserMutation = useMutation({
@@ -146,7 +133,7 @@ export default function Users() {
       <ActionButton
         icon={<FileOutput className="h-4 w-4" />}
         label="Export CSV"
-        onClick={handleExport}
+        onClick={exportCsv}
         variant="secondary"
         disabled={isExporting}
       />

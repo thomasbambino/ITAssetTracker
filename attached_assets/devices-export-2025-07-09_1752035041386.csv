@@ -1,0 +1,119 @@
+Name,Brand,Model,SerialNumber,AssetTag,Category,Site,PurchaseCost,PurchaseDate,PurchasedBy,WarrantyEnd,Status,AssignedTo,Department,IntuneOnboarded,IntuneStatus
+,,"Computer, Monitors, Desk, Accessories",,P-TRayyan,Desktop,,$683.41,,,,active,Thikra Rayyan,Billing,Yes,compliant
+,,Custom,,,Desktop,,$941.78,,,,active,Rick Valentine,Shipping,Yes,compliant
+,,Custom,,,Desktop,,,,,,active,Sabiean Hermez,Shipping,Yes,compliant
+,,Custom Built Workstations AMD Ryzen 3 2200G,,,Desktop,,,,,,active,Jim Curtis,Technology,Yes,noncompliant
+,,Mini PC Ryzen 9,,DT-Tla,Desktop,,$1217.55,,,,active,Trinh La,Shipping,No,unknown
+,,Podcast Equipment,"Scarlit 2i2, Logitech 4K Webcam",,AV,,$649.00,,,,active,Britt Wehrman,IT Test,No,unknown
+,AOC,AOC 36 Ultrawide Monitor,ONAL6JA000180,,Monitor,BRD,,,,,active,Tommy Shorez,IT,No,unknown
+,Apple,"10.9"" iPad 10th gen w/ WIFI",,,Apple,,$329.00,10/6/2024,,,active,Tina Blanco,Management,No,unknown
+,Apple,"10.9"" iPad 10th gen w/ WIFI",,,Apple,,$326.18,10/6/2024,,,active,Tina Blanco,Management,No,unknown
+,Apple,11-inch iPad Pro Wi-Fi 256GB - Space Gray,,,Apple,,$799.00,,,,active,Carin Thomley,Accounting,No,unknown
+,Apple,13-inMacbook Pro,C02H924VQ05F,,Laptop,,$1621.60,4/21/2022,,,active,Petar Trajkovsi,Support,No,unknown
+,Apple,Air,GYX36GVV4V,,Laptop,,$1188.17,,,,active,Jennifer Shorez,Marketing,No,unknown
+,Apple,Airpods Pro 2nd Generation,,,Apple,,$235.43,,,,active,Britt Wehrman,IT Test,No,unknown
+,Apple,Apple Pencil (2nd generation),,,Apple,,$129.00,,,,active,Britt Wehrman,IT Test,No,unknown
+,Apple,Apple iPad,,A-MBarbosa,Apple,,$1481.00,,,,active,Marlos Barbosa,Management,No,unknown
+,Apple,Mac Mini,,DT-TBlanco,Laptop,,$753.13,,,,active,Tina Blanco,Management,No,unknown
+,Apple,"Mac mini (M1, 2020)",,,Desktop,,,,,,active,Brandon May,Billing,No,unknown
+,Apple,"Mac mini (M1, 2020)",H2WFV141Q6NV,,Desktop,,,,,,active,Angelina Shorees,Billing,No,unknown
+,Apple,"MacBook Air (M2, 2022)",F346WXD602,,Laptop,,$2031.93,,,,active,Thierry Watters,Sales,No,unknown
+,Apple,"MacBook Air (M2, 2022)",GQ9WG74T4V,,Laptop,,$1496.93,3/1/2023,,,active,Tommy Shorez,IT,No,unknown
+,Apple,"MacBook Pro (14-inch, 2021)",MW9H6HTP9N,,Laptop,Remote,$2153.92,11/1/2022,it,5/30/2026,active,Britt Wehrman,IT Test,No,unknown
+,Apple,"MacBook Pro 14"" M3",,,Apple,,$1834.67,10/6/2024,,,active,Tina Blanco,Management,No,unknown
+,Apple,Macbook Pro,,LT-FBarbosa,Laptop,,$2781.02,,,,active,Fernanda Barbosa,Billing,No,unknown
+,Apple,Macbook Pro,,LT-MBarbosa,Desktop,,$2702.68,,,,active,Marlos Barbosa,Management,No,unknown
+,Apple,Macbook Pro,W6P2CVN4W7,,Laptop,BRD,$2153.92,,,,active,Britt Wehrman,IT Test,No,unknown
+,Apple,Macbook Pro,,LT-TBlanco,Laptop,,$2702.68,,,,active,Tina Blanco,Management,No,unknown
+,Apple,Magic Keyboard for iPad Pro 11-inch,,,Apple,,$299.00,,,,active,Britt Wehrman,IT Test,No,unknown
+,Apple,Mini,H2WG31R3Q6NV,Mini,Workstations,,,,,,lost,Mike Yadago,Accounting,No,unknown
+,Blue,Yeti Nano,24403QD0ZC9,,Mic,MI6,$96.96,,,,active,Britt Wehrman,IT Test,No,unknown
+,Blue,Yeti Nano,2439SQR017N9,,Mic,,$96.96,2/3/2025,,,active,Brandon May,Billing,No,unknown
+,Bose,Quiet Comfortable Ultra wirless headsets x3,,,,,$1386.74,10/6/2024,,,active,Tina Blanco,Management,No,unknown
+,Cisco,,,,Desk Phone,,$414.62,,,,active,Carin Thomley,Accounting,No,unknown
+,Cisco,Cisco ASR-1001,,,Router,,$5578.00,,,,active,Angelina Shorees,Billing,No,unknown
+,Cisco,Cisco Catalyst 9300 24 Ports Network Essentials,,,Switch,,$2410.00,,,,active,Tommy Shorez,IT,No,unknown
+,Cisco,Cisco Desk Phone,,DP-MYadago,Desk Phone,,$414.62,,,,active,Mike Yadago,Accounting,No,unknown
+,Cisco,Cisco Desk Phone,,,Desk Phone,,$414.62,,,,active,Angelina Shorees,Billing,No,unknown
+,Cisco,Cisco Desk Phone,,,Desk Phone,,$414.62,,,,active,Janice Bentley,Shipping,No,unknown
+,Cisco,Cisco Desk Phone,,DP-MBarbosa,Desk Phone,,$414.62,,,,active,Marlos Barbosa,Management,No,unknown
+,Cisco,Cisco Secure Firewall POP (1140),,,Firewall,,$3850.17,,,,active,Tommy Shorez,IT,No,unknown
+,Cisco,Cisco Secure Firewall POP (1140),,,Firewall,,$3850.17,,,,active,,,No,unknown
+,Custom,Custom Built Workstations,,,Desktop,,$1142.14,,,,active,Crystal Jackson,Billing,No,unknown
+,Dell,15.6-in Dell Vostro 7510,2234185527,ST:10Y6CL3,Laptop,,$1810.79,,,,active,Mary Palmer Meuer,Sales,No,unknown
+,Dell,27 QHD Monitor / SE2723DS,,,Monitor,,$215.99,,,,active,Thierry Watters,Sales,No,unknown
+,Dell,27 QHD Monitor / SE2723DS,,,Monitor,,$215.99,,,,active,Stacey Turner,Billing,No,unknown
+,Dell,32 Curved / S32222DGM,SN-BSG8MAJ9-914,M-TBlanco2,Monitor,,$399.98,,,,lost,Tina Blanco,Management,No,unknown
+,Dell,32 Curved FHD Monitor - S3222HN,,,Monitor,,$280.66,,,,active,Marlos Barbosa,Management,No,unknown
+,Dell,32 Curved FHD Monitor - S3222HN,,,Monitor,,$280.66,,,,active,Marlos Barbosa,Management,No,unknown
+,Dell,32 Curved Gaming Monitor / S32222DGM,,,Monitor,,$399.98,,,,active,Tina Blanco,Management,No,unknown
+,Dell,32 Curved Gaming Monitor / S32222DGM,CN-0W0HP6-TV100-1C6-2P4V-A02,,Monitor,,$299.00,,,,active,Angelina Shorees,Billing,No,unknown
+,Dell,32 Curved Gaming Monitor / S32222DGM,CN-0DFYGX-TV100-34G-11HV-A05,,Monitor,,$349.00,,,,active,Angelina Shorees,Billing,No,unknown
+,Dell,34 Curved Gaming Monitor � S3422DWG,,,Monitor,,$349.00,,,,active,Carin Thomley,Accounting,No,unknown
+,Dell,5620,,LT-FKvasny,Laptop,,$987.66,,,,active,Filip Kvasny,Sales,No,unknown
+,Dell,7620,,LT-HOrr,Laptop,,$1045.93,,,,active,Hillary Orr,Accounting,No,unknown
+,Dell,C1422H,,,Monitor,,$290.24,,,,active,Carin Thomley,Accounting,No,unknown
+,Dell,Dell 27 Monitor - SE2725H,,,Monitor,,,,,,active,Serena Purcell,Billing,No,unknown
+,Dell,Dell XPS 15 9530,CRNYD14,,Laptop,,$2035.37,,,,active,Jenny Brown,Accounting,No,unknown
+,Dell,Inspiron 16,,LT-ZPadilla,Laptop,,$1024.08,,,,active,Zoraida Padilla,Billing,No,unknown
+,Dell,Inspiron 16 7620 2-in-1,ewfwergwrgrwg4333,ST:400LNL3,Laptop,,,,,,active,Trinh La,Shipping,No,unknown
+,Dell,"Inspiron 2-in-1 16"" Touch Screen",34584247552,ST:FVYKG74,Desktop,,$1100.00,2/26/2025,,,broken,Jenna Connolly,Accounting,No,unknown
+,Dell,Lattitude 5550 BTX,,ST:3MH2G54,Laptop,,$1748.79,12/13/2024,,,active,Barry Hipple,Support,No,unknown
+,Dell,OptiPlex 7000 Small Form Factor,,ST: JY7R7V3,Desktop,,$1548.20,,,,active,Janice Bentley,Shipping,No,unknown
+,Dell,OptiPlex Micro 7010,,ST: 7NH8PZ3,Desktop,,$774.12,,,,active,Joel Pineda,Shipping,No,unknown
+,Dell,OptiPlex Micro 7010,25158603783,ST:BK2S6X3,Desktop,,$1027.87,,,,active,,,No,unknown
+,Dell,OptiPlex Micro 7010,,ST: 13RL2Z3,Desktop,,$975.26,,,,active,Roxy Pech,Billing,No,unknown
+,Dell,OptiPlex Micro 7010,,ST:GPV9SY3,Desktop,,,,,,active,,,No,unknown
+,Dell,OptiPlex Micro 7020,3.56514E+11,ST:GDLXY24,Desktop,,$1516.35,9/26/2024,,,lost,Tina Blanco,Management,No,unknown
+,Dell,OptiPlex Micro Plus 7020,28242743224,ST: CZ30054,Desktop,,$775.19,10/15/2024,,,active,Melissa Williams,Shipping,No,unknown
+,Dell,OptiPlex Micro Plus 7020,16530449080,ST: 7LDSW54,Desktop,,$1102.88,12/12/2024,,,active,,,No,unknown
+,Dell,Optiplex,,,,,,,,,active,Jonathan Occena,Shipping,No,unknown
+,Dell,Optiplex 7020,32779386040,ST: F240054,Desktop,,$775.19,10/15/2024,,,active,Kevin Johncharles,Shipping,No,unknown
+,Dell,PowerEdge R450,,S-G1RMNZ3,Server,,$9891.94,,,,active,,,No,unknown
+,Dell,Precision 5490,2RMZJ24,ST: 2RMZJ24,Laptop,,$3792.00,,,,active,Carin Thomley,Accounting,No,unknown
+,Dell,Precision 7510,,,Monitor,,$999.95,3/19/2025,it,,active,Aly Luttmann,Accounting,No,unknown
+,Dell,S2721HS,,M-TShorez,Monitor,,$199.99,,,,active,Tommy Shorez,IT,No,unknown
+,Dell,"S2721Hs 27"" 16:9 IPS",,,Monitor,,$382.00,,,,active,Thikra Rayyan,Billing,No,unknown
+,Dell,"S2721Hs 27"" 16:9 IPS",,,Monitor,,$220.49,,,,active,Thikra Rayyan,Billing,No,unknown
+,Dell,S3222HN,,,Monitor,,$280.66,,,,active,Carin Thomley,Accounting,No,unknown
+,Dell,S3222HN,,M-FBarbosa,Monitor,,$280.66,,,,active,Fernanda Barbosa,Billing,No,unknown
+,Dell,S3222HN,,,Monitor,,$280.66,,,,active,Carin Thomley,Accounting,No,unknown
+,Dell,S3422DWG,,,Monitor,,$434.92,,,,active,Jennifer Shorez,Marketing,No,unknown
+,Dell,Vostro 5620,,,Laptop,,$924.97,,,,active,Serena Purcell,Billing,No,unknown
+,Dell,Vostro 5620,,ST: 3JZ3GS3,Laptop,,$916.39,,,,active,Tim Bagnieski,Sales,No,unknown
+,Dell,Vostro 5620,,,Laptop,,$920.49,,,,active,Stacey Turner,Billing,No,unknown
+,Dell,Vostro 5620,,ST:CJY3GS3,Laptop,,$916.39,,,,active,Brandon May,Billing,No,unknown
+,Dell,Vostro 5620,,ST: 820CGS3,Laptop,,$1053.20,,,,active,Seann Coughlin,Sales,No,unknown
+,Dell,Vostro 5620,,ST:CMPCNL3,Laptop,,$916.39,,,,active,Mary Palmer Meuer,Sales,No,unknown
+,Dell,Vostro 7620,,ST: 2N1KFX3,Laptop,,$1066.89,,,,active,Lacey Moore,Marketing,No,unknown
+,Dell,Vostro 7620,886SFS3,ST: 886SFS3,Laptop,,$1368.54,,,,active,Robert Egan,Support,No,unknown
+,Dell,XPS 15,SN-BSG8MAJ9-914,AT-173923-234,Laptop,,$1705.02,8/1/2023,Tommy Shorez,12/14/2025,active,Olaf Olen,IT,No,unknown
+,Dell,XPS 15,6928314663,ST:36KXTT3,Laptop,,$1612.49,,,,active,Olaf Olen,IT,No,unknown
+,Dell,XPS 15 9530,,ST: 2VG4R34,Laptop,,$1270.99,,,,active,Rafael Barragan,Support,No,unknown
+,Dell,XPS 15 9530,,ST: 57WGBY3,Desktop,,$1705.02,,,,active,Olaf Olen,IT,No,unknown
+,Dell,XPS 15 9530,,ST: DCFFY3,Laptop,,$1390.10,,,,active,Thikra Rayyan,Billing,No,unknown
+,Fortinet,Foritnet Firewall FG200,FG200FT922948287,,Firewall,,$7909.46,12/15/2023,,,active,,,No,unknown
+,HP,All in one,,,Desktop,,,,,,active,Barry Hipple,Support,No,unknown
+,HP,HF7,,,Monitor,,,,,,active,Sue Shorees,Sales,No,unknown
+,HP,HF7,,,Monitor,,,,,,active,Sue Shorees,Sales,No,unknown
+,HP,HP Laptop 17,5CG12518S1,LT-JArroyo,Laptop,,,,,,active,Jona Arroyo,Sales,No,unknown
+,HP,X360,,,Laptop,,,,,,active,Barry Hipple,Support,No,unknown
+,MSI,MSI Cubi 5,,DT-TRayyan,Desktop,,$1124.00,,,,active,Thikra Rayyan,Billing,No,unknown
+,MSI,MSI Cubi 5,,DT-TLa2,Desktop,,$818.87,,,,active,Trinh La,Shipping,No,unknown
+,MSI,"MSI Stealth 16""",K2311N0069738,LT-TBlanco2,Laptop,,$1728.99,,,,active,Tina Blanco,Management,No,unknown
+,Microsoft,Surface Laptop,0F0175V23163FB,LT-JBreslin,Desktop,,$1497.99,,,,active,Jared Breslin,Support,No,unknown
+,Microsoft,Surface Laptop Go,,LT-Support,Laptop,,,,,,active,,,No,unknown
+,Microsoft,Surface Pro,0F36BX423473BF,,Laptop,,$1572.37,,,,active,Eric Talman,Support,No,unknown
+,Polycom,Poly VVX201,,,Desk Phone,,,,,,active,Joel Pineda,Shipping,No,unknown
+,Polycom,Poly VVX411,,,Desk Phone,,,,,,active,Sue Shorees,Sales,No,unknown
+,Polycom,Poly VVX450,,,Desk Phone,,,,,,active,Barry Hipple,Support,No,unknown
+,Polycom,Poly VVX450,,,Desk Phone,,,,,,retired,Trinh La,Shipping,No,unknown
+,Polycom,Polycom,,,Desk Phone,,$414.62,,,,active,Tina Blanco,Management,No,unknown
+,Polycom,VVX 601,,,Desk Phone,,,,,,active,Danty Jopa,Support,No,unknown
+,Samsung,Odyssey G3,,M-Tla,Monitor,,$418.00,,,,active,Trinh La,Shipping,No,unknown
+,Samsung,Odyssey G4,,,Monitor,,$279.36,,,,active,Marlos Barbosa,Management,No,unknown
+,Samsung,Odyssey G4,,,Monitor,,$279.36,,,,active,Marlos Barbosa,Management,No,unknown
+,Sceptre,SCEPTRE C35 Ultrawide Monitor,M40C35CBIQ0749,,Monitor,,,,,,active,Danty Jopa,Support,No,unknown
+,Sony,ZV-E10,S01-6309221-9,,Camera,,$754.24,2/3/2025,,,active,Tommy Shorez,IT,No,unknown
+,Sunpak,"12"" Bicolor LED ring light kit",,,,,$43.09,10/6/2024,,,active,Tina Blanco,Management,No,unknown
+,Yealink,Yealink T54W,,,Desk Phone,,,,,,active,Sabiean Hermez,Shipping,No,unknown
