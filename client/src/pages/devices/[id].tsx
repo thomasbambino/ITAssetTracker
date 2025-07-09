@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/dialog";
 import { DeviceAssignmentDialog } from '@/components/devices/DeviceAssignmentDialog';
 import { DeviceForm } from '@/components/forms/DeviceForm';
+import { MaintenanceForm } from '@/components/forms/MaintenanceForm';
 import { DataTable } from '@/components/ui/data-table';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { QrCodeDisplay } from '@/components/qrcodes/QrCodeDisplay';
@@ -98,6 +99,8 @@ export default function DeviceDetails() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [showQrCodeDialog, setShowQrCodeDialog] = useState(false);
+  const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
+  const [selectedMaintenanceRecord, setSelectedMaintenanceRecord] = useState<any>(null);
   const [showPdfViewerDialog, setShowPdfViewerDialog] = useState(false);
 
   // Determine if we're in "new device" mode
@@ -1033,6 +1036,11 @@ export default function DeviceDetails() {
                         columns={maintenanceColumns}
                         keyField="id"
                         searchable={false}
+                        onRowClick={(record) => {
+                          setSelectedMaintenanceRecord(record);
+                          setShowMaintenanceDialog(true);
+                        }}
+                        rowCursor="pointer"
                         emptyState={
                           <div className="text-center py-6">
                             <InfoIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
@@ -1166,6 +1174,32 @@ export default function DeviceDetails() {
           fileName={device.invoiceFileName}
         />
       )}
+
+      {/* Maintenance Record Dialog */}
+      <Dialog open={showMaintenanceDialog} onOpenChange={setShowMaintenanceDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedMaintenanceRecord ? "Maintenance Record Details" : "New Maintenance Record"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedMaintenanceRecord 
+                ? "View and update the maintenance record details."
+                : "Enter the details for the new maintenance record."}
+            </DialogDescription>
+          </DialogHeader>
+          <MaintenanceForm 
+            record={selectedMaintenanceRecord} 
+            onSuccess={() => {
+              setShowMaintenanceDialog(false);
+              setSelectedMaintenanceRecord(null);
+              refetchMaintenance();
+              queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/maintenance/scheduled'] });
+            }} 
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

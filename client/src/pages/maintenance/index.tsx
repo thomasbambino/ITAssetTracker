@@ -49,11 +49,10 @@ export default function Maintenance() {
     queryKey: ['/api/maintenance/scheduled'],
   });
 
-  // Handle navigation to device details
+  // Handle opening maintenance record details
   const handleRowClick = (record: MaintenanceRecord) => {
-    if (record.deviceId && record.device) {
-      navigate(`/devices/${record.deviceId}`);
-    }
+    setSelectedRecord(record);
+    setIsAddDialogOpen(true);
   };
 
   const columns = [
