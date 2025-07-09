@@ -65,9 +65,19 @@ export function MultiSelectDropdown({
       }
     };
     
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
 
   // Focus search input when dropdown opens
   useEffect(() => {
@@ -82,13 +92,23 @@ export function MultiSelectDropdown({
     }
   }, [isOpen]);
 
-  const handleToggleOption = (optionId: string | number) => {
+  const handleToggleOption = (optionId: string | number, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    console.log('Toggle option:', optionId, 'Current value:', value);
+    
     if (value.includes(optionId)) {
       // Remove from selection
-      onChange(value.filter(id => id !== optionId));
+      const newValue = value.filter(id => id !== optionId);
+      console.log('Removing, new value:', newValue);
+      onChange(newValue);
     } else {
       // Add to selection
-      onChange([...value, optionId]);
+      const newValue = [...value, optionId];
+      console.log('Adding, new value:', newValue);
+      onChange(newValue);
     }
   };
 
@@ -180,7 +200,7 @@ export function MultiSelectDropdown({
                       "relative flex cursor-pointer select-none items-center justify-between rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
                       isSelected && "bg-accent text-accent-foreground"
                     )}
-                    onClick={() => handleToggleOption(option.id)}
+                    onClick={(e) => handleToggleOption(option.id, e)}
                   >
                     <div>
                       <span>{option.label}</span>
