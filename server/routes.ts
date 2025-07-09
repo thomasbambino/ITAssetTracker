@@ -2191,6 +2191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
 
               // Find user by name if provided (for device assignment)
+              let assignedUserId = null;
               if (record.AssignedTo || record.assignedTo) {
                 const assignedToName = record.AssignedTo || record.assignedTo;
                 const users = await storage.getUsers();
@@ -2201,12 +2202,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 if (user) {
                   deviceData.userId = user.id;
+                  assignedUserId = user.id;
                 }
               }
               
               // Validate and create device
               const validatedData = insertDeviceSchema.parse(deviceData);
-              await storage.createDevice(validatedData, loggedInUserId);
+              const newDevice = await storage.createDevice(validatedData, loggedInUserId);
+              
+              // Create assignment history record if device was assigned to a user
+              if (assignedUserId && newDevice) {
+                await storage.createAssignmentHistory({
+                  deviceId: newDevice.id,
+                  userId: assignedUserId,
+                  assignedBy: loggedInUserId,
+                  assignedAt: new Date(),
+                  notes: 'Device assigned during CSV import'
+                });
+              }
+              
               results.success++;
             } catch (error) {
               console.error(`Error importing device (row ${i + 2}):`, error); // +2 because CSV has header row
