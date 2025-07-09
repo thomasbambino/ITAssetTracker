@@ -89,9 +89,19 @@ export function useCsvExport(url: string) {
     setIsExporting(true);
     
     try {
-      // Use window.open to trigger the download directly
-      // This approach works consistently across browsers
-      window.open(url, '_blank');
+      // Create a hidden form that will trigger the download
+      // This preserves the session cookies properly
+      const form = document.createElement('form');
+      form.method = 'GET';
+      form.action = url;
+      form.style.display = 'none';
+      
+      // Add form to document and submit it
+      document.body.appendChild(form);
+      form.submit();
+      
+      // Clean up
+      document.body.removeChild(form);
       
       toast({
         title: "Success",
