@@ -29,7 +29,7 @@ export function FaviconManager() {
     }
     
     // Set page title based on branding and custom siteTitle if available
-    const titleSuffix = brandingSettings.siteTitle || 'IT Asset Manager';
+    const titleSuffix = brandingSettings.siteTitle || 'Asset Manager';
     document.title = `${brandingSettings.companyName} - ${titleSuffix}`;
     
     // Update meta description if available
@@ -43,7 +43,7 @@ export function FaviconManager() {
     }
     
     // Set custom description or default
-    const defaultDescription = 'A comprehensive IT asset management system for tracking hardware, software, and maintenance.';
+    const defaultDescription = 'A comprehensive asset management system for tracking hardware, software, and maintenance.';
     metaDescription.content = brandingSettings.siteDescription || defaultDescription;
     
     // Update Open Graph meta tags for better social sharing
@@ -60,8 +60,8 @@ export function FaviconManager() {
     siteDescription?: string;
   }) {
     const tags = [
-      { property: 'og:title', content: `${branding.companyName} - ${branding.siteTitle || 'IT Asset Manager'}` },
-      { property: 'og:description', content: branding.siteDescription || 'A comprehensive IT asset management system for tracking hardware, software, and maintenance.' },
+      { property: 'og:title', content: `${branding.companyName} - ${branding.siteTitle || 'Asset Manager'}` },
+      { property: 'og:description', content: branding.siteDescription || 'A comprehensive asset management system for tracking hardware, software, and maintenance.' },
       { property: 'og:type', content: 'website' }
     ];
     

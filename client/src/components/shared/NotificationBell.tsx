@@ -63,7 +63,6 @@ export function NotificationBell() {
   useEffect(() => {
     if (unreadNotifications.length > previousNotificationCount && previousNotificationCount > 0) {
       // New notification arrived, play sound
-      console.log('New notification detected, attempting to play sound');
       if (audioRef.current) {
         try {
           // Reset the audio to beginning and play
@@ -72,17 +71,15 @@ export function NotificationBell() {
           if (playPromise !== undefined) {
             playPromise
               .then(() => {
-                console.log('Audio notification played successfully');
+                // Audio played successfully
               })
               .catch((error) => {
-                console.log('Audio notification not played:', error);
+                // Audio notification not played
               });
           }
         } catch (error) {
-          console.log('Audio notification error:', error);
+          // Audio notification error
         }
-      } else {
-        console.log('Audio ref not available');
       }
     }
     setPreviousNotificationCount(unreadNotifications.length);

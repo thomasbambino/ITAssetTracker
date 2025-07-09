@@ -133,7 +133,7 @@ export function QrCodeForm({ qrCode, onSuccess, onCancel }: QrCodeFormProps) {
         onSuccess();
       }
     } catch (error) {
-      console.error("Error submitting QR code:", error);
+      // Handle error silently
     } finally {
       setIsSubmitting(false);
     }

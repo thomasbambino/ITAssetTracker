@@ -4,10 +4,8 @@ async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     try {
       const text = (await res.text()) || res.statusText;
-      console.error(`Response error: ${res.status} ${res.statusText}`, text);
       throw new Error(`${res.status}: ${text}`);
     } catch (error) {
-      console.error("Error parsing error response:", error);
       throw new Error(`${res.status}: ${res.statusText}`);
     }
   }

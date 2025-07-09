@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Redirect } from "wouter";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
 
 interface User {
   id: number;
@@ -24,15 +23,7 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
     staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
   });
 
-  // For debugging
-  useEffect(() => {
-    if (isError) {
-      console.error('Protected route auth error:', error);
-    }
-    if (user) {
-      console.log('User data loaded:', user);
-    }
-  }, [isError, error, user]);
+
 
   if (isLoading) {
     return (

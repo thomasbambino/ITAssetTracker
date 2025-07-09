@@ -11,6 +11,7 @@ import { loginSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Loader2, ServerIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import TwoFactorVerification from "@/components/auth/TwoFactorVerification";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -42,15 +43,8 @@ export default function LoginPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  // Safely cast the data with reasonable defaults
-  const branding: BrandingSettings = brandingData || {
-    companyName: "IT Asset Management",
-    primaryColor: "#1E40AF",
-    logo: null,
-    siteNameColor: "#1E40AF",
-    siteNameColorSecondary: "#3B82F6", 
-    siteNameGradient: true
-  };
+  // Use actual branding data only when available
+  const branding: BrandingSettings | null = brandingData || null;
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -63,15 +57,11 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setLoading(true);
     try {
-      console.log("Attempting login with:", values.email);
-      
       const data = await apiRequest({
         method: "POST", 
         url: "/api/auth/login", 
         data: values
       });
-
-      console.log("Login response:", data);
 
       if (data.success) {
         if (data.requiresTwoFactor) {
@@ -97,7 +87,6 @@ export default function LoginPage() {
         });
       }
     } catch (error) {
-      console.error("Login error:", error);
       
       let errorMessage = "An error occurred during login";
       if (error instanceof Error) {
@@ -147,11 +136,34 @@ export default function LoginPage() {
     );
   }
 
-  // Show loading animation when branding data is loading
+  // Show loading skeleton when branding data is loading
   if (isBrandingLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1">
+            <div className="flex items-center justify-center mb-2">
+              <Skeleton className="w-10 h-10 rounded-md mr-2" />
+              <Skeleton className="h-8 w-48" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-4 w-full" />
+          </CardFooter>
+        </Card>
       </div>
     );
   }
@@ -174,19 +186,21 @@ export default function LoginPage() {
                 <ServerIcon className="h-7 w-7 text-white" />
               </div>
             )}
-            <h2 
-              className="text-2xl font-bold text-foreground" 
-              style={{
-                color: branding.siteNameGradient ? 'transparent' : 'var(--foreground)',
-                backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
-                  ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
-                  : 'none',
-                backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
-                WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
-              }}
-            >
-              {branding.companyName}
-            </h2>
+            {branding && (
+              <h2 
+                className="text-2xl font-bold text-foreground" 
+                style={{
+                  color: branding.siteNameGradient ? 'transparent' : 'var(--foreground)',
+                  backgroundImage: branding.siteNameGradient && branding.siteNameColorSecondary 
+                    ? `linear-gradient(to right, ${branding.siteNameColor || '#1E40AF'}, ${branding.siteNameColorSecondary || '#3B82F6'})` 
+                    : 'none',
+                  backgroundClip: branding.siteNameGradient ? 'text' : 'border-box',
+                  WebkitBackgroundClip: branding.siteNameGradient ? 'text' : 'border-box'
+                }}
+              >
+                {branding.companyName}
+              </h2>
+            )}
           </div>
         </CardHeader>
         <CardContent>

@@ -67,7 +67,6 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
         onSuccess();
       }
     } catch (error) {
-      console.error("Error saving email settings:", error);
       toast({
         title: "Error",
         description: "Failed to save email settings. Please try again.",
@@ -110,7 +109,6 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
         });
       }
     } catch (error) {
-      console.error("Error sending test email:", error);
       toast({
         title: "Error",
         description: "Failed to send test email. Please check your settings.",

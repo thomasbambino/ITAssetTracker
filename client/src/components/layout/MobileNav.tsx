@@ -559,7 +559,6 @@ export function MobileNav() {
                       // Reload the page to ensure clean state
                       window.location.reload();
                     } catch (error) {
-                      console.error('Logout error:', error);
                       toast({
                         title: "Error",
                         description: "Failed to log out. Please try again.",
