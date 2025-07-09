@@ -2090,9 +2090,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Fix common date format issues
                 let dateStr = value.toString().trim();
                 
+                // Handle empty strings, "N/A", "None", etc.
+                if (dateStr === '' || dateStr.toLowerCase() === 'n/a' || dateStr.toLowerCase() === 'none' || dateStr.toLowerCase() === 'null') {
+                  return null;
+                }
+                
                 // Handle the specific "1/27/1023" format - assume it's 2023
                 if (dateStr.includes('/1023')) {
                   dateStr = dateStr.replace('/1023', '/2023');
+                }
+                
+                // Handle 2-digit years (assume 20XX for years 00-30, 19XX for years 31-99)
+                if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{2}$/)) {
+                  const parts = dateStr.split('/');
+                  let year = parseInt(parts[2]);
+                  if (year <= 30) {
+                    year += 2000;
+                  } else if (year <= 99) {
+                    year += 1900;
+                  }
+                  dateStr = `${parts[0]}/${parts[1]}/${year}`;
                 }
                 
                 try {
@@ -2122,7 +2139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 purchaseCost: parseCurrency(record.PurchaseCost || record['Purchase Cost'] || record.Cost || record.cost),
                 purchaseDate: parseDate(record.PurchaseDate || record['Purchase Date'] || record.Date || record.date),
                 purchasedBy: record.PurchasedBy || record['Purchased By'] || record.Purchaser || record.purchaser || "",
-                warrantyEOL: parseDate(record.WarrantyEOL || record['Warranty End'] || record.Warranty || record.warranty),
+                warrantyEOL: parseDate(record.WarrantyEOL || record['Warranty End'] || record['Warranty EOL'] || record['Warranty Expiration'] || record['Warranty Expires'] || record.WarrantyEnd || record.WarrantyExpires || record.WarrantyExpiration || record.Warranty || record.warranty || record.warrantyEnd || record.warrantyExpires || record.warrantyExpiration),
                 status: record.Status || record.status || 'active',
                 isIntuneOnboarded: parseBoolean(record.IntuneOnboarded || record.intuneOnboarded),
                 intuneComplianceStatus: record.IntuneStatus || record.intuneStatus || 'unknown',
