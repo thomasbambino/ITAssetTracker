@@ -95,7 +95,26 @@ export function useCsvExport(url: string) {
       });
       
       if (!response.ok) {
+        if (response.status === 401) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to export data",
+            variant: "destructive",
+          });
+          // Redirect to login or refresh page
+          window.location.href = '/login';
+          return false;
+        }
         throw new Error(`Error: ${response.status}`);
+      }
+      
+      // Check if response is actually CSV
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('text/csv')) {
+        console.error('Expected CSV but got:', contentType);
+        const responseText = await response.text();
+        console.error('Response body:', responseText.substring(0, 500));
+        throw new Error('Server returned invalid response format');
       }
       
       // Create a download link
