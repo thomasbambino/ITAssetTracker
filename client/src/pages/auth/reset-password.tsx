@@ -39,15 +39,8 @@ export default function ResetPasswordPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  // Safely cast the data with reasonable defaults
-  const branding: BrandingSettings = brandingData || {
-    companyName: "IT Asset Management",
-    primaryColor: "#1E40AF",
-    logo: null,
-    siteNameColor: "#1E40AF",
-    siteNameColorSecondary: "#3B82F6", 
-    siteNameGradient: true
-  };
+  // Use actual branding data only when available
+  const branding: BrandingSettings | null = brandingData || null;
 
   const form = useForm<z.infer<typeof changePasswordSchema>>({
     resolver: zodResolver(changePasswordSchema),
@@ -85,7 +78,6 @@ export default function ResetPasswordPage() {
         });
       }
     } catch (error) {
-      console.error("Password reset error:", error);
       toast({
         title: "Failed to change password",
         description: "An error occurred during password reset",

@@ -185,7 +185,7 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
               <FormItem>
                 <FormLabel>From Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="IT Asset Management" {...field} />
+                  <Input placeholder="Your Company Name" {...field} />
                 </FormControl>
                 <FormDescription>
                   The name that will appear as the sender
