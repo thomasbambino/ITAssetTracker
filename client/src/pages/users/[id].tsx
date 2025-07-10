@@ -88,6 +88,8 @@ export default function UserDetails() {
     emailSent?: boolean;
     emailError?: string;
   } | null>(null);
+  const [userToOffboard, setUserToOffboard] = useState<number | null>(null);
+  const [userToReactivate, setUserToReactivate] = useState<number | null>(null);
   
   // Device action states
   const [deviceToUnassign, setDeviceToUnassign] = useState<number | null>(null);
@@ -193,6 +195,60 @@ export default function UserDetails() {
       resetPasswordMutation.mutate(id);
     }
   };
+
+  // Offboard user mutation
+  const offboardUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiRequest({
+        method: 'POST',
+        url: `/api/users/${userId}/offboard`
+      });
+      return userId;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "User offboarded successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setUserToOffboard(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to offboard user",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Reactivate user mutation
+  const reactivateUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiRequest({
+        method: 'POST',
+        url: `/api/users/${userId}/reactivate`
+      });
+      return userId;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "User reactivated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setUserToReactivate(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to reactivate user",
+        variant: "destructive",
+      });
+    }
+  });
 
   // Unassign device mutation
   const unassignDeviceMutation = useMutation({
@@ -444,6 +500,11 @@ export default function UserDetails() {
                         <Badge variant={user.role === 'admin' ? 'secondary' : 'outline'}>
                           {user.role === 'admin' ? 'Admin' : 'User'}
                         </Badge>
+                        {user.active === false && (
+                          <Badge variant="destructive">
+                            Inactive Employee
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
@@ -469,7 +530,7 @@ export default function UserDetails() {
                         </div>
                       )}
                       
-                      <div className="pt-2">
+                      <div className="pt-2 space-y-2">
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -480,6 +541,27 @@ export default function UserDetails() {
                           <KeyIcon className="h-4 w-4 mr-2" />
                           {resetPasswordMutation.isPending ? 'Resetting...' : 'Reset Password'}
                         </Button>
+                        {user.active === false ? (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full"
+                            onClick={() => setUserToReactivate(user.id)}
+                          >
+                            <UserCheckIcon className="h-4 w-4 mr-2" />
+                            Reactivate User
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full"
+                            onClick={() => setUserToOffboard(user.id)}
+                          >
+                            <UserMinusIcon className="h-4 w-4 mr-2" />
+                            Offboard User
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -834,6 +916,51 @@ export default function UserDetails() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Offboard User Confirmation Dialog */}
+      <AlertDialog open={!!userToOffboard} onOpenChange={() => setUserToOffboard(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Offboard User</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will deactivate the user account and remove their login access.
+              They will no longer be able to access the system, but their data will remain.
+              This action can be reversed by reactivating the user.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => userToOffboard && offboardUserMutation.mutate(userToOffboard.toString())}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Offboard User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reactivate User Confirmation Dialog */}
+      <AlertDialog open={!!userToReactivate} onOpenChange={() => setUserToReactivate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reactivate User</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will reactivate the user account and restore their login access.
+              They will be able to log in and access the system again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => userToReactivate && reactivateUserMutation.mutate(userToReactivate.toString())}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Reactivate User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
