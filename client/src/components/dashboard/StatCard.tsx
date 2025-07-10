@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Link } from 'wouter';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
 
 interface StatCardProps {
   icon: ReactNode;
@@ -53,12 +54,12 @@ export function StatCard({
   };
 
   return (
-    <Card className="overflow-hidden flex flex-col h-full">
+    <Card className="overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 group">
       <CardContent className="p-0 flex-1">
         <div className="px-3 py-4 sm:px-4 sm:py-5 xl:px-6 h-full">
           <div className="flex items-center">
-            <div className={`flex-shrink-0 rounded-md p-2 sm:p-3 ${iconClass}`}>
-              <div className="scale-75">
+            <div className={`flex-shrink-0 rounded-md p-2 sm:p-3 transition-all duration-300 group-hover:scale-110 ${iconClass}`}>
+              <div className="scale-75 transition-transform duration-300">
                 {icon}
               </div>
             </div>
@@ -66,7 +67,9 @@ export function StatCard({
               <dl>
                 <dt className={getTitleClassName(title)} title={title}>{title}</dt>
                 <dd className="flex flex-col sm:flex-row sm:items-baseline">
-                  <div className="text-xl sm:text-2xl font-semibold text-foreground">{value}</div>
+                  <div className="text-xl sm:text-2xl font-semibold text-foreground transition-colors duration-300 group-hover:text-primary">
+                    <AnimatedCounter value={value} duration={800} />
+                  </div>
                   {additionalInfo && (
                     <p className={getAdditionalInfoClassName(additionalInfo.text, additionalInfo.type)}>
                       <span className="truncate">{additionalInfo.text}</span>
@@ -78,9 +81,9 @@ export function StatCard({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="bg-muted px-3 py-2 sm:px-4 sm:py-2 xl:px-6 border-t mt-auto">
+      <CardFooter className="bg-muted px-3 py-2 sm:px-4 sm:py-2 xl:px-6 border-t mt-auto transition-colors duration-300 group-hover:bg-primary/5">
         <div className="text-xs sm:text-sm w-full">
-          <Link href={footerLink} className="font-medium text-primary hover:opacity-90 truncate block">
+          <Link href={footerLink} className="font-medium text-primary hover:opacity-90 truncate block transition-opacity duration-200">
             {footerText}
           </Link>
         </div>

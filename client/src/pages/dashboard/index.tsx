@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { GlobalSearch } from '@/components/shared/GlobalSearch';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { SkeletonCard } from '@/components/ui/skeleton-card';
 import { ActionButton } from '@/components/dashboard/ActionButton';
 import { ChartCard } from '@/components/dashboard/ChartCard';
 import { ActivityTable, ActivityLog } from '@/components/dashboard/ActivityTable';
@@ -246,91 +247,126 @@ export default function Dashboard() {
       
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-2 mb-6">
-        <ActionButton
-          icon={<PlusIcon className="h-4 w-4" />}
-          label="Add Device"
-          onClick={handleAddDevice}
-        />
-        <ActionButton
-          icon={<UserPlusIcon className="h-4 w-4" />}
-          label="Add User"
-          onClick={handleAddUser}
-        />
-        <CsvImport 
-          url="/api/import/users"
-          entityName="Users"
-          buttonText="Import"
-          buttonVariant="outline"
-        />
-        <ActionButton
-          icon={<FileOutput className="h-4 w-4" />}
-          label="Export"
-          onClick={handleExport}
-          variant="secondary"
-        />
+        <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '0ms' }}>
+          <ActionButton
+            icon={<PlusIcon className="h-4 w-4" />}
+            label="Add Device"
+            onClick={handleAddDevice}
+          />
+        </div>
+        <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '100ms' }}>
+          <ActionButton
+            icon={<UserPlusIcon className="h-4 w-4" />}
+            label="Add User"
+            onClick={handleAddUser}
+          />
+        </div>
+        <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '200ms' }}>
+          <CsvImport 
+            url="/api/import/users"
+            entityName="Users"
+            buttonText="Import"
+            buttonVariant="outline"
+          />
+        </div>
+        <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '300ms' }}>
+          <ActionButton
+            icon={<FileOutput className="h-4 w-4" />}
+            label="Export"
+            onClick={handleExport}
+            variant="secondary"
+          />
+        </div>
       </div>
 
       {/* Stats Cards */}
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={<LaptopIcon className="h-6 w-6 text-primary-600" />}
-          iconClass="bg-primary-100"
-          title="Total Devices"
-          value={statsLoading ? 0 : stats?.totalDevices || 0}
-          footerText="View all"
-          footerLink="/devices"
-        />
-        
-        <StatCard
-          icon={<UserCheckIcon className="h-6 w-6 text-green-600" />}
-          iconClass="bg-green-100"
-          title="Assigned Devices"
-          value={statsLoading ? 0 : stats?.assignedDevices || 0}
-          footerText="View details"
-          footerLink="/devices"
-          additionalInfo={
-            stats?.totalDevices
-              ? {
-                  text: `${Math.round((stats.assignedDevices / stats.totalDevices) * 100)}%`,
-                  type: 'success',
+        {statsLoading ? (
+          // Skeleton loading with staggered animation
+          <>
+            {[...Array(4)].map((_, index) => (
+              <div
+                key={index}
+                className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <SkeletonCard />
+              </div>
+            ))}
+          </>
+        ) : (
+          // Actual cards with staggered animation
+          <>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '0ms' }}>
+              <StatCard
+                icon={<LaptopIcon className="h-6 w-6 text-primary-600" />}
+                iconClass="bg-primary-100"
+                title="Total Devices"
+                value={stats?.totalDevices || 0}
+                footerText="View all"
+                footerLink="/devices"
+              />
+            </div>
+            
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms' }}>
+              <StatCard
+                icon={<UserCheckIcon className="h-6 w-6 text-green-600" />}
+                iconClass="bg-green-100"
+                title="Assigned Devices"
+                value={stats?.assignedDevices || 0}
+                footerText="View details"
+                footerLink="/devices"
+                additionalInfo={
+                  stats?.totalDevices
+                    ? {
+                        text: `${Math.round((stats.assignedDevices / stats.totalDevices) * 100)}%`,
+                        type: 'success',
+                      }
+                    : undefined
                 }
-              : undefined
-          }
-        />
-        
-        <StatCard
-          icon={<CalendarXIcon className="h-6 w-6 text-red-600" />}
-          iconClass="bg-red-100"
-          title="Expiring Warranties"
-          value={statsLoading ? 0 : stats?.expiringWarranties || 0}
-          footerText="View all"
-          footerLink="/warranties"
-          additionalInfo={
-            stats?.expiringWarranties
-              ? {
-                  text: 'Next 30 days',
-                  type: 'error',
+              />
+            </div>
+            
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
+              <StatCard
+                icon={<CalendarXIcon className="h-6 w-6 text-red-600" />}
+                iconClass="bg-red-100"
+                title="Expiring Warranties"
+                value={stats?.expiringWarranties || 0}
+                footerText="View all"
+                footerLink="/warranties"
+                additionalInfo={
+                  stats?.expiringWarranties
+                    ? {
+                        text: 'Next 30 days',
+                        type: 'error',
+                      }
+                    : undefined
                 }
-              : undefined
-          }
-        />
-        
-        <StatCard
-          icon={<TicketIcon className="h-6 w-6 text-purple-600" />}
-          iconClass="bg-purple-100"
-          title="Open Tickets"
-          value={statsLoading ? 0 : stats?.openTickets || 0}
-          footerText="View all"
-          footerLink="/problem-reports"
-          additionalInfo={
-            stats?.openTickets
-              ? {
-                  text: 'Need attention',
-                  type: 'warning',
+              />
+            </div>
+            
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms' }}>
+              <StatCard
+                icon={<TicketIcon className="h-6 w-6 text-purple-600" />}
+                iconClass="bg-purple-100"
+                title="Open Tickets"
+                value={stats?.openTickets || 0}
+                footerText="View all"
+                footerLink="/problem-reports"
+                additionalInfo={
+                  stats?.openTickets
+                    ? {
+                        text: 'Need attention',
+                        type: 'warning',
+                      }
+                    : undefined
                 }
-              : undefined
-          }
-        />
+              />
+            </div>
+          </>
+        )}
+
       </div>
 
       {/* Charts Section */}
