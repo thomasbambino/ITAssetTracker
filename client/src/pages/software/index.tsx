@@ -416,26 +416,38 @@ export default function Software() {
           </DialogHeader>
           {selectedSoftware && (
             <div className="w-full space-y-4">
-              {/* Main Assignment Type Tabs */}
+              {/* Main Assignment Type Toggle */}
               <div className="border-b pb-4">
-                <Tabs value={assignmentType} onValueChange={(value) => setAssignmentType(value as 'single' | 'bulk')} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 h-10">
-                    <TabsTrigger value="single" className="font-medium">Single Assignment</TabsTrigger>
-                    <TabsTrigger value="bulk" className="font-medium">Multiple Users</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="single" className="mt-6">
-                    <SoftwareAssignmentForm 
-                      softwareId={selectedSoftware.id} 
-                      onSuccess={handleAssignmentSuccess} 
-                    />
-                  </TabsContent>
-                  <TabsContent value="bulk" className="mt-6">
-                    <BulkSoftwareAssignmentForm 
-                      softwareId={selectedSoftware.id} 
-                      onSuccess={handleAssignmentSuccess} 
-                    />
-                  </TabsContent>
-                </Tabs>
+                <div className="flex items-center space-x-2 mb-4">
+                  <Button
+                    type="button"
+                    variant={assignmentType === 'single' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAssignmentType('single')}
+                  >
+                    Single Assignment
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={assignmentType === 'bulk' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAssignmentType('bulk')}
+                  >
+                    Multiple Users
+                  </Button>
+                </div>
+                
+                {assignmentType === 'single' ? (
+                  <SoftwareAssignmentForm 
+                    softwareId={selectedSoftware.id} 
+                    onSuccess={handleAssignmentSuccess} 
+                  />
+                ) : (
+                  <BulkSoftwareAssignmentForm 
+                    softwareId={selectedSoftware.id} 
+                    onSuccess={handleAssignmentSuccess} 
+                  />
+                )}
               </div>
             </div>
           )}
