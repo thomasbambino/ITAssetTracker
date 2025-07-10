@@ -286,17 +286,17 @@ export default function FlappyHelp() {
         </Button>
       </div>
 
-      <div className="relative">
+      <div className="relative border rounded overflow-hidden">
         <canvas
           ref={canvasRef}
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
           onClick={jump}
-          className="border rounded cursor-pointer bg-sky-200"
+          className="cursor-pointer bg-sky-200 block"
         />
 
         {!gameRunning && !gameOver && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="text-center text-white">
               <p className="text-sm mb-2">Press Space to start!</p>
               <p className="text-xs">Help the satellite phone avoid trees</p>
@@ -305,7 +305,7 @@ export default function FlappyHelp() {
         )}
 
         {gameOver && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="text-center text-white">
               <p className="text-sm mb-2">Game Over!</p>
               <p className="text-xs mb-3">Score: {score}</p>
