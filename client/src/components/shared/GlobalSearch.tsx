@@ -115,7 +115,7 @@ export function GlobalSearch() {
     ? searchResults.filter(
         result => 
           result.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          result.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
+          (result.subtitle && result.subtitle.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     : searchResults;
 
