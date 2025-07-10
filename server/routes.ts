@@ -54,6 +54,14 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
+// Define uploads directory
+const uploadsDir = path.join(process.cwd(), 'uploads');
+
+// Ensure uploads directory exists
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Configure multer for problem report attachments with file validation
 const attachmentUpload = multer({
   dest: 'uploads/attachments/',
