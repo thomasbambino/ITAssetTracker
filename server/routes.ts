@@ -2974,6 +2974,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Message images route - serve uploaded message images
+  app.get('/uploads/*', async (req: Request, res: Response) => {
+    try {
+      const filePath = path.join(process.cwd(), req.path);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+      
+      // Get file stats to determine content type
+      const stats = fs.statSync(filePath);
+      if (!stats.isFile()) {
+        return res.status(404).json({ message: "Not a file" });
+      }
+      
+      // Determine content type based on file extension
+      const ext = path.extname(filePath).toLowerCase();
+      const contentTypeMap: { [key: string]: string } = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.pdf': 'application/pdf'
+      };
+      
+      const contentType = contentTypeMap[ext] || 'application/octet-stream';
+      
+      // Set appropriate headers for inline viewing
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', 'inline');
+      res.sendFile(path.resolve(filePath));
+    } catch (error) {
+      console.error('Error serving uploaded file:', error);
+      res.status(500).json({ message: "Error serving file" });
+    }
+  });
+
   // CSV Import/Export routes
   app.post('/api/import/users', isAuthenticated, isAdmin, upload.single('file'), async (req: Request, res: Response) => {
     try {
