@@ -280,7 +280,7 @@ export default function UserDashboard() {
               {assignedDevices.map((device, index) => (
                 <Card 
                   key={device.id} 
-                  className={`p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02] delay-${index * 100 + 600} ${
+                  className={`p-6 transition-all duration-300 delay-${index * 100 + 600} ${
                     isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                   }`}
                 >
@@ -404,7 +404,7 @@ export default function UserDashboard() {
               {assignedSoftware.map((assignment, index) => (
                 <Card 
                   key={assignment.id} 
-                  className={`border rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02] delay-${index * 100 + 800} ${
+                  className={`border rounded-lg p-4 transition-all duration-300 delay-${index * 100 + 800} ${
                     isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                   }`}
                 >
