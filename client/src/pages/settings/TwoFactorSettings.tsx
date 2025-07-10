@@ -42,6 +42,14 @@ export default function TwoFactorSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Update queries when backup codes dialog closes
+  useEffect(() => {
+    if (!showBackupCodes && backupCodes.length > 0) {
+      queryClient.invalidateQueries({ queryKey: ['/api/2fa/status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+    }
+  }, [showBackupCodes, backupCodes.length, queryClient]);
+
   // Get 2FA status
   const { data: status, isLoading } = useQuery({
     queryKey: ['/api/2fa/status'],
@@ -109,13 +117,11 @@ export default function TwoFactorSettings() {
     },
     onSuccess: (data) => {
       setBackupCodes(data.data.backupCodes);
-      setShowBackupCodes(true);
       setIsSetupDialogOpen(false);
-      // Delay query invalidation to allow backup codes dialog to show properly
+      // Show backup codes dialog after setup dialog closes
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/2fa/status'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
-      }, 100);
+        setShowBackupCodes(true);
+      }, 50);
       toast({
         title: 'Two-Factor Authentication Enabled',
         description: 'Your account is now protected with 2FA.',
