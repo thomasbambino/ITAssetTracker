@@ -36,7 +36,7 @@ export function formatDate(date: Date | string | null | undefined): string {
   });
 }
 
-// Format date with time (automatically adjusts to user's timezone and locale)
+// Format date with time in MM/DD/YY format
 export function formatDateTime(date: Date | string | null | undefined): string {
   if (!date) return '';
   
@@ -47,14 +47,16 @@ export function formatDateTime(date: Date | string | null | undefined): string {
     return '';
   }
   
-  // Use user's locale and timezone automatically
-  return dateObj.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  // Format as MM/DD/YY HH:MM AM/PM
+  const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+  const day = dateObj.getDate().toString().padStart(2, '0');
+  const year = dateObj.getFullYear().toString().slice(-2);
+  const hours = dateObj.getHours();
+  const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  
+  return `${month}/${day}/${year} ${displayHours}:${minutes} ${ampm}`;
 }
 
 // Get full name helper
