@@ -512,3 +512,25 @@ export type InsertProblemReportMessage = z.infer<typeof insertProblemReportMessa
 export type ProblemReportMessage = typeof problemReportMessages.$inferSelect;
 export type InsertProblemReportAttachment = z.infer<typeof insertProblemReportAttachmentSchema>;
 export type ProblemReportAttachment = typeof problemReportAttachments.$inferSelect;
+
+// Game High Scores Table
+export const gameHighScores = pgTable("game_high_scores", {
+  id: serial("id").primaryKey(),
+  gameName: text("game_name").notNull(),
+  highScore: integer("high_score").notNull(),
+  playerName: text("player_name"),
+  userId: integer("user_id").references(() => users.id),
+  achievedAt: timestamp("achieved_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueGameName: unique().on(table.gameName),
+}));
+
+export const insertGameHighScoreSchema = createInsertSchema(gameHighScores).omit({
+  id: true,
+  achievedAt: true,
+  updatedAt: true,
+});
+
+export type InsertGameHighScore = z.infer<typeof insertGameHighScoreSchema>;
+export type GameHighScore = typeof gameHighScores.$inferSelect;

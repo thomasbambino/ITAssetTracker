@@ -2,11 +2,12 @@ import {
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
   type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
   type Notification, type BrandingSettings, type EmailSettings, type Site,
+  type GameHighScore,
   type InsertCategory, type InsertDevice, type InsertUser, 
   type InsertAssignmentHistory, type InsertActivityLog,
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
   type InsertQrCode, type InsertNotification, type InsertBrandingSettings, 
-  type InsertEmailSettings, type InsertSite
+  type InsertEmailSettings, type InsertSite, type InsertGameHighScore
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
@@ -4315,5 +4316,61 @@ export class DatabaseStorage implements IStorage {
       uploadedByFirstName: row.uploaded_by_first_name,
       uploadedByLastName: row.uploaded_by_last_name
     };
+  }
+
+  // Game High Score operations
+  async getGameHighScore(gameName: string): Promise<any | undefined> {
+    try {
+      const highScore = await db.one(`
+        SELECT 
+          id,
+          game_name as "gameName",
+          high_score as "highScore",
+          player_name as "playerName",
+          user_id as "userId",
+          achieved_at as "achievedAt",
+          updated_at as "updatedAt"
+        FROM game_high_scores 
+        WHERE game_name = $1
+      `, [gameName]);
+      return highScore;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async updateGameHighScore(gameName: string, score: number, playerName?: string, userId?: number): Promise<any> {
+    try {
+      // Try to update existing record
+      const result = await db.result(`
+        UPDATE game_high_scores 
+        SET 
+          high_score = $2,
+          player_name = $3,
+          user_id = $4,
+          achieved_at = NOW(),
+          updated_at = NOW()
+        WHERE game_name = $1 AND high_score < $2
+      `, [gameName, score, playerName || null, userId || null]);
+
+      if (result.rowCount === 0) {
+        // No existing record or score wasn't higher, try to insert or get existing
+        try {
+          await db.one(`
+            INSERT INTO game_high_scores (game_name, high_score, player_name, user_id)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+          `, [gameName, score, playerName || null, userId || null]);
+        } catch (insertError) {
+          // Record exists but score wasn't higher, just return current high score
+        }
+      }
+
+      // Return the current high score
+      return await this.getGameHighScore(gameName);
+    } catch (error) {
+      console.error('Error updating game high score:', error);
+      throw error;
+    }
   }
 }

@@ -3200,6 +3200,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Game High Score routes
+  app.get('/api/game/:gameName/highscore', async (req: Request, res: Response) => {
+    try {
+      const { gameName } = req.params;
+      const highScore = await storage.getGameHighScore(gameName);
+      
+      if (!highScore) {
+        return res.json({ highScore: 0, playerName: null });
+      }
+      
+      res.json(highScore);
+    } catch (error) {
+      console.error('Error fetching high score:', error);
+      res.status(500).json({ message: 'Error fetching high score' });
+    }
+  });
+
+  app.post('/api/game/:gameName/highscore', async (req: Request, res: Response) => {
+    try {
+      const { gameName } = req.params;
+      const { score, playerName } = req.body;
+      
+      if (!score || score < 0) {
+        return res.status(400).json({ message: 'Invalid score' });
+      }
+      
+      // Get current user ID if logged in
+      const userId = req.session.userId;
+      
+      const result = await storage.updateGameHighScore(gameName, score, playerName, userId);
+      res.json(result);
+    } catch (error) {
+      console.error('Error updating high score:', error);
+      res.status(500).json({ message: 'Error updating high score' });
+    }
+  });
+
   // Start the server
   const server = createServer(app);
   return server;

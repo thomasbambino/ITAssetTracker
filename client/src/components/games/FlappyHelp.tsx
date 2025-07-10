@@ -21,6 +21,7 @@ export default function FlappyHelp() {
   const [bird, setBird] = useState<Bird>({ x: 50, y: 150, velocity: 0 });
   const [trees, setTrees] = useState<Tree[]>([]);
   const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
   const [gameRunning, setGameRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const gameLoopRef = useRef<number>();
@@ -36,14 +37,48 @@ export default function FlappyHelp() {
   const JUMP_FORCE = -6;
   const TREE_SPEED = 2;
 
-  // Load tree image
+  // Load tree image and fetch high score
   useEffect(() => {
     const img = new Image();
     img.src = treeUpwardImg;
     img.onload = () => {
       treeImageRef.current = img;
     };
+    
+    // Fetch high score when component mounts
+    fetchHighScore();
   }, []);
+
+  // Fetch high score from API
+  const fetchHighScore = async () => {
+    try {
+      const response = await fetch('/api/game/flappy-help/highscore');
+      const data = await response.json();
+      setHighScore(data.highScore || 0);
+    } catch (error) {
+      console.error('Error fetching high score:', error);
+    }
+  };
+
+  // Update high score when game ends
+  const updateHighScore = async (score: number) => {
+    try {
+      const response = await fetch('/api/game/flappy-help/highscore', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          score, 
+          playerName: 'Anonymous' 
+        }),
+      });
+      const data = await response.json();
+      setHighScore(data.highScore || 0);
+    } catch (error) {
+      console.error('Error updating high score:', error);
+    }
+  };
 
   const resetGame = useCallback(() => {
     setBird({ x: 50, y: 150, velocity: 0 });
@@ -143,8 +178,12 @@ export default function FlappyHelp() {
     if (gameRunning && checkCollision(bird, trees)) {
       setGameOver(true);
       setGameRunning(false);
+      // Update high score when game ends
+      if (score > 0) {
+        updateHighScore(score);
+      }
     }
-  }, [bird, trees, checkCollision, gameRunning]);
+  }, [bird, trees, checkCollision, gameRunning, score]);
 
   // Draw tree using the provided image
   const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean) => {
@@ -270,8 +309,9 @@ export default function FlappyHelp() {
   return (
     <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-slate-800 border rounded-lg shadow-2xl p-4 w-[300px]">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <span className="text-xs text-muted-foreground">Score: {score}</span>
+          <span className="text-xs text-muted-foreground">High: {highScore}</span>
         </div>
         <Button
           variant="ghost"
