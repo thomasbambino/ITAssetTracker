@@ -53,12 +53,14 @@ export function StatCard({
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="px-3 py-4 sm:px-4 sm:py-5 xl:px-6">
+    <Card className="overflow-hidden flex flex-col h-full">
+      <CardContent className="p-0 flex-1">
+        <div className="px-3 py-4 sm:px-4 sm:py-5 xl:px-6 h-full">
           <div className="flex items-center">
             <div className={`flex-shrink-0 rounded-md p-2 sm:p-3 ${iconClass}`}>
-              {icon}
+              <div className="scale-75">
+                {icon}
+              </div>
             </div>
             <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
               <dl>
@@ -76,7 +78,7 @@ export function StatCard({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="bg-muted px-3 py-2 sm:px-4 sm:py-2 xl:px-6 border-t">
+      <CardFooter className="bg-muted px-3 py-2 sm:px-4 sm:py-2 xl:px-6 border-t mt-auto">
         <div className="text-xs sm:text-sm w-full">
           <Link href={footerLink} className="font-medium text-primary hover:opacity-90 truncate block">
             {footerText}
