@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import treeUpwardImg from '@/assets/tree-upward.png';
 
 interface Bird {
   x: number;
@@ -24,15 +25,25 @@ export default function FlappyHelp() {
   const [gameOver, setGameOver] = useState(false);
   const gameLoopRef = useRef<number>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const treeImageRef = useRef<HTMLImageElement>();
 
   const CANVAS_WIDTH = 280;
   const CANVAS_HEIGHT = 200;
   const BIRD_SIZE = 18;
-  const TREE_WIDTH = 35;
+  const TREE_WIDTH = 60;
   const TREE_GAP = 90;
   const GRAVITY = 0.4;
   const JUMP_FORCE = -6;
   const TREE_SPEED = 2;
+
+  // Load tree image
+  useEffect(() => {
+    const img = new Image();
+    img.src = treeUpwardImg;
+    img.onload = () => {
+      treeImageRef.current = img;
+    };
+  }, []);
 
   const resetGame = useCallback(() => {
     setBird({ x: 50, y: 150, velocity: 0 });
@@ -135,61 +146,26 @@ export default function FlappyHelp() {
     }
   }, [bird, trees, checkCollision, gameRunning]);
 
-  // Draw pixelated tree
+  // Draw tree using the provided image
   const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean) => {
+    if (!treeImageRef.current) return;
+    
+    const img = treeImageRef.current;
     const width = TREE_WIDTH;
-    const trunkWidth = 8;
-    const trunkHeight = 10;
+    
+    ctx.save();
     
     if (isTop) {
-      // Top tree (inverted)
-      // Tree trunk at bottom
-      ctx.fillStyle = '#8B4513';
-      ctx.fillRect(x + (width - trunkWidth) / 2, y + height - trunkHeight, trunkWidth, trunkHeight);
-      
-      // Tree foliage (darker green at edges, lighter in center)
-      const foliageHeight = height - trunkHeight;
-      for (let i = 0; i < foliageHeight; i++) {
-        const row = Math.floor(i / 3);
-        const foliageWidth = Math.min(width, 10 + row * 4);
-        const offsetX = (width - foliageWidth) / 2;
-        
-        // Vary green shades for depth
-        if (i % 3 === 0) {
-          ctx.fillStyle = '#228B22'; // Dark green
-        } else if (i % 3 === 1) {
-          ctx.fillStyle = '#32CD32'; // Medium green
-        } else {
-          ctx.fillStyle = '#90EE90'; // Light green
-        }
-        
-        ctx.fillRect(x + offsetX, y + i, foliageWidth, 3);
-      }
+      // Top tree (facing down) - flip vertically
+      ctx.translate(x + width / 2, y + height / 2);
+      ctx.scale(1, -1);
+      ctx.drawImage(img, -width / 2, -height / 2, width, height);
     } else {
-      // Bottom tree (normal)
-      // Tree trunk at top
-      ctx.fillStyle = '#8B4513';
-      ctx.fillRect(x + (width - trunkWidth) / 2, y, trunkWidth, trunkHeight);
-      
-      // Tree foliage (darker green at edges, lighter in center)
-      const foliageHeight = height - trunkHeight;
-      for (let i = 0; i < foliageHeight; i++) {
-        const row = Math.floor(i / 3);
-        const foliageWidth = Math.min(width, 10 + (foliageHeight - i) / 3 * 4);
-        const offsetX = (width - foliageWidth) / 2;
-        
-        // Vary green shades for depth
-        if (i % 3 === 0) {
-          ctx.fillStyle = '#228B22'; // Dark green
-        } else if (i % 3 === 1) {
-          ctx.fillStyle = '#32CD32'; // Medium green
-        } else {
-          ctx.fillStyle = '#90EE90'; // Light green
-        }
-        
-        ctx.fillRect(x + offsetX, y + trunkHeight + i, foliageWidth, 3);
-      }
+      // Bottom tree (facing up) - normal orientation
+      ctx.drawImage(img, x, y, width, height);
     }
+    
+    ctx.restore();
   };
 
   // Draw satellite phone icon (rotated 90 degrees and bigger)
