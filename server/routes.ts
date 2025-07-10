@@ -98,7 +98,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const devices = await storage.getDevices();
       const unassignedDevices = await storage.getUnassignedDevices();
       const expiringWarranties = await storage.getDevicesWithWarrantyExpiring(30);
-      const openTickets = await storage.getProblemReports('open');
+      const allTickets = await storage.getProblemReports();
+      const openTickets = allTickets.filter(ticket => ticket.status !== 'closed');
       
       const stats = {
         totalDevices: devices.length,
