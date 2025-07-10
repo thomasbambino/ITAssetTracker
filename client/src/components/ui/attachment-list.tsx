@@ -74,55 +74,58 @@ export function AttachmentList({
       </h4>
       
       {attachments.map((attachment) => (
-        <Card key={attachment.id} className="p-3">
+        <Card key={attachment.id} className="p-4">
           <CardContent className="p-0">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                {getFileIcon(attachment.fileType)}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate mb-1" title={attachment.originalName}>
+            <div className="space-y-2">
+              {/* Top row: Icon, filename, and action buttons */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {getFileIcon(attachment.fileType)}
+                  <p className="text-sm font-medium truncate" title={attachment.originalName}>
                     {attachment.originalName}
                   </p>
-                  <div className="text-xs text-muted-foreground">
-                    {formatFileSize(attachment.fileSize)} • {attachment.uploadedByFirstName} {attachment.uploadedByLastName} • {formatDateTime(attachment.createdAt)}
-                  </div>
+                </div>
+                
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {isImage(attachment.fileType) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPreviewImage(attachment)}
+                      className="h-8 w-8 p-0"
+                      title="View image"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDownload(attachment)}
+                    className="h-8 w-8 p-0"
+                    title="Download file"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  
+                  {canDelete && onDelete && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDelete(attachment)}
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                      title="Delete attachment"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
               
-              <div className="flex items-center gap-1 flex-shrink-0">
-                {isImage(attachment.fileType) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPreviewImage(attachment)}
-                    className="h-8 w-8 p-0"
-                    title="View image"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                )}
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDownload(attachment)}
-                  className="h-8 w-8 p-0"
-                  title="Download file"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                
-                {canDelete && onDelete && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(attachment)}
-                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                    title="Delete attachment"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+              {/* Bottom row: File size, uploader, and date */}
+              <div className="pl-10 text-xs text-muted-foreground">
+                {formatFileSize(attachment.fileSize)} • {attachment.uploadedByFirstName} {attachment.uploadedByLastName} • {formatDateTime(attachment.createdAt)}
               </div>
             </div>
           </CardContent>
