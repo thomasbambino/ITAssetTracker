@@ -411,6 +411,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Offboard user (deactivate)
+  app.post('/api/users/:id/offboard', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Update user to set active to false
+      const user = await storage.updateUser(id, { active: false }, loggedInUserId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ message: "User offboarded successfully", user });
+    } catch (error) {
+      console.error("Error offboarding user:", error);
+      res.status(500).json({ message: "Error offboarding user" });
+    }
+  });
+
+  // Reactivate user (reverse offboarding)
+  app.post('/api/users/:id/reactivate', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Update user to set active to true
+      const user = await storage.updateUser(id, { active: true }, loggedInUserId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ message: "User reactivated successfully", user });
+    } catch (error) {
+      console.error("Error reactivating user:", error);
+      res.status(500).json({ message: "Error reactivating user" });
+    }
+  });
+
   // Device routes
   app.get('/api/devices', async (req: Request, res: Response) => {
     try {
