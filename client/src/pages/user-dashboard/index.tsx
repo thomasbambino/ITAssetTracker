@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { SkeletonCard } from '@/components/ui/skeleton-card';
-import { ActionButton } from '@/components/dashboard/ActionButton';
+
 import { 
   Monitor, 
   Package, 
@@ -151,12 +151,16 @@ export default function UserDashboard() {
       actions={
         <Dialog open={isProblemReportOpen} onOpenChange={setIsProblemReportOpen}>
           <DialogTrigger asChild>
-            <ActionButton 
-              icon={<AlertTriangle className="h-4 w-4" />}
-              label="Report a Problem"
-              onClick={() => setIsProblemReportOpen(true)}
-              variant="secondary"
-            />
+            <Button 
+              variant="outline" 
+              className={`gap-2 transition-all duration-300 hover:shadow-lg hover:scale-105 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+              }`}
+              style={{ animationDelay: '400ms' }}
+            >
+              <AlertTriangle className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+              Report a Problem
+            </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
