@@ -24,24 +24,9 @@ export function ImagePreviewDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[90vw] sm:max-h-[90vh] p-0">
         <DialogHeader className="p-4 pb-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
-            <div className="flex items-center gap-2">
-              {onDownload && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onDownload}
-                  className="flex items-center gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Download
-                </Button>
-              )}
-            </div>
-          </div>
+          <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
         </DialogHeader>
-        <div className="p-4 pt-0">
+        <div className="p-4 pt-0 space-y-4">
           <div className="flex items-center justify-center bg-muted/30 rounded-lg p-4">
             <img
               src={imageSrc}
@@ -50,6 +35,18 @@ export function ImagePreviewDialog({
               style={{ minHeight: '200px' }}
             />
           </div>
+          {onDownload && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                onClick={onDownload}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -74,26 +74,33 @@ export function AttachmentList({
       </h4>
       
       {attachments.map((attachment) => (
-        <Card key={attachment.id} className="p-3">
+        <Card key={attachment.id} className="p-4">
           <CardContent className="p-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
                 {getFileIcon(attachment.fileType)}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 space-y-2">
                   <p className="text-sm font-medium truncate" title={attachment.originalName}>
                     {attachment.originalName}
                   </p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>{formatFileSize(attachment.fileSize)}</span>
-                    <span>
-                      Uploaded by {attachment.uploadedByFirstName} {attachment.uploadedByLastName}
-                    </span>
-                    <span>{formatDateTime(attachment.createdAt)}</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium">Size:</span>
+                      <span>{formatFileSize(attachment.fileSize)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium">Uploaded by:</span>
+                      <span>{attachment.uploadedByFirstName} {attachment.uploadedByLastName}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium">Date:</span>
+                      <span>{formatDateTime(attachment.createdAt)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 {isImage(attachment.fileType) && (
                   <Button
                     variant="ghost"
