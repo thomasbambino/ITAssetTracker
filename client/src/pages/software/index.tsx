@@ -47,7 +47,7 @@ export default function Software() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [assignmentType, setAssignmentType] = useState<'single' | 'bulk'>('single');
+
   const [selectedSoftware, setSelectedSoftware] = useState<Software | null>(null);
   const [, setLocation] = useLocation();
   
@@ -401,12 +401,7 @@ export default function Software() {
       </Tabs>
       
       {/* Software Assignment Dialog */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={(open) => {
-        setIsAssignDialogOpen(open);
-        if (!open) {
-          setAssignmentType('single'); // Reset to single assignment type when dialog closes
-        }
-      }}>
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assign Software</DialogTitle>
@@ -415,41 +410,10 @@ export default function Software() {
             </DialogDescription>
           </DialogHeader>
           {selectedSoftware && (
-            <div className="w-full space-y-4">
-              {/* Main Assignment Type Toggle */}
-              <div className="border-b pb-4">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Button
-                    type="button"
-                    variant={assignmentType === 'single' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setAssignmentType('single')}
-                  >
-                    Single Assignment
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={assignmentType === 'bulk' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setAssignmentType('bulk')}
-                  >
-                    Multiple Users
-                  </Button>
-                </div>
-                
-                {assignmentType === 'single' ? (
-                  <SoftwareAssignmentForm 
-                    softwareId={selectedSoftware.id} 
-                    onSuccess={handleAssignmentSuccess} 
-                  />
-                ) : (
-                  <BulkSoftwareAssignmentForm 
-                    softwareId={selectedSoftware.id} 
-                    onSuccess={handleAssignmentSuccess} 
-                  />
-                )}
-              </div>
-            </div>
+            <BulkSoftwareAssignmentForm 
+              softwareId={selectedSoftware.id} 
+              onSuccess={handleAssignmentSuccess} 
+            />
           )}
         </DialogContent>
       </Dialog>
