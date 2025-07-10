@@ -9,6 +9,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { formatDate, formatCurrency, mapErrorMessage } from "@/lib/utils";
 import { SoftwareForm } from "@/components/forms/SoftwareForm";
 import { SoftwareAssignmentForm } from "@/components/forms/SoftwareAssignmentForm";
+import { BulkSoftwareAssignmentForm } from "@/components/forms/BulkSoftwareAssignmentForm";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AlertCircle, Bell, Calendar, CheckCircle, Clock, CreditCard, Edit as EditIcon, Mail, Monitor, Plus, Tag, Trash2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -80,6 +81,7 @@ export default function SoftwareDetails() {
   const softwareId = Number(params.id);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [assignmentType, setAssignmentType] = useState<'single' | 'bulk'>('single');
   const { toast } = useToast();
 
   // Query to fetch software details
@@ -514,18 +516,54 @@ export default function SoftwareDetails() {
       </Dialog>
 
       {/* Assign Software Dialog */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <Dialog open={isAssignDialogOpen} onOpenChange={(open) => {
+        setIsAssignDialogOpen(open);
+        if (!open) {
+          setAssignmentType('single'); // Reset to single assignment type when dialog closes
+        }
+      }}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assign Software</DialogTitle>
             <DialogDescription>
-              Assign {software.name} to a user or device
+              Assign {software.name} to users or devices
             </DialogDescription>
           </DialogHeader>
-          <SoftwareAssignmentForm 
-            softwareId={software.id} 
-            onSuccess={handleAssignSuccess} 
-          />
+          <div className="w-full space-y-4">
+            {/* Main Assignment Type Toggle */}
+            <div className="border-b pb-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <Button
+                  type="button"
+                  variant={assignmentType === 'single' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAssignmentType('single')}
+                >
+                  Single Assignment
+                </Button>
+                <Button
+                  type="button"
+                  variant={assignmentType === 'bulk' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAssignmentType('bulk')}
+                >
+                  Multiple Users
+                </Button>
+              </div>
+              
+              {assignmentType === 'single' ? (
+                <SoftwareAssignmentForm 
+                  softwareId={software.id} 
+                  onSuccess={handleAssignSuccess} 
+                />
+              ) : (
+                <BulkSoftwareAssignmentForm 
+                  softwareId={software.id} 
+                  onSuccess={handleAssignSuccess} 
+                />
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </PageContainer>
