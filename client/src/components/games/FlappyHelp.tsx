@@ -134,6 +134,33 @@ export default function FlappyHelp() {
     }
   }, [bird, pipes, checkCollision, gameRunning]);
 
+  // Draw satellite phone icon
+  const drawSatellitePhone = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    const size = BIRD_SIZE;
+    
+    // Antenna (top left)
+    ctx.fillStyle = '#666666';
+    ctx.fillRect(x, y, 2, 4);
+    
+    // Phone body outline
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(x + 1, y + 3, size - 2, size - 4);
+    
+    // Phone body main
+    ctx.fillStyle = '#777777';
+    ctx.fillRect(x + 2, y + 4, size - 4, size - 6);
+    
+    // Screen
+    ctx.fillStyle = '#87CEEB';
+    ctx.fillRect(x + 3, y + 5, size - 6, 3);
+    
+    // Keypad (small dots)
+    ctx.fillStyle = '#555555';
+    ctx.fillRect(x + 3, y + 9, 1, 1);
+    ctx.fillRect(x + 5, y + 9, 1, 1);
+    ctx.fillRect(x + 7, y + 9, 1, 1);
+  };
+
   // Canvas rendering
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -155,9 +182,8 @@ export default function FlappyHelp() {
       ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, CANVAS_HEIGHT - pipe.bottomY);
     });
 
-    // Draw bird
-    ctx.fillStyle = '#FFD700';
-    ctx.fillRect(bird.x, bird.y, BIRD_SIZE, BIRD_SIZE);
+    // Draw satellite phone
+    drawSatellitePhone(ctx, bird.x, bird.y);
 
     // Draw ground
     ctx.fillStyle = '#8B4513';
@@ -230,7 +256,7 @@ export default function FlappyHelp() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
             <div className="text-center text-white">
               <p className="text-sm mb-2">Click or press Space to start!</p>
-              <p className="text-xs">Help the bird avoid pipes</p>
+              <p className="text-xs">Help the satellite phone avoid pipes</p>
             </div>
           </div>
         )}
@@ -253,7 +279,7 @@ export default function FlappyHelp() {
       </div>
 
       <p className="text-xs text-muted-foreground mt-2 text-center">
-        Click the bird or press Space to jump!
+        Click the phone or press Space to jump!
       </p>
     </div>
   );
