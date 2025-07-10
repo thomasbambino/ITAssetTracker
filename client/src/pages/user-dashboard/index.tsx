@@ -184,48 +184,74 @@ export default function UserDashboard() {
             </>
           ) : (
             <>
-              <StatCard
-                title="My Devices"
-                value={assignedDevices.length}
-                icon={Monitor}
-                isVisible={isVisible}
-                delay={0}
-                description="Devices assigned to you"
-                theme="blue"
-              />
-              <StatCard
-                title="Software & Portals"
-                value={assignedSoftware.length}
-                icon={Package}
-                isVisible={isVisible}
-                delay={100}
-                description="Software licenses assigned"
-                theme="green"
-              />
-              <StatCard
-                title="Active Devices"
-                value={assignedDevices.filter(d => d.status?.toLowerCase() === 'active').length}
-                icon={Monitor}
-                isVisible={isVisible}
-                delay={200}
-                description="Currently active devices"
-                theme="emerald"
-              />
-              <StatCard
-                title="Expiring Soon"
-                value={Array.isArray(assignedSoftware) ? assignedSoftware.filter(s => {
-                  if (!s.software?.expiryDate) return false;
-                  const expiry = new Date(s.software.expiryDate);
-                  const now = new Date();
-                  const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
-                  return expiry <= thirtyDaysFromNow;
-                }).length : 0}
-                icon={Calendar}
-                isVisible={isVisible}
-                delay={300}
-                description="Software expiring within 30 days"
-                theme="orange"
-              />
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '0ms' }}>
+                <StatCard
+                  icon={<Monitor className="h-6 w-6 text-blue-600" />}
+                  iconClass="bg-blue-100"
+                  title="My Devices"
+                  value={assignedDevices.length}
+                  footerText="View all"
+                  footerLink="/guest-devices"
+                />
+              </div>
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms' }}>
+                <StatCard
+                  icon={<Package className="h-6 w-6 text-green-600" />}
+                  iconClass="bg-green-100"
+                  title="Software & Portals"
+                  value={assignedSoftware.length}
+                  footerText="View all"
+                  footerLink="/guest-software"
+                />
+              </div>
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
+                <StatCard
+                  icon={<Monitor className="h-6 w-6 text-emerald-600" />}
+                  iconClass="bg-emerald-100"
+                  title="Active Devices"
+                  value={assignedDevices.filter(d => d.status?.toLowerCase() === 'active').length}
+                  footerText="View details"
+                  footerLink="/guest-devices"
+                  additionalInfo={
+                    assignedDevices.length > 0
+                      ? {
+                          text: `${Math.round((assignedDevices.filter(d => d.status?.toLowerCase() === 'active').length / assignedDevices.length) * 100)}%`,
+                          type: 'success',
+                        }
+                      : undefined
+                  }
+                />
+              </div>
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms' }}>
+                <StatCard
+                  icon={<Calendar className="h-6 w-6 text-orange-600" />}
+                  iconClass="bg-orange-100"
+                  title="Expiring Soon"
+                  value={Array.isArray(assignedSoftware) ? assignedSoftware.filter(s => {
+                    if (!s.software?.expiryDate) return false;
+                    const expiry = new Date(s.software.expiryDate);
+                    const now = new Date();
+                    const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+                    return expiry <= thirtyDaysFromNow;
+                  }).length : 0}
+                  footerText="View software"
+                  footerLink="/guest-software"
+                  additionalInfo={
+                    Array.isArray(assignedSoftware) && assignedSoftware.filter(s => {
+                      if (!s.software?.expiryDate) return false;
+                      const expiry = new Date(s.software.expiryDate);
+                      const now = new Date();
+                      const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+                      return expiry <= thirtyDaysFromNow;
+                    }).length > 0
+                      ? {
+                          text: 'Next 30 days',
+                          type: 'warning',
+                        }
+                      : undefined
+                  }
+                />
+              </div>
             </>
           )}
         </div>
