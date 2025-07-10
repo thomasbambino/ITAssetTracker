@@ -38,6 +38,7 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { BrandingProvider } from "@/components/branding/BrandingContext";
 import { FaviconManager } from "@/components/branding/FaviconManager";
 import { useAuth } from "@/hooks/use-auth";
+import { PageTransition } from "@/components/layout/PageTransition";
 
 // Routes that require admin privileges
 const ADMIN_ROUTES = [
@@ -62,7 +63,9 @@ function ProtectedPageWrapper({ component: Component, adminRequired = false }: {
 }) {
   return (
     <ProtectedRoute adminOnly={adminRequired}>
-      <Component />
+      <PageTransition>
+        <Component />
+      </PageTransition>
     </ProtectedRoute>
   );
 }
@@ -72,12 +75,16 @@ function AuthRouter() {
     <Switch>
       <Route path="/auth/login">
         <AuthLayout>
-          <LoginPage />
+          <PageTransition>
+            <LoginPage />
+          </PageTransition>
         </AuthLayout>
       </Route>
       <Route path="/auth/reset-password">
         <AuthLayout>
-          <ResetPasswordPage />
+          <PageTransition>
+            <ResetPasswordPage />
+          </PageTransition>
         </AuthLayout>
       </Route>
     </Switch>
