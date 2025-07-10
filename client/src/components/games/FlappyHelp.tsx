@@ -268,26 +268,22 @@ export default function FlappyHelp() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-slate-800 border rounded-lg shadow-2xl p-4 w-72">
+    <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-slate-800 border rounded-lg shadow-2xl p-4 w-[300px]">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
-          <HelpCircle className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">Flappy Help</span>
-        </div>
-        <div className="flex items-center space-x-2">
           <span className="text-xs text-muted-foreground">Score: {score}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setIsOpen(false);
-              resetGame();
-            }}
-            className="h-6 w-6 p-0"
-          >
-            <X className="h-3 w-3" />
-          </Button>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setIsOpen(false);
+            resetGame();
+          }}
+          className="h-6 w-6 p-0"
+        >
+          <X className="h-3 w-3" />
+        </Button>
       </div>
 
       <div className="relative">
@@ -326,7 +322,7 @@ export default function FlappyHelp() {
       </div>
 
       <p className="text-xs text-muted-foreground mt-2 text-center">
-        Click the phone or press Space to jump!
+        Press Space to jump!
       </p>
     </div>
   );
