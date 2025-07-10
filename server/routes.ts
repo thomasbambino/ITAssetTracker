@@ -13,6 +13,7 @@ import emailRoutes from "./email-routes";
 import twoFactorRoutes from "./two-factor-routes";
 import { isAuthenticated, isAdmin } from "./auth";
 import mailgunService from "./direct-mailgun";
+import { AIService } from "./ai-service";
 
 import { 
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
@@ -53,6 +54,140 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
+
+// Helper functions for AI-powered filtering
+async function filterDevices(devices: any[], filters: any) {
+  let filtered = devices;
+  
+  if (filters.category) {
+    const categories = await storage.getCategories();
+    const category = categories.find(cat => 
+      cat.name.toLowerCase().includes(filters.category.toLowerCase())
+    );
+    if (category) {
+      filtered = filtered.filter(device => device.categoryId === category.id);
+    }
+  }
+  
+  if (filters.department) {
+    const users = await storage.getUsers();
+    const departmentUsers = users.filter(user => 
+      user.department?.toLowerCase().includes(filters.department.toLowerCase())
+    );
+    const userIds = departmentUsers.map(user => user.id);
+    filtered = filtered.filter(device => device.userId && userIds.includes(device.userId));
+  }
+  
+  if (filters.brand) {
+    filtered = filtered.filter(device => 
+      device.brand?.toLowerCase().includes(filters.brand.toLowerCase())
+    );
+  }
+  
+  if (filters.model) {
+    filtered = filtered.filter(device => 
+      device.model?.toLowerCase().includes(filters.model.toLowerCase())
+    );
+  }
+  
+  if (filters.status) {
+    filtered = filtered.filter(device => 
+      device.status?.toLowerCase() === filters.status.toLowerCase()
+    );
+  }
+  
+  if (filters.expiryPeriod) {
+    const now = new Date();
+    if (filters.expiryPeriod === 'expired') {
+      filtered = filtered.filter(device => 
+        device.warrantyExpiry && new Date(device.warrantyExpiry) < now
+      );
+    } else if (filters.expiryPeriod === 'next month') {
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      filtered = filtered.filter(device => 
+        device.warrantyExpiry && 
+        new Date(device.warrantyExpiry) >= now &&
+        new Date(device.warrantyExpiry) <= nextMonth
+      );
+    }
+  }
+  
+  return filtered;
+}
+
+async function filterUsers(users: any[], filters: any) {
+  let filtered = users;
+  
+  if (filters.department) {
+    filtered = filtered.filter(user => 
+      user.department?.toLowerCase().includes(filters.department.toLowerCase())
+    );
+  }
+  
+  if (filters.status) {
+    const isActive = filters.status.toLowerCase() === 'active';
+    filtered = filtered.filter(user => user.active === isActive);
+  }
+  
+  return filtered;
+}
+
+async function filterSoftware(software: any[], filters: any) {
+  let filtered = software;
+  
+  if (filters.status) {
+    filtered = filtered.filter(item => 
+      item.status?.toLowerCase() === filters.status.toLowerCase()
+    );
+  }
+  
+  if (filters.expiryPeriod) {
+    const now = new Date();
+    if (filters.expiryPeriod === 'expired') {
+      filtered = filtered.filter(item => 
+        item.expiryDate && new Date(item.expiryDate) < now
+      );
+    } else if (filters.expiryPeriod === 'next month') {
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      filtered = filtered.filter(item => 
+        item.expiryDate && 
+        new Date(item.expiryDate) >= now &&
+        new Date(item.expiryDate) <= nextMonth
+      );
+    }
+  }
+  
+  return filtered;
+}
+
+async function filterMaintenance(maintenance: any[], filters: any) {
+  let filtered = maintenance;
+  
+  if (filters.status) {
+    filtered = filtered.filter(record => 
+      record.status?.toLowerCase() === filters.status.toLowerCase()
+    );
+  }
+  
+  if (filters.dateRange) {
+    if (filters.dateRange.start) {
+      const startDate = new Date(filters.dateRange.start);
+      filtered = filtered.filter(record => 
+        record.scheduledDate && new Date(record.scheduledDate) >= startDate
+      );
+    }
+    if (filters.dateRange.end) {
+      const endDate = new Date(filters.dateRange.end);
+      filtered = filtered.filter(record => 
+        record.scheduledDate && new Date(record.scheduledDate) <= endDate
+      );
+    }
+  }
+  
+  return filtered;
+}
 
 // Define uploads directory
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -3280,6 +3415,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating high score:', error);
       res.status(500).json({ message: 'Error updating high score' });
+    }
+  });
+
+  // AI-powered API endpoints
+  
+  // Smart search with natural language processing
+  app.post('/api/search/smart', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { query } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: 'Query is required' });
+      }
+      
+      // Parse the natural language query
+      const parsedQuery = await AIService.parseSearchQuery(query);
+      
+      // Execute search based on parsed intent and filters
+      let results = [];
+      
+      switch (parsedQuery.intent) {
+        case 'devices':
+          const devices = await storage.getDevices();
+          results = await filterDevices(devices, parsedQuery.filters);
+          break;
+          
+        case 'users':
+          const users = await storage.getUsers();
+          results = await filterUsers(users, parsedQuery.filters);
+          break;
+          
+        case 'software':
+          const software = await storage.getSoftware();
+          results = await filterSoftware(software, parsedQuery.filters);
+          break;
+          
+        case 'maintenance':
+          const maintenance = await storage.getMaintenanceRecords();
+          results = await filterMaintenance(maintenance, parsedQuery.filters);
+          break;
+          
+        default:
+          // General search across all entities
+          const allDevices = await storage.getDevices();
+          const allUsers = await storage.getUsers();
+          results = [...allDevices, ...allUsers];
+      }
+      
+      res.json({
+        query: parsedQuery,
+        results: results.slice(0, 50), // Limit results
+        totalFound: results.length
+      });
+    } catch (error) {
+      console.error('Smart search error:', error);
+      res.status(500).json({ message: 'Error processing search query' });
+    }
+  });
+  
+  // AI-powered problem report analysis
+  app.post('/api/problem-reports/analyze', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { title, description, deviceId, softwareId } = req.body;
+      
+      if (!title || !description) {
+        return res.status(400).json({ message: 'Title and description are required' });
+      }
+      
+      let deviceType: string | undefined;
+      let softwareName: string | undefined;
+      
+      // Get device type if deviceId provided
+      if (deviceId) {
+        const device = await storage.getDeviceById(deviceId);
+        if (device) {
+          const category = device.categoryId ? await storage.getCategoryById(device.categoryId) : null;
+          deviceType = category?.name || 'Unknown Device';
+        }
+      }
+      
+      // Get software name if softwareId provided
+      if (softwareId) {
+        const software = await storage.getSoftwareById(softwareId);
+        softwareName = software?.name;
+      }
+      
+      // Analyze the problem report
+      const analysis = await AIService.analyzeProblemReport(title, description, deviceType, softwareName);
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error('Problem report analysis error:', error);
+      res.status(500).json({ message: 'Error analyzing problem report' });
+    }
+  });
+  
+  // Generate search suggestions
+  app.post('/api/search/suggestions', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { query } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: 'Query is required' });
+      }
+      
+      const suggestions = await AIService.generateSearchSuggestions(query);
+      res.json({ suggestions });
+    } catch (error) {
+      console.error('Search suggestions error:', error);
+      res.status(500).json({ message: 'Error generating suggestions' });
     }
   });
 

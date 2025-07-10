@@ -12,14 +12,19 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
   SearchIcon, 
   UserIcon, 
   LaptopIcon, 
   TagIcon,
-  FilterIcon
+  FilterIcon,
+  BrainIcon,
+  Sparkles,
+  Clock
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 // Define types for the data received from API
 interface User {
@@ -46,35 +51,75 @@ interface Category {
 
 type SearchResult = {
   id: number;
-  type: 'user' | 'device' | 'category';
+  type: 'user' | 'device' | 'category' | 'software' | 'maintenance';
   title: string;
   subtitle: string;
   icon: React.ReactNode;
   url: string;
 };
 
+interface SmartSearchResult {
+  query: {
+    intent: string;
+    confidence: number;
+  };
+  results: any[];
+  totalFound: number;
+}
+
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [smartSearchResults, setSmartSearchResults] = useState<SmartSearchResult | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isAiMode, setIsAiMode] = useState(false);
   const [, navigate] = useLocation();
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // AI-powered smart search mutation
+  const smartSearchMutation = useMutation({
+    mutationFn: async (query: string) => {
+      const response = await apiRequest('/api/search/smart', {
+        method: 'POST',
+        body: JSON.stringify({ query })
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      setSmartSearchResults(data);
+    }
+  });
+  
+  // Search suggestions mutation
+  const suggestionsMutation = useMutation({
+    mutationFn: async (query: string) => {
+      const response = await apiRequest('/api/search/suggestions', {
+        method: 'POST',
+        body: JSON.stringify({ query })
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      setSuggestions(data.suggestions || []);
+    }
+  });
 
-  // Fetch users for search
+  // Fetch users for search (only when not in AI mode)
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
-    enabled: open,
+    enabled: open && !isAiMode,
   });
 
-  // Fetch devices for search
+  // Fetch devices for search (only when not in AI mode)
   const { data: devices = [] } = useQuery<Device[]>({
     queryKey: ['/api/devices'],
-    enabled: open,
+    enabled: open && !isAiMode,
   });
 
-  // Fetch categories for search
+  // Fetch categories for search (only when not in AI mode)
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
-    enabled: open,
+    enabled: open && !isAiMode,
   });
 
   // Combine all results
@@ -119,10 +164,53 @@ export function GlobalSearch() {
       )
     : searchResults;
 
+  // Trigger AI search when query changes and is natural language
+  useEffect(() => {
+    if (searchQuery.length > 10 && searchQuery.includes(' ')) {
+      setIsAiMode(true);
+      smartSearchMutation.mutate(searchQuery);
+    } else {
+      setIsAiMode(false);
+      setSmartSearchResults(null);
+    }
+  }, [searchQuery]);
+
+  // Generate suggestions for partial queries
+  useEffect(() => {
+    if (searchQuery.length > 3 && searchQuery.length < 10) {
+      const timeoutId = setTimeout(() => {
+        suggestionsMutation.mutate(searchQuery);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchQuery]);
+
+  // Convert AI search results to SearchResult format
+  const aiSearchResults: SearchResult[] = smartSearchResults?.results.map((result: any) => ({
+    id: result.id,
+    type: result.type || 'device',
+    title: result.title || `${result.brand} ${result.model}` || result.name || `${result.firstName} ${result.lastName}`,
+    subtitle: result.subtitle || result.assetTag || result.department || '',
+    icon: result.type === 'user' ? <UserIcon className="h-4 w-4" /> : <LaptopIcon className="h-4 w-4" />,
+    url: result.type === 'user' ? `/users/${result.id}` : `/devices/${result.id}`
+  })) || [];
+
+  // Use AI results when available, otherwise use regular search
+  const displayResults = isAiMode ? aiSearchResults : filteredResults;
+
   // Group results by type
   const userResults = filteredResults.filter(r => r.type === 'user');
   const deviceResults = filteredResults.filter(r => r.type === 'device');
   const categoryResults = filteredResults.filter(r => r.type === 'category');
+
+  // Group AI results by type
+  const aiUserResults = displayResults.filter(r => r.type === 'user');
+  const aiDeviceResults = displayResults.filter(r => r.type === 'device');
+  const aiCategoryResults = displayResults.filter(r => r.type === 'category');
+
+  const finalUserResults = isAiMode ? aiUserResults : userResults;
+  const finalDeviceResults = isAiMode ? aiDeviceResults : deviceResults;
+  const finalCategoryResults = isAiMode ? aiCategoryResults : categoryResults;
 
   // Handle keyboard shortcut to open search
   useEffect(() => {
@@ -142,6 +230,12 @@ export function GlobalSearch() {
     navigate(result.url);
   };
 
+  const handleSuggestionSelect = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    setIsAiMode(true);
+    smartSearchMutation.mutate(suggestion);
+  };
+
   return (
     <div className="relative w-full max-w-md border border-input rounded-md bg-background">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -150,12 +244,18 @@ export function GlobalSearch() {
       <Input
         ref={inputRef}
         type="text"
-        className="pl-10 pr-10 w-full border-0 shadow-none font-medium text-base focus-visible:ring-0"
-        placeholder="Search..."
+        className="pl-10 pr-16 w-full border-0 shadow-none font-medium text-base focus-visible:ring-0"
+        placeholder="Search or ask in natural language..."
         onClick={() => setOpen(true)}
         readOnly
       />
-      <div className="absolute inset-y-0 right-0 flex items-center">
+      <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+        {isAiMode && (
+          <Badge variant="secondary" className="mr-2 text-xs">
+            <BrainIcon className="h-3 w-3 mr-1" />
+            AI
+          </Badge>
+        )}
         <Button 
           type="button" 
           variant="ghost" 
@@ -169,18 +269,61 @@ export function GlobalSearch() {
       </div>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput 
-          placeholder="Search users, devices, categories..." 
-          value={searchQuery}
-          className="text-base font-medium"
-          onValueChange={setSearchQuery}
-        />
+        <div className="flex items-center border-b px-3">
+          <SearchIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <CommandInput 
+            placeholder="Try: 'Show me all laptops assigned to sales that expire next month'" 
+            value={searchQuery}
+            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            onValueChange={setSearchQuery}
+          />
+          {smartSearchMutation.isPending && (
+            <div className="ml-2 flex items-center">
+              <Sparkles className="h-4 w-4 animate-pulse text-blue-500" />
+            </div>
+          )}
+        </div>
+        
         <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
+          {/* Search suggestions */}
+          {suggestions.length > 0 && searchQuery.length > 3 && !isAiMode && (
+            <CommandGroup heading="Suggestions">
+              {suggestions.map((suggestion, index) => (
+                <CommandItem
+                  key={`suggestion-${index}`}
+                  onSelect={() => handleSuggestionSelect(suggestion)}
+                >
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-sm">{suggestion}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
 
-          {userResults.length > 0 && (
+          {/* AI Search Results */}
+          {isAiMode && smartSearchResults && (
+            <>
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                AI Search • {smartSearchResults.totalFound} results • 
+                {Math.round(smartSearchResults.query.confidence * 100)}% confidence
+              </div>
+              <CommandSeparator />
+            </>
+          )}
+
+          {/* No results */}
+          {!smartSearchMutation.isPending && displayResults.length === 0 && searchQuery.length > 0 && (
+            <CommandEmpty>
+              {isAiMode ? 'No results found for your query.' : 'No results found.'}
+            </CommandEmpty>
+          )}
+
+          {/* User Results */}
+          {finalUserResults.length > 0 && (
             <CommandGroup heading="Users">
-              {userResults.map(result => (
+              {finalUserResults.map(result => (
                 <CommandItem
                   key={`user-${result.id}`}
                   onSelect={() => handleSelect(result)}
@@ -189,7 +332,7 @@ export function GlobalSearch() {
                     {result.icon}
                     <div className="ml-2">
                       <p className="text-sm font-medium">{result.title}</p>
-                      <p className="text-xs text-gray-500">{result.subtitle}</p>
+                      <p className="text-xs text-muted-foreground">{result.subtitle}</p>
                     </div>
                   </div>
                 </CommandItem>
@@ -197,11 +340,12 @@ export function GlobalSearch() {
             </CommandGroup>
           )}
 
-          {deviceResults.length > 0 && (
+          {/* Device Results */}
+          {finalDeviceResults.length > 0 && (
             <>
-              {userResults.length > 0 && <CommandSeparator />}
+              {finalUserResults.length > 0 && <CommandSeparator />}
               <CommandGroup heading="Devices">
-                {deviceResults.map(result => (
+                {finalDeviceResults.map(result => (
                   <CommandItem
                     key={`device-${result.id}`}
                     onSelect={() => handleSelect(result)}
@@ -210,7 +354,7 @@ export function GlobalSearch() {
                       {result.icon}
                       <div className="ml-2">
                         <p className="text-sm font-medium">{result.title}</p>
-                        <p className="text-xs text-gray-500">{result.subtitle}</p>
+                        <p className="text-xs text-muted-foreground">{result.subtitle}</p>
                       </div>
                     </div>
                   </CommandItem>
@@ -219,11 +363,12 @@ export function GlobalSearch() {
             </>
           )}
 
-          {categoryResults.length > 0 && (
+          {/* Category Results */}
+          {finalCategoryResults.length > 0 && (
             <>
-              {(userResults.length > 0 || deviceResults.length > 0) && <CommandSeparator />}
+              {(finalUserResults.length > 0 || finalDeviceResults.length > 0) && <CommandSeparator />}
               <CommandGroup heading="Categories">
-                {categoryResults.map(result => (
+                {finalCategoryResults.map(result => (
                   <CommandItem
                     key={`category-${result.id}`}
                     onSelect={() => handleSelect(result)}
@@ -232,13 +377,37 @@ export function GlobalSearch() {
                       {result.icon}
                       <div className="ml-2">
                         <p className="text-sm font-medium">{result.title}</p>
-                        <p className="text-xs text-gray-500">{result.subtitle}</p>
+                        <p className="text-xs text-muted-foreground">{result.subtitle}</p>
                       </div>
                     </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
             </>
+          )}
+
+          {/* Help section */}
+          {searchQuery.length === 0 && (
+            <CommandGroup heading="Examples">
+              <CommandItem onSelect={() => handleSuggestionSelect("Show me all laptops assigned to sales")}>
+                <div className="flex items-center">
+                  <BrainIcon className="h-4 w-4 mr-2 text-blue-500" />
+                  <span className="text-sm">Show me all laptops assigned to sales</span>
+                </div>
+              </CommandItem>
+              <CommandItem onSelect={() => handleSuggestionSelect("Find devices with expired warranties")}>
+                <div className="flex items-center">
+                  <BrainIcon className="h-4 w-4 mr-2 text-blue-500" />
+                  <span className="text-sm">Find devices with expired warranties</span>
+                </div>
+              </CommandItem>
+              <CommandItem onSelect={() => handleSuggestionSelect("Apple devices in IT department")}>
+                <div className="flex items-center">
+                  <BrainIcon className="h-4 w-4 mr-2 text-blue-500" />
+                  <span className="text-sm">Apple devices in IT department</span>
+                </div>
+              </CommandItem>
+            </CommandGroup>
           )}
         </CommandList>
       </CommandDialog>

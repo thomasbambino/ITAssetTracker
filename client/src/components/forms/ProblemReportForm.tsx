@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,7 +22,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LoaderIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LoaderIcon, BrainIcon, CheckCircle, AlertTriangle, Info } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery as useAuthQuery } from "@tanstack/react-query";
@@ -57,6 +59,15 @@ interface Software {
   vendor: string;
 }
 
+interface ProblemAnalysis {
+  category: 'hardware' | 'software' | 'network' | 'access' | 'general';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  suggestedAssignee: string;
+  tags: string[];
+  confidence: number;
+  reasoning: string;
+}
+
 interface ProblemReportFormProps {
   onSuccess?: () => void;
 }
@@ -64,6 +75,8 @@ interface ProblemReportFormProps {
 export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
   const [reportType, setReportType] = useState<"device" | "software" | "">("");
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [aiAnalysis, setAiAnalysis] = useState<ProblemAnalysis | null>(null);
+  const [showAiSuggestions, setShowAiSuggestions] = useState(false);
   const { toast } = useToast();
 
   // Get current user from API
@@ -94,6 +107,21 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
   const { data: assignedSoftware = [] } = useQuery<any[]>({
     queryKey: [`/api/software-assignments/user/${user?.id}`],
     enabled: !!user?.id && reportType === "software",
+  });
+
+  // AI Analysis mutation
+  const aiAnalysisMutation = useMutation({
+    mutationFn: async (data: { title: string; description: string; deviceType?: string; softwareName?: string }) => {
+      const response = await apiRequest('/api/problem-reports/analyze', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      setAiAnalysis(data);
+      setShowAiSuggestions(true);
+    }
   });
 
   // Submit mutation
@@ -133,6 +161,8 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
       form.reset();
       setReportType("");
       setAttachments([]);
+      setAiAnalysis(null);
+      setShowAiSuggestions(false);
       onSuccess?.();
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
@@ -154,6 +184,54 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
     setReportType(type);
     form.setValue("type", type);
     form.setValue("itemId", ""); // Reset item selection when type changes
+    setAiAnalysis(null);
+    setShowAiSuggestions(false);
+  };
+
+  // Trigger AI analysis when subject and description have sufficient content
+  useEffect(() => {
+    const subject = form.watch("subject");
+    const description = form.watch("description");
+    const itemId = form.watch("itemId");
+    
+    if (subject && description && subject.length > 5 && description.length > 20) {
+      const timeoutId = setTimeout(() => {
+        let deviceType = "";
+        let softwareName = "";
+        
+        if (reportType === "device" && itemId) {
+          const device = assignedDevices.find(d => d.id === parseInt(itemId));
+          if (device) {
+            deviceType = `${device.brand} ${device.model}`;
+          }
+        } else if (reportType === "software" && itemId) {
+          const software = assignedSoftware.find(s => s.software.id === parseInt(itemId));
+          if (software) {
+            softwareName = software.software.name;
+          }
+        }
+        
+        aiAnalysisMutation.mutate({
+          title: subject,
+          description: description,
+          deviceType,
+          softwareName
+        });
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [form.watch("subject"), form.watch("description"), form.watch("itemId"), reportType, assignedDevices, assignedSoftware]);
+
+  const applyAiSuggestions = () => {
+    if (aiAnalysis) {
+      form.setValue("priority", aiAnalysis.priority);
+      setShowAiSuggestions(false);
+      toast({
+        title: "AI Suggestions Applied",
+        description: `Priority set to ${aiAnalysis.priority} based on AI analysis.`,
+      });
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -310,6 +388,101 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
             </FormItem>
           )}
         />
+
+        {/* AI Analysis Loading */}
+        {aiAnalysisMutation.isPending && (
+          <Alert>
+            <BrainIcon className="h-4 w-4" />
+            <AlertDescription className="flex items-center gap-2">
+              <LoaderIcon className="h-4 w-4 animate-spin" />
+              Analyzing problem with AI...
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* AI Suggestions */}
+        {showAiSuggestions && aiAnalysis && (
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-blue-700">
+                <BrainIcon className="h-5 w-5" />
+                AI Analysis & Suggestions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-700">Category</div>
+                  <Badge variant="outline" className="capitalize">
+                    {aiAnalysis.category}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-700">Suggested Priority</div>
+                  <Badge className={getPriorityColor(aiAnalysis.priority)}>
+                    {aiAnalysis.priority.charAt(0).toUpperCase() + aiAnalysis.priority.slice(1)}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-700">Suggested Team</div>
+                  <Badge variant="secondary">
+                    {aiAnalysis.suggestedAssignee}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-700">Confidence</div>
+                  <Badge variant="outline">
+                    {Math.round(aiAnalysis.confidence * 100)}%
+                  </Badge>
+                </div>
+              </div>
+
+              {aiAnalysis.tags.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-700">Suggested Tags</div>
+                  <div className="flex flex-wrap gap-1">
+                    {aiAnalysis.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-gray-700">Analysis Reasoning</div>
+                <p className="text-sm text-gray-600">{aiAnalysis.reasoning}</p>
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Info className="h-4 w-4" />
+                  AI suggestions are based on problem description analysis
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowAiSuggestions(false)}
+                  >
+                    Dismiss
+                  </Button>
+                  <Button 
+                    type="button" 
+                    size="sm"
+                    onClick={applyAiSuggestions}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Apply Priority
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* File Attachments */}
         <div className="space-y-2">
