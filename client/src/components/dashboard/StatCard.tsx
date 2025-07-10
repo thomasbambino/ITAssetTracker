@@ -29,7 +29,7 @@ export function StatCard({
       <CardContent className="p-0">
         <div className="px-3 py-4 sm:px-4 sm:py-5 xl:px-6">
           <div className="flex items-center">
-            <div className={`flex-shrink-0 rounded-md p-2 sm:p-3 ${iconClass}`}>
+            <div className={`flex-shrink-0 rounded-md p-1.5 sm:p-2 ${iconClass}`}>
               {icon}
             </div>
             <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">

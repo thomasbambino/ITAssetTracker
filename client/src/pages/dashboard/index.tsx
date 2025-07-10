@@ -273,7 +273,7 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
-          icon={<LaptopIcon className="h-6 w-6 text-primary-600" />}
+          icon={<LaptopIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600" />}
           iconClass="bg-primary-100"
           title="Total Devices"
           value={statsLoading ? 0 : stats?.totalDevices || 0}
@@ -282,7 +282,7 @@ export default function Dashboard() {
         />
         
         <StatCard
-          icon={<UserCheckIcon className="h-6 w-6 text-green-600" />}
+          icon={<UserCheckIcon className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />}
           iconClass="bg-green-100"
           title="Assigned Devices"
           value={statsLoading ? 0 : stats?.assignedDevices || 0}
@@ -299,7 +299,7 @@ export default function Dashboard() {
         />
         
         <StatCard
-          icon={<AlertTriangleIcon className="h-6 w-6 text-yellow-600" />}
+          icon={<AlertTriangleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />}
           iconClass="bg-yellow-100"
           title="Unassigned Devices"
           value={statsLoading ? 0 : stats?.unassignedDevices || 0}
@@ -316,7 +316,7 @@ export default function Dashboard() {
         />
         
         <StatCard
-          icon={<CalendarXIcon className="h-6 w-6 text-red-600" />}
+          icon={<CalendarXIcon className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />}
           iconClass="bg-red-100"
           title="Expiring Warranties"
           value={statsLoading ? 0 : stats?.expiringWarranties || 0}
@@ -333,7 +333,7 @@ export default function Dashboard() {
         />
         
         <StatCard
-          icon={<TicketIcon className="h-6 w-6 text-purple-600" />}
+          icon={<TicketIcon className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />}
           iconClass="bg-purple-100"
           title="Open Tickets"
           value={statsLoading ? 0 : stats?.openTickets || 0}
