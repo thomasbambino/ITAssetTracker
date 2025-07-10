@@ -98,12 +98,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const devices = await storage.getDevices();
       const unassignedDevices = await storage.getUnassignedDevices();
       const expiringWarranties = await storage.getDevicesWithWarrantyExpiring(30);
+      const openTickets = await storage.getProblemReports('open');
       
       const stats = {
         totalDevices: devices.length,
         assignedDevices: devices.length - unassignedDevices.length,
         unassignedDevices: unassignedDevices.length,
-        expiringWarranties: expiringWarranties.length
+        expiringWarranties: expiringWarranties.length,
+        openTickets: openTickets.length
       };
       
       res.json(stats);

@@ -14,7 +14,8 @@ import {
   FileOutput,
   UserCheckIcon,
   AlertTriangleIcon,
-  CalendarXIcon
+  CalendarXIcon,
+  TicketIcon
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -44,6 +45,7 @@ export default function Dashboard() {
     assignedDevices: number;
     unassignedDevices: number;
     expiringWarranties: number;
+    openTickets: number;
   }
 
   interface CategoryStats {
@@ -269,7 +271,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           icon={<LaptopIcon className="h-6 w-6 text-primary-600" />}
           iconClass="bg-primary-100"
@@ -325,6 +327,23 @@ export default function Dashboard() {
               ? {
                   text: 'Next 30 days',
                   type: 'error',
+                }
+              : undefined
+          }
+        />
+        
+        <StatCard
+          icon={<TicketIcon className="h-6 w-6 text-purple-600" />}
+          iconClass="bg-purple-100"
+          title="Open Tickets"
+          value={statsLoading ? 0 : stats?.openTickets || 0}
+          footerText="View all"
+          footerLink="/problem-reports"
+          additionalInfo={
+            stats?.openTickets
+              ? {
+                  text: 'Need attention',
+                  type: 'warning',
                 }
               : undefined
           }
