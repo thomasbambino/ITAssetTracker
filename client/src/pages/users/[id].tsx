@@ -28,6 +28,7 @@ import {
   UserPlusIcon,
   UserXIcon,
   UserCheckIcon,
+  UserMinusIcon,
   Check,
   ChevronsUpDown
 } from 'lucide-react';
