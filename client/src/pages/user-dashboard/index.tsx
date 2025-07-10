@@ -152,13 +152,11 @@ export default function UserDashboard() {
         <Dialog open={isProblemReportOpen} onOpenChange={setIsProblemReportOpen}>
           <DialogTrigger asChild>
             <ActionButton 
-              variant="outline" 
-              icon={AlertTriangle}
-              isVisible={isVisible}
-              delay={400}
-            >
-              Report a Problem
-            </ActionButton>
+              icon={<AlertTriangle className="h-4 w-4" />}
+              label="Report a Problem"
+              onClick={() => setIsProblemReportOpen(true)}
+              variant="secondary"
+            />
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
