@@ -49,7 +49,7 @@ export default function FlappyHelp() {
       }
       setBird(prev => ({ ...prev, velocity: JUMP_FORCE }));
     }
-  }, [gameRunning, gameOver]);
+  }, [gameRunning, gameOver, JUMP_FORCE]);
 
   const checkCollision = useCallback((bird: Bird, trees: Tree[]) => {
     // Check ground and ceiling
@@ -113,10 +113,11 @@ export default function FlappyHelp() {
   // Game loop effect
   useEffect(() => {
     if (gameRunning && !gameOver) {
-      gameLoopRef.current = requestAnimationFrame(() => {
+      const loop = () => {
         gameLoop();
-        gameLoopRef.current = requestAnimationFrame(gameLoop);
-      });
+        gameLoopRef.current = requestAnimationFrame(loop);
+      };
+      gameLoopRef.current = requestAnimationFrame(loop);
     }
 
     return () => {
