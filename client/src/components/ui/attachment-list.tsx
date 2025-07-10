@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, Trash2, FileText, Image, Eye } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { ImagePreviewDialog } from '@/components/ui/image-preview-dialog';
 
 interface Attachment {
   id: number;
@@ -34,6 +35,7 @@ export function AttachmentList({
   canDelete = false,
   className 
 }: AttachmentListProps) {
+  const [previewImage, setPreviewImage] = useState<Attachment | null>(null);
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) {
       return <Image className="h-5 w-5 text-blue-500" />;
@@ -96,7 +98,7 @@ export function AttachmentList({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onDownload(attachment)}
+                    onClick={() => setPreviewImage(attachment)}
                     className="h-8 w-8 p-0"
                     title="View image"
                   >
@@ -130,6 +132,18 @@ export function AttachmentList({
           </CardContent>
         </Card>
       ))}
+
+      {/* Image Preview Dialog */}
+      {previewImage && (
+        <ImagePreviewDialog
+          isOpen={!!previewImage}
+          onClose={() => setPreviewImage(null)}
+          imageSrc={`/api/problem-reports/${previewImage.problemReportId}/attachments/${previewImage.id}/download`}
+          imageAlt={previewImage.originalName}
+          title={previewImage.originalName}
+          onDownload={() => onDownload(previewImage)}
+        />
+      )}
     </div>
   );
 }

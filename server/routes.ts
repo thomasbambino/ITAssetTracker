@@ -2693,13 +2693,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/problem-reports/:id/messages', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/problem-reports/:id/messages', isAuthenticated, upload.array('messageImages', 5), async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const { message, isInternal } = req.body;
       const sessionData = req.session as any;
+      const files = req.files as Express.Multer.File[];
       
-      if (!message || message.trim().length === 0) {
+      if ((!message || message.trim().length === 0) && (!files || files.length === 0)) {
         return res.status(400).json({ message: "Message cannot be empty" });
       }
       
@@ -2714,11 +2715,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
+      let imageUrls: string[] = [];
+      
+      // Process uploaded inline images
+      if (files && files.length > 0) {
+        for (const file of files) {
+          // Validate image type
+          if (!file.mimetype.startsWith('image/')) {
+            return res.status(400).json({ message: "Only image files are allowed for inline images" });
+          }
+          
+          // Generate unique filename
+          const timestamp = Date.now();
+          const randomId = Math.random().toString(36).substring(2, 15);
+          const extension = path.extname(file.originalname);
+          const filename = `message-${timestamp}-${randomId}${extension}`;
+          const filepath = path.join(uploadsDir, filename);
+          
+          // Save file
+          await fs.promises.writeFile(filepath, file.buffer);
+          
+          // Store relative URL
+          imageUrls.push(`/uploads/${filename}`);
+        }
+      }
+      
       const messageData = {
         problemReportId: parseInt(id),
         userId: sessionData.userId,
-        message: message.trim(),
-        isInternal: sessionData.userRole === 'admin' && isInternal === true
+        message: message ? message.trim() : '',
+        isInternal: sessionData.userRole === 'admin' && isInternal === true,
+        images: imageUrls
       };
       
       const newMessage = await storage.createProblemReportMessage(messageData, sessionData.userId);

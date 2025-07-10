@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { AttachmentList } from "@/components/ui/attachment-list";
 import { FileUpload } from "@/components/ui/file-upload";
+import { InlineImageInput } from "@/components/ui/inline-image-input";
 
 interface ProblemReportDetailDialogProps {
   problemReportId: number;
@@ -77,6 +78,7 @@ interface ProblemReportMessage {
   userFirstName: string;
   userLastName: string;
   userRole: string;
+  images?: string[]; // URLs of inline images
 }
 
 export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: ProblemReportDetailDialogProps) {
@@ -84,6 +86,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
   const [isInternalMessage, setIsInternalMessage] = useState(false);
   const [previousMessageCount, setPreviousMessageCount] = useState(0);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [messageImages, setMessageImages] = useState<File[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -193,23 +196,33 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
 
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string; isInternal: boolean }) => {
+      // Create FormData for the message with inline images
+      const formData = new FormData();
+      formData.append('message', data.message);
+      formData.append('isInternal', data.isInternal.toString());
+      
+      // Add inline images to the message
+      messageImages.forEach((image, index) => {
+        formData.append(`messageImages`, image);
+      });
+      
       const response = await apiRequest({
         url: `/api/problem-reports/${problemReportId}/messages`,
         method: 'POST',
-        data
+        data: formData
       });
       
-      // If there are attachments, upload them
+      // If there are attachments, upload them separately
       if (attachments.length > 0) {
-        const formData = new FormData();
+        const attachmentFormData = new FormData();
         attachments.forEach((file) => {
-          formData.append('files', file);
+          attachmentFormData.append('files', file);
         });
         
         await apiRequest({
           url: `/api/problem-reports/${problemReportId}/attachments`,
           method: "POST",
-          data: formData,
+          data: attachmentFormData,
         });
       }
       
@@ -222,6 +235,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
       setNewMessage("");
       setIsInternalMessage(false);
       setAttachments([]);
+      setMessageImages([]);
       toast({
         title: "Message Sent",
         description: "Your message has been added to the conversation.",
@@ -341,7 +355,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
   };
 
   const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && messageImages.length === 0) return;
     
     sendMessageMutation.mutate({
       message: newMessage.trim(),
@@ -626,7 +640,25 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                                 : 'bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30'
                               : 'bg-muted/50 border border-border'
                           }`}>
-                            <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                            {message.message && (
+                              <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                            )}
+                            {message.images && message.images.length > 0 && (
+                              <div className={`flex flex-wrap gap-2 ${message.message ? 'mt-2' : ''}`}>
+                                {message.images.map((imageUrl, index) => (
+                                  <img
+                                    key={index}
+                                    src={imageUrl}
+                                    alt={`Message image ${index + 1}`}
+                                    className="max-w-xs max-h-48 rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => {
+                                      // Open image in a new tab for full view
+                                      window.open(imageUrl, '_blank');
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -641,16 +673,14 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
             {report.status !== 'archived' && (user?.role === 'admin' || report.userId === user?.id) && (
               <div className="border-t p-4 flex-shrink-0">
                 <div className="space-y-3">
-                  <Textarea
-                    placeholder="Type your message..."
+                  <InlineImageInput
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    className="min-h-[80px]"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.ctrlKey) {
-                        handleSendMessage();
-                      }
-                    }}
+                    onChange={setNewMessage}
+                    images={messageImages}
+                    onImagesChange={setMessageImages}
+                    placeholder="Type your message... (Ctrl+Enter to send)"
+                    maxImages={5}
+                    maxImageSize={5 * 1024 * 1024} // 5MB
                   />
                   
 
@@ -678,7 +708,7 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                       <span className="text-xs text-muted-foreground">Ctrl+Enter to send</span>
                       <Button
                         onClick={handleSendMessage}
-                        disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                        disabled={(!newMessage.trim() && messageImages.length === 0) || sendMessageMutation.isPending}
                         size="sm"
                       >
                         <Send className="h-4 w-4 mr-1" />

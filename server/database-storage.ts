@@ -3340,6 +3340,26 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  private async ensureImagesColumn(): Promise<void> {
+    try {
+      // Check if the images column exists in problem_report_messages table
+      const columnQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'problem_report_messages' AND column_name = 'images'
+      `;
+      
+      const columns = await db.manyOrNone(columnQuery);
+      
+      if (columns.length === 0) {
+        await db.none('ALTER TABLE problem_report_messages ADD COLUMN images JSONB');
+        console.log('Added images column to problem_report_messages table');
+      }
+    } catch (error) {
+      console.error('Error ensuring images column:', error);
+    }
+  }
+
   async updateBrandingSettings(settings: Partial<InsertBrandingSettings>): Promise<BrandingSettings> {
     try {
       // Check if branding settings already exist
@@ -4077,6 +4097,9 @@ export class DatabaseStorage implements IStorage {
   // Problem Report Messages Methods
   async getProblemReportMessages(problemReportId: number): Promise<any[]> {
     try {
+      // First, ensure the images column exists
+      await this.ensureImagesColumn();
+      
       const query = `
         SELECT prm.*, 
                u.first_name as user_first_name, u.last_name as user_last_name,
@@ -4097,9 +4120,12 @@ export class DatabaseStorage implements IStorage {
 
   async createProblemReportMessage(message: any, loggedInUserId?: number): Promise<any> {
     try {
+      // First, ensure the images column exists
+      await this.ensureImagesColumn();
+      
       const query = `
-        INSERT INTO problem_report_messages (problem_report_id, user_id, message, is_internal)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO problem_report_messages (problem_report_id, user_id, message, is_internal, images)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING *
       `;
       
@@ -4107,7 +4133,8 @@ export class DatabaseStorage implements IStorage {
         message.problemReportId,
         message.userId,
         message.message,
-        message.isInternal || false
+        message.isInternal || false,
+        message.images ? JSON.stringify(message.images) : null
       ]);
       
       const newMessage = this.transformProblemReportMessage(result);
@@ -4166,6 +4193,7 @@ export class DatabaseStorage implements IStorage {
       message: row.message,
       isInternal: row.is_internal,
       createdAt: row.created_at,
+      images: row.images ? JSON.parse(row.images) : [],
       // Additional fields from joins
       userFirstName: row.user_first_name,
       userLastName: row.user_last_name,
