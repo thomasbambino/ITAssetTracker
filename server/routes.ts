@@ -2931,6 +2931,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/attachments/:id/view', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const sessionData = req.session as any;
+      const attachmentId = parseInt(id);
+      
+      // Get attachment by ID
+      const attachment = await storage.getProblemReportAttachmentById(attachmentId);
+      
+      if (!attachment) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+      
+      // Check if user has access to this attachment's problem report
+      const report = await storage.getProblemReportById(attachment.problemReportId);
+      if (!report) {
+        return res.status(404).json({ message: "Problem report not found" });
+      }
+      
+      // Non-admin users can only view attachments from their own reports
+      if (sessionData.userRole !== 'admin' && report.userId !== sessionData.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Check if file exists
+      if (!fs.existsSync(attachment.filePath)) {
+        return res.status(404).json({ message: "File not found on server" });
+      }
+      
+      // Set appropriate headers for inline viewing
+      res.setHeader('Content-Type', attachment.fileType);
+      res.setHeader('Content-Disposition', 'inline');
+      res.sendFile(path.resolve(attachment.filePath));
+    } catch (error) {
+      console.error('Error viewing attachment:', error);
+      res.status(500).json({ message: "Error viewing file" });
+    }
+  });
+
   app.delete('/api/attachments/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;

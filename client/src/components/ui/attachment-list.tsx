@@ -138,7 +138,7 @@ export function AttachmentList({
         <ImagePreviewDialog
           isOpen={!!previewImage}
           onClose={() => setPreviewImage(null)}
-          imageSrc={`/api/problem-reports/${previewImage.problemReportId}/attachments/${previewImage.id}/download`}
+          imageSrc={`/api/attachments/${previewImage.id}/view`}
           imageAlt={previewImage.originalName}
           title={previewImage.originalName}
           onDownload={() => onDownload(previewImage)}
