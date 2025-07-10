@@ -414,6 +414,41 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
     },
   });
 
+  const uploadAttachmentsMutation = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      attachments.forEach((file) => {
+        formData.append('files', file);
+      });
+      
+      return apiRequest({
+        url: `/api/problem-reports/${problemReportId}/attachments`,
+        method: "POST",
+        data: formData,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/problem-reports', problemReportId, 'attachments'] });
+      setAttachments([]);
+      toast({
+        title: "Attachments uploaded",
+        description: "Your files have been uploaded successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload attachments",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUploadAttachments = () => {
+    if (attachments.length === 0) return;
+    uploadAttachmentsMutation.mutate();
+  };
+
   const handleAssignmentChange = (userId: string) => {
     updateReportMutation.mutate({
       assignedToId: userId === "unassigned" ? null : parseInt(userId)
@@ -579,6 +614,18 @@ export function ProblemReportDetailDialog({ problemReportId, isOpen, onClose }: 
                         className="text-xs"
                         compact={true}
                       />
+                      {attachments.length > 0 && (
+                        <div className="flex justify-end mt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleUploadAttachments}
+                            disabled={uploadAttachmentsMutation.isPending}
+                          >
+                            {uploadAttachmentsMutation.isPending ? "Uploading..." : "Upload Attachments"}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
