@@ -271,7 +271,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<LaptopIcon className="h-6 w-6 text-primary-600" />}
           iconClass="bg-primary-100"
@@ -293,23 +293,6 @@ export default function Dashboard() {
               ? {
                   text: `${Math.round((stats.assignedDevices / stats.totalDevices) * 100)}%`,
                   type: 'success',
-                }
-              : undefined
-          }
-        />
-        
-        <StatCard
-          icon={<AlertTriangleIcon className="h-6 w-6 text-yellow-600" />}
-          iconClass="bg-yellow-100"
-          title="Unassigned Devices"
-          value={statsLoading ? 0 : stats?.unassignedDevices || 0}
-          footerText="Assign devices"
-          footerLink="/devices/unassigned"
-          additionalInfo={
-            stats?.totalDevices
-              ? {
-                  text: `${Math.round((stats.unassignedDevices / stats.totalDevices) * 100)}%`,
-                  type: 'warning',
                 }
               : undefined
           }
