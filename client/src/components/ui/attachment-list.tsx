@@ -74,28 +74,17 @@ export function AttachmentList({
       </h4>
       
       {attachments.map((attachment) => (
-        <Card key={attachment.id} className="p-4">
+        <Card key={attachment.id} className="p-3">
           <CardContent className="p-0">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {getFileIcon(attachment.fileType)}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate mb-2" title={attachment.originalName}>
+                  <p className="text-sm font-medium truncate mb-1" title={attachment.originalName}>
                     {attachment.originalName}
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium whitespace-nowrap">Size:</span>
-                      <span>{formatFileSize(attachment.fileSize)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium whitespace-nowrap">By:</span>
-                      <span className="truncate">{attachment.uploadedByFirstName} {attachment.uploadedByLastName}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium whitespace-nowrap">Date:</span>
-                      <span className="truncate">{formatDateTime(attachment.createdAt)}</span>
-                    </div>
+                  <div className="text-xs text-muted-foreground">
+                    {formatFileSize(attachment.fileSize)} • {attachment.uploadedByFirstName} {attachment.uploadedByLastName} • {formatDateTime(attachment.createdAt)}
                   </div>
                 </div>
               </div>
