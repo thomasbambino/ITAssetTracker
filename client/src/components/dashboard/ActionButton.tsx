@@ -25,7 +25,7 @@ export function ActionButton({
       size="default"
       onClick={onClick}
       disabled={disabled}
-      className={cn("inline-flex items-center transition-all duration-200 hover:scale-105 hover:shadow-md group", className)}
+      className={cn("inline-flex items-center", className)}
     >
       <span className="mr-2 transition-transform duration-200 group-hover:scale-110">{icon}</span>
       <span className="transition-all duration-200">{label}</span>
