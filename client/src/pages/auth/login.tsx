@@ -16,6 +16,7 @@ import TwoFactorVerification from "@/components/auth/TwoFactorVerification";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import FlappyHelp from "@/components/games/FlappyHelp";
 
 interface BrandingSettings {
   id?: number;
@@ -144,6 +145,7 @@ export default function LoginPage() {
         <div className="absolute top-6 right-6 z-10">
           <ThemeToggle />
         </div>
+        <FlappyHelp />
         <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
           <CardHeader className="space-y-6 pb-8">
             <div className="flex flex-col items-center space-y-4">
@@ -180,6 +182,7 @@ export default function LoginPage() {
       <div className="absolute top-6 right-6 z-10">
         <ThemeToggle />
       </div>
+      <FlappyHelp />
       <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
         <CardHeader className="space-y-6 pb-8">
           <div className="flex flex-col items-center space-y-4">
