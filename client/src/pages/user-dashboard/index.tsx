@@ -1,8 +1,12 @@
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageContainer } from '@/components/layout/PageContainer';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { SkeletonCard } from '@/components/ui/skeleton-card';
+import { ActionButton } from '@/components/dashboard/ActionButton';
 import { 
   Monitor, 
   Package, 
@@ -20,7 +24,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ProblemReportForm } from '@/components/forms/ProblemReportForm';
-import { useState } from 'react';
 
 interface AssignedDevice {
   id: number;
@@ -113,16 +116,23 @@ function formatStatus(status: string | null | undefined): string {
 export default function UserDashboard() {
   const { user } = useAuth();
   const [isProblemReportOpen, setIsProblemReportOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
-  const { data: assignedDevices = [] } = useQuery<AssignedDevice[]>({
+  const { data: assignedDevices = [], isLoading: devicesLoading } = useQuery<AssignedDevice[]>({
     queryKey: ['/api/devices/assigned'],
     enabled: !!user?.id,
   });
 
-  const { data: assignedSoftware = [] } = useQuery<AssignedSoftware[]>({
+  const { data: assignedSoftware = [], isLoading: softwareLoading } = useQuery<AssignedSoftware[]>({
     queryKey: [`/api/software-assignments/user/${user?.id}`],
     enabled: !!user?.id,
   });
+
+  // Trigger animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!user) {
     return (
@@ -141,10 +151,14 @@ export default function UserDashboard() {
       actions={
         <Dialog open={isProblemReportOpen} onOpenChange={setIsProblemReportOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <AlertTriangle className="h-4 w-4" />
+            <ActionButton 
+              variant="outline" 
+              icon={AlertTriangle}
+              isVisible={isVisible}
+              delay={400}
+            >
               Report a Problem
-            </Button>
+            </ActionButton>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -158,60 +172,66 @@ export default function UserDashboard() {
       <div className="space-y-8">
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Assigned Devices</CardTitle>
-              <Monitor className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{assignedDevices.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Software & Portals</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{assignedSoftware.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Devices</CardTitle>
-              <Monitor className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {assignedDevices.filter(d => d.status?.toLowerCase() === 'active').length}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
-              <Calendar className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {Array.isArray(assignedSoftware) ? assignedSoftware.filter(s => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {(devicesLoading || softwareLoading) ? (
+            <>
+              <SkeletonCard delay={0} />
+              <SkeletonCard delay={100} />
+              <SkeletonCard delay={200} />
+              <SkeletonCard delay={300} />
+            </>
+          ) : (
+            <>
+              <StatCard
+                title="My Devices"
+                value={assignedDevices.length}
+                icon={Monitor}
+                isVisible={isVisible}
+                delay={0}
+                description="Devices assigned to you"
+                theme="blue"
+              />
+              <StatCard
+                title="Software & Portals"
+                value={assignedSoftware.length}
+                icon={Package}
+                isVisible={isVisible}
+                delay={100}
+                description="Software licenses assigned"
+                theme="green"
+              />
+              <StatCard
+                title="Active Devices"
+                value={assignedDevices.filter(d => d.status?.toLowerCase() === 'active').length}
+                icon={Monitor}
+                isVisible={isVisible}
+                delay={200}
+                description="Currently active devices"
+                theme="emerald"
+              />
+              <StatCard
+                title="Expiring Soon"
+                value={Array.isArray(assignedSoftware) ? assignedSoftware.filter(s => {
                   if (!s.software?.expiryDate) return false;
                   const expiry = new Date(s.software.expiryDate);
                   const now = new Date();
                   const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
                   return expiry <= thirtyDaysFromNow;
                 }).length : 0}
-              </div>
-            </CardContent>
-          </Card>
+                icon={Calendar}
+                isVisible={isVisible}
+                delay={300}
+                description="Software expiring within 30 days"
+                theme="orange"
+              />
+            </>
+          )}
         </div>
 
         {/* Assigned Devices */}
-        <div className="space-y-6">
+        <div className={`space-y-6 transition-all duration-500 delay-500 ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}>
           <div>
             <h2 className="text-xl font-semibold flex items-center space-x-2">
               <Monitor className="h-5 w-5" />
@@ -229,8 +249,13 @@ export default function UserDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6">
-              {assignedDevices.map((device) => (
-                <Card key={device.id} className="p-6">
+              {assignedDevices.map((device, index) => (
+                <Card 
+                  key={device.id} 
+                  className={`p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02] delay-${index * 100 + 600} ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                  }`}
+                >
                   {/* Horizontal Layout - Name/Serial on left, Info on right */}
                   <div className="flex items-start gap-8">
                     
@@ -328,7 +353,9 @@ export default function UserDashboard() {
         </div>
 
         {/* Assigned Software */}
-        <div className="space-y-6">
+        <div className={`space-y-6 transition-all duration-500 delay-700 ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}>
           <div>
             <h2 className="text-xl font-semibold flex items-center space-x-2">
               <Package className="h-5 w-5" />
@@ -346,8 +373,13 @@ export default function UserDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {assignedSoftware.map((assignment) => (
-                <Card key={assignment.id} className="border rounded-lg p-4">
+              {assignedSoftware.map((assignment, index) => (
+                <Card 
+                  key={assignment.id} 
+                  className={`border rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02] delay-${index * 100 + 800} ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                  }`}
+                >
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <h3 className="font-medium flex items-center gap-2">
