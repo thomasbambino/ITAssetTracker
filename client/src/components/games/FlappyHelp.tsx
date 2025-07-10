@@ -298,7 +298,7 @@ export default function FlappyHelp() {
         {!gameRunning && !gameOver && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
             <div className="text-center text-white">
-              <p className="text-sm mb-2">Click or press Space to start!</p>
+              <p className="text-sm mb-2">Press Space to start!</p>
               <p className="text-xs">Help the satellite phone avoid trees</p>
             </div>
           </div>
