@@ -10,7 +10,8 @@ import {
   User, 
   FileText, 
   ExternalLink,
-  Monitor
+  Monitor,
+  Loader2
 } from 'lucide-react';
 
 interface AssignedSoftware {
@@ -86,7 +87,7 @@ export default function GuestSoftware() {
       <PageContainer title="Software &amp; Portals">
         <div className="flex items-center justify-center h-32">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
             <p className="mt-2 text-muted-foreground">Loading software...</p>
           </div>
         </div>

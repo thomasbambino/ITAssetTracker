@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { Shield, Key, User } from 'lucide-react';
+import { Shield, Key, User, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -110,7 +110,7 @@ export default function UserSettings() {
               <CardContent className="space-y-4">
                 {is2FALoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
                   <div className="flex items-center justify-between p-4 border rounded-lg">
