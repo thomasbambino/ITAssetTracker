@@ -11,7 +11,8 @@ import {
   EditIcon, 
   FileOutput,
   FilterIcon,
-  XIcon
+  XIcon,
+  CopyIcon
 } from 'lucide-react';
 import { ActionButton } from '@/components/dashboard/ActionButton';
 import { CsvImport } from '@/components/ui/csv-import';
@@ -41,6 +42,16 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Devices() {
   const [, navigate] = useLocation();
@@ -49,6 +60,8 @@ export default function Devices() {
   const [assignmentDialogDevice, setAssignmentDialogDevice] = useState<any | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [duplicateDialogDevice, setDuplicateDialogDevice] = useState<any | null>(null);
+  const [duplicateCount, setDuplicateCount] = useState<number>(1);
   
   // Extract query parameters from URL
   const [location] = useLocation();
@@ -192,6 +205,49 @@ export default function Devices() {
       });
     }
   });
+
+  // Duplicate device mutation
+  const duplicateDeviceMutation = useMutation({
+    mutationFn: async ({ device, count }: { device: any; count: number }) => {
+      const results = [];
+      for (let i = 0; i < count; i++) {
+        const duplicateData = {
+          ...device,
+          id: undefined, // Remove ID to create new records
+          assetTag: `${device.assetTag}-COPY-${i + 1}`, // Add suffix to asset tag
+          serialNumber: device.serialNumber ? `${device.serialNumber}-COPY-${i + 1}` : null,
+          name: device.name ? `${device.name} (Copy ${i + 1})` : null,
+          userId: null, // Don't assign duplicated devices
+          categoryId: device.category?.id || null,
+          siteId: device.site?.id || null,
+        };
+        
+        const result = await apiRequest({
+          method: 'POST',
+          url: '/api/devices',
+          data: duplicateData
+        });
+        results.push(result);
+      }
+      return results;
+    },
+    onSuccess: (results) => {
+      toast({
+        title: "Success",
+        description: `${results.length} device(s) duplicated successfully`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/devices'] });
+      setDuplicateDialogDevice(null);
+      setDuplicateCount(1);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to duplicate device",
+        variant: "destructive",
+      });
+    }
+  });
   
   // Table columns
   const columns = [
@@ -265,6 +321,13 @@ export default function Devices() {
       icon: <EditIcon className="h-4 w-4" />,
       onClick: (device: any) => {
         navigate(`/devices/${device.id}`);
+      },
+    },
+    {
+      label: "Duplicate",
+      icon: <CopyIcon className="h-4 w-4" />,
+      onClick: (device: any) => {
+        setDuplicateDialogDevice(device);
       },
     },
     {
@@ -500,6 +563,59 @@ export default function Devices() {
           }}
         />
       )}
+
+      {/* Duplicate Device Dialog */}
+      <Dialog open={!!duplicateDialogDevice} onOpenChange={(open) => !open && setDuplicateDialogDevice(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Duplicate Device</DialogTitle>
+            <DialogDescription>
+              Create copies of {duplicateDialogDevice?.name || `${duplicateDialogDevice?.brand} ${duplicateDialogDevice?.model}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="copy-count" className="text-right">
+                Number of copies
+              </Label>
+              <Input
+                id="copy-count"
+                type="number"
+                min="1"
+                max="50"
+                value={duplicateCount}
+                onChange={(e) => setDuplicateCount(parseInt(e.target.value) || 1)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <p>Each copy will have:</p>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Asset tag with "-COPY-#" suffix</li>
+                <li>Serial number with "-COPY-#" suffix (if present)</li>
+                <li>Device name with "(Copy #)" suffix (if present)</li>
+                <li>Same specifications and category</li>
+                <li>No user assignment (unassigned)</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateDialogDevice(null)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (duplicateDialogDevice) {
+                  duplicateDeviceMutation.mutate({ device: duplicateDialogDevice, count: duplicateCount });
+                }
+              }}
+              disabled={duplicateDeviceMutation.isPending}
+            >
+              {duplicateDeviceMutation.isPending ? 'Creating...' : `Create ${duplicateCount} ${duplicateCount === 1 ? 'Copy' : 'Copies'}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
