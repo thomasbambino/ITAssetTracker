@@ -4134,7 +4134,7 @@ export class DatabaseStorage implements IStorage {
         message.userId,
         message.message,
         message.isInternal || false,
-        message.images && message.images.length > 0 ? message.images : null
+        message.images && message.images.length > 0 ? JSON.stringify(message.images) : null
       ]);
       
       const newMessage = this.transformProblemReportMessage(result);
@@ -4188,17 +4188,20 @@ export class DatabaseStorage implements IStorage {
   private transformProblemReportMessage(row: any): any {
     let images = [];
     if (row.images) {
-      // PostgreSQL JSONB automatically returns the correct JavaScript type
-      if (Array.isArray(row.images)) {
-        images = row.images;
-      } else {
-        // In case it's still a string, try to parse it
-        try {
-          images = typeof row.images === 'string' ? JSON.parse(row.images) : [row.images];
-        } catch (error) {
-          console.error('Error parsing images JSON:', error, 'Raw images:', row.images);
-          images = [];
+      try {
+        // PostgreSQL JSONB with pg-promise should return the parsed JSON directly
+        if (Array.isArray(row.images)) {
+          images = row.images;
+        } else if (typeof row.images === 'string') {
+          // If it's a string, parse it
+          images = JSON.parse(row.images);
+        } else {
+          // If it's any other type, convert to array
+          images = [row.images];
         }
+      } catch (error) {
+        console.error('Error parsing images JSON:', error, 'Raw images:', row.images);
+        images = [];
       }
     }
 
