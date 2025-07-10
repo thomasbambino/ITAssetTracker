@@ -76,25 +76,25 @@ export function AttachmentList({
       {attachments.map((attachment) => (
         <Card key={attachment.id} className="p-4">
           <CardContent className="p-0">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 {getFileIcon(attachment.fileType)}
-                <div className="flex-1 min-w-0 space-y-2">
-                  <p className="text-sm font-medium truncate" title={attachment.originalName}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate mb-2" title={attachment.originalName}>
                     {attachment.originalName}
                   </p>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="font-medium">Size:</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium whitespace-nowrap">Size:</span>
                       <span>{formatFileSize(attachment.fileSize)}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="font-medium">Uploaded by:</span>
-                      <span>{attachment.uploadedByFirstName} {attachment.uploadedByLastName}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium whitespace-nowrap">By:</span>
+                      <span className="truncate">{attachment.uploadedByFirstName} {attachment.uploadedByLastName}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="font-medium">Date:</span>
-                      <span>{formatDateTime(attachment.createdAt)}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium whitespace-nowrap">Date:</span>
+                      <span className="truncate">{formatDateTime(attachment.createdAt)}</span>
                     </div>
                   </div>
                 </div>
