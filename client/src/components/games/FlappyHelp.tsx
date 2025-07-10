@@ -8,7 +8,7 @@ interface Bird {
   velocity: number;
 }
 
-interface Pipe {
+interface Tree {
   x: number;
   topHeight: number;
   bottomY: number;
@@ -18,7 +18,7 @@ interface Pipe {
 export default function FlappyHelp() {
   const [isOpen, setIsOpen] = useState(false);
   const [bird, setBird] = useState<Bird>({ x: 50, y: 150, velocity: 0 });
-  const [pipes, setPipes] = useState<Pipe[]>([]);
+  const [trees, setTrees] = useState<Tree[]>([]);
   const [score, setScore] = useState(0);
   const [gameRunning, setGameRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -27,42 +27,42 @@ export default function FlappyHelp() {
 
   const CANVAS_WIDTH = 280;
   const CANVAS_HEIGHT = 200;
-  const BIRD_SIZE = 12;
-  const PIPE_WIDTH = 30;
-  const PIPE_GAP = 80;
+  const BIRD_SIZE = 18;
+  const TREE_WIDTH = 35;
+  const TREE_GAP = 90;
   const GRAVITY = 0.4;
   const JUMP_FORCE = -6;
-  const PIPE_SPEED = 2;
+  const TREE_SPEED = 2;
 
   const resetGame = useCallback(() => {
     setBird({ x: 50, y: 150, velocity: 0 });
-    setPipes([]);
+    setTrees([]);
     setScore(0);
     setGameOver(false);
     setGameRunning(false);
   }, []);
 
   const jump = useCallback(() => {
-    if (!gameRunning && !gameOver) {
-      setGameRunning(true);
-    }
     if (!gameOver) {
+      if (!gameRunning) {
+        setGameRunning(true);
+      }
       setBird(prev => ({ ...prev, velocity: JUMP_FORCE }));
     }
   }, [gameRunning, gameOver]);
 
-  const checkCollision = useCallback((bird: Bird, pipes: Pipe[]) => {
+  const checkCollision = useCallback((bird: Bird, trees: Tree[]) => {
     // Check ground and ceiling
     if (bird.y <= 0 || bird.y >= CANVAS_HEIGHT - BIRD_SIZE) {
       return true;
     }
 
-    // Check pipe collision
-    for (const pipe of pipes) {
+    // Check tree collision
+    for (const tree of trees) {
       if (
-        bird.x + BIRD_SIZE > pipe.x &&
-        bird.x < pipe.x + PIPE_WIDTH &&
-        (bird.y < pipe.topHeight || bird.y + BIRD_SIZE > pipe.bottomY)
+        bird.x + BIRD_SIZE > tree.x &&
+        bird.x < tree.x + TREE_WIDTH &&
+        (bird.y < tree.topHeight || bird.y + BIRD_SIZE > tree.bottomY)
       ) {
         return true;
       }
@@ -83,30 +83,30 @@ export default function FlappyHelp() {
       return newBird;
     });
 
-    setPipes(prev => {
-      let newPipes = prev.map(pipe => ({ ...pipe, x: pipe.x - PIPE_SPEED }))
-        .filter(pipe => pipe.x > -PIPE_WIDTH);
+    setTrees(prev => {
+      let newTrees = prev.map(tree => ({ ...tree, x: tree.x - TREE_SPEED }))
+        .filter(tree => tree.x > -TREE_WIDTH);
 
-      // Add new pipe
-      if (newPipes.length === 0 || newPipes[newPipes.length - 1].x < CANVAS_WIDTH - 150) {
-        const topHeight = Math.random() * (CANVAS_HEIGHT - PIPE_GAP - 40) + 20;
-        newPipes.push({
+      // Add new tree
+      if (newTrees.length === 0 || newTrees[newTrees.length - 1].x < CANVAS_WIDTH - 150) {
+        const topHeight = Math.random() * (CANVAS_HEIGHT - TREE_GAP - 40) + 20;
+        newTrees.push({
           x: CANVAS_WIDTH,
           topHeight,
-          bottomY: topHeight + PIPE_GAP,
+          bottomY: topHeight + TREE_GAP,
           scored: false
         });
       }
 
       // Check for scoring
-      newPipes.forEach(pipe => {
-        if (!pipe.scored && pipe.x + PIPE_WIDTH < bird.x) {
-          pipe.scored = true;
+      newTrees.forEach(tree => {
+        if (!tree.scored && tree.x + TREE_WIDTH < bird.x) {
+          tree.scored = true;
           setScore(s => s + 1);
         }
       });
 
-      return newPipes;
+      return newTrees;
     });
   }, [gameRunning, gameOver, bird.x]);
 
@@ -128,37 +128,110 @@ export default function FlappyHelp() {
 
   // Collision detection
   useEffect(() => {
-    if (gameRunning && checkCollision(bird, pipes)) {
+    if (gameRunning && checkCollision(bird, trees)) {
       setGameOver(true);
       setGameRunning(false);
     }
-  }, [bird, pipes, checkCollision, gameRunning]);
+  }, [bird, trees, checkCollision, gameRunning]);
 
-  // Draw satellite phone icon
+  // Draw pixelated tree
+  const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean) => {
+    const width = TREE_WIDTH;
+    const trunkWidth = 8;
+    const trunkHeight = 10;
+    
+    if (isTop) {
+      // Top tree (inverted)
+      // Tree trunk at bottom
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(x + (width - trunkWidth) / 2, y + height - trunkHeight, trunkWidth, trunkHeight);
+      
+      // Tree foliage (darker green at edges, lighter in center)
+      const foliageHeight = height - trunkHeight;
+      for (let i = 0; i < foliageHeight; i++) {
+        const row = Math.floor(i / 3);
+        const foliageWidth = Math.min(width, 10 + row * 4);
+        const offsetX = (width - foliageWidth) / 2;
+        
+        // Vary green shades for depth
+        if (i % 3 === 0) {
+          ctx.fillStyle = '#228B22'; // Dark green
+        } else if (i % 3 === 1) {
+          ctx.fillStyle = '#32CD32'; // Medium green
+        } else {
+          ctx.fillStyle = '#90EE90'; // Light green
+        }
+        
+        ctx.fillRect(x + offsetX, y + i, foliageWidth, 3);
+      }
+    } else {
+      // Bottom tree (normal)
+      // Tree trunk at top
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(x + (width - trunkWidth) / 2, y, trunkWidth, trunkHeight);
+      
+      // Tree foliage (darker green at edges, lighter in center)
+      const foliageHeight = height - trunkHeight;
+      for (let i = 0; i < foliageHeight; i++) {
+        const row = Math.floor(i / 3);
+        const foliageWidth = Math.min(width, 10 + (foliageHeight - i) / 3 * 4);
+        const offsetX = (width - foliageWidth) / 2;
+        
+        // Vary green shades for depth
+        if (i % 3 === 0) {
+          ctx.fillStyle = '#228B22'; // Dark green
+        } else if (i % 3 === 1) {
+          ctx.fillStyle = '#32CD32'; // Medium green
+        } else {
+          ctx.fillStyle = '#90EE90'; // Light green
+        }
+        
+        ctx.fillRect(x + offsetX, y + trunkHeight + i, foliageWidth, 3);
+      }
+    }
+  };
+
+  // Draw satellite phone icon (rotated 90 degrees and bigger)
   const drawSatellitePhone = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
     const size = BIRD_SIZE;
     
-    // Antenna (top left)
+    // Save the current transformation
+    ctx.save();
+    
+    // Rotate 90 degrees clockwise around the center of the phone
+    ctx.translate(x + size/2, y + size/2);
+    ctx.rotate(Math.PI / 2);
+    ctx.translate(-size/2, -size/2);
+    
+    // Antenna (now extends horizontally from rotated phone)
     ctx.fillStyle = '#666666';
-    ctx.fillRect(x, y, 2, 4);
+    ctx.fillRect(0, -3, 4, 2);
     
     // Phone body outline
     ctx.fillStyle = '#333333';
-    ctx.fillRect(x + 1, y + 3, size - 2, size - 4);
+    ctx.fillRect(0, 0, size - 1, size - 2);
     
     // Phone body main
     ctx.fillStyle = '#777777';
-    ctx.fillRect(x + 2, y + 4, size - 4, size - 6);
+    ctx.fillRect(1, 1, size - 3, size - 4);
     
     // Screen
     ctx.fillStyle = '#87CEEB';
-    ctx.fillRect(x + 3, y + 5, size - 6, 3);
+    ctx.fillRect(2, 2, size - 6, 4);
     
     // Keypad (small dots)
     ctx.fillStyle = '#555555';
-    ctx.fillRect(x + 3, y + 9, 1, 1);
-    ctx.fillRect(x + 5, y + 9, 1, 1);
-    ctx.fillRect(x + 7, y + 9, 1, 1);
+    ctx.fillRect(2, 7, 1, 1);
+    ctx.fillRect(4, 7, 1, 1);
+    ctx.fillRect(6, 7, 1, 1);
+    ctx.fillRect(8, 7, 1, 1);
+    ctx.fillRect(2, 9, 1, 1);
+    ctx.fillRect(4, 9, 1, 1);
+    ctx.fillRect(6, 9, 1, 1);
+    ctx.fillRect(8, 9, 1, 1);
+    
+    // Restore the transformation
+    ctx.restore();
   };
 
   // Canvas rendering
@@ -173,13 +246,10 @@ export default function FlappyHelp() {
     ctx.fillStyle = '#87CEEB';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Draw pipes
-    ctx.fillStyle = '#32CD32';
-    pipes.forEach(pipe => {
-      // Top pipe
-      ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
-      // Bottom pipe
-      ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, CANVAS_HEIGHT - pipe.bottomY);
+    // Draw trees
+    trees.forEach(tree => {
+      drawTree(ctx, tree.x, 0, tree.topHeight, true); // Top tree
+      drawTree(ctx, tree.x, tree.bottomY, CANVAS_HEIGHT - tree.bottomY, false); // Bottom tree
     });
 
     // Draw satellite phone
@@ -188,7 +258,7 @@ export default function FlappyHelp() {
     // Draw ground
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(0, CANVAS_HEIGHT - 10, CANVAS_WIDTH, 10);
-  }, [bird, pipes]);
+  }, [bird, trees]);
 
   // Keyboard controls
   useEffect(() => {
@@ -256,7 +326,7 @@ export default function FlappyHelp() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
             <div className="text-center text-white">
               <p className="text-sm mb-2">Click or press Space to start!</p>
-              <p className="text-xs">Help the satellite phone avoid pipes</p>
+              <p className="text-xs">Help the satellite phone avoid trees</p>
             </div>
           </div>
         )}
