@@ -42,14 +42,6 @@ export default function TwoFactorSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Update queries when backup codes dialog closes
-  useEffect(() => {
-    if (!showBackupCodes && backupCodes.length > 0) {
-      queryClient.invalidateQueries({ queryKey: ['/api/2fa/status'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
-    }
-  }, [showBackupCodes, backupCodes.length, queryClient]);
-
   // Get 2FA status
   const { data: status, isLoading } = useQuery({
     queryKey: ['/api/2fa/status'],
@@ -432,7 +424,14 @@ export default function TwoFactorSettings() {
       </Dialog>
 
       {/* Backup Codes Dialog */}
-      <Dialog open={showBackupCodes} onOpenChange={setShowBackupCodes}>
+      <Dialog open={showBackupCodes} onOpenChange={(open) => {
+        setShowBackupCodes(open);
+        if (!open && backupCodes.length > 0) {
+          // Only invalidate queries when dialog is closed and we have backup codes
+          queryClient.invalidateQueries({ queryKey: ['/api/2fa/status'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Backup Codes</DialogTitle>
