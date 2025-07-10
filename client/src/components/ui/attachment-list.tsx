@@ -123,8 +123,8 @@ export function AttachmentList({
                 </div>
               </div>
               
-              {/* Bottom row: File size, uploader, and date aligned with filename */}
-              <div className="pl-8 text-xs text-muted-foreground">
+              {/* Bottom row: File size, uploader, and date aligned with icon */}
+              <div className="text-xs text-muted-foreground">
                 {formatFileSize(attachment.fileSize)} • {attachment.uploadedByFirstName} {attachment.uploadedByLastName} • {formatDateTime(attachment.createdAt)}
               </div>
             </div>
