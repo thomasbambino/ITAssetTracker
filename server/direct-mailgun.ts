@@ -249,8 +249,13 @@ export class DirectMailgunService {
       // Try to get company name from branding settings and use specific email logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      // Use the embedded logo for emails
-      const logoSrc = 'data:image/png;base64,' + EMAIL_LOGO_BASE64;
+      // Use HTML/CSS logo for better email client compatibility
+      const logoHtml = `
+        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <div style="color: white; font-size: 24px; font-weight: bold; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">★</div>
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 16px; font-weight: 900; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); z-index: 1;">S</div>
+        </div>
+      `;
       
       const subject = `${companyName} - Your Temporary Password`;
       const text = `Hello ${userName}, A password reset has been requested for your account. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
@@ -269,8 +274,8 @@ export class DirectMailgunService {
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
               <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                <div style="width: 48px; height: 48px; margin-right: 12px; display: flex; align-items: center; justify-content: center;">
-                  <img src="${logoSrc}" alt="Company logo" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;" />
+                <div style="margin-right: 12px;">
+                  ${logoHtml}
                 </div>
                 <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
               </div>
@@ -356,8 +361,13 @@ export class DirectMailgunService {
       // Try to get company name from branding settings and use specific email logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      // Use the embedded logo for emails
-      const logoSrc = 'data:image/png;base64,' + EMAIL_LOGO_BASE64;
+      // Use HTML/CSS logo for better email client compatibility
+      const logoHtml = `
+        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <div style="color: white; font-size: 24px; font-weight: bold; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">★</div>
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 16px; font-weight: 900; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); z-index: 1;">S</div>
+        </div>
+      `;
       
       const subject = `Welcome to ${companyName} - Your Account is Ready`;
       const text = `Hello ${userName}, Welcome to ${companyName}! Your account has been created and is ready to use. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
@@ -376,8 +386,8 @@ export class DirectMailgunService {
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
               <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                <div style="width: 48px; height: 48px; margin-right: 12px; display: flex; align-items: center; justify-content: center;">
-                  <img src="${logoSrc}" alt="Company logo" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;" />
+                <div style="margin-right: 12px;">
+                  ${logoHtml}
                 </div>
                 <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
               </div>
