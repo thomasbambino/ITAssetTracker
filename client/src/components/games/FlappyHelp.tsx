@@ -24,6 +24,7 @@ export default function FlappyHelp() {
   const [highScore, setHighScore] = useState(0);
   const [gameRunning, setGameRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [backgroundOffset, setBackgroundOffset] = useState(0);
   const gameLoopRef = useRef<number>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const treeImageRef = useRef<HTMLImageElement>();
@@ -36,6 +37,7 @@ export default function FlappyHelp() {
   const GRAVITY = 0.4;
   const JUMP_FORCE = -6;
   const TREE_SPEED = 2;
+  const BACKGROUND_SPEED = 0.5;
 
   // Load tree image and fetch high score
   useEffect(() => {
@@ -86,6 +88,7 @@ export default function FlappyHelp() {
     setScore(0);
     setGameOver(false);
     setGameRunning(false);
+    setBackgroundOffset(0);
   }, []);
 
   const jump = useCallback(() => {
@@ -169,6 +172,9 @@ export default function FlappyHelp() {
 
       return newTrees;
     });
+
+    // Update background offset for mountain scrolling
+    setBackgroundOffset(prev => (prev + BACKGROUND_SPEED) % CANVAS_WIDTH);
   }, [gameRunning, gameOver, bird.x]);
 
   // Game loop effect
@@ -199,6 +205,44 @@ export default function FlappyHelp() {
       }
     }
   }, [bird, trees, checkCollision, gameRunning, score]);
+
+  // Draw moving mountain background
+  const drawMountainBackground = (ctx: CanvasRenderingContext2D) => {
+    // Draw multiple layers of mountains for depth
+    const mountainLayers = [
+      { color: '#2d4a3e', height: 0.6, offset: backgroundOffset * 0.3 },
+      { color: '#1a3d2e', height: 0.7, offset: backgroundOffset * 0.5 },
+      { color: '#0f261c', height: 0.8, offset: backgroundOffset * 0.7 }
+    ];
+
+    mountainLayers.forEach(layer => {
+      ctx.fillStyle = layer.color;
+      ctx.beginPath();
+      
+      // Draw repeating mountain pattern
+      for (let i = -1; i <= 2; i++) {
+        const baseX = i * CANVAS_WIDTH - layer.offset;
+        const baseY = CANVAS_HEIGHT * layer.height;
+        
+        // Mountain peaks
+        ctx.moveTo(baseX, CANVAS_HEIGHT);
+        ctx.lineTo(baseX + CANVAS_WIDTH * 0.1, baseY);
+        ctx.lineTo(baseX + CANVAS_WIDTH * 0.2, baseY + 20);
+        ctx.lineTo(baseX + CANVAS_WIDTH * 0.3, baseY - 10);
+        ctx.lineTo(baseX + CANVAS_WIDTH * 0.4, baseY + 15);
+        ctx.lineTo(baseX + CANVAS_WIDTH * 0.5, baseY - 5);
+        ctx.lineTo(baseX + CANVAS_WIDTH * 0.6, baseY + 10);
+        ctx.lineTo(baseX + CANVAS_WIDTH * 0.7, baseY - 15);
+        ctx.lineTo(baseX + CANVAS_WIDTH * 0.8, baseY + 5);
+        ctx.lineTo(baseX + CANVAS_WIDTH * 0.9, baseY - 8);
+        ctx.lineTo(baseX + CANVAS_WIDTH, baseY + 12);
+        ctx.lineTo(baseX + CANVAS_WIDTH, CANVAS_HEIGHT);
+      }
+      
+      ctx.closePath();
+      ctx.fill();
+    });
+  };
 
   // Draw tree using the provided image
   const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean) => {
@@ -281,9 +325,15 @@ export default function FlappyHelp() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
-    ctx.fillStyle = '#87CEEB';
+    // Clear canvas with sky gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+    gradient.addColorStop(0, '#87CEEB');
+    gradient.addColorStop(1, '#B0E0E6');
+    ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Draw moving mountain background
+    drawMountainBackground(ctx);
 
     // Draw trees
     trees.forEach(tree => {
@@ -297,7 +347,7 @@ export default function FlappyHelp() {
     // Draw ground
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(0, CANVAS_HEIGHT - 10, CANVAS_WIDTH, 10);
-  }, [bird, trees]);
+  }, [bird, trees, backgroundOffset]);
 
   // Keyboard controls
   useEffect(() => {
