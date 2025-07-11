@@ -302,7 +302,7 @@ export function GlobalSearch() {
         </Button>
       </div>
 
-      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={!isAiMode}>
+      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
         <div className="flex items-center border-b px-3">
           <CommandInput 
             placeholder="Try: 'Show me all laptops assigned to sales that expire next month'" 
@@ -449,6 +449,28 @@ export function GlobalSearch() {
           {searchQuery && !isAiMode && finalDeviceResults.length === 0 && finalUserResults.length === 0 && finalCategoryResults.length === 0 && (
             <div className="px-4 py-2 text-sm text-muted-foreground">
               No results found for "{searchQuery}"
+            </div>
+          )}
+          
+          {/* Fallback display for AI results if Command component fails */}
+          {isAiMode && smartSearchResults && aiSearchResults.length > 0 && (
+            <div className="px-4 py-2">
+              <div className="text-sm font-medium mb-2">AI Search Results ({aiSearchResults.length})</div>
+              <div className="space-y-1">
+                {aiSearchResults.map(result => (
+                  <div 
+                    key={`fallback-${result.id}`}
+                    className="flex items-center p-2 hover:bg-accent rounded-md cursor-pointer"
+                    onClick={() => handleSelect(result)}
+                  >
+                    {result.icon}
+                    <div className="ml-2">
+                      <p className="text-sm font-medium">{result.title}</p>
+                      <p className="text-xs text-muted-foreground">{result.subtitle}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </CommandList>
