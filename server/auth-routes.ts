@@ -32,6 +32,30 @@ router.post('/login', async (req: Request, res: Response) => {
         req.session.userRole = (result.user.role || 'user') as 'user' | 'admin';
         req.session.passwordResetRequired = Boolean(result.passwordResetRequired);
         
+        // Check if user has 2FA enabled, if not, create a security notification
+        if (!result.user.twoFactorEnabled) {
+          try {
+            const existingNotifications = await storage.getNotifications(result.user.id, 10);
+            const has2FANotification = existingNotifications.some(notification => 
+              notification.type === 'security_2fa' && !notification.isRead
+            );
+            
+            if (!has2FANotification) {
+              await storage.createNotification({
+                userId: result.user.id,
+                type: 'security_2fa',
+                title: 'Secure Your Account with Two-Factor Authentication',
+                message: 'Protect your account by enabling two-factor authentication (2FA). This adds an extra layer of security to prevent unauthorized access. Go to Settings > Security to enable 2FA.',
+                isRead: false,
+                relatedId: null,
+                relatedType: 'security'
+              });
+            }
+          } catch (error) {
+            console.error('Error creating 2FA notification for user:', error);
+          }
+        }
+        
         // Don't send password-related fields to the client
         const { 
           passwordHash, 

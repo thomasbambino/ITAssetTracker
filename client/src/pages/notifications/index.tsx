@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Clock, Bell, CheckCircle, CalendarClock, Trash2, MessageSquare, Reply, Filter } from "lucide-react";
+import { AlertTriangle, Clock, Bell, CheckCircle, CalendarClock, Trash2, MessageSquare, Reply, Filter, Shield } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
@@ -27,7 +27,7 @@ interface Notification {
   userId: number;
   title: string;
   message: string;
-  type: "warranty_expiry" | "maintenance_due" | "license_expiry" | "device_assigned" | "problem_report";
+  type: "warranty_expiry" | "maintenance_due" | "license_expiry" | "device_assigned" | "problem_report" | "security_2fa";
   isRead: boolean;
   createdAt: Date | null;
   link?: string | null;
@@ -220,6 +220,8 @@ export default function NotificationsPage() {
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case "problem_report":
         return <MessageSquare className="h-5 w-5 text-orange-500" />;
+      case "security_2fa":
+        return <Shield className="h-5 w-5 text-purple-500" />;
       default:
         return <Bell className="h-5 w-5 text-primary" />;
     }
@@ -240,6 +242,8 @@ export default function NotificationsPage() {
         return `${baseClass} ${isRead ? "" : "border-l-4 border-green-500"}`;
       case "problem_report":
         return `${baseClass} ${isRead ? "" : "border-l-4 border-orange-500"}`;
+      case "security_2fa":
+        return `${baseClass} ${isRead ? "" : "border-l-4 border-purple-500"}`;
       default:
         return `${baseClass} ${isRead ? "" : "border-l-4 border-primary"}`;
     }
@@ -250,7 +254,14 @@ export default function NotificationsPage() {
     <div 
       key={notification.id} 
       className={`p-4 mb-2 rounded-md shadow-sm cursor-pointer hover:bg-muted/50 ${getNotificationClass(notification.type, notification.isRead)}`}
-      onClick={() => openNotificationDetails(notification)}
+      onClick={() => {
+        if (notification.type === "security_2fa") {
+          // Navigate to 2FA settings page
+          window.location.href = '/settings/two-factor';
+        } else {
+          openNotificationDetails(notification);
+        }
+      }}
     >
       <div className="flex items-start">
         <div className="mr-3 mt-1">
@@ -305,6 +316,11 @@ export default function NotificationsPage() {
             {notification.type === "problem_report" && (
               <div className="text-xs text-blue-600 font-medium">
                 Click to view conversation
+              </div>
+            )}
+            {notification.type === "security_2fa" && (
+              <div className="text-xs text-purple-600 font-medium">
+                Click to enable 2FA
               </div>
             )}
           </div>

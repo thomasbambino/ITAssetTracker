@@ -17,7 +17,7 @@ interface Notification {
   userId: number;
   title: string;
   message: string;
-  type: "warranty_expiry" | "maintenance_due" | "license_expiry" | "device_assigned" | "problem_report";
+  type: "warranty_expiry" | "maintenance_due" | "license_expiry" | "device_assigned" | "problem_report" | "security_2fa";
   isRead: boolean;
   createdAt: Date | null;
   link?: string | null;
@@ -98,6 +98,8 @@ export function NotificationBell() {
         return "✅";
       case "problem_report":
         return ""; // Removed emoji for cleaner display
+      case "security_2fa":
+        return "🔐"; // Security icon for 2FA notifications
       default:
         return "🔔";
     }

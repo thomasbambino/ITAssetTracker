@@ -240,6 +240,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize API routes
   const apiRouter = app.route('/api');
 
+  // 2FA Security notification helper
+  async function create2FASecurityNotifications() {
+    try {
+      const users = await storage.getUsers();
+      const usersWithout2FA = users.filter(user => user.active && !user.twoFactorEnabled);
+      
+      for (const user of usersWithout2FA) {
+        // Check if user already has a pending 2FA security notification
+        const existingNotifications = await storage.getNotifications(user.id, 10);
+        const has2FANotification = existingNotifications.some(notification => 
+          notification.type === 'security_2fa' && !notification.isRead
+        );
+        
+        if (!has2FANotification) {
+          await storage.createNotification({
+            userId: user.id,
+            type: 'security_2fa',
+            title: 'Secure Your Account with Two-Factor Authentication',
+            message: 'Protect your account by enabling two-factor authentication (2FA). This adds an extra layer of security to prevent unauthorized access.',
+            isRead: false,
+            relatedId: null,
+            relatedType: 'security'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error creating 2FA security notifications:', error);
+    }
+  }
+
+  // Create 2FA security notifications for users without 2FA
+  app.post('/api/notifications/2fa-reminder', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      await create2FASecurityNotifications();
+      res.json({ success: true, message: '2FA security notifications created for users without 2FA' });
+    } catch (error) {
+      console.error('Error creating 2FA notifications:', error);
+      res.status(500).json({ success: false, message: 'Failed to create 2FA notifications' });
+    }
+  });
+
   // Get dashboard stats
   app.get('/api/stats', isAuthenticated, async (req: Request, res: Response) => {
     try {
