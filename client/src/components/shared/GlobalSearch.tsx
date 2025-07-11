@@ -328,8 +328,9 @@ export function GlobalSearch() {
           <CommandInput 
             placeholder="Search or ask AI..." 
             value={searchQuery}
-            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 pl-4 pr-4"
+            className="flex h-11 w-full max-w-none rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 pl-4 pr-4 whitespace-nowrap overflow-x-auto"
             onValueChange={setSearchQuery}
+            style={{ width: '100%', maxWidth: 'none' }}
           />
           {smartSearchMutation.isPending && (
             <Sparkles className="h-4 w-4 animate-pulse text-blue-500 ml-2 shrink-0" />
