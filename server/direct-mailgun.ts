@@ -298,7 +298,7 @@ export class DirectMailgunService {
               </div>
               
               <!-- Password Box -->
-              <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; position: relative;">
+              <div style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; position: relative;">
                 <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
                   Temporary Password
                 </p>
@@ -411,7 +411,7 @@ export class DirectMailgunService {
               </div>
               
               <!-- Password Box -->
-              <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; position: relative;">
+              <div style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; position: relative;">
                 <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
                   Temporary Password
                 </p>
