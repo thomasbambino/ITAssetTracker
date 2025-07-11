@@ -97,6 +97,8 @@ export function GlobalSearch() {
     },
     onError: (error) => {
       console.error('Smart search error:', error);
+      console.error('Error details:', error);
+      setIsAiMode(false);
     }
   });
   
