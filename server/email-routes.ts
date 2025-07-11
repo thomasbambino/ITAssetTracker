@@ -8,7 +8,7 @@ const router = Router();
 
 // Email settings schema for validation
 const emailSettingsSchema = z.object({
-  apiKey: z.string().min(1, "API Key is required"),
+  apiKey: z.string().optional(), // Allow empty API key to preserve existing key
   domain: z.string().min(1, "Domain is required"),
   fromEmail: z.string().email("Invalid email address"),
   fromName: z.string().min(1, "Sender name is required"),
