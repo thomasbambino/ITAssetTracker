@@ -3429,8 +3429,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Query is required' });
       }
       
+      console.log('Smart search query:', query);
+      
       // Parse the natural language query
       const parsedQuery = await AIService.parseSearchQuery(query);
+      console.log('AI parsed query:', JSON.stringify(parsedQuery, null, 2));
       
       // Execute search based on parsed intent and filters
       let results = [];
@@ -3438,7 +3441,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       switch (parsedQuery.intent) {
         case 'devices':
           const devices = await storage.getDevices();
+          console.log('Total devices before filtering:', devices.length);
           results = await filterDevices(devices, parsedQuery.filters);
+          console.log('Devices after filtering:', results.length);
+          console.log('Applied filters:', JSON.stringify(parsedQuery.filters, null, 2));
           break;
           
         case 'users':

@@ -58,7 +58,7 @@ Return a JSON object with this structure:
       "end": "ISO date if mentioned"
     },
     "brand": "brand name if mentioned",
-    "model": "model name if mentioned",
+    "model": "model name if mentioned (include partial matches like 'iPad' for iPad devices)",
     "expiryPeriod": "next week|next month|next quarter|expired if mentioned"
   },
   "sortBy": "field to sort by if mentioned",
@@ -68,7 +68,9 @@ Return a JSON object with this structure:
 Examples:
 "Show me all laptops assigned to sales" -> {"intent": "devices", "filters": {"category": "Laptops", "department": "Sales"}, "confidence": 0.95}
 "Find expired warranties" -> {"intent": "devices", "filters": {"expiryPeriod": "expired"}, "confidence": 0.9}
-"Apple devices in IT" -> {"intent": "devices", "filters": {"brand": "Apple", "department": "IT"}, "confidence": 0.95}`;
+"Apple devices in IT" -> {"intent": "devices", "filters": {"brand": "Apple", "department": "IT"}, "confidence": 0.95}
+"show me all ipads" -> {"intent": "devices", "filters": {"model": "iPad"}, "confidence": 0.95}
+"find all iphones" -> {"intent": "devices", "filters": {"model": "iPhone"}, "confidence": 0.95}`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
