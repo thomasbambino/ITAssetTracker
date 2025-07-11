@@ -246,19 +246,13 @@ export class DirectMailgunService {
   // Send password reset email with beautiful HTML formatting
   public async sendPasswordResetEmail(to: string, tempPassword: string, userName: string): Promise<{ success: boolean; message: string }> {
     try {
-      // Try to get company name from branding settings and use specific email logo
+      // Try to get company name from branding settings and use optimized logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      // Use simple HTML logo for maximum email client compatibility
-      const logoHtml = `
-        <table cellpadding="0" cellspacing="0" style="width: 48px; height: 48px; background-color: #dc2626; border-radius: 8px;">
-          <tr>
-            <td style="text-align: center; vertical-align: middle; font-size: 28px; color: white; font-weight: bold; font-family: Arial, sans-serif;">
-              S
-            </td>
-          </tr>
-        </table>
-      `;
+      
+      // Use your optimized logo (2.8KB base64)
+      const logoBase64 = 'iVBORw0KGgoAAAANSUhEUgAAADAAAAAuCAMAAABZAGpeAAACvlBMVEUAAADlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCWOt9Z0AAAA6XRSTlMAAAQRHiYoIxcKFUaAr87f5+jk17+YYSkFK4HP9v7mqlANHYXj+LhIAU/64cGllZKcs9Lw7msCBhMIeZohFDd1w/frsGAfGlmIC437hicQRzM+1Z2J/bk4bb3y+aDinvyLCTWCzeVyu2LtZSVmyBsPltzst27K80wtd8X173YyWBmpxn8MqEPUzD9zByDAVdOQn0t+avHZTmiuo1JWHC+0MN6iNHTqRQPWFlFcer46LnzCSn1dx+m2tSqkbzZC4IpsprokZNFAspmExA6reKxnk8n0mznLhz2DEiJp3TvQRLEYoVcxX608vMFIWZEAAARkSURBVEjHY2CgBmBEBsQpZmJmYWVj5+AkqAcsz8XNw8vHLyAoJCwiKiYugU8LSE5SSlrmJRzIyskrKOLUAhRXUlZ5iQZU1dSBtjBgug7I1dDkA6vR0tbR1dM3MDQyBnNNTM1Ais0tUDQARSytwAq0rRVsODWAfAlbO3sHRydnF1cgx82d1wNNg6eXN1C5gI+vBlKo+vkHmAOlAr2CvF8GI2sA2hgSClQfFo7sVjDbjDUiMgpktQGSBqB4RPTLl956tkg+Ayu31YyJhXo/DkVDoODLl/EJiXD1YNWWSckpqrAQTk1DNssvHWSEJ0w9WLlrhmEmLHAFnLOyJZA15MS/fJmbB1EPVp3PXVAYClVdVFwiaY7qN9vSly/LyhlhESRRUVlVDVVdI1Jbl4gWa4yM9cAQ1YVFaEN9owBUdVlTc3gLZtplZGoFyrVB1NvwtHtDVMt0eHTmg9KuTXlXSEhJeDciRHr4X77sBZuk0dcOUR3dP8HfAuQ61oxW/miQiPFEJXiQTAKKTAarnzIVJOc9TXQ6B5DbLTljppAsPB3OsoRpqAUmSnWQhtnA1BRfOHHOXCA7cV7JfAGUhJu5AKZBFBjQvqDU3f5y4SJ3FmBi8ly8JGwpRkpfBtWwfObLlytWAjWs0l1tA1StGL5mLTzKXi5dWzANwjJOgmowV3v5sgMUHi1MQNXreByM4WZO081Z78koBeE1+UE1dIe9fCkCzvGedhs2ToU72cFjUx4o73TrgvneGbBQYuJ9+XIzI9NyRu6NNVDF0YWNpnXg3OwpuaXVESwWzAkPVuuXmYsZ1dUZF0McW7PVS5NlOShX2miG9G6DJqnWlYikuebldkuNWTsSGXd6hK3dtXsPyD9mDXvXzN+nBXNf1H5mxm4zmAZNrSmM7PuquUHuTQTlUOY9Bw4KVyMCVObQpuWMh2d0w5JGdhUb4xHZl63mUEeLdhgjBf/Uo6KbgN45VsoDT0uJs827jwPDOXC5jUKIDszRQBC/beuJLDsuUJo86VQdiMiOZowLQPF6ylkb7uiXjvvCPOZInoaka7sgYPJUZEQU1YonURLB1KAzZ/17LOH5IPEcMFOfB1kA4nGyuV+4eAnuiqUXL8+4wrEckWWAZBYwOV/lAGtYvu5ar0A83Gh+r/qKfLTsxch4HVjiqq6G6Dabd4NPFeEWXTNGjPzLWGcElFlkCS8hbqrrFcJyiclejCKasROkvuMWSomVBQ/JYkXUApHR87YQUPjOXZQi0SwOKBZ0D5wkj6BUcZb3H4AC+s59RhRz2Pe9lD1z2G0zqBRt72FUesgEzuAt4hmG4GL46jo0b2W9jJICxVCFNTBJhDDOOfrgQvLkkEcOAmCvOU60Qa18GLu3az+GhA7T/R3emeHMHUhxGJpb341eWT1pXMwIi8WWp0efWd6GK69Jz7DFqBQZbRqQS203++ccL5yMo0xUpOWX2HliqUNRYgrsWUaunYvtFrDfXI69YkcTZCSp6UAIAACC3YLuef+EeAAAAABJRU5ErkJggg==';
+      const logoHtml = `<img src="data:image/png;base64,${logoBase64}" alt="${companyName} Logo" width="48" height="48" style="display: block; border-radius: 8px;">`;
       
       const subject = `${companyName} - Your Temporary Password`;
       const text = `Hello ${userName}, A password reset has been requested for your account. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
@@ -365,19 +359,13 @@ export class DirectMailgunService {
   // Send welcome email for new user creation with beautiful HTML formatting
   public async sendWelcomeEmail(to: string, tempPassword: string, userName: string): Promise<{ success: boolean; message: string }> {
     try {
-      // Try to get company name from branding settings and use specific email logo
+      // Try to get company name from branding settings and use optimized logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      // Use simple HTML logo for maximum email client compatibility
-      const logoHtml = `
-        <table cellpadding="0" cellspacing="0" style="width: 48px; height: 48px; background-color: #10b981; border-radius: 8px;">
-          <tr>
-            <td style="text-align: center; vertical-align: middle; font-size: 28px; color: white; font-weight: bold; font-family: Arial, sans-serif;">
-              S
-            </td>
-          </tr>
-        </table>
-      `;
+      
+      // Use your optimized logo (2.8KB base64)
+      const logoBase64 = 'iVBORw0KGgoAAAANSUhEUgAAADAAAAAuCAMAAABZAGpeAAACvlBMVEUAAADlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCXlKCWOt9Z0AAAA6XRSTlMAAAQRHiYoIxcKFUaAr87f5+jk17+YYSkFK4HP9v7mqlANHYXj+LhIAU/64cGllZKcs9Lw7msCBhMIeZohFDd1w/frsGAfGlmIC437hicQRzM+1Z2J/bk4bb3y+aDinvyLCTWCzeVyu2LtZSVmyBsPltzst27K80wtd8X173YyWBmpxn8MqEPUzD9zByDAVdOQn0t+avHZTmiuo1JWHC+0MN6iNHTqRQPWFlFcer46LnzCSn1dx+m2tSqkbzZC4IpsprokZNFAspmExA6reKxnk8n0mznLhz2DEiJp3TvQRLEYoVcxX608vMFIWZEAAARkSURBVEjHY2CgBmBEBsQpZmJmYWVj5+AkqAcsz8XNw8vHLyAoJCwiKiYugU8LSE5SSlrmJRzIyskrKOLUAhRXUlZ5iQZU1dSBtjBgug7I1dDkA6vR0tbR1dM3MDQyBnNNTM1Ais0tUDQARSytwAq0rRVsODWAfAlbO3sHRydnF1cgx82d1wNNg6eXN1C5gI+vBlKo+vkHmAOlAr2CvF8GI2sA2hgSClQfFo7sVjDbjDUiMgpktQGSBqB4RPTLl956tkg+Ayu31YyJhXo/DkVDoODLl/EJiXD1YNWWSckpqrAQTk1DNssvHWSEJ0w9WLlrhmEmLHAFnLOyJZA15MS/fJmbB1EPVp3PXVAYClVdVFwiaY7qN9vSly/LyhlhESRRUVlVDVVdI1Jbl4gWa4yM9cAQ1YVFaEN9owBUdVlTc3gLZtplZGoFyrVB1NvwtHtDVMt0eHTmg9KuTXlXSEhJeDciRHr4X77sBZuk0dcOUR3dP8HfAuQ61oxW/miQiPFEJXiQTAKKTAarnzIVJOc9TXQ6B5DbLTljppAsPB3OsoRpqAUmSnWQhtnA1BRfOHHOXCA7cV7JfAGUhJu5AKZBFBjQvqDU3f5y4SJ3FmBi8ly8JGwpRkpfBtWwfObLlytWAjWs0l1tA1StGL5mLTzKXi5dWzANwjJOgmowV3v5sgMUHi1MQNXreByM4WZO081Z78koBeE1+UE1dIe9fCkCzvGedhs2ToU72cFjUx4o73TrgvneGbBQYuJ9+XIzI9NyRu6NNVDF0YWNpnXg3OwpuaXVESwWzAkPVuuXmYsZ1dUZF0McW7PVS5NlOShX2miG9G6DJqnWlYikuebldkuNWTsSGXd6hK3dtXsPyD9mDXvXzN+nBXNf1H5mxm4zmAZNrSmM7PuquUHuTQTlUOY9Bw4KVyMCVObQpuWMh2d0w5JGdhUb4xHZl63mUEeLdhgjBf/Uo6KbgN45VsoDT0uJs827jwPDOXC5jUKIDszRQBC/beuJLDsuUJo86VQdiMiOZowLQPF6ylkb7uiXjvvCPOZInoaka7sgYPJUZEQU1YonURLB1KAzZ/17LOH5IPEcMFOfB1kA4nGyuV+4eAnuiqUXL8+4wrEckWWAZBYwOV/lAGtYvu5ar0A83Gh+r/qKfLTsxch4HVjiqq6G6Dabd4NPFeEWXTNGjPzLWGcElFlkCS8hbqrrFcJyiclejCKasROkvuMWSomVBQ/JYkXUApHR87YQUPjOXZQi0SwOKBZ0D5wkj6BUcZb3H4AC+s59RhRz2Pe9lD1z2G0zqBRt72FUesgEzuAt4hmG4GL46jo0b2W9jJICxVCFNTBJhDDOOfrgQvLkkEcOAmCvOU60Qa18GLu3az+GhA7T/R3emeHMHUhxGJpb341eWT1pXMwIi8WWp0efWd6GK69Jz7DFqBQZbRqQS203++ccL5yMo0xUpOWX2HliqUNRYgrsWUaunYvtFrDfXI69YkcTZCSp6UAIAACC3YLuef+EeAAAAABJRU5ErkJggg==';
+      const logoHtml = `<img src="data:image/png;base64,${logoBase64}" alt="${companyName} Logo" width="48" height="48" style="display: block; border-radius: 8px;">`;
       
       const subject = `Welcome to ${companyName} - Your Account is Ready`;
       const text = `Hello ${userName}, Welcome to ${companyName}! Your account has been created and is ready to use. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
