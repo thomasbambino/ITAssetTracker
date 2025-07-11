@@ -724,10 +724,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/users', async (req: Request, res: Response) => {
+  app.post('/api/users', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
       const validatedData = insertUserSchema.parse(req.body);
-      const user = await storage.createUser(validatedData);
+      const user = await storage.createUser(validatedData, loggedInUserId);
+      
+      // Send welcome email if user has an email address
+      if (user.email) {
+        try {
+          // Get email settings to check if service is configured and enabled
+          const emailSettings = await storage.getEmailSettings();
+          
+          if (emailSettings && emailSettings.isEnabled) {
+            // Update the direct mailgun service with current settings from database
+            console.log('Updating direct mailgun service for welcome email...');
+            const updatedMailgunService = updateMailgunService(emailSettings);
+            
+            // Check if direct mailgun service is configured
+            const isConfigured = updatedMailgunService.isConfigured();
+            console.log('Database-based mailgun service configuration check for welcome email:', isConfigured);
+            
+            if (isConfigured) {
+              // Generate temporary password for new user
+              const tempPassword = 'TempPass123!';
+              const fullName = `${user.firstName} ${user.lastName}`;
+              
+              console.log(`Sending welcome email to: ${user.email}`);
+              const result = await updatedMailgunService.sendWelcomeEmail(
+                user.email,
+                tempPassword,
+                fullName
+              );
+              
+              console.log('Welcome email result:', result);
+              
+              // Also set the temporary password in the database
+              if (result.success) {
+                const bcrypt = await import('bcrypt');
+                const hashedPassword = await bcrypt.hash(tempPassword, 10);
+                await storage.updateUser(user.id, {
+                  passwordHash: hashedPassword,
+                  passwordResetRequired: true
+                }, loggedInUserId, true);
+              }
+            }
+          }
+        } catch (emailError) {
+          console.error('Error sending welcome email:', emailError);
+          // Don't fail user creation if email fails
+        }
+      }
+      
       res.status(201).json(user);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -3681,8 +3731,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
               };
 
               // Create user
-              await storage.createUser(userToCreate, loggedInUserId);
+              const newUser = await storage.createUser(userToCreate, loggedInUserId);
               importedCount++;
+              
+              // Send welcome email if user has an email address
+              if (newUser.email) {
+                try {
+                  // Get email settings to check if service is configured and enabled
+                  const emailSettings = await storage.getEmailSettings();
+                  
+                  if (emailSettings && emailSettings.isEnabled) {
+                    // Update the direct mailgun service with current settings from database
+                    const updatedMailgunService = updateMailgunService(emailSettings);
+                    
+                    // Check if direct mailgun service is configured
+                    const isConfigured = updatedMailgunService.isConfigured();
+                    
+                    if (isConfigured) {
+                      const fullName = `${newUser.firstName} ${newUser.lastName}`;
+                      
+                      console.log(`Sending welcome email to imported user: ${newUser.email}`);
+                      const result = await updatedMailgunService.sendWelcomeEmail(
+                        newUser.email,
+                        tempPassword,
+                        fullName
+                      );
+                      
+                      console.log('Welcome email result for imported user:', result);
+                    }
+                  }
+                } catch (emailError) {
+                  console.error('Error sending welcome email to imported user:', emailError);
+                  // Don't fail user creation if email fails
+                }
+              }
 
             } catch (error) {
               console.error('Error processing user record:', error);
