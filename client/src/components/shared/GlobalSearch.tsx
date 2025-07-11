@@ -90,6 +90,7 @@ export function GlobalSearch() {
     },
     onSuccess: (data) => {
       console.log('Smart search success:', data);
+      console.log('Setting smart search results:', data);
       setSmartSearchResults(data);
     },
     onError: (error) => {
@@ -206,6 +207,11 @@ export function GlobalSearch() {
     url: result.type === 'user' ? `/users/${result.id}` : `/devices/${result.id}`
   })) || [];
 
+  // Debug logging
+  console.log('AI search results:', aiSearchResults);
+  console.log('Is AI mode:', isAiMode);
+  console.log('Smart search results:', smartSearchResults);
+
   // Use AI results when available, otherwise use regular search
   const displayResults = isAiMode ? aiSearchResults : filteredResults;
 
@@ -222,6 +228,12 @@ export function GlobalSearch() {
   const finalUserResults = isAiMode ? aiUserResults : userResults;
   const finalDeviceResults = isAiMode ? aiDeviceResults : deviceResults;
   const finalCategoryResults = isAiMode ? aiCategoryResults : categoryResults;
+
+  // Debug logging for final results
+  console.log('Final user results:', finalUserResults.length);
+  console.log('Final device results:', finalDeviceResults.length);
+  console.log('Final category results:', finalCategoryResults.length);
+  console.log('Final device results data:', finalDeviceResults);
 
   // Handle keyboard shortcut to open search
   useEffect(() => {
@@ -283,11 +295,10 @@ export function GlobalSearch() {
 
       <CommandDialog open={open} onOpenChange={setOpen}>
         <div className="flex items-center border-b px-3">
-          <SearchIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <CommandInput 
             placeholder="Try: 'Show me all laptops assigned to sales that expire next month'" 
             value={searchQuery}
-            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 pl-3"
             onValueChange={setSearchQuery}
           />
           {smartSearchMutation.isPending && (
