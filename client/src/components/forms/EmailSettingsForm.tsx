@@ -151,17 +151,20 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
         data: values,
       });
 
-      // Send password reset test email to current logged-in user
+      // Determine test email target - use custom test email if provided, otherwise use logged-in user's email
+      const targetEmail = testEmail.trim();
+      
+      // Send password reset test email to specified email
       const result = await apiRequest({
         url: `/api/settings/email/test-reset`,
         method: "POST",
-        data: {},
+        data: targetEmail ? { email: targetEmail } : {},
       });
       
       if (result.success) {
         toast({
           title: "Password reset test email sent",
-          description: "A test password reset email has been sent to your account. Check your inbox and spam folder.",
+          description: `A test password reset email has been sent to ${targetEmail || 'your account'}. Check your inbox and spam folder.`,
         });
       } else {
         toast({
@@ -193,17 +196,20 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
         data: values,
       });
 
-      // Send welcome test email to current logged-in user
+      // Determine test email target - use custom test email if provided, otherwise use logged-in user's email
+      const targetEmail = testEmail.trim();
+      
+      // Send welcome test email to specified email
       const result = await apiRequest({
         url: `/api/settings/email/test-welcome`,
         method: "POST",
-        data: {},
+        data: targetEmail ? { email: targetEmail } : {},
       });
       
       if (result.success) {
         toast({
           title: "Welcome test email sent",
-          description: "A test welcome email has been sent to your account. Check your inbox and spam folder.",
+          description: `A test welcome email has been sent to ${targetEmail || 'your account'}. Check your inbox and spam folder.`,
         });
       } else {
         toast({

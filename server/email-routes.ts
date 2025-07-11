@@ -340,9 +340,13 @@ router.post('/settings/email/test-reset', isAuthenticated, isAdmin, async (req: 
       });
     }
     
+    // Get target email from request body or use current user's email
+    const targetEmail = req.body.email || currentUser.email;
+    const targetName = req.body.email ? 'Test User' : `${currentUser.firstName} ${currentUser.lastName}`;
+    
     console.log(`=== PASSWORD RESET TEST EMAIL ===`);
-    console.log(`Target email: ${currentUser.email}`);
-    console.log(`User: ${currentUser.firstName} ${currentUser.lastName}`);
+    console.log(`Target email: ${targetEmail}`);
+    console.log(`User: ${targetName}`);
     
     // Update the direct mailgun service with the latest settings
     const updatedMailgunService = updateMailgunService(emailSettings);
@@ -354,15 +358,15 @@ router.post('/settings/email/test-reset', isAuthenticated, isAdmin, async (req: 
     if (isMailgunServiceConfigured) {
       // Send password reset test email using the existing method
       const result = await updatedMailgunService.sendPasswordResetEmail(
-        currentUser.email,
+        targetEmail,
         'TestPass123!',
-        `${currentUser.firstName} ${currentUser.lastName}`
+        targetName
       );
       
       console.log('Password reset test email result:', result);
       
       if (result.success) {
-        console.log(`✓ Password reset test email sent successfully to: ${currentUser.email}`);
+        console.log(`✓ Password reset test email sent successfully to: ${targetEmail}`);
         return res.json(result);
       } else {
         console.log(`✗ Password reset test email failed: ${result.message}`);
@@ -387,9 +391,9 @@ router.post('/settings/email/test-reset', isAuthenticated, isAdmin, async (req: 
           if (envMailgunService.isConfigured()) {
             console.log('Using environment variables for password reset test');
             const envResult = await envMailgunService.sendPasswordResetEmail(
-              currentUser.email,
+              targetEmail,
               'TestPass123!',
-              `${currentUser.firstName} ${currentUser.lastName}`
+              targetName
             );
             
             console.log('Password reset test email result with env vars:', envResult);
@@ -448,9 +452,13 @@ router.post('/settings/email/test-welcome', isAuthenticated, isAdmin, async (req
       });
     }
     
+    // Get target email from request body or use current user's email
+    const targetEmail = req.body.email || currentUser.email;
+    const targetName = req.body.email ? 'Test User' : `${currentUser.firstName} ${currentUser.lastName}`;
+    
     console.log(`=== WELCOME TEST EMAIL ===`);
-    console.log(`Target email: ${currentUser.email}`);
-    console.log(`User: ${currentUser.firstName} ${currentUser.lastName}`);
+    console.log(`Target email: ${targetEmail}`);
+    console.log(`User: ${targetName}`);
     
     // Update the direct mailgun service with the latest settings
     const updatedMailgunService = updateMailgunService(emailSettings);
@@ -462,15 +470,15 @@ router.post('/settings/email/test-welcome', isAuthenticated, isAdmin, async (req
     if (isMailgunServiceConfigured) {
       // Send welcome test email using the existing method
       const result = await updatedMailgunService.sendWelcomeEmail(
-        currentUser.email,
+        targetEmail,
         'TestPass123!',
-        `${currentUser.firstName} ${currentUser.lastName}`
+        targetName
       );
       
       console.log('Welcome test email result:', result);
       
       if (result.success) {
-        console.log(`✓ Welcome test email sent successfully to: ${currentUser.email}`);
+        console.log(`✓ Welcome test email sent successfully to: ${targetEmail}`);
         return res.json(result);
       } else {
         console.log(`✗ Welcome test email failed: ${result.message}`);
@@ -495,9 +503,9 @@ router.post('/settings/email/test-welcome', isAuthenticated, isAdmin, async (req
           if (envMailgunService.isConfigured()) {
             console.log('Using environment variables for welcome test');
             const envResult = await envMailgunService.sendWelcomeEmail(
-              currentUser.email,
+              targetEmail,
               'TestPass123!',
-              `${currentUser.firstName} ${currentUser.lastName}`
+              targetName
             );
             
             console.log('Welcome test email result with env vars:', envResult);
