@@ -330,11 +330,42 @@ router.post('/settings/email/test-reset', isAuthenticated, isAdmin, async (req: 
       
       if (result.success) {
         console.log(`✓ Password reset test email sent successfully to: ${currentUser.email}`);
+        return res.json(result);
       } else {
         console.log(`✗ Password reset test email failed: ${result.message}`);
+        
+        // If database settings failed, try environment variables as fallback
+        console.log('Attempting to use environment variables for password reset test...');
+        
+        const apiKey = process.env.MAILGUN_API_KEY;
+        const domain = process.env.MAILGUN_DOMAIN;
+        
+        if (apiKey && domain) {
+          const envEmailSettings = {
+            apiKey,
+            domain,
+            fromEmail: emailSettings.fromEmail,
+            fromName: emailSettings.fromName,
+            isEnabled: true
+          };
+          
+          const envMailgunService = new DirectMailgunService(envEmailSettings);
+          
+          if (envMailgunService.isConfigured()) {
+            console.log('Using environment variables for password reset test');
+            const envResult = await envMailgunService.sendPasswordResetEmail(
+              currentUser.email,
+              'TestPass123!',
+              `${currentUser.firstName} ${currentUser.lastName}`
+            );
+            
+            console.log('Password reset test email result with env vars:', envResult);
+            return res.json(envResult);
+          }
+        }
+        
+        return res.json(result);
       }
-      
-      return res.json(result);
     } else {
       console.log('Email service is not configured properly. Using simulation mode.');
       
@@ -407,11 +438,42 @@ router.post('/settings/email/test-welcome', isAuthenticated, isAdmin, async (req
       
       if (result.success) {
         console.log(`✓ Welcome test email sent successfully to: ${currentUser.email}`);
+        return res.json(result);
       } else {
         console.log(`✗ Welcome test email failed: ${result.message}`);
+        
+        // If database settings failed, try environment variables as fallback
+        console.log('Attempting to use environment variables for welcome test...');
+        
+        const apiKey = process.env.MAILGUN_API_KEY;
+        const domain = process.env.MAILGUN_DOMAIN;
+        
+        if (apiKey && domain) {
+          const envEmailSettings = {
+            apiKey,
+            domain,
+            fromEmail: emailSettings.fromEmail,
+            fromName: emailSettings.fromName,
+            isEnabled: true
+          };
+          
+          const envMailgunService = new DirectMailgunService(envEmailSettings);
+          
+          if (envMailgunService.isConfigured()) {
+            console.log('Using environment variables for welcome test');
+            const envResult = await envMailgunService.sendWelcomeEmail(
+              currentUser.email,
+              'TestPass123!',
+              `${currentUser.firstName} ${currentUser.lastName}`
+            );
+            
+            console.log('Welcome test email result with env vars:', envResult);
+            return res.json(envResult);
+          }
+        }
+        
+        return res.json(result);
       }
-      
-      return res.json(result);
     } else {
       console.log('Email service is not configured properly. Using simulation mode.');
       
