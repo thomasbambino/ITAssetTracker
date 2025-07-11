@@ -73,7 +73,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
         
         {/* Desktop Header - only shows on medium screens and up */}
-        <div className="hidden md:flex bg-background w-full items-center justify-end p-3 border-b border-border">
+        <div className="hidden md:flex bg-background w-full items-center justify-end p-3 shadow-sm">
           <div className="flex items-center gap-3">
             <NotificationBell />
             <ThemeToggle size="sm" />
