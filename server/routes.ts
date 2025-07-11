@@ -447,16 +447,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/managers/promote/:userId', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.userId);
-      const { managedDepartmentIds } = req.body;
       
       // Get the currently logged in user's ID from the session
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
+      // Get the user's current department
+      const currentUser = await storage.getUserById(userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Set managed department to their current department (if they have one)
+      const managedDepartmentIds = currentUser.departmentId ? JSON.stringify([currentUser.departmentId]) : null;
+      
       // Promote user to manager
       const updatedUser = await storage.updateUser(userId, {
         isManager: true,
-        managedDepartmentIds: managedDepartmentIds || null
+        managedDepartmentIds: managedDepartmentIds
       }, loggedInUserId);
       
       if (!updatedUser) {
