@@ -306,8 +306,10 @@ export function GlobalSearch() {
           {isAiMode && smartSearchResults && (
             <>
               <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                AI Search • {smartSearchResults.totalFound} results • 
-                {Math.round(smartSearchResults.query.confidence * 100)}% confidence
+                AI Search • {smartSearchResults.totalFound} results
+                {smartSearchResults.query?.confidence && (
+                  <> • {Math.round(smartSearchResults.query.confidence * 100)}% confidence</>
+                )}
               </div>
               <CommandSeparator />
             </>
