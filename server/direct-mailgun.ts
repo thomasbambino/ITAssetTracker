@@ -92,13 +92,14 @@ export class DirectMailgunService {
       }
       
       // Log what we're sending (without sensitive data)
-      console.log('Sending direct Mailgun request:', {
+      console.log('🚀 Sending direct Mailgun request:', {
         to: emailData.to,
         subject: emailData.subject,
         from: this.fromEmail,
         domain: this.domain,
         textLength: emailData.text?.length || 0,
-        htmlLength: emailData.html?.length || 0
+        htmlLength: emailData.html?.length || 0,
+        hasApiKey: !!this.apiKey
       });
 
       // Send the request with proper auth
