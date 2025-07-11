@@ -222,44 +222,52 @@ export default function FlappyHelp() {
     ctx.restore();
   };
 
-  // Draw satellite phone icon (rotated 90 degrees and bigger)
+  // Draw satellite phone icon (rotated 90 degrees with proper proportions)
   const drawSatellitePhone = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    const size = BIRD_SIZE;
+    const width = BIRD_SIZE * 0.7; // Make it narrower
+    const height = BIRD_SIZE * 1.2; // Make it taller for proper phone proportions
     
     // Save the current transformation
     ctx.save();
     
     // Rotate 90 degrees clockwise around the center of the phone
-    ctx.translate(x + size/2, y + size/2);
+    ctx.translate(x + width/2, y + height/2);
     ctx.rotate(Math.PI / 2);
-    ctx.translate(-size/2, -size/2);
+    ctx.translate(-width/2, -height/2);
     
     // Antenna (now extends horizontally from rotated phone)
     ctx.fillStyle = '#666666';
-    ctx.fillRect(0, -3, 4, 2);
+    ctx.fillRect(0, -4, 3, 2);
     
     // Phone body outline
     ctx.fillStyle = '#333333';
-    ctx.fillRect(0, 0, size - 1, size - 2);
+    ctx.fillRect(0, 0, width, height);
     
     // Phone body main
     ctx.fillStyle = '#777777';
-    ctx.fillRect(1, 1, size - 3, size - 4);
+    ctx.fillRect(1, 1, width - 2, height - 2);
     
-    // Screen
+    // Screen (proportionally sized)
     ctx.fillStyle = '#87CEEB';
-    ctx.fillRect(2, 2, size - 6, 4);
+    ctx.fillRect(2, 2, width - 4, height * 0.3);
     
-    // Keypad (small dots)
+    // Keypad (arranged in a more phone-like grid)
     ctx.fillStyle = '#555555';
-    ctx.fillRect(2, 7, 1, 1);
-    ctx.fillRect(4, 7, 1, 1);
-    ctx.fillRect(6, 7, 1, 1);
-    ctx.fillRect(8, 7, 1, 1);
-    ctx.fillRect(2, 9, 1, 1);
-    ctx.fillRect(4, 9, 1, 1);
-    ctx.fillRect(6, 9, 1, 1);
-    ctx.fillRect(8, 9, 1, 1);
+    const keypadStartY = height * 0.4;
+    const keySize = 1;
+    const keySpacing = 2;
+    
+    // Draw 3x4 keypad grid
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        ctx.fillRect(
+          2 + col * keySpacing, 
+          keypadStartY + row * keySpacing, 
+          keySize, 
+          keySize
+        );
+      }
+    }
     
     // Restore the transformation
     ctx.restore();
