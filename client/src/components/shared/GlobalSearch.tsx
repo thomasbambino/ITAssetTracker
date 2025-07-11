@@ -79,25 +79,18 @@ export function GlobalSearch() {
   // AI-powered smart search mutation
   const smartSearchMutation = useMutation({
     mutationFn: async (query: string) => {
-      console.log('Making smart search request for:', query);
       const response = await apiRequest({
         url: '/api/search/smart',
         method: 'POST',
         data: { query }
       });
-      console.log('Smart search response:', response);
       return response;
     },
     onSuccess: (data) => {
-      console.log('Smart search success:', data);
-      console.log('Setting smart search results:', data);
-      console.log('Results array:', data.results);
-      console.log('Results length:', data.results?.length);
       setSmartSearchResults(data);
     },
     onError: (error) => {
       console.error('Smart search error:', error);
-      console.error('Error details:', error);
       setIsAiMode(false);
     }
   });
@@ -179,13 +172,10 @@ export function GlobalSearch() {
 
   // Trigger AI search when query changes and is natural language
   useEffect(() => {
-    console.log('Search query changed:', searchQuery, 'Length:', searchQuery.length, 'Has spaces:', searchQuery.includes(' '));
     if (searchQuery.length > 10 && searchQuery.includes(' ')) {
-      console.log('Triggering AI search mode');
       setIsAiMode(true);
       smartSearchMutation.mutate(searchQuery);
     } else {
-      console.log('Using regular search mode');
       setIsAiMode(false);
       setSmartSearchResults(null);
     }
@@ -233,14 +223,7 @@ export function GlobalSearch() {
   const finalDeviceResults = isAiMode ? aiDeviceResults : deviceResults;
   const finalCategoryResults = isAiMode ? aiCategoryResults : categoryResults;
 
-  // Debug logging
-  console.log('Search Debug:', {
-    isAiMode,
-    searchQuery,
-    finalDeviceResults: finalDeviceResults.length,
-    aiDeviceResults: aiDeviceResults.length,
-    smartSearchResults: smartSearchResults?.results?.length
-  });
+
 
 
 
