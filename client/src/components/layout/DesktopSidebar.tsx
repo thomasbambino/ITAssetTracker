@@ -299,7 +299,7 @@ export function DesktopSidebar() {
 
   return (
     <div className="hidden md:flex flex-col w-64 bg-background border-r border-border h-screen sticky top-0">
-      <div className="flex items-center h-16 px-4 border-b border-border">
+      <div className="flex items-center h-16 px-4">
         <div className="flex items-center">
           {branding?.logo ? (
             <div className="w-9 h-9 bg-card rounded-md flex items-center justify-center border border-border">
