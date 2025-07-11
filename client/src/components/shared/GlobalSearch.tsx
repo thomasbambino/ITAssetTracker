@@ -302,12 +302,6 @@ export function GlobalSearch() {
         readOnly
       />
       <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-        {isAiMode && (
-          <Badge variant="secondary" className="mr-2 text-xs">
-            <BrainIcon className="h-3 w-3 mr-1" />
-            AI
-          </Badge>
-        )}
         <Button 
           type="button" 
           variant="ghost" 
