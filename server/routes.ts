@@ -1903,15 +1903,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const departmentUsers = users.filter(user => user.department === currentUser.department);
         const departmentUserIds = departmentUsers.map(user => user.id);
         
-        // Get software assignments for users in the manager's department
-        const assignments = await storage.getSoftwareAssignments();
-        const departmentAssignments = assignments.filter(assignment => 
-          departmentUserIds.includes(assignment.userId)
-        );
-        const departmentSoftwareIds = [...new Set(departmentAssignments.map(assignment => assignment.softwareId))];
+        // Get all software assignments for all department users
+        const departmentSoftwareIds = new Set<number>();
+        for (const userId of departmentUserIds) {
+          const userAssignments = await storage.getSoftwareAssignmentsByUser(userId);
+          userAssignments.forEach(assignment => {
+            departmentSoftwareIds.add(assignment.softwareId);
+          });
+        }
         
         // Filter software to only show those assigned to users in the manager's department
-        software = software.filter(sw => departmentSoftwareIds.includes(sw.id));
+        software = software.filter(sw => departmentSoftwareIds.has(sw.id));
       }
       
       res.json(software);
