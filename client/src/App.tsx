@@ -95,12 +95,13 @@ function MainRouter() {
   const [location] = useLocation();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isManager = user?.isManager;
   const isAdminRoute = ADMIN_ROUTES.some(route => 
     location === route || location.startsWith(`${route}/`)
   );
 
-  // For non-admin users, show only the user dashboard and guest pages
-  if (!isAdmin) {
+  // For regular users (not managers or admins), show only the user dashboard and guest pages
+  if (!isAdmin && !isManager) {
     return (
       <Switch>
         <Route path="/" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
@@ -111,6 +112,32 @@ function MainRouter() {
         <Route path="/settings/two-factor" component={() => <ProtectedPageWrapper component={TwoFactorSettings} />} />
         {/* Redirect all other routes to user dashboard */}
         <Route component={() => <ProtectedPageWrapper component={UserDashboard} />} />
+      </Switch>
+    );
+  }
+
+  // For managers, show dashboard, users, devices, software, notifications, and user settings
+  if (isManager && !isAdmin) {
+    return (
+      <Switch>
+        <Route path="/" component={() => <ProtectedPageWrapper component={Dashboard} />} />
+        <Route path="/users" component={() => <ProtectedPageWrapper component={Users} />} />
+        <Route path="/users/:id" component={() => <ProtectedPageWrapper component={UserDetails} />} />
+        <Route path="/devices" component={() => <ProtectedPageWrapper component={Devices} />} />
+        <Route path="/devices/:id" component={() => <ProtectedPageWrapper component={DeviceDetails} />} />
+        <Route path="/software" component={() => <ProtectedPageWrapper component={Software} />} />
+        <Route path="/software/:id" component={() => <ProtectedPageWrapper component={SoftwareDetails} />} />
+        <Route path="/notifications" component={() => <ProtectedPageWrapper component={Notifications} />} />
+        <Route path="/user-settings" component={() => <ProtectedPageWrapper component={UserSettings} />} />
+        <Route path="/settings/two-factor" component={() => <ProtectedPageWrapper component={TwoFactorSettings} />} />
+        
+        {/* Manager user account pages - manager viewing their own account */}
+        <Route path="/user-dashboard" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
+        <Route path="/guest-devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
+        <Route path="/guest-software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
+        
+        {/* Redirect all other routes to manager dashboard */}
+        <Route component={() => <ProtectedPageWrapper component={Dashboard} />} />
       </Switch>
     );
   }

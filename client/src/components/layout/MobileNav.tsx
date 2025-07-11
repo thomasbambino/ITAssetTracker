@@ -243,17 +243,31 @@ export function MobileNav() {
     if (!currentUser) {
       return route.href === '/';
     }
+    // Managers (users with isManager: true) can see dashboard, users, devices, software, notifications, and their personal pages
+    if (currentUser.isManager) {
+      return ['/', '/users', '/devices', '/software', '/notifications', '/user-dashboard', '/guest-devices', '/guest-software', '/user-settings'].includes(route.href);
+    }
     // Regular users can see dashboard, devices, software, notifications, and user settings
     if (currentUser.role === 'user') {
       return ['/', '/devices', '/software', '/notifications', '/user-settings'].includes(route.href);
     }
-    // Managers can see dashboard, users, devices, software, notifications, and their personal pages
-    if (currentUser.role === 'manager') {
-      return ['/', '/users', '/devices', '/software', '/notifications', '/user-dashboard', '/guest-devices', '/guest-software', '/user-settings'].includes(route.href);
-    }
     // Admins can see all routes
     return true;
   }).map(route => {
+    // For manager users (isManager: true), use department-specific labels
+    if (currentUser?.isManager) {
+      const managerRouteLabels: Record<string, string> = {
+        '/': 'Dashboard',
+        '/users': 'Users',
+        '/devices': 'Devices',
+        '/software': 'Software & Portals',
+        '/notifications': 'Notifications'
+      };
+      return {
+        ...route,
+        label: managerRouteLabels[route.href] || route.label
+      };
+    }
     // Customize labels for regular users to add "My" prefix
     if (currentUser?.role === 'user') {
       const userRouteLabels: Record<string, string> = {
@@ -265,20 +279,6 @@ export function MobileNav() {
       return {
         ...route,
         label: userRouteLabels[route.href] || route.label
-      };
-    }
-    // For manager users, use department-specific labels
-    if (currentUser?.role === 'manager') {
-      const managerRouteLabels: Record<string, string> = {
-        '/': 'Dashboard',
-        '/users': 'Users',
-        '/devices': 'Devices',
-        '/software': 'Software & Portals',
-        '/notifications': 'Notifications'
-      };
-      return {
-        ...route,
-        label: managerRouteLabels[route.href] || route.label
       };
     }
     // For admin users, use original labels (without "My" prefix for main routes)
@@ -459,8 +459,8 @@ export function MobileNav() {
           {/* Main Group */}
           <div>
             <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {currentUser?.role === 'user' ? 'My Account' : 
-               currentUser?.role === 'manager' ? currentUser?.department || 'Department' : 
+              {currentUser?.isManager ? currentUser?.department || 'Department' :
+               currentUser?.role === 'user' ? 'My Account' : 
                'Main'}
             </h3>
             <div className="mt-1 space-y-1">
@@ -490,7 +490,7 @@ export function MobileNav() {
             </>
           )}
 
-          {(currentUser?.role === 'manager' || currentUser?.role === 'admin') && (
+          {(currentUser?.isManager || currentUser?.role === 'admin') && (
             <>
               <Separator className="mx-2" />
               
