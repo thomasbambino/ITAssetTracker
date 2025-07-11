@@ -3671,11 +3671,17 @@ export class DatabaseStorage implements IStorage {
           d.budget, 
           d.created_at as "createdAt",
           COUNT(CASE WHEN u.is_manager = true AND u.managed_department_ids IS NOT NULL 
-                AND JSON_EXTRACT_ARRAY(u.managed_department_ids) @> CAST(d.id AS TEXT) 
+                AND (u.managed_department_ids::text LIKE '%[' || d.id || ',%' 
+                     OR u.managed_department_ids::text LIKE '%,' || d.id || ',%'
+                     OR u.managed_department_ids::text LIKE '%,' || d.id || ']%'
+                     OR u.managed_department_ids::text = '[' || d.id || ']')
                 THEN 1 END) as "managerCount",
           STRING_AGG(
             CASE WHEN u.is_manager = true AND u.managed_department_ids IS NOT NULL 
-                 AND JSON_EXTRACT_ARRAY(u.managed_department_ids) @> CAST(d.id AS TEXT)
+                 AND (u.managed_department_ids::text LIKE '%[' || d.id || ',%' 
+                      OR u.managed_department_ids::text LIKE '%,' || d.id || ',%'
+                      OR u.managed_department_ids::text LIKE '%,' || d.id || ']%'
+                      OR u.managed_department_ids::text = '[' || d.id || ']')
                  THEN u.first_name || ' ' || u.last_name 
                  END, 
             ', '
@@ -3687,33 +3693,8 @@ export class DatabaseStorage implements IStorage {
       `);
       return departments || [];
     } catch (error) {
-      console.error('Error getting departments (trying fallback query):', error);
-      
-      // Fallback to simpler pattern matching if JSON functions don't work
-      const departments = await db.manyOrNone(`
-        SELECT 
-          d.id, 
-          d.name, 
-          d.description, 
-          d.manager, 
-          d.budget, 
-          d.created_at as "createdAt",
-          COUNT(CASE WHEN u.is_manager = true AND u.managed_department_ids IS NOT NULL 
-                AND u.managed_department_ids::text LIKE '%' || d.id || '%' 
-                THEN 1 END) as "managerCount",
-          STRING_AGG(
-            CASE WHEN u.is_manager = true AND u.managed_department_ids IS NOT NULL 
-                 AND u.managed_department_ids::text LIKE '%' || d.id || '%'
-                 THEN u.first_name || ' ' || u.last_name 
-                 END, 
-            ', '
-          ) as "assignedManagers"
-        FROM departments d
-        LEFT JOIN users u ON u.active = true
-        GROUP BY d.id, d.name, d.description, d.manager, d.budget, d.created_at
-        ORDER BY d.name ASC
-      `);
-      return departments || [];
+      console.error('Error getting departments:', error);
+      throw error;
     }
   }
   

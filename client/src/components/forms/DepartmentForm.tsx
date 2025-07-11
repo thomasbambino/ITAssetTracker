@@ -17,7 +17,6 @@ interface DepartmentFormProps {
     id: number;
     name: string;
     description?: string | null;
-    manager?: string | null;
     budget?: number | null;
   };
 }
@@ -25,7 +24,6 @@ interface DepartmentFormProps {
 const formSchema = z.object({
   name: z.string().min(1, "Department name is required").max(100),
   description: z.string().max(500).optional().nullable(),
-  manager: z.string().max(100).optional().nullable(),
   budget: z.coerce.number().min(0).optional().nullable(),
 });
 
@@ -40,7 +38,6 @@ export function DepartmentForm({ isOpen, onClose, departmentToEdit }: Department
     defaultValues: {
       name: departmentToEdit?.name || "",
       description: departmentToEdit?.description || "",
-      manager: departmentToEdit?.manager || "",
       budget: departmentToEdit?.budget || null,
     },
   });
@@ -120,23 +117,7 @@ export function DepartmentForm({ isOpen, onClose, departmentToEdit }: Department
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="manager"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Manager</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Department manager (optional)" 
-                      {...field} 
-                      value={field.value || ""} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <FormField
               control={form.control}
               name="budget"
