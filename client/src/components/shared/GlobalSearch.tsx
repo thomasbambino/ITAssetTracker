@@ -186,7 +186,7 @@ export function GlobalSearch() {
   }, [searchQuery]);
 
   // Convert AI search results to SearchResult format
-  const aiSearchResults: SearchResult[] = smartSearchResults?.results.map((result: any) => ({
+  const aiSearchResults: SearchResult[] = smartSearchResults?.results?.map((result: any) => ({
     id: result.id,
     type: result.type || 'device',
     title: result.title || `${result.brand} ${result.model}` || result.name || `${result.firstName} ${result.lastName}`,
