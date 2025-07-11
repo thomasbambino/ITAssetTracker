@@ -2,6 +2,10 @@
 import fetch from 'node-fetch';
 import { storage } from './storage';
 
+// Email logo - base64 encoded PNG (full version with star logo)
+import fs from 'fs';
+const EMAIL_LOGO_BASE64 = fs.readFileSync('/tmp/new_logo_base64.txt', 'utf8');
+
 interface EmailSettings {
   id?: number;
   apiKey: string | null;
@@ -245,10 +249,8 @@ export class DirectMailgunService {
       // Try to get company name from branding settings and use specific email logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      // Use the new logo specifically for emails
-      const fs = require('fs');
-      const logoBase64 = fs.readFileSync('/tmp/new_logo_base64.txt', 'utf8');
-      const logoSrc = 'data:image/png;base64,' + logoBase64;
+      // Use the embedded logo for emails
+      const logoSrc = 'data:image/png;base64,' + EMAIL_LOGO_BASE64;
       
       const subject = `${companyName} - Your Temporary Password`;
       const text = `Hello ${userName}, A password reset has been requested for your account. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
@@ -354,10 +356,8 @@ export class DirectMailgunService {
       // Try to get company name from branding settings and use specific email logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      // Use the new logo specifically for emails
-      const fs = require('fs');
-      const logoBase64 = fs.readFileSync('/tmp/new_logo_base64.txt', 'utf8');
-      const logoSrc = 'data:image/png;base64,' + logoBase64;
+      // Use the embedded logo for emails
+      const logoSrc = 'data:image/png;base64,' + EMAIL_LOGO_BASE64;
       
       const subject = `Welcome to ${companyName} - Your Account is Ready`;
       const text = `Hello ${userName}, Welcome to ${companyName}! Your account has been created and is ready to use. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
