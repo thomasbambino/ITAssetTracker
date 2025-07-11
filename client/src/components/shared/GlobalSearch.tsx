@@ -328,7 +328,7 @@ export function GlobalSearch() {
           <CommandInput 
             placeholder="Search or ask AI..." 
             value={searchQuery}
-            className="flex h-11 flex-1 rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 pl-3 pr-2"
+            className="flex h-11 flex-1 rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 pl-3 pr-16"
             onValueChange={setSearchQuery}
           />
           <div className="flex items-center gap-2 ml-2 shrink-0">
