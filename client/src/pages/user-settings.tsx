@@ -258,7 +258,11 @@ export default function UserSettings() {
                 <Label htmlFor="user-role">Role</Label>
                 <Input 
                   id="user-role" 
-                  value={user?.role ? (user.role === 'admin' ? 'Administrator' : 'User') : 'Loading...'} 
+                  value={user?.role ? (
+                    user.role === 'admin' ? 'Administrator' :
+                    user.isManager ? 'Manager' :
+                    'User'
+                  ) : 'Loading...'} 
                   disabled 
                   className="bg-muted"
                 />

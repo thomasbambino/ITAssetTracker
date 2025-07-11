@@ -563,7 +563,7 @@ export function MobileNav() {
                 <p className="text-xs font-medium text-muted-foreground mt-0.5">
                   {currentUser ? (
                     currentUser.role === 'admin' ? 'Administrator' :
-                    currentUser.role === 'manager' ? 'Manager' :
+                    currentUser.isManager ? 'Manager' :
                     'User'
                   ) : ''}
                 </p>

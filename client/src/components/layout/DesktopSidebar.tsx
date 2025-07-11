@@ -455,7 +455,11 @@ export function DesktopSidebar() {
               {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Loading...'}
             </p>
             <p className="text-xs font-medium text-muted-foreground mt-0.5">
-              {currentUser ? (currentUser.role === 'admin' ? 'Administrator' : 'User') : ''}
+              {currentUser ? (
+                currentUser.role === 'admin' ? 'Administrator' :
+                currentUser.isManager ? 'Manager' :
+                'User'
+              ) : ''}
             </p>
           </div>
           <div className="ml-auto">
