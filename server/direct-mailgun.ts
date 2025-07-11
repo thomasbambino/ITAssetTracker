@@ -257,69 +257,78 @@ export class DirectMailgunService {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Password Reset - ${companyName}</title>
         </head>
-        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1f2937;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f1f5f9 0%, #dbeafe 50%, #e0e7ff 100%); min-height: 100vh; padding: 20px;">
+          <div style="max-width: 480px; margin: 0 auto; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
+            
             <!-- Header -->
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                🔐 Password Reset
-              </h1>
-              <p style="margin: 8px 0 0 0; color: #e2e8f0; font-size: 16px; opacity: 0.9;">
-                ${companyName} IT Asset Management
-              </p>
+            <div style="padding: 48px 32px 32px 32px; text-align: center;">
+              <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px;">
+                  <div style="width: 24px; height: 24px; background-color: white; border-radius: 2px; position: relative;">
+                    <div style="position: absolute; top: 6px; left: 6px; width: 12px; height: 8px; background-color: #1E40AF; border-radius: 1px;"></div>
+                    <div style="position: absolute; top: 16px; left: 6px; width: 8px; height: 1px; background-color: #1E40AF;"></div>
+                    <div style="position: absolute; top: 18px; left: 6px; width: 12px; height: 1px; background-color: #1E40AF;"></div>
+                  </div>
+                </div>
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
+              </div>
+              <div style="text-align: center;">
+                <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: #1f2937;">Password Reset</h2>
+                <p style="margin: 0; font-size: 16px; color: #6b7280;">Your temporary password is ready to use</p>
+              </div>
             </div>
             
             <!-- Content -->
-            <div style="padding: 40px 30px;">
-              <div style="margin-bottom: 30px;">
-                <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 24px; font-weight: 600;">
+            <div style="padding: 0 32px 32px 32px;">
+              <div style="margin-bottom: 24px;">
+                <h3 style="margin: 0 0 16px 0; color: #1f2937; font-size: 20px; font-weight: 600;">
                   Hello ${userName},
-                </h2>
-                <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
-                  A password reset has been requested for your account. Your temporary password is ready to use.
+                </h3>
+                <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                  A password reset has been requested for your account. Use the temporary password below to sign in.
                 </p>
               </div>
               
               <!-- Password Box -->
-              <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; position: relative;">
                 <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
-                  Your Temporary Password
+                  Temporary Password
                 </p>
-                <div style="background-color: #ffffff; border: 1px solid #d1d5db; border-radius: 8px; padding: 16px; margin: 12px 0;">
-                  <code style="font-family: 'Courier New', monospace; font-size: 20px; font-weight: 700; color: #1f2937; letter-spacing: 1px;">
+                <div style="background-color: #ffffff; border: 2px solid #d1d5db; border-radius: 8px; padding: 16px; margin: 12px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                  <code style="font-family: 'Courier New', monospace; font-size: 18px; font-weight: 700; color: #1f2937; letter-spacing: 1px;">
                     ${tempPassword}
                   </code>
                 </div>
                 <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 13px; line-height: 1.4;">
-                  Copy this password and use it to log in to your account
+                  Copy this password to sign in to your account
                 </p>
               </div>
               
-              <!-- Instructions -->
-              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0;">
-                <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 16px; font-weight: 600; display: flex; align-items: center;">
-                  ⚠️ Important Security Notice
-                </h3>
-                <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">
-                  You will be required to change this password the first time you log in. Please choose a strong, unique password for your account security.
+              <!-- Security Notice -->
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+                <h4 style="margin: 0 0 8px 0; color: #92400e; font-size: 14px; font-weight: 600;">
+                  🔒 Security Notice
+                </h4>
+                <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;">
+                  You'll be required to change this password when you first sign in. Choose a strong, unique password for your security.
                 </p>
               </div>
               
               <!-- Action Button -->
               <div style="text-align: center; margin: 32px 0;">
-                <a href="#" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
-                  Access Your Account
+                <a href="#" style="display: inline-block; background: linear-gradient(to right, #1E40AF 0%, rgba(30, 64, 175, 0.9) 100%); color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
+                  Sign In Now
                 </a>
               </div>
             </div>
             
             <!-- Footer -->
-            <div style="background-color: #f8fafc; padding: 24px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <div style="background-color: #f8fafc; padding: 24px 32px; border-top: 1px solid #e5e7eb; text-align: center;">
               <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
-                This email was sent from the ${companyName} IT Asset Management System
+                This email was sent from ${companyName} IT Asset Management
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                If you didn't request this password reset, please contact your IT administrator immediately.
+                If you didn't request this reset, contact your IT administrator immediately.
               </p>
             </div>
           </div>
@@ -357,85 +366,94 @@ export class DirectMailgunService {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Welcome to ${companyName}</title>
         </head>
-        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1f2937;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f1f5f9 0%, #dbeafe 50%, #e0e7ff 100%); min-height: 100vh; padding: 20px;">
+          <div style="max-width: 480px; margin: 0 auto; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
+            
             <!-- Header -->
-            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                🎉 Welcome to ${companyName}!
-              </h1>
-              <p style="margin: 8px 0 0 0; color: #d1fae5; font-size: 16px; opacity: 0.9;">
-                Your IT Asset Management Account
-              </p>
+            <div style="padding: 48px 32px 32px 32px; text-align: center;">
+              <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px;">
+                  <div style="width: 24px; height: 24px; background-color: white; border-radius: 2px; position: relative;">
+                    <div style="position: absolute; top: 6px; left: 6px; width: 12px; height: 8px; background-color: #1E40AF; border-radius: 1px;"></div>
+                    <div style="position: absolute; top: 16px; left: 6px; width: 8px; height: 1px; background-color: #1E40AF;"></div>
+                    <div style="position: absolute; top: 18px; left: 6px; width: 12px; height: 1px; background-color: #1E40AF;"></div>
+                  </div>
+                </div>
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
+              </div>
+              <div style="text-align: center;">
+                <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: #1f2937;">Welcome!</h2>
+                <p style="margin: 0; font-size: 16px; color: #6b7280;">Your account is ready to use</p>
+              </div>
             </div>
             
             <!-- Content -->
-            <div style="padding: 40px 30px;">
-              <div style="margin-bottom: 30px;">
-                <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 24px; font-weight: 600;">
+            <div style="padding: 0 32px 32px 32px;">
+              <div style="margin-bottom: 24px;">
+                <h3 style="margin: 0 0 16px 0; color: #1f2937; font-size: 20px; font-weight: 600;">
                   Hello ${userName},
-                </h2>
-                <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
-                  Welcome to ${companyName}! Your account has been created and is ready to use. You can now access your devices, software, and other IT resources through our management system.
+                </h3>
+                <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                  Welcome to ${companyName}! Your account has been created and is ready to use. You can now access your devices, software, and other IT resources.
                 </p>
               </div>
               
               <!-- Password Box -->
-              <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; position: relative;">
                 <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
-                  Your Temporary Password
+                  Temporary Password
                 </p>
-                <div style="background-color: #ffffff; border: 1px solid #d1d5db; border-radius: 8px; padding: 16px; margin: 12px 0;">
-                  <code style="font-family: 'Courier New', monospace; font-size: 20px; font-weight: 700; color: #1f2937; letter-spacing: 1px;">
+                <div style="background-color: #ffffff; border: 2px solid #d1d5db; border-radius: 8px; padding: 16px; margin: 12px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                  <code style="font-family: 'Courier New', monospace; font-size: 18px; font-weight: 700; color: #1f2937; letter-spacing: 1px;">
                     ${tempPassword}
                   </code>
                 </div>
                 <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 13px; line-height: 1.4;">
-                  Use this password to log in for the first time
+                  Use this password to sign in for the first time
                 </p>
               </div>
               
               <!-- Getting Started -->
-              <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0;">
-                <h3 style="margin: 0 0 12px 0; color: #0c4a6e; font-size: 16px; font-weight: 600; display: flex; align-items: center;">
+              <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+                <h4 style="margin: 0 0 8px 0; color: #0c4a6e; font-size: 14px; font-weight: 600;">
                   🚀 Getting Started
-                </h3>
-                <p style="margin: 0 0 12px 0; color: #0c4a6e; font-size: 14px; line-height: 1.5;">
-                  Once you log in, you'll be able to:
+                </h4>
+                <p style="margin: 0 0 8px 0; color: #0c4a6e; font-size: 13px; line-height: 1.5;">
+                  Once you sign in, you'll be able to:
                 </p>
-                <ul style="margin: 0; padding-left: 20px; color: #0c4a6e; font-size: 14px; line-height: 1.5;">
-                  <li>View your assigned devices and their specifications</li>
+                <ul style="margin: 0; padding-left: 16px; color: #0c4a6e; font-size: 13px; line-height: 1.4;">
+                  <li>View your assigned devices and specifications</li>
                   <li>Access your software licenses and applications</li>
                   <li>Report technical issues or problems</li>
-                  <li>Update your account settings and security preferences</li>
+                  <li>Update your account settings and security</li>
                 </ul>
               </div>
               
               <!-- Security Notice -->
-              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0;">
-                <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 16px; font-weight: 600; display: flex; align-items: center;">
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+                <h4 style="margin: 0 0 8px 0; color: #92400e; font-size: 14px; font-weight: 600;">
                   🔒 Security First
-                </h3>
-                <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">
-                  You'll be required to change this password the first time you log in. Please choose a strong, unique password and consider enabling two-factor authentication for extra security.
+                </h4>
+                <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;">
+                  You'll need to change this password when you first sign in. Consider enabling two-factor authentication for extra security.
                 </p>
               </div>
               
               <!-- Action Button -->
               <div style="text-align: center; margin: 32px 0;">
-                <a href="#" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
+                <a href="#" style="display: inline-block; background: linear-gradient(to right, #1E40AF 0%, rgba(30, 64, 175, 0.9) 100%); color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
                   Get Started Now
                 </a>
               </div>
             </div>
             
             <!-- Footer -->
-            <div style="background-color: #f8fafc; padding: 24px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <div style="background-color: #f8fafc; padding: 24px 32px; border-top: 1px solid #e5e7eb; text-align: center;">
               <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
-                This email was sent from the ${companyName} IT Asset Management System
+                This email was sent from ${companyName} IT Asset Management
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                If you have any questions or need help getting started, please contact your IT administrator.
+                If you have questions or need help getting started, contact your IT administrator.
               </p>
             </div>
           </div>
