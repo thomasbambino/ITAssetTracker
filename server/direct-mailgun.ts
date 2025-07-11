@@ -249,12 +249,15 @@ export class DirectMailgunService {
       // Try to get company name from branding settings and use specific email logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      // Use HTML/CSS logo for better email client compatibility
+      // Use simple HTML logo for maximum email client compatibility
       const logoHtml = `
-        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-          <div style="color: white; font-size: 24px; font-weight: bold; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">★</div>
-          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 16px; font-weight: 900; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); z-index: 1;">S</div>
-        </div>
+        <table cellpadding="0" cellspacing="0" style="width: 48px; height: 48px; background-color: #dc2626; border-radius: 8px;">
+          <tr>
+            <td style="text-align: center; vertical-align: middle; font-size: 28px; color: white; font-weight: bold; font-family: Arial, sans-serif;">
+              S
+            </td>
+          </tr>
+        </table>
       `;
       
       const subject = `${companyName} - Your Temporary Password`;
@@ -273,12 +276,16 @@ export class DirectMailgunService {
             
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
-              <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                <div style="margin-right: 12px;">
-                  ${logoHtml}
-                </div>
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
-              </div>
+              <table cellpadding="0" cellspacing="0" style="margin: 0 auto 24px auto;">
+                <tr>
+                  <td style="padding-right: 12px; vertical-align: middle;">
+                    ${logoHtml}
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937; font-family: Arial, sans-serif;">${companyName}</h1>
+                  </td>
+                </tr>
+              </table>
               <div style="text-align: center;">
                 <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: #1f2937;">Password Reset</h2>
                 <p style="margin: 0; font-size: 16px; color: #6b7280;">Your temporary password is ready to use</p>
@@ -361,12 +368,15 @@ export class DirectMailgunService {
       // Try to get company name from branding settings and use specific email logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      // Use HTML/CSS logo for better email client compatibility
+      // Use simple HTML logo for maximum email client compatibility
       const logoHtml = `
-        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-          <div style="color: white; font-size: 24px; font-weight: bold; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">★</div>
-          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 16px; font-weight: 900; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); z-index: 1;">S</div>
-        </div>
+        <table cellpadding="0" cellspacing="0" style="width: 48px; height: 48px; background-color: #10b981; border-radius: 8px;">
+          <tr>
+            <td style="text-align: center; vertical-align: middle; font-size: 28px; color: white; font-weight: bold; font-family: Arial, sans-serif;">
+              S
+            </td>
+          </tr>
+        </table>
       `;
       
       const subject = `Welcome to ${companyName} - Your Account is Ready`;
@@ -385,12 +395,16 @@ export class DirectMailgunService {
             
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
-              <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                <div style="margin-right: 12px;">
-                  ${logoHtml}
-                </div>
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
-              </div>
+              <table cellpadding="0" cellspacing="0" style="margin: 0 auto 24px auto;">
+                <tr>
+                  <td style="padding-right: 12px; vertical-align: middle;">
+                    ${logoHtml}
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937; font-family: Arial, sans-serif;">${companyName}</h1>
+                  </td>
+                </tr>
+              </table>
               <div style="text-align: center;">
                 <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: #1f2937;">Welcome!</h2>
                 <p style="margin: 0; font-size: 16px; color: #6b7280;">Your account is ready to use</p>
