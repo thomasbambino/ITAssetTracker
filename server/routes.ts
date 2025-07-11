@@ -504,9 +504,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
-      // Update manager's departments
+      // Update manager's departments - store as JSON string
+      const departmentIds = Array.isArray(managedDepartmentIds) 
+        ? JSON.stringify(managedDepartmentIds)
+        : managedDepartmentIds;
+      
       const updatedUser = await storage.updateUser(userId, {
-        managedDepartmentIds: managedDepartmentIds || null
+        managedDepartmentIds: departmentIds
       }, loggedInUserId);
       
       if (!updatedUser) {

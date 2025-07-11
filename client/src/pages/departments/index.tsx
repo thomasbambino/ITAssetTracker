@@ -34,6 +34,8 @@ type Department = {
   manager: string | null;
   budget: number | null;
   createdAt: string;
+  managerCount?: number;
+  assignedManagers?: string | null;
 };
 
 export default function Departments() {
@@ -148,7 +150,7 @@ export default function Departments() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Manager</TableHead>
+                    <TableHead>Assigned Managers</TableHead>
                     <TableHead>Budget</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead className="w-[120px]">Actions</TableHead>
@@ -158,7 +160,20 @@ export default function Departments() {
                   {departments.map((department) => (
                     <TableRow key={department.id}>
                       <TableCell className="font-medium">{department.name}</TableCell>
-                      <TableCell>{department.manager || "—"}</TableCell>
+                      <TableCell>
+                        {department.assignedManagers ? (
+                          <div className="flex flex-col space-y-1">
+                            {department.assignedManagers.split(', ').map((manager, index) => (
+                              <div key={index} className="flex items-center space-x-2">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span className="text-sm font-medium">{manager}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">No managers assigned</span>
+                        )}
+                      </TableCell>
                       <TableCell>{formatCurrency(department.budget)}</TableCell>
                       <TableCell className="max-w-[400px] truncate">
                         {department.description || "—"}
