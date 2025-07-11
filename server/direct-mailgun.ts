@@ -242,10 +242,9 @@ export class DirectMailgunService {
   // Send password reset email with beautiful HTML formatting
   public async sendPasswordResetEmail(to: string, tempPassword: string, userName: string): Promise<{ success: boolean; message: string }> {
     try {
-      // Try to get company name and logo from branding settings
+      // Try to get company name from branding settings
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      const logoSrc = branding?.logo || null;
       
       const subject = `${companyName} - Your Temporary Password`;
       const text = `Hello ${userName}, A password reset has been requested for your account. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
@@ -264,19 +263,13 @@ export class DirectMailgunService {
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
               <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                ${logoSrc ? `
-                  <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                    <img src="${logoSrc}" alt="Company logo" style="height: 48px; width: 48px; object-fit: contain;" />
+                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px;">
+                  <div style="width: 24px; height: 24px; background-color: white; border-radius: 2px; position: relative;">
+                    <div style="position: absolute; top: 6px; left: 6px; width: 12px; height: 8px; background-color: #1E40AF; border-radius: 1px;"></div>
+                    <div style="position: absolute; top: 16px; left: 6px; width: 8px; height: 1px; background-color: #1E40AF;"></div>
+                    <div style="position: absolute; top: 18px; left: 6px; width: 12px; height: 1px; background-color: #1E40AF;"></div>
                   </div>
-                ` : `
-                  <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px;">
-                    <div style="width: 24px; height: 24px; background-color: white; border-radius: 2px; position: relative;">
-                      <div style="position: absolute; top: 6px; left: 6px; width: 12px; height: 8px; background-color: #1E40AF; border-radius: 1px;"></div>
-                      <div style="position: absolute; top: 16px; left: 6px; width: 8px; height: 1px; background-color: #1E40AF;"></div>
-                      <div style="position: absolute; top: 18px; left: 6px; width: 12px; height: 1px; background-color: #1E40AF;"></div>
-                    </div>
-                  </div>
-                `}
+                </div>
                 <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
               </div>
               <div style="text-align: center;">
@@ -358,10 +351,9 @@ export class DirectMailgunService {
   // Send welcome email for new user creation with beautiful HTML formatting
   public async sendWelcomeEmail(to: string, tempPassword: string, userName: string): Promise<{ success: boolean; message: string }> {
     try {
-      // Try to get company name and logo from branding settings
+      // Try to get company name from branding settings
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
-      const logoSrc = branding?.logo || null;
       
       const subject = `Welcome to ${companyName} - Your Account is Ready`;
       const text = `Hello ${userName}, Welcome to ${companyName}! Your account has been created and is ready to use. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
@@ -380,19 +372,13 @@ export class DirectMailgunService {
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
               <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                ${logoSrc ? `
-                  <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                    <img src="${logoSrc}" alt="Company logo" style="height: 48px; width: 48px; object-fit: contain;" />
+                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px;">
+                  <div style="width: 24px; height: 24px; background-color: white; border-radius: 2px; position: relative;">
+                    <div style="position: absolute; top: 6px; left: 6px; width: 12px; height: 8px; background-color: #1E40AF; border-radius: 1px;"></div>
+                    <div style="position: absolute; top: 16px; left: 6px; width: 8px; height: 1px; background-color: #1E40AF;"></div>
+                    <div style="position: absolute; top: 18px; left: 6px; width: 12px; height: 1px; background-color: #1E40AF;"></div>
                   </div>
-                ` : `
-                  <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px;">
-                    <div style="width: 24px; height: 24px; background-color: white; border-radius: 2px; position: relative;">
-                      <div style="position: absolute; top: 6px; left: 6px; width: 12px; height: 8px; background-color: #1E40AF; border-radius: 1px;"></div>
-                      <div style="position: absolute; top: 16px; left: 6px; width: 8px; height: 1px; background-color: #1E40AF;"></div>
-                      <div style="position: absolute; top: 18px; left: 6px; width: 12px; height: 1px; background-color: #1E40AF;"></div>
-                    </div>
-                  </div>
-                `}
+                </div>
                 <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
               </div>
               <div style="text-align: center;">
