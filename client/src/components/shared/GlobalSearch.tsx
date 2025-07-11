@@ -91,6 +91,8 @@ export function GlobalSearch() {
     onSuccess: (data) => {
       console.log('Smart search success:', data);
       console.log('Setting smart search results:', data);
+      console.log('Results array:', data.results);
+      console.log('Results length:', data.results?.length);
       setSmartSearchResults(data);
     },
     onError: (error) => {
@@ -198,19 +200,21 @@ export function GlobalSearch() {
   }, [searchQuery]);
 
   // Convert AI search results to SearchResult format
-  const aiSearchResults: SearchResult[] = smartSearchResults?.results?.map((result: any) => ({
-    id: result.id,
-    type: result.type || 'device',
-    title: result.title || `${result.brand} ${result.model}` || result.name || `${result.firstName} ${result.lastName}`,
-    subtitle: result.subtitle || result.assetTag || result.department || '',
-    icon: result.type === 'user' ? <UserIcon className="h-4 w-4" /> : <LaptopIcon className="h-4 w-4" />,
-    url: result.type === 'user' ? `/users/${result.id}` : `/devices/${result.id}`
-  })) || [];
-
-  // Debug logging
-  console.log('AI search results:', aiSearchResults);
-  console.log('Is AI mode:', isAiMode);
-  console.log('Smart search results:', smartSearchResults);
+  const aiSearchResults: SearchResult[] = smartSearchResults?.results?.map((result: any) => {
+    const title = result.title || (result.brand && result.model ? `${result.brand} ${result.model}` : result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim());
+    const subtitle = result.subtitle || result.assetTag || result.department || result.categoryName || '';
+    
+    console.log('Converting AI result:', result, 'to title:', title, 'subtitle:', subtitle);
+    
+    return {
+      id: result.id,
+      type: result.type || 'device',
+      title,
+      subtitle,
+      icon: result.type === 'user' ? <UserIcon className="h-4 w-4" /> : <LaptopIcon className="h-4 w-4" />,
+      url: result.type === 'user' ? `/users/${result.id}` : `/devices/${result.id}`
+    };
+  }) || [];
 
   // Use AI results when available, otherwise use regular search
   const displayResults = isAiMode ? aiSearchResults : filteredResults;
@@ -221,19 +225,22 @@ export function GlobalSearch() {
   const categoryResults = filteredResults.filter(r => r.type === 'category');
 
   // Group AI results by type
-  const aiUserResults = displayResults.filter(r => r.type === 'user');
-  const aiDeviceResults = displayResults.filter(r => r.type === 'device');
-  const aiCategoryResults = displayResults.filter(r => r.type === 'category');
+  const aiUserResults = aiSearchResults.filter(r => r.type === 'user');
+  const aiDeviceResults = aiSearchResults.filter(r => r.type === 'device');
+  const aiCategoryResults = aiSearchResults.filter(r => r.type === 'category');
 
   const finalUserResults = isAiMode ? aiUserResults : userResults;
   const finalDeviceResults = isAiMode ? aiDeviceResults : deviceResults;
   const finalCategoryResults = isAiMode ? aiCategoryResults : categoryResults;
 
-  // Debug logging for final results
-  console.log('Final user results:', finalUserResults.length);
-  console.log('Final device results:', finalDeviceResults.length);
-  console.log('Final category results:', finalCategoryResults.length);
-  console.log('Final device results data:', finalDeviceResults);
+  // Debug logging
+  if (isAiMode && smartSearchResults) {
+    console.log('AI Mode Debug:');
+    console.log('- smartSearchResults:', smartSearchResults);
+    console.log('- aiSearchResults:', aiSearchResults);
+    console.log('- finalDeviceResults:', finalDeviceResults);
+    console.log('- finalDeviceResults length:', finalDeviceResults.length);
+  }
 
   // Handle keyboard shortcut to open search
   useEffect(() => {
@@ -370,7 +377,7 @@ export function GlobalSearch() {
           {finalDeviceResults.length > 0 && (
             <>
               {finalUserResults.length > 0 && <CommandSeparator />}
-              <CommandGroup heading="Devices">
+              <CommandGroup heading={isAiMode ? `Devices (${finalDeviceResults.length})` : "Devices"}>
                 {finalDeviceResults.map(result => (
                   <CommandItem
                     key={`device-${result.id}`}
