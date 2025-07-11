@@ -245,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionData = req.session as any;
       const userId = sessionData.userId;
-      const currentUser = await storage.getUser(userId);
+      const currentUser = await storage.getUserById(userId);
       
       if (!currentUser) {
         return res.status(401).json({ message: "User not found" });
@@ -302,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionData = req.session as any;
       const userId = sessionData.userId;
-      const currentUser = await storage.getUser(userId);
+      const currentUser = await storage.getUserById(userId);
       
       if (!currentUser) {
         return res.status(401).json({ message: "User not found" });
@@ -396,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionData = req.session as any;
       const userId = sessionData.userId;
-      const currentUser = await storage.getUser(userId);
+      const currentUser = await storage.getUserById(userId);
       
       if (!currentUser) {
         return res.status(401).json({ message: "User not found" });
@@ -616,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionData = req.session as any;
       const userId = sessionData.userId;
-      const currentUser = await storage.getUser(userId);
+      const currentUser = await storage.getUserById(userId);
       
       if (!currentUser) {
         return res.status(401).json({ message: "User not found" });
@@ -804,7 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionData = req.session as any;
       const userId = sessionData.userId;
-      const currentUser = await storage.getUser(userId);
+      const currentUser = await storage.getUserById(userId);
       
       if (!currentUser) {
         return res.status(401).json({ message: "User not found" });
@@ -1889,7 +1889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionData = req.session as any;
       const userId = sessionData.userId;
-      const currentUser = await storage.getUser(userId);
+      const currentUser = await storage.getUserById(userId);
       
       if (!currentUser) {
         return res.status(401).json({ message: "User not found" });
@@ -2916,7 +2916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionData = req.session as any;
       const { status, userId } = req.query;
-      const currentUser = await storage.getUser(sessionData.userId);
+      const currentUser = await storage.getUserById(sessionData.userId);
       
       if (!currentUser) {
         return res.status(401).json({ message: "User not found" });
