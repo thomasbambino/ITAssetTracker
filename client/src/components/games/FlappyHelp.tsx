@@ -210,37 +210,49 @@ export default function FlappyHelp() {
   const drawMountainBackground = (ctx: CanvasRenderingContext2D) => {
     // Draw multiple layers of mountains for depth
     const mountainLayers = [
-      { color: '#2d4a3e', height: 0.6, offset: backgroundOffset * 0.3 },
-      { color: '#1a3d2e', height: 0.7, offset: backgroundOffset * 0.5 },
-      { color: '#0f261c', height: 0.8, offset: backgroundOffset * 0.7 }
+      { color: '#2d4a3e', height: 0.6, speed: 0.3 },
+      { color: '#1a3d2e', height: 0.7, speed: 0.5 },
+      { color: '#0f261c', height: 0.8, speed: 0.7 }
     ];
 
     mountainLayers.forEach(layer => {
       ctx.fillStyle = layer.color;
-      ctx.beginPath();
       
-      // Draw repeating mountain pattern
-      for (let i = -1; i <= 2; i++) {
-        const baseX = i * CANVAS_WIDTH - layer.offset;
+      // Calculate seamless offset for this layer
+      const layerOffset = (backgroundOffset * layer.speed) % CANVAS_WIDTH;
+      
+      // Draw two identical mountain patterns side by side for seamless scrolling
+      for (let repeat = 0; repeat < 2; repeat++) {
+        const baseX = repeat * CANVAS_WIDTH - layerOffset;
         const baseY = CANVAS_HEIGHT * layer.height;
         
-        // Mountain peaks
+        ctx.beginPath();
         ctx.moveTo(baseX, CANVAS_HEIGHT);
-        ctx.lineTo(baseX + CANVAS_WIDTH * 0.1, baseY);
-        ctx.lineTo(baseX + CANVAS_WIDTH * 0.2, baseY + 20);
-        ctx.lineTo(baseX + CANVAS_WIDTH * 0.3, baseY - 10);
-        ctx.lineTo(baseX + CANVAS_WIDTH * 0.4, baseY + 15);
-        ctx.lineTo(baseX + CANVAS_WIDTH * 0.5, baseY - 5);
-        ctx.lineTo(baseX + CANVAS_WIDTH * 0.6, baseY + 10);
-        ctx.lineTo(baseX + CANVAS_WIDTH * 0.7, baseY - 15);
-        ctx.lineTo(baseX + CANVAS_WIDTH * 0.8, baseY + 5);
-        ctx.lineTo(baseX + CANVAS_WIDTH * 0.9, baseY - 8);
-        ctx.lineTo(baseX + CANVAS_WIDTH, baseY + 12);
+        
+        // Create consistent mountain silhouette that tiles perfectly
+        const peaks = [
+          { x: 0, y: 0 },
+          { x: 0.1, y: -30 },
+          { x: 0.2, y: -15 },
+          { x: 0.3, y: -35 },
+          { x: 0.4, y: -10 },
+          { x: 0.5, y: -40 },
+          { x: 0.6, y: -20 },
+          { x: 0.7, y: -25 },
+          { x: 0.8, y: -45 },
+          { x: 0.9, y: -15 },
+          { x: 1.0, y: 0 }
+        ];
+        
+        peaks.forEach(peak => {
+          ctx.lineTo(baseX + CANVAS_WIDTH * peak.x, baseY + peak.y);
+        });
+        
         ctx.lineTo(baseX + CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.lineTo(baseX, CANVAS_HEIGHT);
+        ctx.closePath();
+        ctx.fill();
       }
-      
-      ctx.closePath();
-      ctx.fill();
     });
   };
 
