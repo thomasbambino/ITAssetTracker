@@ -1,4 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -236,6 +237,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register 2FA routes
   app.use('/api/2fa', twoFactorRoutes);
+  
+  // Serve email logo as static file
+  app.use('/email-assets', express.static(path.join(__dirname, 'public')));
   
   // Initialize API routes
   const apiRouter = app.route('/api');
