@@ -263,12 +263,15 @@ export class DirectMailgunService {
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
               <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px;">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke="white" stroke-width="2" fill="none"/>
-                    <line x1="8" y1="21" x2="16" y2="21" stroke="white" stroke-width="2"/>
-                    <line x1="12" y1="17" x2="12" y2="21" stroke="white" stroke-width="2"/>
-                  </svg>
+                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                  <div style="position: relative; width: 24px; height: 24px;">
+                    <!-- Server/Monitor Icon -->
+                    <div style="position: absolute; top: 2px; left: 2px; width: 20px; height: 14px; border: 2px solid white; border-radius: 2px; background: transparent;"></div>
+                    <!-- Base/Stand -->
+                    <div style="position: absolute; bottom: 0; left: 8px; width: 8px; height: 2px; background: white;"></div>
+                    <!-- Stand pole -->
+                    <div style="position: absolute; bottom: 2px; left: 11px; width: 2px; height: 4px; background: white;"></div>
+                  </div>
                 </div>
                 <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
               </div>
@@ -372,12 +375,15 @@ export class DirectMailgunService {
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
               <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px;">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke="white" stroke-width="2" fill="none"/>
-                    <line x1="8" y1="21" x2="16" y2="21" stroke="white" stroke-width="2"/>
-                    <line x1="12" y1="17" x2="12" y2="21" stroke="white" stroke-width="2"/>
-                  </svg>
+                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                  <div style="position: relative; width: 24px; height: 24px;">
+                    <!-- Server/Monitor Icon -->
+                    <div style="position: absolute; top: 2px; left: 2px; width: 20px; height: 14px; border: 2px solid white; border-radius: 2px; background: transparent;"></div>
+                    <!-- Base/Stand -->
+                    <div style="position: absolute; bottom: 0; left: 8px; width: 8px; height: 2px; background: white;"></div>
+                    <!-- Stand pole -->
+                    <div style="position: absolute; bottom: 2px; left: 11px; width: 2px; height: 4px; background: white;"></div>
+                  </div>
                 </div>
                 <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
               </div>
