@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 const formSchema = z.object({
   apiKey: z.string().min(1, "API Key is required"),
@@ -35,9 +36,12 @@ interface EmailSettingsFormProps {
 
 export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [testEmail, setTestEmail] = useState("");
+  const [isTestingPasswordReset, setIsTestingPasswordReset] = useState(false);
+  const [isTestingWelcome, setIsTestingWelcome] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -134,6 +138,90 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
       });
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handleTestPasswordReset = async () => {
+    const values = form.getValues();
+    setIsTestingPasswordReset(true);
+    
+    try {
+      // First save the current settings
+      await apiRequest({
+        url: `/api/settings/email`,
+        method: "PUT",
+        data: values,
+      });
+
+      // Then send a test password reset email
+      const result = await apiRequest({
+        url: `/api/settings/email/test-password-reset`,
+        method: "POST",
+        data: {},
+      });
+      
+      if (result.success) {
+        toast({
+          title: "Test password reset email sent",
+          description: `A test password reset email has been sent to ${user?.email}. Check your inbox and spam folder.`,
+        });
+      } else {
+        toast({
+          title: "Test failed",
+          description: result.message || "Failed to send test password reset email. Please check your settings.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send test password reset email. Please check your settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingPasswordReset(false);
+    }
+  };
+
+  const handleTestWelcome = async () => {
+    const values = form.getValues();
+    setIsTestingWelcome(true);
+    
+    try {
+      // First save the current settings
+      await apiRequest({
+        url: `/api/settings/email`,
+        method: "PUT",
+        data: values,
+      });
+
+      // Then send a test welcome email
+      const result = await apiRequest({
+        url: `/api/settings/email/test-welcome`,
+        method: "POST",
+        data: {},
+      });
+      
+      if (result.success) {
+        toast({
+          title: "Test welcome email sent",
+          description: `A test welcome email has been sent to ${user?.email}. Check your inbox and spam folder.`,
+        });
+      } else {
+        toast({
+          title: "Test failed",
+          description: result.message || "Failed to send test welcome email. Please check your settings.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send test welcome email. Please check your settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingWelcome(false);
     }
   };
 
@@ -243,10 +331,11 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
             <div>
               <h3 className="text-lg font-medium">Test Email Configuration</h3>
               <p className="text-sm text-muted-foreground">
-                Send a test email to verify your settings are working correctly.
+                Send test emails to verify your settings are working correctly.
               </p>
             </div>
             
+            {/* General Test Email */}
             <div className="flex gap-4">
               <div className="flex-1">
                 <Input
@@ -267,6 +356,38 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
               >
                 {isTesting ? "Sending..." : "Send Test Email"}
               </Button>
+            </div>
+
+            {/* Template Test Emails */}
+            <div className="border-t pt-4">
+              <div className="mb-3">
+                <h4 className="text-sm font-medium">Test Email Templates</h4>
+                <p className="text-xs text-muted-foreground">
+                  Test specific email templates sent to your account ({user?.email})
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTestPasswordReset}
+                  disabled={isTestingPasswordReset || isSaving}
+                  className="w-full"
+                >
+                  {isTestingPasswordReset ? "Sending..." : "Test Password Reset"}
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTestWelcome}
+                  disabled={isTestingWelcome || isSaving}
+                  className="w-full"
+                >
+                  {isTestingWelcome ? "Sending..." : "Test Welcome Email"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
