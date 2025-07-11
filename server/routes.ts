@@ -8,6 +8,11 @@ import { stringify } from "csv-stringify";
 import { z } from "zod";
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import session from "express-session";
 import authRoutes from "./auth-routes";
 import emailRoutes from "./email-routes";
