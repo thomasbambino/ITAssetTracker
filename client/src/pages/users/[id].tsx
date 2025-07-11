@@ -91,6 +91,8 @@ export default function UserDetails() {
   } | null>(null);
   const [userToOffboard, setUserToOffboard] = useState<number | null>(null);
   const [userToReactivate, setUserToReactivate] = useState<number | null>(null);
+  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [showDemoteDialog, setShowDemoteDialog] = useState(false);
   
   // Device action states
   const [deviceToUnassign, setDeviceToUnassign] = useState<number | null>(null);
@@ -246,6 +248,58 @@ export default function UserDetails() {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to reactivate user",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Manager promotion/demotion mutations
+  const promoteToManagerMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest({
+        method: 'POST',
+        url: `/api/managers/promote/${id}`,
+        data: { managedDepartmentIds: null }
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "User has been promoted to manager",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+      setShowPromoteDialog(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to promote user",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const demoteFromManagerMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest({
+        method: 'POST',
+        url: `/api/managers/demote/${id}`
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "User has been demoted from manager",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+      setShowDemoteDialog(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error", 
+        description: error instanceof Error ? error.message : "Failed to demote user",
         variant: "destructive",
       });
     }
@@ -498,8 +552,12 @@ export default function UserDetails() {
                             {user.department}
                           </Badge>
                         )}
-                        <Badge variant={user.role === 'admin' ? 'secondary' : 'outline'}>
-                          {user.role === 'admin' ? 'Admin' : 'User'}
+                        <Badge variant={
+                          user.role === 'admin' ? 'secondary' : 
+                          user.isManager ? 'default' : 'outline'
+                        }>
+                          {user.role === 'admin' ? 'Admin' : 
+                           user.isManager ? 'Manager' : 'User'}
                         </Badge>
                         {user.active === false && (
                           <Badge variant="destructive">
@@ -562,6 +620,31 @@ export default function UserDetails() {
                             <UserMinusIcon className="h-4 w-4 mr-2" />
                             Offboard User
                           </Button>
+                        )}
+                        
+                        {/* Manager promotion/demotion buttons */}
+                        {user.role !== 'admin' && (
+                          user.isManager ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="w-full"
+                              onClick={() => setShowDemoteDialog(true)}
+                            >
+                              <UserMinusIcon className="h-4 w-4 mr-2" />
+                              Demote from Manager
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="w-full"
+                              onClick={() => setShowPromoteDialog(true)}
+                            >
+                              <UserCheckIcon className="h-4 w-4 mr-2" />
+                              Promote to Manager
+                            </Button>
+                          )
                         )}
                       </div>
                     </div>
@@ -958,6 +1041,50 @@ export default function UserDetails() {
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               Reactivate User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Promote to Manager Confirmation Dialog */}
+      <AlertDialog open={showPromoteDialog} onOpenChange={setShowPromoteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Promote to Manager</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will promote the user to manager role, giving them access to manage users and resources in their department.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => promoteToManagerMutation.mutate()}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={promoteToManagerMutation.isPending}
+            >
+              {promoteToManagerMutation.isPending ? 'Promoting...' : 'Promote to Manager'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Demote from Manager Confirmation Dialog */}
+      <AlertDialog open={showDemoteDialog} onOpenChange={setShowDemoteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Demote from Manager</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the user's manager role and they will become a regular user. They will lose access to management features.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => demoteFromManagerMutation.mutate()}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              disabled={demoteFromManagerMutation.isPending}
+            >
+              {demoteFromManagerMutation.isPending ? 'Demoting...' : 'Demote from Manager'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
