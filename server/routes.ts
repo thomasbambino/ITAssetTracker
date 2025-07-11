@@ -3420,6 +3420,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI-powered API endpoints
   
+  // Test endpoint to verify AI service is working
+  app.post('/api/test-ai', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { query } = req.body;
+      console.log('Testing AI with query:', query);
+      
+      const result = await AIService.parseSearchQuery(query || 'show me all ipads');
+      console.log('AI parsing result:', result);
+      
+      res.json({ success: true, result });
+    } catch (error) {
+      console.error('AI test error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+  
   // Smart search with natural language processing
   app.post('/api/search/smart', isAuthenticated, async (req: Request, res: Response) => {
     try {
