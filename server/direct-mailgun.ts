@@ -2,9 +2,7 @@
 import fetch from 'node-fetch';
 import { storage } from './storage';
 
-// Email logo - base64 encoded PNG (full version with star logo)
-import fs from 'fs';
-const EMAIL_LOGO_BASE64 = fs.readFileSync('/tmp/new_logo_base64.txt', 'utf8');
+// Email logo - hosted URL approach for better email client compatibility
 
 interface EmailSettings {
   id?: number;
@@ -324,7 +322,7 @@ export class DirectMailgunService {
               
               <!-- Action Button -->
               <div style="text-align: center; margin: 32px 0;">
-                <a href="#" style="display: inline-block; background: linear-gradient(to right, #1E40AF 0%, rgba(30, 64, 175, 0.9) 100%); color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
+                <a href="${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/login" style="display: inline-block; background: linear-gradient(to right, #1E40AF 0%, rgba(30, 64, 175, 0.9) 100%); color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
                   Sign In Now
                 </a>
               </div>
@@ -453,7 +451,7 @@ export class DirectMailgunService {
               
               <!-- Action Button -->
               <div style="text-align: center; margin: 32px 0;">
-                <a href="#" style="display: inline-block; background: linear-gradient(to right, #1E40AF 0%, rgba(30, 64, 175, 0.9) 100%); color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
+                <a href="${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/login" style="display: inline-block; background: linear-gradient(to right, #1E40AF 0%, rgba(30, 64, 175, 0.9) 100%); color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
                   Get Started Now
                 </a>
               </div>
