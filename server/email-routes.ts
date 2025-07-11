@@ -111,16 +111,30 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
     const sessionData = req.session as any;
     const loggedInUserId = sessionData.userId;
     
+    console.log('Session debug for email test:', {
+      sessionId: req.sessionID,
+      userId: loggedInUserId,
+      hasSession: !!req.session,
+      sessionData: sessionData
+    });
+    
     let defaultTargetEmail = emailSettings.fromEmail;
     if (loggedInUserId) {
       try {
         const currentUser = await storage.getUserById(loggedInUserId);
+        console.log('Current user for test email:', {
+          userId: loggedInUserId,
+          userEmail: currentUser?.email,
+          userFound: !!currentUser
+        });
         if (currentUser && currentUser.email) {
           defaultTargetEmail = currentUser.email;
         }
       } catch (error) {
-        console.log('Could not get current user for test email, using fromEmail as fallback');
+        console.log('Could not get current user for test email, using fromEmail as fallback:', error);
       }
+    } else {
+      console.log('No logged in user ID found in session for test email');
     }
     
     const targetEmail = req.body.email || defaultTargetEmail;
