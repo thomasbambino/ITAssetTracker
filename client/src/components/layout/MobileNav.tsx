@@ -459,7 +459,7 @@ export function MobileNav() {
           {/* Main Group */}
           <div>
             <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {currentUser?.isManager ? currentUser?.department || 'Department' :
+              {currentUser?.isManager && currentUser?.department === 'Billing' ? 'Billing' :
                currentUser?.role === 'user' ? 'My Account' : 
                'Main'}
             </h3>
@@ -471,8 +471,8 @@ export function MobileNav() {
             </div>
           </div>
 
-          {/* System Group for regular users */}
-          {currentUser?.role === 'user' && (
+          {/* System Group for regular users only (not managers) */}
+          {currentUser?.role === 'user' && !currentUser?.isManager && (
             <>
               <Separator className="mx-2" />
               
