@@ -304,7 +304,12 @@ export function GlobalSearch() {
         </Button>
       </div>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={open} onOpenChange={setOpen} filter={(value, search) => {
+        // In AI mode, show all results without filtering
+        if (isAiMode) return 1;
+        // Default filtering for regular search
+        return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+      }}>
         <div className="flex items-center border-b px-3">
           <CommandInput 
             placeholder="Try: 'Show me all laptops assigned to sales that expire next month'" 
@@ -319,7 +324,7 @@ export function GlobalSearch() {
           )}
         </div>
         
-        <CommandList>
+        <CommandList className="max-h-[400px] overflow-y-auto">
           {/* Search suggestions */}
           {suggestions.length > 0 && searchQuery.length > 3 && !isAiMode && (
             <CommandGroup heading="Suggestions">
