@@ -233,6 +233,15 @@ export function GlobalSearch() {
   const finalDeviceResults = isAiMode ? aiDeviceResults : deviceResults;
   const finalCategoryResults = isAiMode ? aiCategoryResults : categoryResults;
 
+  // Debug logging
+  console.log('Search Debug:', {
+    isAiMode,
+    searchQuery,
+    finalDeviceResults: finalDeviceResults.length,
+    aiDeviceResults: aiDeviceResults.length,
+    smartSearchResults: smartSearchResults?.results?.length
+  });
+
 
 
   // Handle keyboard shortcut to open search
@@ -374,6 +383,7 @@ export function GlobalSearch() {
                 {finalDeviceResults.map(result => (
                   <CommandItem
                     key={`device-${result.id}`}
+                    value={result.title}
                     onSelect={() => handleSelect(result)}
                   >
                     <div className="flex items-center">
@@ -435,10 +445,10 @@ export function GlobalSearch() {
               </CommandItem>
             </CommandGroup>
           )}
-          {/* Debug: Show when no results are being displayed */}
-          {isAiMode && smartSearchResults && finalDeviceResults.length === 0 && finalUserResults.length === 0 && finalCategoryResults.length === 0 && (
+          {/* Show when no results */}
+          {searchQuery && !isAiMode && finalDeviceResults.length === 0 && finalUserResults.length === 0 && finalCategoryResults.length === 0 && (
             <div className="px-4 py-2 text-sm text-muted-foreground">
-              Debug: No results to display despite having data
+              No results found for "{searchQuery}"
             </div>
           )}
         </CommandList>
