@@ -264,15 +264,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Filter devices assigned to users in the manager's department
         devices = devices.filter(device => 
-          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+          device.userId && departmentUserIds.includes(device.userId)
         );
         
-        unassignedDevices = unassignedDevices.filter(device => 
-          device.assignedTo && departmentUserIds.includes(device.assignedTo)
-        );
+        // Unassigned devices should not be filtered by department for managers
+        // Leave unassignedDevices as-is since they're not assigned to anyone
         
         expiringWarranties = expiringWarranties.filter(device => 
-          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+          device.userId && departmentUserIds.includes(device.userId)
         );
         
         // Filter tickets from users in the manager's department
@@ -293,6 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(stats);
     } catch (error) {
+      console.error('Error in /api/stats:', error);
       res.status(500).json({ message: "Error fetching stats" });
     }
   });
@@ -318,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Filter devices assigned to users in the manager's department
         devices = devices.filter(device => 
-          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+          device.userId && departmentUserIds.includes(device.userId)
         );
       }
       
@@ -386,6 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(distribution);
     } catch (error) {
+      console.error('Error in /api/stats/categories:', error);
       res.status(500).json({ message: "Error fetching category distribution" });
     }
   });
@@ -411,7 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Filter devices assigned to users in the manager's department
         devices = devices.filter(device => 
-          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+          device.userId && departmentUserIds.includes(device.userId)
         );
         
         // Filter users to only show those in the manager's department
@@ -440,6 +441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(distribution);
     } catch (error) {
+      console.error('Error in /api/stats/departments:', error);
       res.status(500).json({ message: "Error fetching department distribution" });
     }
   });
@@ -629,6 +631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(users);
     } catch (error) {
+      console.error('Error in /api/users:', error);
       res.status(500).json({ message: "Error fetching users" });
     }
   });
@@ -817,7 +820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Filter devices assigned to users in the manager's department
         devices = devices.filter(device => 
-          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+          device.userId && departmentUserIds.includes(device.userId)
         );
       }
       
@@ -841,6 +844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(enrichedDevices);
     } catch (error) {
+      console.error('Error in /api/devices:', error);
       res.status(500).json({ message: "Error fetching devices" });
     }
   });
@@ -1912,6 +1916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(software);
     } catch (error) {
+      console.error('Error in /api/software:', error);
       res.status(500).json({ message: "Error fetching software" });
     }
   });
