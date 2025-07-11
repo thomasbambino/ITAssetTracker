@@ -324,8 +324,9 @@ export function GlobalSearch() {
 
       <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false} className="max-w-4xl w-[90vw]">
         <div className="flex items-center border-b px-3">
+          {/* Search input with updated placeholder text */}
           <CommandInput 
-            placeholder="Try: 'Show me all laptops' or 'Find Tommy's devices'" 
+            placeholder="Search devices, users, or ask AI questions" 
             value={searchQuery}
             className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 pl-3"
             onValueChange={setSearchQuery}
