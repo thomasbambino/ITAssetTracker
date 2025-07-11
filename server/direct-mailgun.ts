@@ -77,9 +77,8 @@ export class DirectMailgunService {
       // Use direct HTTP approach instead of SDK
       const url = `https://api.mailgun.net/v3/${this.domain}/messages`;
       
-      // Create form data using FormData for better compatibility
-      const FormData = require('form-data');
-      const formData = new FormData();
+      // Create form data using URLSearchParams
+      const formData = new URLSearchParams();
       formData.append('from', this.fromEmail!);
       formData.append('to', emailData.to);
       formData.append('subject', emailData.subject);
@@ -110,17 +109,17 @@ export class DirectMailgunService {
         fromEmail: this.fromEmail,
         apiKeyLength: this.apiKey?.length || 0,
         apiKeyPrefix: this.apiKey?.substring(0, 8) || 'none',
-        hasFormData: !!formData
+        formDataSize: formData.toString().length
       });
 
-      // Send the request with proper auth and form data
+      // Send the request with proper auth
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${Buffer.from(`api:${this.apiKey}`).toString('base64')}`,
-          ...formData.getHeaders()
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: formData
+        body: formData.toString()
       });
 
       // Parse the response
