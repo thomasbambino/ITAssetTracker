@@ -323,22 +323,17 @@ export function GlobalSearch() {
       </div>
 
       <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false} className="max-w-5xl w-[95vw]">
-        <div className="relative flex items-center border-b px-3">
+        <div className="flex items-center border-b px-3">
           {/* Search input with updated placeholder text */}
           <CommandInput 
             placeholder="Search or ask AI..." 
             value={searchQuery}
-            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 pl-3 pr-20"
+            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 pl-3 pr-3"
             onValueChange={setSearchQuery}
           />
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-            {smartSearchMutation.isPending && (
-              <Sparkles className="h-4 w-4 animate-pulse text-blue-500" />
-            )}
-            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-              <span className="text-xs">⌘</span>K
-            </kbd>
-          </div>
+          {smartSearchMutation.isPending && (
+            <Sparkles className="h-4 w-4 animate-pulse text-blue-500 ml-2 shrink-0" />
+          )}
         </div>
         
         <CommandList className="max-h-[400px] overflow-y-auto">
