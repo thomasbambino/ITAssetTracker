@@ -263,14 +263,12 @@ export class DirectMailgunService {
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
               <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
-                  <div style="position: relative; width: 24px; height: 24px;">
-                    <!-- Server/Monitor Icon -->
-                    <div style="position: absolute; top: 2px; left: 2px; width: 20px; height: 14px; border: 2px solid white; border-radius: 2px; background: transparent;"></div>
-                    <!-- Base/Stand -->
-                    <div style="position: absolute; bottom: 0; left: 8px; width: 8px; height: 2px; background: white;"></div>
-                    <!-- Stand pole -->
-                    <div style="position: absolute; bottom: 2px; left: 11px; width: 2px; height: 4px; background: white;"></div>
+                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px; width: 48px; height: 48px; display: table-cell; vertical-align: middle; text-align: center;">
+                  <div style="display: inline-block; width: 24px; height: 24px; background: white; border-radius: 3px; position: relative;">
+                    <!-- Simple monitor/server icon -->
+                    <div style="position: absolute; top: 3px; left: 3px; right: 3px; bottom: 8px; border: 1px solid #1E40AF; border-radius: 1px;"></div>
+                    <div style="position: absolute; bottom: 2px; left: 8px; right: 8px; height: 2px; background: #1E40AF;"></div>
+                    <div style="position: absolute; bottom: 0; left: 10px; right: 10px; height: 2px; background: #1E40AF;"></div>
                   </div>
                 </div>
                 <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
@@ -375,14 +373,12 @@ export class DirectMailgunService {
             <!-- Header -->
             <div style="padding: 48px 32px 32px 32px; text-align: center;">
               <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
-                  <div style="position: relative; width: 24px; height: 24px;">
-                    <!-- Server/Monitor Icon -->
-                    <div style="position: absolute; top: 2px; left: 2px; width: 20px; height: 14px; border: 2px solid white; border-radius: 2px; background: transparent;"></div>
-                    <!-- Base/Stand -->
-                    <div style="position: absolute; bottom: 0; left: 8px; width: 8px; height: 2px; background: white;"></div>
-                    <!-- Stand pole -->
-                    <div style="position: absolute; bottom: 2px; left: 11px; width: 2px; height: 4px; background: white;"></div>
+                <div style="background: linear-gradient(135deg, #1E40AF 0%, rgba(30, 64, 175, 0.8) 100%); padding: 12px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-right: 12px; width: 48px; height: 48px; display: table-cell; vertical-align: middle; text-align: center;">
+                  <div style="display: inline-block; width: 24px; height: 24px; background: white; border-radius: 3px; position: relative;">
+                    <!-- Simple monitor/server icon -->
+                    <div style="position: absolute; top: 3px; left: 3px; right: 3px; bottom: 8px; border: 1px solid #1E40AF; border-radius: 1px;"></div>
+                    <div style="position: absolute; bottom: 2px; left: 8px; right: 8px; height: 2px; background: #1E40AF;"></div>
+                    <div style="position: absolute; bottom: 0; left: 10px; right: 10px; height: 2px; background: #1E40AF;"></div>
                   </div>
                 </div>
                 <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">${companyName}</h1>
