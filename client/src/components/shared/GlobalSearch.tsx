@@ -206,8 +206,6 @@ export function GlobalSearch() {
     const title = result.title || (result.brand && result.model ? `${result.brand} ${result.model}` : result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim());
     const subtitle = result.subtitle || result.assetTag || result.department || result.categoryName || '';
     
-    console.log('Converting AI result:', result, 'to title:', title, 'subtitle:', subtitle);
-    
     return {
       id: result.id,
       type: result.type || 'device',
@@ -235,16 +233,7 @@ export function GlobalSearch() {
   const finalDeviceResults = isAiMode ? aiDeviceResults : deviceResults;
   const finalCategoryResults = isAiMode ? aiCategoryResults : categoryResults;
 
-  // Debug logging
-  if (isAiMode && smartSearchResults) {
-    console.log('AI Mode Debug:');
-    console.log('- smartSearchResults:', smartSearchResults);
-    console.log('- aiSearchResults:', aiSearchResults);
-    console.log('- finalDeviceResults:', finalDeviceResults);
-    console.log('- finalDeviceResults length:', finalDeviceResults.length);
-    console.log('- isAiMode:', isAiMode);
-    console.log('- searchQuery:', searchQuery);
-  }
+
 
   // Handle keyboard shortcut to open search
   useEffect(() => {
@@ -304,12 +293,7 @@ export function GlobalSearch() {
         </Button>
       </div>
 
-      <CommandDialog open={open} onOpenChange={setOpen} filter={(value, search) => {
-        // In AI mode, show all results without filtering
-        if (isAiMode) return 1;
-        // Default filtering for regular search
-        return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
-      }}>
+      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={!isAiMode}>
         <div className="flex items-center border-b px-3">
           <CommandInput 
             placeholder="Try: 'Show me all laptops assigned to sales that expire next month'" 
@@ -387,23 +371,20 @@ export function GlobalSearch() {
             <>
               {finalUserResults.length > 0 && <CommandSeparator />}
               <CommandGroup heading={isAiMode ? `Devices (${finalDeviceResults.length})` : "Devices"}>
-                {finalDeviceResults.map((result, index) => {
-                  console.log(`Rendering device ${index}:`, result);
-                  return (
-                    <CommandItem
-                      key={`device-${result.id}`}
-                      onSelect={() => handleSelect(result)}
-                    >
-                      <div className="flex items-center">
-                        {result.icon}
-                        <div className="ml-2">
-                          <p className="text-sm font-medium">{result.title}</p>
-                          <p className="text-xs text-muted-foreground">{result.subtitle}</p>
-                        </div>
+                {finalDeviceResults.map(result => (
+                  <CommandItem
+                    key={`device-${result.id}`}
+                    onSelect={() => handleSelect(result)}
+                  >
+                    <div className="flex items-center">
+                      {result.icon}
+                      <div className="ml-2">
+                        <p className="text-sm font-medium">{result.title}</p>
+                        <p className="text-xs text-muted-foreground">{result.subtitle}</p>
                       </div>
-                    </CommandItem>
-                  );
-                })}
+                    </div>
+                  </CommandItem>
+                ))}
               </CommandGroup>
             </>
           )}
