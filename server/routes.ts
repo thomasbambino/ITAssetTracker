@@ -2189,6 +2189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const emailSettings = await storage.getEmailSettings();
           if (emailSettings) {
             console.log('Updating mailgun service with current email settings for software notification');
+            console.log('Email settings:', JSON.stringify(emailSettings, null, 2));
             const updatedMailgunService = updateMailgunService(emailSettings);
             
             const emailResult = await updatedMailgunService.sendSoftwareAccessEmail(
