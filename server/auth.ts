@@ -71,6 +71,32 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
   });
 }
 
+// Middleware: Check if user is manager or admin
+export function isManagerOrAdmin(req: Request, res: Response, next: NextFunction) {
+  // @ts-ignore - session is added by express-session
+  if (req.session && (req.session.userRole === 'admin' || req.session.userRole === 'manager')) {
+    return next();
+  }
+  
+  return res.status(403).json({
+    success: false,
+    message: 'Manager or admin privileges required'
+  });
+}
+
+// Middleware: Check if user is manager
+export function isManager(req: Request, res: Response, next: NextFunction) {
+  // @ts-ignore - session is added by express-session
+  if (req.session && req.session.userRole === 'manager') {
+    return next();
+  }
+  
+  return res.status(403).json({
+    success: false,
+    message: 'Manager privileges required'
+  });
+}
+
 // Middleware: Check if password reset is required
 export function checkPasswordResetRequired(req: Request, res: Response, next: NextFunction) {
   // @ts-ignore - session is added by express-session

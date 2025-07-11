@@ -25,7 +25,7 @@ import {
 // Define the session data type to fix type errors
 interface SessionData {
   userId: number;
-  userRole: 'admin' | 'user';
+  userRole: 'admin' | 'manager' | 'user';
   passwordResetRequired: boolean;
   pendingTwoFactorUserId?: number; // For 2FA verification flow
 }
@@ -34,7 +34,7 @@ interface SessionData {
 declare module 'express-session' {
   interface SessionData {
     userId?: number;
-    userRole?: 'admin' | 'user';
+    userRole?: 'admin' | 'manager' | 'user';
     passwordResetRequired?: boolean;
     pendingTwoFactorUserId?: number;
   }
@@ -44,7 +44,7 @@ declare module 'express-session' {
 declare module 'express-session' {
   interface SessionData {
     userId: number;
-    userRole: 'admin' | 'user';
+    userRole: 'admin' | 'manager' | 'user';
     passwordResetRequired: boolean;
   }
 }
@@ -432,6 +432,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manager routes
+  app.get('/api/managers', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getUsers();
+      const managers = users.filter(user => user.isManager);
+      res.json(managers);
+    } catch (error) {
+      console.error("Error fetching managers:", error);
+      res.status(500).json({ message: "Error fetching managers" });
+    }
+  });
+
+  app.post('/api/managers/promote/:userId', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { managedDepartmentIds } = req.body;
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Promote user to manager
+      const updatedUser = await storage.updateUser(userId, {
+        isManager: true,
+        managedDepartmentIds: managedDepartmentIds || null
+      }, loggedInUserId);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error promoting user to manager:", error);
+      res.status(500).json({ message: "Error promoting user to manager" });
+    }
+  });
+
+  app.post('/api/managers/demote/:userId', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Demote manager to regular user
+      const updatedUser = await storage.updateUser(userId, {
+        isManager: false,
+        managedDepartmentIds: null
+      }, loggedInUserId);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error demoting manager:", error);
+      res.status(500).json({ message: "Error demoting manager" });
+    }
+  });
+
+  app.put('/api/managers/:userId/departments', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { managedDepartmentIds } = req.body;
+      
+      // Get the currently logged in user's ID from the session
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Update manager's departments
+      const updatedUser = await storage.updateUser(userId, {
+        managedDepartmentIds: managedDepartmentIds || null
+      }, loggedInUserId);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating manager departments:", error);
+      res.status(500).json({ message: "Error updating manager departments" });
+    }
+  });
+
   // Get all users
   app.get('/api/users', async (req: Request, res: Response) => {
     try {
@@ -498,7 +586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Explicitly handle the role field as an enum and departmentId
       const schema = insertUserSchema.partial().extend({
-        role: z.enum(['user', 'admin']).optional(),
+        role: z.enum(['user', 'manager', 'admin']).optional(),
         departmentId: z.union([
           z.string().transform((str) => {
             if (str === '0' || str === '' || str === null || str === undefined) return null;

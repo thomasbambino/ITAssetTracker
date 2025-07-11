@@ -37,6 +37,8 @@ export const users = pgTable("users", {
   tempPasswordExpiry: timestamp("temp_password_expiry"),
   passwordResetRequired: boolean("password_reset_required").default(true),
   role: text("role").default('user'),
+  isManager: boolean("is_manager").default(false),
+  managedDepartmentIds: text("managed_department_ids"), // JSON array of department IDs this user manages
   active: boolean("active").default(true),
   lastLogin: timestamp("last_login"),
   twoFactorSecret: text("two_factor_secret"),
@@ -55,7 +57,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   passwordResetRequired: true,
   lastLogin: true,
 }).extend({
-  role: z.enum(['user', 'admin']).optional().default('user'),
+  role: z.enum(['user', 'manager', 'admin']).optional().default('user'),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -14,6 +14,7 @@ import { addDepartmentsTable } from "./migrations/add-departments-table";
 import { migrateDepartmentsData } from "./migrations/migrate-departments-data";
 import { addSoftwareUrlField } from "./migrations/add-software-url";
 import { addTwoFactorAuthFields } from "./migrations/add-two-factor-auth";
+import { addManagerFields } from "./migrations/add-manager-fields";
 
 const app = express();
 app.use(express.json());
@@ -90,6 +91,7 @@ app.use((req, res, next) => {
     await migrateDepartmentsData();
     await addSoftwareUrlField();
     await addTwoFactorAuthFields();
+    await addManagerFields();
     log('Database migrations completed.');
     
     // Initialize direct mailgun service with settings from the database

@@ -254,6 +254,9 @@ export class DatabaseStorage implements IStorage {
         department,
         department_id as "departmentId",
         role,
+        active,
+        is_manager as "isManager",
+        managed_department_ids as "managedDepartmentIds",
         created_at as "createdAt" 
       FROM users
       ORDER BY last_name, first_name
@@ -315,6 +318,8 @@ export class DatabaseStorage implements IStorage {
           two_factor_backup_codes as "twoFactorBackupCodes",
           role,
           active,
+          is_manager as "isManager",
+          managed_department_ids as "managedDepartmentIds",
           last_login as "lastLogin",
           created_at as "createdAt" 
         FROM users 
@@ -348,6 +353,8 @@ export class DatabaseStorage implements IStorage {
           two_factor_backup_codes as "twoFactorBackupCodes",
           role,
           active,
+          is_manager as "isManager",
+          managed_department_ids as "managedDepartmentIds",
           last_login as "lastLogin",
           created_at as "createdAt" 
         FROM users 
@@ -467,6 +474,16 @@ export class DatabaseStorage implements IStorage {
       if (user.active !== undefined) {
         updates.push(`active = $${paramCount++}`);
         values.push(user.active);
+      }
+      
+      if (user.isManager !== undefined) {
+        updates.push(`is_manager = $${paramCount++}`);
+        values.push(user.isManager);
+      }
+      
+      if (user.managedDepartmentIds !== undefined) {
+        updates.push(`managed_department_ids = $${paramCount++}`);
+        values.push(user.managedDepartmentIds);
       }
       
       if (user.lastLogin !== undefined) {

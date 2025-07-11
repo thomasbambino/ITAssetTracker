@@ -58,8 +58,10 @@ export function DesktopSidebar() {
     firstName: string;
     lastName: string;
     email: string;
-    role: 'user' | 'admin';
+    role: 'user' | 'manager' | 'admin';
     department?: string | null;
+    isManager?: boolean;
+    managedDepartmentIds?: string | null;
   }
 
   // Fetch branding settings
@@ -235,6 +237,10 @@ export function DesktopSidebar() {
     if (currentUser.role === 'user') {
       return ['/', '/devices', '/software', '/notifications', '/user-settings'].includes(route.href);
     }
+    // Managers can see dashboard, users, devices, software, notifications, and their personal pages
+    if (currentUser.role === 'manager') {
+      return ['/', '/users', '/devices', '/software', '/notifications', '/user-dashboard', '/guest-devices', '/guest-software', '/user-settings'].includes(route.href);
+    }
     // Admins can see all routes
     return true;
   }).map(route => {
@@ -249,6 +255,20 @@ export function DesktopSidebar() {
       return {
         ...route,
         label: userRouteLabels[route.href] || route.label
+      };
+    }
+    // For manager users, use department-specific labels
+    if (currentUser?.role === 'manager') {
+      const managerRouteLabels: Record<string, string> = {
+        '/': 'Dashboard',
+        '/users': 'Users',
+        '/devices': 'Devices',
+        '/software': 'Software & Portals',
+        '/notifications': 'Notifications'
+      };
+      return {
+        ...route,
+        label: managerRouteLabels[route.href] || route.label
       };
     }
     // For admin users, use original labels (without "My" prefix for main routes)
@@ -334,7 +354,9 @@ export function DesktopSidebar() {
         {/* Main Group */}
         <div>
           <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            {currentUser?.role === 'user' ? 'My Account' : 'Main'}
+            {currentUser?.role === 'user' ? 'My Account' : 
+             currentUser?.role === 'manager' ? currentUser?.department || 'Department' : 
+             'Main'}
           </h3>
           <div className="mt-1 space-y-1">
             {routes
@@ -363,11 +385,11 @@ export function DesktopSidebar() {
           </>
         )}
 
-        {currentUser?.role === 'admin' && (
+        {(currentUser?.role === 'manager' || currentUser?.role === 'admin') && (
           <>
             <Separator className="mx-2" />
             
-            {/* User Pages Group - Admin viewing their own account */}
+            {/* User Pages Group - Manager/Admin viewing their own account */}
             <div>
               <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 My Account
@@ -380,35 +402,39 @@ export function DesktopSidebar() {
               </div>
             </div>
 
-            <Separator className="mx-2" />
-            
-            {/* Management Group */}
-            <div>
-              <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Management
-              </h3>
-              <div className="mt-1 space-y-1">
-                {routes
-                  .filter(route => route.category === 'management')
-                  .map(renderNavItem)
-                }
-              </div>
-            </div>
+            {currentUser?.role === 'admin' && (
+              <>
+                <Separator className="mx-2" />
+                
+                {/* Management Group - Only for Admin */}
+                <div>
+                  <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Management
+                  </h3>
+                  <div className="mt-1 space-y-1">
+                    {routes
+                      .filter(route => route.category === 'management')
+                      .map(renderNavItem)
+                    }
+                  </div>
+                </div>
 
-            <Separator className="mx-2" />
-            
-            {/* System Group */}
-            <div>
-              <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                System
-              </h3>
-              <div className="mt-1 space-y-1">
-                {routes
-                  .filter(route => route.category === 'system')
-                  .map(renderNavItem)
-                }
-              </div>
-            </div>
+                <Separator className="mx-2" />
+                
+                {/* System Group - Only for Admin */}
+                <div>
+                  <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    System
+                  </h3>
+                  <div className="mt-1 space-y-1">
+                    {routes
+                      .filter(route => route.category === 'system')
+                      .map(renderNavItem)
+                    }
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
