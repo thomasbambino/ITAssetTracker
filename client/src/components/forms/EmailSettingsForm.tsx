@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const formSchema = z.object({
   apiKey: z.string().min(1, "API Key is required"),
@@ -50,8 +50,22 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
     },
   });
 
+  // Reset form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        apiKey: initialData.apiKey || "",
+        domain: initialData.domain || "",
+        fromEmail: initialData.fromEmail || "",
+        fromName: initialData.fromName || "",
+        isEnabled: initialData.isEnabled || false,
+      });
+    }
+  }, [initialData, form]);
+
   const onSubmit = async (data: FormValues) => {
     setIsSaving(true);
+    console.log('Form data being submitted:', data);
     try {
       const result = await apiRequest({
         url: `/api/settings/email`,
@@ -213,7 +227,10 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
                 <FormControl>
                   <Switch
                     checked={field.value}
-                    onCheckedChange={field.onChange}
+                    onCheckedChange={(checked) => {
+                      console.log('Switch toggled:', checked);
+                      field.onChange(checked);
+                    }}
                   />
                 </FormControl>
               </FormItem>
