@@ -61,11 +61,24 @@ async function filterDevices(devices: any[], filters: any) {
   
   if (filters.category) {
     const categories = await storage.getCategories();
+    console.log('Available categories:', categories.map(c => c.name));
+    console.log('Looking for category:', filters.category);
+    
+    // Try exact match first, then partial match
     const category = categories.find(cat => 
-      cat.name.toLowerCase().includes(filters.category.toLowerCase())
+      cat.name.toLowerCase() === filters.category.toLowerCase()
+    ) || categories.find(cat => 
+      cat.name.toLowerCase().includes(filters.category.toLowerCase()) ||
+      filters.category.toLowerCase().includes(cat.name.toLowerCase())
     );
+    
+    console.log('Found category for filter "' + filters.category + '":', category?.name);
     if (category) {
       filtered = filtered.filter(device => device.categoryId === category.id);
+      console.log('Filtered to', filtered.length, 'devices in category', category.name);
+    } else {
+      console.log('No category found for filter "' + filters.category + '"');
+      // Don't filter if category not found - return all devices
     }
   }
   
@@ -3482,13 +3495,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // General search across all entities
           const allDevices = await storage.getDevices();
           const allUsers = await storage.getUsers();
-          results = [...allDevices, ...allUsers];
+          const allSoftware = await storage.getSoftware();
+          const allCategories = await storage.getCategories();
+          results = [...allDevices, ...allUsers, ...allSoftware, ...allCategories];
       }
       
       // Add type field to results for frontend processing
       const formattedResults = results.map((result: any) => ({
         ...result,
-        type: result.firstName ? 'user' : 'device'
+        type: result.firstName ? 'user' : 
+              result.name && result.description ? 'category' :
+              result.name && result.version ? 'software' :
+              result.maintenanceType ? 'maintenance' : 'device'
       }));
       
       console.log('Formatted results sample:', formattedResults.slice(0, 3));

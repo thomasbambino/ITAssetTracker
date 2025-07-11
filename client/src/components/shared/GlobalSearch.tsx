@@ -21,7 +21,9 @@ import {
   FilterIcon,
   BrainIcon,
   Sparkles,
-  Clock
+  Clock,
+  PackageIcon,
+  WrenchIcon
 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -193,16 +195,47 @@ export function GlobalSearch() {
 
   // Convert AI search results to SearchResult format
   const aiSearchResults: SearchResult[] = smartSearchResults?.results?.map((result: any) => {
-    const title = result.title || (result.brand && result.model ? `${result.brand} ${result.model}` : result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim());
-    const subtitle = result.subtitle || result.assetTag || result.department || result.categoryName || '';
+    let title: string, subtitle: string, icon: React.ReactNode, url: string;
+    
+    switch (result.type) {
+      case 'user':
+        title = `${result.firstName || ''} ${result.lastName || ''}`.trim();
+        subtitle = result.department || result.email || 'No department';
+        icon = <UserIcon className="h-4 w-4" />;
+        url = `/users/${result.id}`;
+        break;
+      case 'category':
+        title = result.name || 'Unknown Category';
+        subtitle = result.description || 'No description';
+        icon = <TagIcon className="h-4 w-4" />;
+        url = `/categories/${result.id}`;
+        break;
+      case 'software':
+        title = result.name || 'Unknown Software';
+        subtitle = result.version || result.description || 'No version';
+        icon = <PackageIcon className="h-4 w-4" />;
+        url = `/software/${result.id}`;
+        break;
+      case 'maintenance':
+        title = result.title || 'Maintenance Record';
+        subtitle = result.description || result.maintenanceType || 'No description';
+        icon = <WrenchIcon className="h-4 w-4" />;
+        url = `/maintenance/${result.id}`;
+        break;
+      default: // device
+        title = result.brand && result.model ? `${result.brand} ${result.model}` : result.name || 'Unknown Device';
+        subtitle = result.assetTag || result.serialNumber || result.categoryName || 'No asset tag';
+        icon = <LaptopIcon className="h-4 w-4" />;
+        url = `/devices/${result.id}`;
+    }
     
     return {
       id: result.id,
       type: result.type || 'device',
       title,
       subtitle,
-      icon: result.type === 'user' ? <UserIcon className="h-4 w-4" /> : <LaptopIcon className="h-4 w-4" />,
-      url: result.type === 'user' ? `/users/${result.id}` : `/devices/${result.id}`
+      icon,
+      url
     };
   }) || [];
 
@@ -218,10 +251,14 @@ export function GlobalSearch() {
   const aiUserResults = aiSearchResults.filter(r => r.type === 'user');
   const aiDeviceResults = aiSearchResults.filter(r => r.type === 'device');
   const aiCategoryResults = aiSearchResults.filter(r => r.type === 'category');
+  const aiSoftwareResults = aiSearchResults.filter(r => r.type === 'software');
+  const aiMaintenanceResults = aiSearchResults.filter(r => r.type === 'maintenance');
 
   const finalUserResults = isAiMode ? aiUserResults : userResults;
   const finalDeviceResults = isAiMode ? aiDeviceResults : deviceResults;
   const finalCategoryResults = isAiMode ? aiCategoryResults : categoryResults;
+  const finalSoftwareResults = isAiMode ? aiSoftwareResults : [];
+  const finalMaintenanceResults = isAiMode ? aiMaintenanceResults : [];
 
 
 
@@ -428,6 +465,55 @@ export function GlobalSearch() {
               </CommandItem>
             </CommandGroup>
           )}
+          
+          {/* Software Results */}
+          {finalSoftwareResults.length > 0 && (
+            <>
+              {(finalUserResults.length > 0 || finalDeviceResults.length > 0 || finalCategoryResults.length > 0) && <CommandSeparator />}
+              <CommandGroup heading={isAiMode ? `Software (${finalSoftwareResults.length})` : "Software"}>
+                {finalSoftwareResults.map(result => (
+                  <CommandItem
+                    key={`software-${result.id}`}
+                    value={result.title}
+                    onSelect={() => handleSelect(result)}
+                  >
+                    <div className="flex items-center">
+                      {result.icon}
+                      <div className="ml-2">
+                        <p className="text-sm font-medium">{result.title}</p>
+                        <p className="text-xs text-muted-foreground">{result.subtitle}</p>
+                      </div>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+          
+          {/* Maintenance Results */}
+          {finalMaintenanceResults.length > 0 && (
+            <>
+              {(finalUserResults.length > 0 || finalDeviceResults.length > 0 || finalCategoryResults.length > 0 || finalSoftwareResults.length > 0) && <CommandSeparator />}
+              <CommandGroup heading={isAiMode ? `Maintenance (${finalMaintenanceResults.length})` : "Maintenance"}>
+                {finalMaintenanceResults.map(result => (
+                  <CommandItem
+                    key={`maintenance-${result.id}`}
+                    value={result.title}
+                    onSelect={() => handleSelect(result)}
+                  >
+                    <div className="flex items-center">
+                      {result.icon}
+                      <div className="ml-2">
+                        <p className="text-sm font-medium">{result.title}</p>
+                        <p className="text-xs text-muted-foreground">{result.subtitle}</p>
+                      </div>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+          
           {/* Show when no results */}
           {searchQuery && !isAiMode && finalDeviceResults.length === 0 && finalUserResults.length === 0 && finalCategoryResults.length === 0 && (
             <div className="px-4 py-2 text-sm text-muted-foreground">
