@@ -12,7 +12,7 @@ import authRoutes from "./auth-routes";
 import emailRoutes from "./email-routes";
 import twoFactorRoutes from "./two-factor-routes";
 import { isAuthenticated, isAdmin } from "./auth";
-import mailgunService from "./direct-mailgun";
+import mailgunService, { updateMailgunService } from "./direct-mailgun";
 import { AIService } from "./ai-service";
 
 import { 
@@ -2185,15 +2185,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const user = validatedData.userId ? await storage.getUserById(validatedData.userId) : null;
         
         if (user) {
-          const emailResult = await mailgunService.sendSoftwareAccessEmail(
-            software.notificationEmail,
-            user.email,
-            `${user.firstName} ${user.lastName}`,
-            software.name,
-            software.vendor
-          );
-          
-          console.log('Software access notification email result:', emailResult);
+          // Get current email settings and update the service
+          const emailSettings = await storage.getEmailSettings();
+          if (emailSettings) {
+            console.log('Updating mailgun service with current email settings for software notification');
+            const updatedMailgunService = updateMailgunService(emailSettings);
+            
+            const emailResult = await updatedMailgunService.sendSoftwareAccessEmail(
+              software.notificationEmail,
+              'assigned',
+              software.name,
+              `${user.firstName} ${user.lastName}`
+            );
+            
+            console.log('Software access notification email result:', emailResult);
+          } else {
+            console.log('No email settings found for software notification');
+          }
         }
       }
       
@@ -2218,10 +2226,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
+      // Get the assignment details before deletion for notification
+      const assignment = await storage.getSoftwareAssignmentById(id);
+      
       const success = await storage.deleteSoftwareAssignment(id, loggedInUserId);
       
       if (!success) {
         return res.status(404).json({ message: "Software assignment not found" });
+      }
+      
+      // Send notification email if configured and assignment existed
+      if (assignment && assignment.userId) {
+        const software = await storage.getSoftwareById(assignment.softwareId);
+        
+        if (software && software.sendAccessNotifications && software.notificationEmail) {
+          const user = await storage.getUserById(assignment.userId);
+          
+          if (user) {
+            // Get current email settings and update the service
+            const emailSettings = await storage.getEmailSettings();
+            if (emailSettings) {
+              console.log('Updating mailgun service with current email settings for software unassignment notification');
+              const updatedMailgunService = updateMailgunService(emailSettings);
+              
+              const emailResult = await updatedMailgunService.sendSoftwareAccessEmail(
+                software.notificationEmail,
+                'unassigned',
+                software.name,
+                `${user.firstName} ${user.lastName}`
+              );
+              
+              console.log('Software unassignment notification email result:', emailResult);
+            }
+          }
+        }
       }
       
       res.status(204).send();
