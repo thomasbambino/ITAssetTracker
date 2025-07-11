@@ -325,7 +325,7 @@ export function MobileNav() {
   return (
     <>
       {/* Header */}
-      <div className="md:hidden bg-background border-b border-border w-full flex items-center justify-between p-3 shadow-sm">
+      <div className="md:hidden bg-background w-full flex items-center justify-between p-3">
         <div className="flex items-center">
           <Button 
             variant="ghost" 
