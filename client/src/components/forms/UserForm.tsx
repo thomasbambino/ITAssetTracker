@@ -91,10 +91,34 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
   
   // Set departmentId effect - needed to update the field when user data loads
   React.useEffect(() => {
-    if (user?.departmentId) {
-      form.setValue('departmentId', user.departmentId);
+    if (user) {
+      // Set departmentId if it exists
+      if (user.departmentId) {
+        form.setValue('departmentId', user.departmentId);
+        console.log('Setting department ID for user:', user.departmentId, 'User department:', user.department);
+      }
+      // Also set other user fields when user data is available
+      form.setValue('firstName', user.firstName || '');
+      form.setValue('lastName', user.lastName || '');
+      form.setValue('email', user.email || '');
+      form.setValue('phoneNumber', user.phoneNumber || '');
+      form.setValue('department', user.department || '');
+      form.setValue('role', user.role || 'user');
     }
   }, [user, form]);
+
+  // Additional effect to handle department selection when departments load
+  React.useEffect(() => {
+    if (user && user.departmentId && departments && departments.length > 0) {
+      // Make sure the department is set when both user and departments are available
+      const userDept = departments.find(dept => dept.id === user.departmentId);
+      if (userDept) {
+        form.setValue('departmentId', user.departmentId);
+        form.setValue('department', userDept.name);
+        console.log('Updated department selection:', userDept.name);
+      }
+    }
+  }, [user, departments, form]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -294,7 +318,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
               <FormLabel>User Role</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
-                defaultValue={field.value}
+                value={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
