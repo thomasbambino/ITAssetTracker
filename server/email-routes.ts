@@ -60,8 +60,14 @@ router.put('/settings/email', isAuthenticated, isAdmin, async (req: Request, res
     
     const emailSettings = validationResult.data;
     
+    // If API key is empty, don't update it (preserve existing key)
+    const settingsToUpdate = { ...emailSettings };
+    if (!emailSettings.apiKey || emailSettings.apiKey.trim() === '') {
+      delete settingsToUpdate.apiKey; // Don't update API key if it's empty
+    }
+    
     // Update the settings in the database
-    const updatedSettings = await storage.updateEmailSettings(emailSettings);
+    const updatedSettings = await storage.updateEmailSettings(settingsToUpdate);
     
     // Debug the settings before updating
     console.log('Email settings before update:', {
@@ -182,11 +188,38 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
         console.log(`✓ Test email sent successfully to: ${targetEmail}`);
         console.log(`✓ Sent from: ${emailSettings.fromEmail}`);
         console.log(`✓ Using domain: ${emailSettings.domain}`);
+        return res.json(result);
       } else {
         console.log(`✗ Test email failed: ${result.message}`);
+        
+        // If database settings failed, try environment variables as fallback
+        console.log('Attempting to use environment variables for basic email test...');
+        
+        const apiKey = process.env.MAILGUN_API_KEY;
+        const domain = process.env.MAILGUN_DOMAIN;
+        
+        if (apiKey && domain) {
+          const envEmailSettings = {
+            apiKey,
+            domain,
+            fromEmail: emailSettings.fromEmail,
+            fromName: emailSettings.fromName,
+            isEnabled: true
+          };
+          
+          const envMailgunService = new DirectMailgunService(envEmailSettings);
+          
+          if (envMailgunService.isConfigured()) {
+            console.log('Using environment variables for basic email test');
+            const envResult = await envMailgunService.sendTestEmail(targetEmail);
+            
+            console.log('Basic email test result with env vars:', envResult);
+            return res.json(envResult);
+          }
+        }
+        
+        return res.json(result);
       }
-      
-      return res.json(result);
     } else {
       console.log('Email service is not configured properly. Using simulation mode.');
       

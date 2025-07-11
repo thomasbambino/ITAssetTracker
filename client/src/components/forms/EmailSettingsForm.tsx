@@ -19,7 +19,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 
 const formSchema = z.object({
-  apiKey: z.string().min(1, "API Key is required"),
+  apiKey: z.string().optional(), // Allow empty API key to preserve existing key
   domain: z.string().min(1, "Domain is required"),
   fromEmail: z.string().email("Invalid email address"),
   fromName: z.string().min(1, "Sender name is required"),
@@ -44,7 +44,7 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      apiKey: initialData?.apiKey || "",
+      apiKey: (initialData?.apiKey && initialData?.apiKey.includes('•')) ? "" : (initialData?.apiKey || ""), // Don't pre-fill with masked API key
       domain: initialData?.domain || "",
       fromEmail: initialData?.fromEmail || "",
       fromName: initialData?.fromName || "",
@@ -56,7 +56,7 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
   useEffect(() => {
     if (initialData) {
       form.reset({
-        apiKey: initialData.apiKey || "",
+        apiKey: (initialData.apiKey && initialData.apiKey.includes('•')) ? "" : (initialData.apiKey || ""), // Don't pre-fill with masked API key
         domain: initialData.domain || "",
         fromEmail: initialData.fromEmail || "",
         fromName: initialData.fromName || "",
