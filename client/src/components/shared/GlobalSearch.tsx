@@ -334,7 +334,7 @@ export function GlobalSearch() {
             style={{ width: '100%', maxWidth: 'none' }}
           />
           {smartSearchMutation.isPending && (
-            <Sparkles className="h-4 w-4 animate-pulse text-blue-500 ml-2 shrink-0" />
+            <Sparkles className="h-4 w-4 animate-pulse text-blue-500 ml-4 mr-8 shrink-0" />
           )}
         </div>
         
