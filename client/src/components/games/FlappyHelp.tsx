@@ -98,19 +98,34 @@ export default function FlappyHelp() {
   }, [gameRunning, gameOver, JUMP_FORCE]);
 
   const checkCollision = useCallback((bird: Bird, trees: Tree[]) => {
-    // Check ground and ceiling
-    if (bird.y <= 0 || bird.y >= CANVAS_HEIGHT - BIRD_SIZE) {
+    // Add collision buffer to make hitboxes more forgiving
+    const COLLISION_BUFFER = 4; // Reduce effective collision area by 4 pixels on each side
+    
+    // Effective bird hitbox (smaller than visual size)
+    const birdLeft = bird.x + COLLISION_BUFFER;
+    const birdRight = bird.x + BIRD_SIZE - COLLISION_BUFFER;
+    const birdTop = bird.y + COLLISION_BUFFER;
+    const birdBottom = bird.y + BIRD_SIZE - COLLISION_BUFFER;
+    
+    // Check ground and ceiling with buffer
+    if (birdTop <= 0 || birdBottom >= CANVAS_HEIGHT) {
       return true;
     }
 
-    // Check tree collision
+    // Check tree collision with improved precision
     for (const tree of trees) {
-      if (
-        bird.x + BIRD_SIZE > tree.x &&
-        bird.x < tree.x + TREE_WIDTH &&
-        (bird.y < tree.topHeight || bird.y + BIRD_SIZE > tree.bottomY)
-      ) {
-        return true;
+      // Tree hitbox boundaries
+      const treeLeft = tree.x + COLLISION_BUFFER;
+      const treeRight = tree.x + TREE_WIDTH - COLLISION_BUFFER;
+      const topTreeBottom = tree.topHeight - COLLISION_BUFFER;
+      const bottomTreeTop = tree.bottomY + COLLISION_BUFFER;
+      
+      // Check if bird is horizontally within tree bounds
+      if (birdRight > treeLeft && birdLeft < treeRight) {
+        // Check if bird hits top tree or bottom tree
+        if (birdTop < topTreeBottom || birdBottom > bottomTreeTop) {
+          return true;
+        }
       }
     }
     return false;
