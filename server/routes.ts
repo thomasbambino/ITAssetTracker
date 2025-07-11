@@ -3469,10 +3469,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results = [...allDevices, ...allUsers];
       }
       
+      // Add type field to results for frontend processing
+      const formattedResults = results.map((result: any) => ({
+        ...result,
+        type: result.firstName ? 'user' : 'device'
+      }));
+      
+      console.log('Formatted results sample:', formattedResults.slice(0, 3));
+      
       res.json({
         query: parsedQuery,
-        results: results.slice(0, 50), // Limit results
-        totalFound: results.length
+        results: formattedResults.slice(0, 50), // Limit results
+        totalFound: formattedResults.length
       });
     } catch (error) {
       console.error('Smart search error:', error);
