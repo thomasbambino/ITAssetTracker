@@ -242,6 +242,8 @@ export function GlobalSearch() {
     console.log('- aiSearchResults:', aiSearchResults);
     console.log('- finalDeviceResults:', finalDeviceResults);
     console.log('- finalDeviceResults length:', finalDeviceResults.length);
+    console.log('- isAiMode:', isAiMode);
+    console.log('- searchQuery:', searchQuery);
   }
 
   // Handle keyboard shortcut to open search
@@ -380,20 +382,23 @@ export function GlobalSearch() {
             <>
               {finalUserResults.length > 0 && <CommandSeparator />}
               <CommandGroup heading={isAiMode ? `Devices (${finalDeviceResults.length})` : "Devices"}>
-                {finalDeviceResults.map(result => (
-                  <CommandItem
-                    key={`device-${result.id}`}
-                    onSelect={() => handleSelect(result)}
-                  >
-                    <div className="flex items-center">
-                      {result.icon}
-                      <div className="ml-2">
-                        <p className="text-sm font-medium">{result.title}</p>
-                        <p className="text-xs text-muted-foreground">{result.subtitle}</p>
+                {finalDeviceResults.map((result, index) => {
+                  console.log(`Rendering device ${index}:`, result);
+                  return (
+                    <CommandItem
+                      key={`device-${result.id}`}
+                      onSelect={() => handleSelect(result)}
+                    >
+                      <div className="flex items-center">
+                        {result.icon}
+                        <div className="ml-2">
+                          <p className="text-sm font-medium">{result.title}</p>
+                          <p className="text-xs text-muted-foreground">{result.subtitle}</p>
+                        </div>
                       </div>
-                    </div>
-                  </CommandItem>
-                ))}
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </>
           )}
@@ -443,6 +448,12 @@ export function GlobalSearch() {
                 </div>
               </CommandItem>
             </CommandGroup>
+          )}
+          {/* Debug: Show when no results are being displayed */}
+          {isAiMode && smartSearchResults && finalDeviceResults.length === 0 && finalUserResults.length === 0 && finalCategoryResults.length === 0 && (
+            <div className="px-4 py-2 text-sm text-muted-foreground">
+              Debug: No results to display despite having data
+            </div>
           )}
         </CommandList>
       </CommandDialog>
