@@ -80,9 +80,10 @@ export function GlobalSearch() {
   const smartSearchMutation = useMutation({
     mutationFn: async (query: string) => {
       console.log('Making smart search request for:', query);
-      const response = await apiRequest('/api/search/smart', {
+      const response = await apiRequest({
+        url: '/api/search/smart',
         method: 'POST',
-        body: JSON.stringify({ query })
+        data: { query }
       });
       console.log('Smart search response:', response);
       return response;
@@ -99,9 +100,10 @@ export function GlobalSearch() {
   // Search suggestions mutation
   const suggestionsMutation = useMutation({
     mutationFn: async (query: string) => {
-      const response = await apiRequest('/api/search/suggestions', {
+      const response = await apiRequest({
+        url: '/api/search/suggestions',
         method: 'POST',
-        body: JSON.stringify({ query })
+        data: { query }
       });
       return response;
     },
@@ -272,8 +274,10 @@ export function GlobalSearch() {
           className="h-full rounded-md"
           onClick={() => setOpen(true)}
         >
-          <FilterIcon className="h-4 w-4 text-muted-foreground" />
-          <span className="sr-only">Advanced search</span>
+          <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+          <span className="sr-only">Open search</span>
         </Button>
       </div>
 
