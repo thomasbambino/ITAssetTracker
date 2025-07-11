@@ -77,7 +77,7 @@ export class DirectMailgunService {
       // Use direct HTTP approach instead of SDK
       const url = `https://api.mailgun.net/v3/${this.domain}/messages`;
       
-      // Create form data using URLSearchParams
+      // Create a form-like body
       const formData = new URLSearchParams();
       formData.append('from', this.fromEmail!);
       formData.append('to', emailData.to);
@@ -92,24 +92,13 @@ export class DirectMailgunService {
       }
       
       // Log what we're sending (without sensitive data)
-      console.log('🚀 Sending direct Mailgun request:', {
+      console.log('Sending direct Mailgun request:', {
         to: emailData.to,
         subject: emailData.subject,
         from: this.fromEmail,
         domain: this.domain,
         textLength: emailData.text?.length || 0,
-        htmlLength: emailData.html?.length || 0,
-        hasApiKey: !!this.apiKey
-      });
-
-      // Log the full request details for debugging
-      console.log('🔍 Mailgun API Request Debug:', {
-        url: url,
-        domain: this.domain,
-        fromEmail: this.fromEmail,
-        apiKeyLength: this.apiKey?.length || 0,
-        apiKeyPrefix: this.apiKey?.substring(0, 8) || 'none',
-        formDataSize: formData.toString().length
+        htmlLength: emailData.html?.length || 0
       });
 
       // Send the request with proper auth
