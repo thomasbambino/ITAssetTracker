@@ -275,4 +275,158 @@ router.post('/settings/email/env-test', isAuthenticated, isAdmin, async (req: Re
   }
 });
 
+// Test password reset email (admin only)
+router.post('/settings/email/test-reset', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+  try {
+    // Get the current email settings
+    const emailSettings = await storage.getEmailSettings();
+    
+    if (!emailSettings) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Email settings not configured' 
+      });
+    }
+    
+    // Get the logged-in user's information
+    const sessionData = req.session as any;
+    const loggedInUserId = sessionData.userId;
+    
+    if (!loggedInUserId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User not authenticated' 
+      });
+    }
+    
+    const currentUser = await storage.getUserById(loggedInUserId);
+    if (!currentUser || !currentUser.email) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found or email not available' 
+      });
+    }
+    
+    console.log(`=== PASSWORD RESET TEST EMAIL ===`);
+    console.log(`Target email: ${currentUser.email}`);
+    console.log(`User: ${currentUser.firstName} ${currentUser.lastName}`);
+    
+    // Update the direct mailgun service with the latest settings
+    const updatedMailgunService = updateMailgunService(emailSettings);
+    
+    // Check if service is configured
+    const isMailgunServiceConfigured = updatedMailgunService.isConfigured();
+    console.log('Is direct mailgun service configured?', isMailgunServiceConfigured);
+    
+    if (isMailgunServiceConfigured) {
+      // Send password reset test email using the existing method
+      const result = await updatedMailgunService.sendPasswordResetEmail(
+        currentUser.email,
+        'TestPass123!',
+        `${currentUser.firstName} ${currentUser.lastName}`
+      );
+      
+      console.log('Password reset test email result:', result);
+      
+      if (result.success) {
+        console.log(`✓ Password reset test email sent successfully to: ${currentUser.email}`);
+      } else {
+        console.log(`✗ Password reset test email failed: ${result.message}`);
+      }
+      
+      return res.json(result);
+    } else {
+      console.log('Email service is not configured properly. Using simulation mode.');
+      
+      return res.json({
+        success: true,
+        message: `Password reset test email successful (simulated). Email settings found but service not enabled.`
+      });
+    }
+  } catch (error) {
+    console.error('Error with password reset test email:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: `Failed to test password reset email: ${error instanceof Error ? error.message : 'Unknown error'}`
+    });
+  }
+});
+
+// Test welcome email (admin only)
+router.post('/settings/email/test-welcome', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+  try {
+    // Get the current email settings
+    const emailSettings = await storage.getEmailSettings();
+    
+    if (!emailSettings) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Email settings not configured' 
+      });
+    }
+    
+    // Get the logged-in user's information
+    const sessionData = req.session as any;
+    const loggedInUserId = sessionData.userId;
+    
+    if (!loggedInUserId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User not authenticated' 
+      });
+    }
+    
+    const currentUser = await storage.getUserById(loggedInUserId);
+    if (!currentUser || !currentUser.email) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found or email not available' 
+      });
+    }
+    
+    console.log(`=== WELCOME TEST EMAIL ===`);
+    console.log(`Target email: ${currentUser.email}`);
+    console.log(`User: ${currentUser.firstName} ${currentUser.lastName}`);
+    
+    // Update the direct mailgun service with the latest settings
+    const updatedMailgunService = updateMailgunService(emailSettings);
+    
+    // Check if service is configured
+    const isMailgunServiceConfigured = updatedMailgunService.isConfigured();
+    console.log('Is direct mailgun service configured?', isMailgunServiceConfigured);
+    
+    if (isMailgunServiceConfigured) {
+      // Send welcome test email using the existing method
+      const result = await updatedMailgunService.sendWelcomeEmail(
+        currentUser.email,
+        'TestPass123!',
+        `${currentUser.firstName} ${currentUser.lastName}`
+      );
+      
+      console.log('Welcome test email result:', result);
+      
+      if (result.success) {
+        console.log(`✓ Welcome test email sent successfully to: ${currentUser.email}`);
+      } else {
+        console.log(`✗ Welcome test email failed: ${result.message}`);
+      }
+      
+      return res.json(result);
+    } else {
+      console.log('Email service is not configured properly. Using simulation mode.');
+      
+      return res.json({
+        success: true,
+        message: `Welcome test email successful (simulated). Email settings found but service not enabled.`
+      });
+    }
+  } catch (error) {
+    console.error('Error with welcome test email:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: `Failed to test welcome email: ${error instanceof Error ? error.message : 'Unknown error'}`
+    });
+  }
+});
+
 export default router;

@@ -36,6 +36,8 @@ interface EmailSettingsFormProps {
 export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormProps) {
   const { toast } = useToast();
   const [isTesting, setIsTesting] = useState(false);
+  const [isTestingReset, setIsTestingReset] = useState(false);
+  const [isTestingWelcome, setIsTestingWelcome] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [testEmail, setTestEmail] = useState("");
 
@@ -134,6 +136,90 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
       });
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handlePasswordResetTest = async () => {
+    const values = form.getValues();
+    setIsTestingReset(true);
+    
+    try {
+      // First save the current settings
+      await apiRequest({
+        url: `/api/settings/email`,
+        method: "PUT",
+        data: values,
+      });
+
+      // Send password reset test email to current logged-in user
+      const result = await apiRequest({
+        url: `/api/settings/email/test-reset`,
+        method: "POST",
+        data: {},
+      });
+      
+      if (result.success) {
+        toast({
+          title: "Password reset test email sent",
+          description: "A test password reset email has been sent to your account. Check your inbox and spam folder.",
+        });
+      } else {
+        toast({
+          title: "Test failed",
+          description: result.message || "Failed to send password reset test email. Please check your settings.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send password reset test email. Please check your settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingReset(false);
+    }
+  };
+
+  const handleWelcomeTest = async () => {
+    const values = form.getValues();
+    setIsTestingWelcome(true);
+    
+    try {
+      // First save the current settings
+      await apiRequest({
+        url: `/api/settings/email`,
+        method: "PUT",
+        data: values,
+      });
+
+      // Send welcome test email to current logged-in user
+      const result = await apiRequest({
+        url: `/api/settings/email/test-welcome`,
+        method: "POST",
+        data: {},
+      });
+      
+      if (result.success) {
+        toast({
+          title: "Welcome test email sent",
+          description: "A test welcome email has been sent to your account. Check your inbox and spam folder.",
+        });
+      } else {
+        toast({
+          title: "Test failed",
+          description: result.message || "Failed to send welcome test email. Please check your settings.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send welcome test email. Please check your settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingWelcome(false);
     }
   };
 
@@ -241,10 +327,40 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
         <div className="border-t pt-6">
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">Test Email Configuration</h3>
+              <h3 className="text-lg font-medium">Test Email Templates</h3>
               <p className="text-sm text-muted-foreground">
-                Send a test email to verify your settings are working correctly.
+                Test different email templates to verify your settings are working correctly.
               </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleTestEmail}
+                disabled={isTesting || isSaving || isTestingReset || isTestingWelcome}
+                className="w-full"
+              >
+                {isTesting ? "Sending..." : "Test Basic Email"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePasswordResetTest}
+                disabled={isTestingReset || isSaving || isTesting || isTestingWelcome}
+                className="w-full"
+              >
+                {isTestingReset ? "Sending..." : "Test Password Reset"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleWelcomeTest}
+                disabled={isTestingWelcome || isSaving || isTesting || isTestingReset}
+                className="w-full"
+              >
+                {isTestingWelcome ? "Sending..." : "Test Welcome Email"}
+              </Button>
             </div>
             
             <div className="flex gap-4">
@@ -256,17 +372,9 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
                   type="email"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Leave empty to send to your email address
+                  Leave empty to send basic test to your email address. Password reset and welcome emails always go to your account.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleTestEmail}
-                disabled={isTesting || isSaving}
-              >
-                {isTesting ? "Sending..." : "Send Test Email"}
-              </Button>
             </div>
           </div>
         </div>
