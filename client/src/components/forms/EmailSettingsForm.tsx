@@ -239,7 +239,7 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
                   type="email"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Leave empty to send to your configured "From Email" address
+                  Leave empty to send to your email address
                 </p>
               </div>
               <Button

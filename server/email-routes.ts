@@ -107,8 +107,23 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
       });
     }
     
-    // Get the target email from request or use the fromEmail from settings
-    const targetEmail = req.body.email || emailSettings.fromEmail;
+    // Get the target email from request or use the logged-in user's email
+    const sessionData = req.session as any;
+    const loggedInUserId = sessionData.userId;
+    
+    let defaultTargetEmail = emailSettings.fromEmail;
+    if (loggedInUserId) {
+      try {
+        const currentUser = await storage.getUserById(loggedInUserId);
+        if (currentUser && currentUser.email) {
+          defaultTargetEmail = currentUser.email;
+        }
+      } catch (error) {
+        console.log('Could not get current user for test email, using fromEmail as fallback');
+      }
+    }
+    
+    const targetEmail = req.body.email || defaultTargetEmail;
     
     if (!targetEmail) {
       return res.status(400).json({ 
@@ -119,6 +134,7 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
     
     console.log(`=== EMAIL TEST REQUEST ===`);
     console.log(`Target email: ${targetEmail}`);
+    console.log(`Default target (user's email): ${defaultTargetEmail}`);
     console.log(`From email (configured): ${emailSettings.fromEmail}`);
     console.log(`Domain: ${emailSettings.domain}`);
     console.log(`API key present: ${!!emailSettings.apiKey}`);
