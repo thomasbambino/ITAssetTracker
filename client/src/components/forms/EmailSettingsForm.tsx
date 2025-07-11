@@ -106,20 +106,20 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
         data: values,
       });
 
-      // Determine test email target - use custom test email if provided, otherwise let server use logged-in user's email
-      const targetEmail = testEmail.trim() || null;
+      // Determine test email target - use custom test email if provided, otherwise use from email
+      const targetEmail = testEmail.trim() || values.fromEmail;
       
       // Then send a test email
       const result = await apiRequest({
         url: `/api/settings/email/test`,
         method: "POST",
-        data: targetEmail ? { email: targetEmail } : {}, // Only send email if specified
+        data: { email: targetEmail },
       });
       
       if (result.success) {
         toast({
           title: "Test email sent",
-          description: `A test email has been sent to your account. Check your inbox and spam folder.`,
+          description: `A test email has been sent to ${targetEmail}. Check your inbox and spam folder.`,
         });
       } else {
         toast({
