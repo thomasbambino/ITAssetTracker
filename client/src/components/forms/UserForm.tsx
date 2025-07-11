@@ -303,12 +303,11 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="admin">Administrator</SelectItem>
                 </SelectContent>
               </Select>
               <FormDescription>
-                Users have basic access, Managers can oversee departments, Administrators have full system access
+                Users have basic access, Administrators have full system access. Use promotion buttons to make users managers.
               </FormDescription>
               <FormMessage />
             </FormItem>
