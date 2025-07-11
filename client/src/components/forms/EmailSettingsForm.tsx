@@ -119,7 +119,7 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
       if (result.success) {
         toast({
           title: "Test email sent",
-          description: `A test email has been sent to ${targetEmail}. Check your inbox and spam folder.`,
+          description: `A test email has been sent to your account. Check your inbox and spam folder.`,
         });
       } else {
         toast({

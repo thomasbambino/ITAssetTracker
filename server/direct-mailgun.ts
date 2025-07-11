@@ -246,18 +246,78 @@ export class DirectMailgunService {
   // Send password reset email with beautiful HTML formatting
   public async sendPasswordResetEmail(to: string, tempPassword: string, userName: string): Promise<{ success: boolean; message: string }> {
     try {
-      // Try to get company name from branding settings and use optimized logo
+      // Try to get company name from branding settings
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
       
-      // Use your actual optimized logo (4KB base64, 80x80 pixels)
-      const logoUrl = `${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/email-assets/email-logo.png`;
-      const logoHtml = `<img src="${logoUrl}" alt="${companyName} Logo" width="80" height="80" style="display: block; border-radius: 8px;">`;
-      
       const subject = `${companyName} - Your Temporary Password`;
-      const text = `Hello ${userName}, A password reset has been requested for your account. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
+      const text = `Hello ${userName},
+
+A password reset has been requested for your account.
+
+Your temporary password is: ${tempPassword}
+
+You will be required to change this password the first time you log in.
+
+If you did not request this password reset, please contact your system administrator immediately.
+
+Best regards,
+${companyName} IT Team`;
       
-      const html = `
+      return this.sendEmail({
+        to,
+        subject,
+        text
+      });
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      return {
+        success: false,
+        message: `Failed to send password reset email: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  // Send welcome email with simple text formatting
+  public async sendWelcomeEmail(to: string, tempPassword: string, userName: string): Promise<{ success: boolean; message: string }> {
+    try {
+      // Try to get company name from branding settings
+      const branding = await storage.getBrandingSettings();
+      const companyName = branding?.companyName || 'AssetTrack';
+      
+      const subject = `Welcome to ${companyName} - Your Account is Ready`;
+      const text = `Hello ${userName},
+
+Welcome to ${companyName}! Your account has been created and is ready to use.
+
+Your temporary password is: ${tempPassword}
+
+You will be required to change this password the first time you log in.
+
+Getting Started:
+1. Go to the login page
+2. Enter your email address and temporary password
+3. Follow the prompts to create your new password
+4. Start managing your IT assets!
+
+If you have any questions or need assistance, please contact your system administrator.
+
+Best regards,
+${companyName} IT Team`;
+      
+      return this.sendEmail({
+        to,
+        subject,
+        text
+      });
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      return {
+        success: false,
+        message: `Failed to send welcome email: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
         <!DOCTYPE html>
         <html>
         <head>
