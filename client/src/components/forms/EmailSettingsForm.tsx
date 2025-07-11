@@ -37,6 +37,7 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
   const { toast } = useToast();
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -89,17 +90,20 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
         data: values,
       });
 
+      // Determine test email target - use custom test email if provided, otherwise use from email
+      const targetEmail = testEmail.trim() || values.fromEmail;
+      
       // Then send a test email
       const result = await apiRequest({
         url: `/api/settings/email/test`,
         method: "POST",
-        data: { email: values.fromEmail },
+        data: { email: targetEmail },
       });
       
       if (result.success) {
         toast({
           title: "Test email sent",
-          description: "A test email has been sent to the configured address.",
+          description: `A test email has been sent to ${targetEmail}. Check your inbox and spam folder.`,
         });
       } else {
         toast({
@@ -217,16 +221,40 @@ export function EmailSettingsForm({ initialData, onSuccess }: EmailSettingsFormP
           />
         </div>
 
-        <div className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleTestEmail}
-            disabled={isTesting || isSaving}
-          >
-            {isTesting ? "Sending..." : "Send Test Email"}
-          </Button>
-          
+        <div className="border-t pt-6">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-medium">Test Email Configuration</h3>
+              <p className="text-sm text-muted-foreground">
+                Send a test email to verify your settings are working correctly.
+              </p>
+            </div>
+            
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="Enter test email address (optional)"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  type="email"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leave empty to send to your configured "From Email" address
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleTestEmail}
+                disabled={isTesting || isSaving}
+              >
+                {isTesting ? "Sending..." : "Send Test Email"}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
           <Button type="submit" disabled={isSaving}>
             {isSaving ? "Saving..." : "Save Settings"}
           </Button>

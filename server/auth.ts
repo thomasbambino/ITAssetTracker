@@ -301,7 +301,7 @@ export async function resetUserPassword(userId: number, loggedInUserId?: number)
           const envEmailSettings = {
             apiKey,
             domain,
-            fromEmail: `noreply@${domain}`,
+            fromEmail: `connecta@${domain}`, // Use configured email instead of hardcoded noreply
             fromName: `${companyName} System`,
             isEnabled: true
           };

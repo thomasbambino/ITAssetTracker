@@ -117,7 +117,12 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
       });
     }
     
-    console.log(`Sending email test to: ${targetEmail} using domain: ${emailSettings.domain}`);
+    console.log(`=== EMAIL TEST REQUEST ===`);
+    console.log(`Target email: ${targetEmail}`);
+    console.log(`From email (configured): ${emailSettings.fromEmail}`);
+    console.log(`Domain: ${emailSettings.domain}`);
+    console.log(`API key present: ${!!emailSettings.apiKey}`);
+    console.log(`Is enabled: ${emailSettings.isEnabled}`);
     
     // Debug the email settings
     console.log('Email settings from test endpoint:', {
@@ -139,6 +144,18 @@ router.post('/settings/email/test', isAuthenticated, isAdmin, async (req: Reques
     if (isMailgunServiceConfigured) {
       console.log('Using direct mailgun service for test');
       const result = await updatedMailgunService.sendTestEmail(targetEmail);
+      
+      // Add detailed logging for debugging
+      console.log('Test email result:', result);
+      
+      if (result.success) {
+        console.log(`✓ Test email sent successfully to: ${targetEmail}`);
+        console.log(`✓ Sent from: ${emailSettings.fromEmail}`);
+        console.log(`✓ Using domain: ${emailSettings.domain}`);
+      } else {
+        console.log(`✗ Test email failed: ${result.message}`);
+      }
+      
       return res.json(result);
     } else {
       console.log('Email service is not configured properly. Using simulation mode.');
