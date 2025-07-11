@@ -322,7 +322,7 @@ export function GlobalSearch() {
         </Button>
       </div>
 
-      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
+      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false} className="max-w-2xl">
         <div className="flex items-center border-b px-3">
           <CommandInput 
             placeholder="Try: 'Show me all laptops assigned to sales that expire next month'" 
