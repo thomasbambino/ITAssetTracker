@@ -578,8 +578,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Set managed department to their current department (if they have one)
-      const managedDepartmentIds = currentUser.departmentId ? JSON.stringify([currentUser.departmentId]) : null;
+      // Check if user has a department assigned
+      if (!currentUser.departmentId) {
+        return res.status(400).json({ 
+          message: "User must be assigned to a department before being promoted to manager" 
+        });
+      }
+      
+      // Check if the department already has a manager
+      const existingManager = await storage.getDepartmentManager(currentUser.departmentId);
+      
+      if (existingManager && existingManager.id !== userId) {
+        return res.status(400).json({ 
+          message: `Department already has a manager: ${existingManager.firstName} ${existingManager.lastName}. Please demote the existing manager first.` 
+        });
+      }
+      
+      // Set managed department to their current department
+      const managedDepartmentIds = JSON.stringify([currentUser.departmentId]);
       
       // Promote user to manager
       const updatedUser = await storage.updateUser(userId, {

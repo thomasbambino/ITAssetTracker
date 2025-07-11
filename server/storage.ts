@@ -128,6 +128,7 @@ export interface IStorage {
   updateDepartment(id: number, department: Partial<InsertDepartment>, loggedInUserId?: number): Promise<Department | undefined>;
   deleteDepartment(id: number, loggedInUserId?: number): Promise<boolean>;
   getUsersByDepartmentId(departmentId: number): Promise<User[]>;
+  getDepartmentManager(departmentId: number): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -543,6 +544,39 @@ export class MemStorage implements IStorage {
     };
     this.activityLogs.push(newLog);
     return newLog;
+  }
+
+  // Department operations - stub implementations
+  async getDepartments(): Promise<Department[]> {
+    return [];
+  }
+  
+  async getDepartmentById(id: number): Promise<Department | undefined> {
+    return undefined;
+  }
+  
+  async getDepartmentByName(name: string): Promise<Department | undefined> {
+    return undefined;
+  }
+  
+  async createDepartment(department: InsertDepartment, loggedInUserId?: number): Promise<Department> {
+    throw new Error("Department operations not implemented in MemStorage");
+  }
+  
+  async updateDepartment(id: number, department: Partial<InsertDepartment>, loggedInUserId?: number): Promise<Department | undefined> {
+    return undefined;
+  }
+  
+  async deleteDepartment(id: number, loggedInUserId?: number): Promise<boolean> {
+    return false;
+  }
+  
+  async getUsersByDepartmentId(departmentId: number): Promise<User[]> {
+    return [];
+  }
+  
+  async getDepartmentManager(departmentId: number): Promise<User | undefined> {
+    return undefined;
   }
 }
 

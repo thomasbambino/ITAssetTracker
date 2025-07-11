@@ -3900,6 +3900,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getDepartmentManager(departmentId: number): Promise<User | undefined> {
+    try {
+      const manager = await this.db.oneOrNone(`
+        SELECT * FROM users 
+        WHERE department_id = $1 AND is_manager = true AND active = true
+        LIMIT 1
+      `, [departmentId]);
+      return manager || undefined;
+    } catch (error) {
+      console.error('Error getting department manager:', error);
+      throw error;
+    }
+  }
+
   // Problem Report Methods
   async getProblemReports(status?: string, userId?: number): Promise<any[]> {
     try {
