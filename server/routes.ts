@@ -241,12 +241,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = app.route('/api');
 
   // Get dashboard stats
-  app.get('/api/stats', async (req: Request, res: Response) => {
+  app.get('/api/stats', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const devices = await storage.getDevices();
-      const unassignedDevices = await storage.getUnassignedDevices();
-      const expiringWarranties = await storage.getDevicesWithWarrantyExpiring(30);
-      const allTickets = await storage.getProblemReports();
+      const sessionData = req.session as any;
+      const userId = sessionData.userId;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      let devices = await storage.getDevices();
+      let unassignedDevices = await storage.getUnassignedDevices();
+      let expiringWarranties = await storage.getDevicesWithWarrantyExpiring(30);
+      let allTickets = await storage.getProblemReports();
+      
+      // Filter data for managers by their department
+      if (currentUser.isManager && currentUser.role !== 'admin') {
+        const users = await storage.getUsers();
+        const departmentUsers = users.filter(user => user.department === currentUser.department);
+        const departmentUserIds = departmentUsers.map(user => user.id);
+        
+        // Filter devices assigned to users in the manager's department
+        devices = devices.filter(device => 
+          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+        );
+        
+        unassignedDevices = unassignedDevices.filter(device => 
+          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+        );
+        
+        expiringWarranties = expiringWarranties.filter(device => 
+          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+        );
+        
+        // Filter tickets from users in the manager's department
+        allTickets = allTickets.filter(ticket => 
+          departmentUserIds.includes(ticket.userId)
+        );
+      }
+      
       const openTickets = allTickets.filter(ticket => ticket.status !== 'closed');
       
       const stats = {
@@ -264,9 +298,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get category distribution for devices
-  app.get('/api/stats/categories', async (req: Request, res: Response) => {
+  app.get('/api/stats/categories', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const devices = await storage.getDevices();
+      const sessionData = req.session as any;
+      const userId = sessionData.userId;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      let devices = await storage.getDevices();
+      
+      // Filter data for managers by their department
+      if (currentUser.isManager && currentUser.role !== 'admin') {
+        const users = await storage.getUsers();
+        const departmentUsers = users.filter(user => user.department === currentUser.department);
+        const departmentUserIds = departmentUsers.map(user => user.id);
+        
+        // Filter devices assigned to users in the manager's department
+        devices = devices.filter(device => 
+          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+        );
+      }
+      
       const categories = await storage.getCategories();
       
       const distribution = categories.map(category => {
@@ -336,10 +391,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get department distribution for devices
-  app.get('/api/stats/departments', async (req: Request, res: Response) => {
+  app.get('/api/stats/departments', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const users = await storage.getUsers();
-      const devices = await storage.getDevices();
+      const sessionData = req.session as any;
+      const userId = sessionData.userId;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      let users = await storage.getUsers();
+      let devices = await storage.getDevices();
+      
+      // Filter data for managers by their department
+      if (currentUser.isManager && currentUser.role !== 'admin') {
+        const departmentUsers = users.filter(user => user.department === currentUser.department);
+        const departmentUserIds = departmentUsers.map(user => user.id);
+        
+        // Filter devices assigned to users in the manager's department
+        devices = devices.filter(device => 
+          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+        );
+        
+        // Filter users to only show those in the manager's department
+        users = departmentUsers;
+      }
       
       // Get unique departments
       const departmentsArray = users.map(user => user.department).filter(Boolean) as string[];
@@ -533,9 +610,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all users
-  app.get('/api/users', async (req: Request, res: Response) => {
+  app.get('/api/users', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const users = await storage.getUsers();
+      const sessionData = req.session as any;
+      const userId = sessionData.userId;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      let users = await storage.getUsers();
+      
+      // Filter users for managers by their department
+      if (currentUser.isManager && currentUser.role !== 'admin') {
+        users = users.filter(user => user.department === currentUser.department);
+      }
+      
       res.json(users);
     } catch (error) {
       res.status(500).json({ message: "Error fetching users" });
@@ -706,9 +797,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Device routes
-  app.get('/api/devices', async (req: Request, res: Response) => {
+  app.get('/api/devices', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const devices = await storage.getDevices();
+      const sessionData = req.session as any;
+      const userId = sessionData.userId;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      let devices = await storage.getDevices();
+      
+      // Filter devices for managers by their department
+      if (currentUser.isManager && currentUser.role !== 'admin') {
+        const users = await storage.getUsers();
+        const departmentUsers = users.filter(user => user.department === currentUser.department);
+        const departmentUserIds = departmentUsers.map(user => user.id);
+        
+        // Filter devices assigned to users in the manager's department
+        devices = devices.filter(device => 
+          device.assignedTo && departmentUserIds.includes(device.assignedTo)
+        );
+      }
       
       // Enrich with category and user information
       const enrichedDevices = await Promise.all(
@@ -1770,9 +1881,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Software routes
-  app.get('/api/software', async (req: Request, res: Response) => {
+  app.get('/api/software', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const software = await storage.getSoftwareWithUsageCounts();
+      const sessionData = req.session as any;
+      const userId = sessionData.userId;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      let software = await storage.getSoftwareWithUsageCounts();
+      
+      // Filter software for managers by their department
+      if (currentUser.isManager && currentUser.role !== 'admin') {
+        const users = await storage.getUsers();
+        const departmentUsers = users.filter(user => user.department === currentUser.department);
+        const departmentUserIds = departmentUsers.map(user => user.id);
+        
+        // Get software assignments for users in the manager's department
+        const assignments = await storage.getSoftwareAssignments();
+        const departmentAssignments = assignments.filter(assignment => 
+          departmentUserIds.includes(assignment.userId)
+        );
+        const departmentSoftwareIds = [...new Set(departmentAssignments.map(assignment => assignment.softwareId))];
+        
+        // Filter software to only show those assigned to users in the manager's department
+        software = software.filter(sw => departmentSoftwareIds.includes(sw.id));
+      }
+      
       res.json(software);
     } catch (error) {
       res.status(500).json({ message: "Error fetching software" });
@@ -2774,10 +2911,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionData = req.session as any;
       const { status, userId } = req.query;
+      const currentUser = await storage.getUser(sessionData.userId);
       
-      // Non-admin users can only see their own reports
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
       let filterUserId = userId;
-      if (sessionData.userRole !== 'admin') {
+      
+      // Admin users can see all reports
+      if (currentUser.role === 'admin') {
+        // No filtering for admin users
+      } 
+      // Managers can see reports from their department
+      else if (currentUser.isManager) {
+        const allReports = await storage.getProblemReports(status as string);
+        const users = await storage.getUsers();
+        const departmentUsers = users.filter(user => user.department === currentUser.department);
+        const departmentUserIds = departmentUsers.map(user => user.id);
+        
+        const filteredReports = allReports.filter(report => 
+          departmentUserIds.includes(report.userId)
+        );
+        
+        return res.json(filteredReports);
+      }
+      // Regular users can only see their own reports
+      else {
         filterUserId = sessionData.userId.toString();
       }
       
