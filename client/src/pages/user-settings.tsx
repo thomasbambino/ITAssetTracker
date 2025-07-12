@@ -108,8 +108,14 @@ export default function UserSettings() {
         title: 'Photo Uploaded',
         description: 'Your profile photo has been updated successfully.',
       });
-      // Invalidate user data to refresh profile photo
+      // Force immediate refresh of user data
       queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+      queryClient.refetchQueries({ queryKey: ['/api/users/me'] });
+      
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     },
     onError: (error: any) => {
       toast({
@@ -134,8 +140,9 @@ export default function UserSettings() {
         title: 'Photo Deleted',
         description: 'Your profile photo has been removed.',
       });
-      // Invalidate user data to refresh profile photo
+      // Invalidate and refetch user data to refresh profile photo
       queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+      queryClient.refetchQueries({ queryKey: ['/api/users/me'] });
     },
     onError: (error: any) => {
       toast({

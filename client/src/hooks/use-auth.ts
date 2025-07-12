@@ -8,6 +8,7 @@ interface User {
   role: 'admin' | 'user';
   isManager: boolean;
   passwordResetRequired: boolean;
+  profilePhoto?: string;
 }
 
 export function useAuth() {

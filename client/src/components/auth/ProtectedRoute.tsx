@@ -9,6 +9,7 @@ interface User {
   email: string;
   role: 'admin' | 'user';
   passwordResetRequired: boolean;
+  profilePhoto?: string;
 }
 
 interface ProtectedRouteProps {
