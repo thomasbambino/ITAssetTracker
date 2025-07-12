@@ -316,6 +316,7 @@ export class DatabaseStorage implements IStorage {
           two_factor_secret as "twoFactorSecret",
           two_factor_enabled as "twoFactorEnabled",
           two_factor_backup_codes as "twoFactorBackupCodes",
+          profile_photo as "profilePhoto",
           role,
           active,
           is_manager as "isManager",
@@ -351,6 +352,7 @@ export class DatabaseStorage implements IStorage {
           two_factor_secret as "twoFactorSecret",
           two_factor_enabled as "twoFactorEnabled",
           two_factor_backup_codes as "twoFactorBackupCodes",
+          profile_photo as "profilePhoto",
           role,
           active,
           is_manager as "isManager",
@@ -507,6 +509,12 @@ export class DatabaseStorage implements IStorage {
         values.push(user.twoFactorBackupCodes);
       }
       
+      // Profile photo field
+      if (user.profilePhoto !== undefined) {
+        updates.push(`profile_photo = $${paramCount++}`);
+        values.push(user.profilePhoto);
+      }
+      
       // If no updates, return the user
       if (updates.length === 0) {
         return this.getUserById(id);
@@ -534,8 +542,11 @@ export class DatabaseStorage implements IStorage {
           two_factor_secret as "twoFactorSecret",
           two_factor_enabled as "twoFactorEnabled",
           two_factor_backup_codes as "twoFactorBackupCodes",
+          profile_photo as "profilePhoto",
           role,
           active,
+          is_manager as "isManager",
+          managed_department_ids as "managedDepartmentIds",
           last_login as "lastLogin",
           created_at as "createdAt"
       `, values);
