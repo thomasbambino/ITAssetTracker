@@ -322,9 +322,15 @@ export class DirectMailgunService {
               
               <!-- Action Button -->
               <div style="text-align: center; margin: 32px 0;">
-                <a href="${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/login" style="display: inline-block; background: linear-gradient(to right, #1E40AF 0%, rgba(30, 64, 175, 0.9) 100%); color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
-                  Sign In Now
-                </a>
+                <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                  <tr>
+                    <td style="background-color: #1E40AF; border-radius: 8px; padding: 0;">
+                      <a href="${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/login" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 12px 24px; font-weight: 600; font-size: 16px; font-family: Arial, sans-serif; border-radius: 8px;">
+                        Sign In Now
+                      </a>
+                    </td>
+                  </tr>
+                </table>
               </div>
             </div>
             
@@ -451,9 +457,15 @@ export class DirectMailgunService {
               
               <!-- Action Button -->
               <div style="text-align: center; margin: 32px 0;">
-                <a href="${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/login" style="display: inline-block; background: linear-gradient(to right, #1E40AF 0%, rgba(30, 64, 175, 0.9) 100%); color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
-                  Get Started Now
-                </a>
+                <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                  <tr>
+                    <td style="background-color: #1E40AF; border-radius: 8px; padding: 0;">
+                      <a href="${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/login" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 12px 24px; font-weight: 600; font-size: 16px; font-family: Arial, sans-serif; border-radius: 8px;">
+                        Get Started Now
+                      </a>
+                    </td>
+                  </tr>
+                </table>
               </div>
             </div>
             
