@@ -915,6 +915,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload user profile photo
+  app.post('/api/users/:id/photo', isAuthenticated, upload.single('photo'), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Check if user can update this profile (either own profile or admin)
+      if (loggedInUserId !== id && sessionData.userRole !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized to update this profile" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No photo uploaded" });
+      }
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: "Invalid file type. Only JPEG, PNG, and GIF are allowed" });
+      }
+      
+      // Validate file size (5MB limit)
+      if (req.file.size > 5 * 1024 * 1024) {
+        return res.status(400).json({ message: "File too large. Maximum size is 5MB" });
+      }
+      
+      // Convert to base64 for database storage
+      const base64Photo = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      
+      // Update user profile photo
+      const user = await storage.updateUser(id, { profilePhoto: base64Photo }, loggedInUserId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ message: "Profile photo updated successfully", profilePhoto: base64Photo });
+    } catch (error) {
+      console.error("Error uploading profile photo:", error);
+      res.status(500).json({ message: "Error uploading profile photo" });
+    }
+  });
+
+  // Delete user profile photo
+  app.delete('/api/users/:id/photo', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+      
+      // Check if user can update this profile (either own profile or admin)
+      if (loggedInUserId !== id && sessionData.userRole !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized to update this profile" });
+      }
+      
+      // Remove profile photo
+      const user = await storage.updateUser(id, { profilePhoto: null }, loggedInUserId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ message: "Profile photo deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting profile photo:", error);
+      res.status(500).json({ message: "Error deleting profile photo" });
+    }
+  });
+
   // Device routes
   app.get('/api/devices', isAuthenticated, async (req: Request, res: Response) => {
     try {

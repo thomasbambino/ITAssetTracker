@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { Shield, Key, User, Loader2 } from 'lucide-react';
+import { Shield, Key, User, Loader2, Camera, Upload, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -35,6 +35,7 @@ export default function UserSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get 2FA status
   const { data: twoFactorStatus, isLoading: is2FALoading } = useQuery<TwoFactorStatus>({
@@ -82,6 +83,103 @@ export default function UserSettings() {
 
   const handlePasswordSubmit = (data: z.infer<typeof changePasswordSchema>) => {
     changePasswordMutation.mutate(data);
+  };
+
+  // Photo upload mutation
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('photo', file);
+      
+      const response = await fetch(`/api/users/${user?.id}/photo`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to upload photo');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Photo Uploaded',
+        description: 'Your profile photo has been updated successfully.',
+      });
+      // Invalidate user data to refresh profile photo
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Upload Failed',
+        description: error.message || 'Failed to upload photo',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Photo delete mutation
+  const deletePhotoMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest({
+        method: 'DELETE',
+        url: `/api/users/${user?.id}/photo`,
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Photo Deleted',
+        description: 'Your profile photo has been removed.',
+      });
+      // Invalidate user data to refresh profile photo
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Delete Failed',
+        description: error.message || 'Failed to delete photo',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: 'Invalid File Type',
+          description: 'Please select a JPEG, PNG, or GIF image.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'File Too Large',
+          description: 'Please select an image smaller than 5MB.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      uploadPhotoMutation.mutate(file);
+    }
+  };
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDeletePhoto = () => {
+    deletePhotoMutation.mutate();
   };
 
   return (
@@ -226,7 +324,72 @@ export default function UserSettings() {
                 View your account information. Contact an administrator to make changes.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Profile Photo Section */}
+              <div className="space-y-4">
+                <Label>Profile Photo</Label>
+                <div className="flex items-center gap-4">
+                  <div className="relative group">
+                    <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-2 border-border overflow-hidden">
+                      {user?.profilePhoto ? (
+                        <img 
+                          src={user.profilePhoto} 
+                          alt="Profile" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-8 h-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <button
+                      onClick={handlePhotoClick}
+                      className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      disabled={uploadPhotoMutation.isPending}
+                    >
+                      {uploadPhotoMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 text-white animate-spin" />
+                      ) : (
+                        <Camera className="w-4 h-4 text-white" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handlePhotoClick}
+                      disabled={uploadPhotoMutation.isPending}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadPhotoMutation.isPending ? 'Uploading...' : 'Upload Photo'}
+                    </Button>
+                    {user?.profilePhoto && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleDeletePhoto}
+                        disabled={deletePhotoMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {deletePhotoMutation.isPending ? 'Deleting...' : 'Remove'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Upload a profile photo (JPEG, PNG, or GIF, max 5MB)
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+              
+              <Separator className="my-4" />
+              
               <div className="space-y-2">
                 <Label htmlFor="display-name">Display Name</Label>
                 <Input 
