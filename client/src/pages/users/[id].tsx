@@ -542,9 +542,17 @@ export default function UserDetails() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col items-center mb-6">
-                      <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mb-3">
-                        <UserIcon className="h-12 w-12 text-primary-600" />
-                      </div>
+                      {user.profilePhoto ? (
+                        <img 
+                          src={user.profilePhoto} 
+                          alt={`${user.firstName} ${user.lastName}`}
+                          className="w-24 h-24 rounded-full object-cover mb-3 shadow-md"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mb-3">
+                          <UserIcon className="h-12 w-12 text-primary-600" />
+                        </div>
+                      )}
                       <h2 className="text-xl font-semibold">{`${user.firstName} ${user.lastName}`}</h2>
                       <div className="flex items-center mt-1 space-x-2">
                         {user.department && (
