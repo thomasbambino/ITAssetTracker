@@ -1,10 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -62,46 +57,14 @@ export default function Settings() {
       title="Settings"
       description="Configure system and user preferences"
     >
-      <Tabs defaultValue="general" className="w-full">
+      <Tabs defaultValue="security" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="import">Import/Export</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="general" className="mt-0">
-          <Card>
-            <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-              <CardDescription>
-                Configure general application settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="admin-email">Admin Email</Label>
-                <Input id="admin-email" type="email" placeholder="admin@example.com" />
-              </div>
-              
-              <Separator className="my-4" />
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="auto-assign">Auto-assign new devices</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically assign new devices to the IT department
-                  </p>
-                </div>
-                <Switch id="auto-assign" />
-              </div>
-              
-              <Button className="mt-4">Save Changes</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="security" className="mt-0">
           <div className="space-y-6">
             <Card>
