@@ -8,6 +8,7 @@ interface User {
   lastName: string;
   email: string;
   role: 'admin' | 'user';
+  isManager: boolean;
   passwordResetRequired: boolean;
   profilePhoto?: string;
 }

@@ -548,13 +548,21 @@ export function MobileNav() {
           <div className="flex-shrink-0 border-t border-border p-4 bg-muted">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium shadow-sm">
-                  {currentUser ? (
-                    <span>{currentUser.firstName[0]}{currentUser.lastName[0]}</span>
-                  ) : (
-                    <CircleUserIcon className="h-6 w-6" />
-                  )}
-                </div>
+                {currentUser?.profilePhoto ? (
+                  <img 
+                    src={currentUser.profilePhoto} 
+                    alt={`${currentUser.firstName} ${currentUser.lastName}`}
+                    className="h-9 w-9 rounded-full object-cover shadow-sm"
+                  />
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium shadow-sm">
+                    {currentUser ? (
+                      <span>{currentUser.firstName[0]}{currentUser.lastName[0]}</span>
+                    ) : (
+                      <CircleUserIcon className="h-6 w-6" />
+                    )}
+                  </div>
+                )}
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-foreground">
