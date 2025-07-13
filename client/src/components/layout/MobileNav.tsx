@@ -344,8 +344,8 @@ export function MobileNav() {
 
   return (
     <>
-      {/* Header */}
-      <div className="md:hidden bg-background border-b border-border w-full flex items-center justify-between p-3 shadow-sm">
+      {/* Header - Sticky */}
+      <div className="md:hidden bg-background border-b border-border w-full flex items-center justify-between p-3 shadow-sm sticky top-0 z-30">
         <div className="flex items-center">
           <Button 
             variant="ghost" 
@@ -399,9 +399,9 @@ export function MobileNav() {
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar - Sticky */}
       {showSearch && (
-        <div className="md:hidden bg-background border-b border-border w-full p-2 shadow-sm">
+        <div className="md:hidden bg-background border-b border-border w-full p-2 shadow-sm sticky top-[64px] z-30">
           <GlobalSearch />
         </div>
       )}

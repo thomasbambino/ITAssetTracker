@@ -81,8 +81,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
         
         {/* Main Content Area */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none pt-2 pb-6 px-4">
-          {children}
+        <main className="flex-1 relative overflow-y-auto focus:outline-none pt-2 pb-6 px-4 md:px-4">
+          <div className="max-w-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>

@@ -56,18 +56,18 @@ export function StatCard({
   return (
     <Card className="overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 group">
       <CardContent className="p-0 flex-1">
-        <div className="px-3 py-4 sm:px-4 sm:py-5 xl:px-6 h-full">
+        <div className="px-2 py-3 sm:px-4 sm:py-5 xl:px-6 h-full">
           <div className="flex items-center">
-            <div className={`flex-shrink-0 rounded-md p-2 sm:p-3 transition-all duration-300 group-hover:scale-110 ${iconClass}`}>
-              <div className="scale-75 transition-transform duration-300">
+            <div className={`flex-shrink-0 rounded-md p-1.5 sm:p-2 transition-all duration-300 group-hover:scale-110 ${iconClass}`}>
+              <div className="scale-75 sm:scale-100 transition-transform duration-300">
                 {icon}
               </div>
             </div>
-            <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
+            <div className="ml-2 sm:ml-3 w-0 flex-1 min-w-0">
               <dl>
                 <dt className={getTitleClassName(title)} title={title}>{title}</dt>
                 <dd className="flex flex-col sm:flex-row sm:items-baseline">
-                  <div className="text-xl sm:text-2xl font-semibold text-foreground transition-colors duration-300 group-hover:text-primary">
+                  <div className="text-lg sm:text-xl font-semibold text-foreground transition-colors duration-300 group-hover:text-primary">
                     <AnimatedCounter value={value} duration={800} />
                   </div>
                   {additionalInfo && (
@@ -81,7 +81,7 @@ export function StatCard({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="bg-muted px-3 py-2 sm:px-4 sm:py-2 xl:px-6 border-t mt-auto transition-colors duration-300 group-hover:bg-primary/5">
+      <CardFooter className="bg-muted px-2 py-1.5 sm:px-4 sm:py-2 xl:px-6 border-t mt-auto transition-colors duration-300 group-hover:bg-primary/5">
         <div className="text-xs sm:text-sm w-full">
           <Link href={footerLink} className="font-medium text-primary hover:opacity-90 truncate block transition-opacity duration-200">
             {footerText}

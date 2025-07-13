@@ -231,34 +231,36 @@ export default function Dashboard() {
   const sortedDepartmentData = [...(departmentChartData || [])].sort((a, b) => b.value - a.value);
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8 mt-10 md:mt-0">
+    <div className="px-2 sm:px-4 py-4 sm:py-6 lg:px-8 mt-2 md:mt-0 max-w-full overflow-x-hidden">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Overview of your IT asset management system</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 sm:mb-6">
+        <div className="mb-3 md:mb-0">
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Dashboard</h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">Overview of your IT asset management system</p>
         </div>
         
-        {/* Global Search */}
-        <div className="mt-4 md:mt-0 w-full md:w-96">
+        {/* Global Search - Hidden on mobile since it's in the sticky header */}
+        <div className="hidden md:block md:w-96">
           <GlobalSearch />
         </div>
       </div>
       
       {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
         <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '0ms' }}>
           <ActionButton
-            icon={<PlusIcon className="h-4 w-4" />}
+            icon={<PlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />}
             label="Add Device"
             onClick={handleAddDevice}
+            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
           />
         </div>
         <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '100ms' }}>
           <ActionButton
-            icon={<UserPlusIcon className="h-4 w-4" />}
+            icon={<UserPlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />}
             label="Add User"
             onClick={handleAddUser}
+            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
           />
         </div>
         <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '200ms' }}>
@@ -267,20 +269,22 @@ export default function Dashboard() {
             entityName="Users"
             buttonText="Import"
             buttonVariant="outline"
+            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
           />
         </div>
         <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '300ms' }}>
           <ActionButton
-            icon={<FileOutput className="h-4 w-4" />}
+            icon={<FileOutput className="h-3 w-3 sm:h-4 sm:w-4" />}
             label="Export"
             onClick={handleExport}
             variant="secondary"
+            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
           />
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {statsLoading ? (
           // Skeleton loading with staggered animation
           <>
@@ -370,7 +374,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Section */}
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="mt-6 sm:mt-8 grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         <ChartCard title="Asset Distribution by Category">
           {categoriesLoading ? (
             <div className="flex items-center justify-center h-full">
