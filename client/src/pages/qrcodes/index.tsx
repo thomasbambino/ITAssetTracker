@@ -199,26 +199,58 @@ export default function QrCodesPage() {
     if (!selectedQrCode) return;
     
     const qrCodeImg = document.getElementById('qr-code-img') as HTMLImageElement;
-    if (!qrCodeImg || !qrCodeImg.src) return;
+    console.log('QR Code Image Element:', qrCodeImg);
+    console.log('QR Code Image Source:', qrCodeImg?.src);
+    
+    if (!qrCodeImg || !qrCodeImg.src) {
+      toast({
+        title: "Error",
+        description: "QR code image not found. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Create an anchor element and set the download attributes
     const link = document.createElement('a');
     link.href = qrCodeImg.src;
-    link.download = `qrcode-${selectedQrCode.code}.png`;
+    link.download = `qrcode-${selectedQrCode.device?.assetTag || selectedQrCode.code}.png`;
     
     // Programmatically click the link to trigger the download
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    toast({
+      title: "Success",
+      description: "QR code downloaded successfully.",
+    });
   };
   
   // Function to print the QR code
   const printQrCode = () => {
     if (!selectedQrCode) return;
     
+    const qrCodeImg = document.getElementById('qr-code-img') as HTMLImageElement;
+    if (!qrCodeImg || !qrCodeImg.src) {
+      toast({
+        title: "Error",
+        description: "QR code image not found. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Create a new window for printing
     const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    if (!printWindow) {
+      toast({
+        title: "Error",
+        description: "Unable to open print window. Please check your browser's popup settings.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const deviceInfo = selectedQrCode.device 
       ? `${selectedQrCode.device.brand} ${selectedQrCode.device.model} (${selectedQrCode.device.assetTag})`
@@ -233,9 +265,9 @@ export default function QrCodesPage() {
           <style>
             body { font-family: system-ui, sans-serif; text-align: center; padding: 20px; }
             .qr-container { margin: 20px auto; max-width: 300px; }
-            .qr-code { width: 100%; height: auto; }
-            .device-info { margin-top: 10px; font-weight: bold; }
-            .qr-code-text { font-family: monospace; margin-top: 5px; color: #666; }
+            .qr-code { width: 100%; height: auto; max-width: 250px; }
+            .device-info { margin-top: 10px; font-weight: bold; font-size: 14px; }
+            .qr-code-text { font-family: monospace; margin-top: 5px; color: #666; font-size: 12px; }
             @media print {
               body { margin: 0; padding: 0; }
               button { display: none; }
@@ -244,7 +276,7 @@ export default function QrCodesPage() {
         </head>
         <body>
           <div class="qr-container">
-            <img src="${(document.getElementById('qr-code-img') as HTMLImageElement)?.src}" class="qr-code" />
+            <img src="${qrCodeImg.src}" class="qr-code" alt="QR Code" />
             <div class="device-info">${deviceInfo}</div>
             <div class="qr-code-text">${selectedQrCode.code}</div>
           </div>
@@ -257,6 +289,11 @@ export default function QrCodesPage() {
     printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();
+    
+    toast({
+      title: "Success",
+      description: "Print dialog opened successfully.",
+    });
   };
 
   const pageActions = (
@@ -443,11 +480,17 @@ export default function QrCodesPage() {
                   
                   {/* Action Buttons */}
                   <div className="flex space-x-2 justify-center">
-                    <Button variant="outline" size="sm" onClick={printQrCode}>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      // Add a small delay to ensure QR code is fully loaded
+                      setTimeout(printQrCode, 100);
+                    }}>
                       <Printer className="h-4 w-4 mr-2" />
                       Print
                     </Button>
-                    <Button variant="outline" size="sm" onClick={downloadQrCode}>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      // Add a small delay to ensure QR code is fully loaded
+                      setTimeout(downloadQrCode, 100);
+                    }}>
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>
