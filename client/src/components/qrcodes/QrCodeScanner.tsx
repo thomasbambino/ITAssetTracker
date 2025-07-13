@@ -221,9 +221,36 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     
     const initCamera = async () => {
       try {
-        // Dynamically import the HTML5QrCode library
-        const Html5QrcodeModule = await import('html5-qrcode');
-        const Html5Qrcode = Html5QrcodeModule.Html5Qrcode;
+        // Check if we're on iOS Safari first
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        if (isIOS && isSafari) {
+          console.log('iOS Safari detected - using fallback approach');
+        }
+        
+        // Dynamically import the HTML5QrCode library with iOS-specific error handling
+        let Html5Qrcode;
+        try {
+          const Html5QrcodeModule = await import('html5-qrcode');
+          Html5Qrcode = Html5QrcodeModule.Html5Qrcode;
+        } catch (importErr) {
+          console.error("Failed to import HTML5-QrCode library:", importErr);
+          
+          // Check if this is the iOS MIME type error or general loading issue
+          if (importErr instanceof Error && (
+            importErr.message.includes('MIME type') || 
+            importErr.message.includes('text/html') ||
+            importErr.message.includes('not valid Javascript') ||
+            importErr.message.includes('Failed to fetch')
+          )) {
+            setError("Camera scanner is not available on this device. Please use manual code entry below.");
+          } else {
+            setError(`Scanner library failed to load: ${importErr instanceof Error ? importErr.message : String(importErr)}`);
+          }
+          setShowCamera(false);
+          return;
+        }
         
         // Skip if component was unmounted during the import
         if (!mountedRef.current) return;
@@ -469,6 +496,9 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
                 {/* Manual Entry */}
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Enter Code Manually</h4>
+                  <p className="text-xs text-muted-foreground">
+                    If camera scanning isn't working, type or paste the QR code value here
+                  </p>
                   <div className="flex gap-2">
                     <Input 
                       placeholder="Enter QR code value" 
@@ -476,7 +506,7 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
                       onChange={(e) => setManualCode(e.target.value)}
                       className="flex-1"
                     />
-                    <Button onClick={handleManualSubmit}>
+                    <Button onClick={handleManualSubmit} disabled={!manualCode.trim()}>
                       <FileInput className="h-4 w-4 mr-2" />
                       Submit
                     </Button>
