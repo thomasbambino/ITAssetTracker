@@ -58,43 +58,50 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     
     const nextIndex = (currentCameraIndex + 1) % availableCameras.length;
     console.log('Switching to camera index:', nextIndex);
+    
+    // First update the camera index
     setCurrentCameraIndex(nextIndex);
     
-    // Stop current scanner and restart with new camera
-    if (scannerRef.current) {
-      try {
-        // Check if scanner is actually scanning before stopping
-        if (scannerRef.current.isScanning) {
-          console.log('Stopping current scanner...');
-          await scannerRef.current.stop();
+    // Force a complete restart of the camera system
+    try {
+      // Immediate cleanup without waiting for promises
+      if (scannerRef.current) {
+        try {
+          if (scannerRef.current.isScanning) {
+            // Don't await - just fire and forget to avoid media interruption errors
+            scannerRef.current.stop().catch(() => {
+              // Silently ignore all stop errors during switching
+            });
+          }
+        } catch (stopErr) {
+          // Ignore all stop errors
         }
         
-        // Clear scanner reference and reset initialization flag
+        // Clear references immediately
         scannerRef.current = null;
         scannerInitializedRef.current = false;
-        
-        // Longer delay to ensure camera is fully released
-        setTimeout(() => {
-          if (mountedRef.current) {
-            console.log('Restarting camera with new selection...');
-            setShowCamera(false);
-            setTimeout(() => {
-              if (mountedRef.current) {
-                setShowCamera(true);
-              }
-            }, 200);
-          }
-        }, 200);
-      } catch (err) {
-        console.error("Error switching camera:", err);
-        // Reset camera state on error
-        setShowCamera(false);
-        setTimeout(() => {
-          if (mountedRef.current) {
-            setShowCamera(true);
-          }
-        }, 500);
       }
+      
+      // Force DOM cleanup by hiding camera immediately
+      setShowCamera(false);
+      
+      // Wait longer before restart to ensure complete cleanup
+      setTimeout(() => {
+        if (mountedRef.current) {
+          console.log('Restarting camera with new selection...');
+          setShowCamera(true);
+        }
+      }, 300);
+      
+    } catch (err) {
+      console.log("Camera switch initiated despite error:", err);
+      // Force restart even on error
+      setShowCamera(false);
+      setTimeout(() => {
+        if (mountedRef.current) {
+          setShowCamera(true);
+        }
+      }, 500);
     }
   };
   
@@ -173,11 +180,29 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     }
   };
 
-  // Set mounted flag to false on unmount
+  // Set mounted flag to false on unmount and add error handler
   useEffect(() => {
     mountedRef.current = true;
+    
+    // Global error handler for media interruption errors
+    const handleError = (event: ErrorEvent) => {
+      if (event.message && (
+        event.message.includes('media was removed') ||
+        event.message.includes('play() request was interrupted') ||
+        event.message.includes('The play() request was interrupted')
+      )) {
+        // Prevent these errors from showing in console
+        event.preventDefault();
+        console.log('Media interruption error caught and handled during camera switch');
+        return false;
+      }
+    };
+    
+    window.addEventListener('error', handleError);
+    
     return () => {
       mountedRef.current = false;
+      window.removeEventListener('error', handleError);
       cleanupScanner();
     };
   }, []);
