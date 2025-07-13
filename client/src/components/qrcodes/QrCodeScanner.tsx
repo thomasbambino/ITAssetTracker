@@ -61,18 +61,39 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     setCurrentCameraIndex(nextIndex);
     
     // Stop current scanner and restart with new camera
-    if (scannerRef.current && scannerRef.current.isScanning) {
+    if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
+        // Check if scanner is actually scanning before stopping
+        if (scannerRef.current.isScanning) {
+          console.log('Stopping current scanner...');
+          await scannerRef.current.stop();
+        }
+        
+        // Clear scanner reference and reset initialization flag
+        scannerRef.current = null;
         scannerInitializedRef.current = false;
         
-        // Small delay to ensure camera is released
+        // Longer delay to ensure camera is fully released
         setTimeout(() => {
-          setShowCamera(false);
-          setTimeout(() => setShowCamera(true), 100);
-        }, 100);
+          if (mountedRef.current) {
+            console.log('Restarting camera with new selection...');
+            setShowCamera(false);
+            setTimeout(() => {
+              if (mountedRef.current) {
+                setShowCamera(true);
+              }
+            }, 200);
+          }
+        }, 200);
       } catch (err) {
         console.error("Error switching camera:", err);
+        // Reset camera state on error
+        setShowCamera(false);
+        setTimeout(() => {
+          if (mountedRef.current) {
+            setShowCamera(true);
+          }
+        }, 500);
       }
     }
   };
@@ -135,14 +156,20 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
         // Only try to stop if it's scanning
         if (scannerRef.current.isScanning) {
           scannerRef.current.stop().catch((err: any) => {
-            console.log("Error stopping scanner:", err);
+            // Ignore media interruption errors during cleanup
+            if (!err.message?.includes('media was removed') && !err.message?.includes('play() request was interrupted')) {
+              console.log("Error stopping scanner:", err);
+            }
           });
         }
         scannerRef.current = null;
       }
       scannerInitializedRef.current = false;
     } catch (err) {
-      console.log("Error during scanner cleanup:", err);
+      // Ignore media interruption errors during cleanup
+      if (!err.message?.includes('media was removed') && !err.message?.includes('play() request was interrupted')) {
+        console.log("Error during scanner cleanup:", err);
+      }
     }
   };
 
