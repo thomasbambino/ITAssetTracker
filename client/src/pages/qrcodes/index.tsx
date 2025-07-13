@@ -109,15 +109,21 @@ export default function QrCodesPage() {
   };
 
   const handleScanSuccess = (code: string) => {
-    // Record the scan
-    fetch(`/api/qrcodes/code/${code}/scan`, { method: 'POST' })
+    // Record the scan using the correct API endpoint
+    fetch(`/api/qrcodes/scan/${code}`, { 
+      method: 'POST',
+      credentials: 'include', // Include session cookies for authentication
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
       .then(response => {
         if (response.ok) {
           return response.json();
         }
-        throw new Error('Failed to record scan');
+        throw new Error(`Failed to record scan: ${response.status} ${response.statusText}`);
       })
-      .then(qrCode => {
+      .then(result => {
         // Invalidate queries to refresh the list
         queryClient.invalidateQueries({ queryKey: ['/api/qrcodes'] });
         
@@ -132,15 +138,15 @@ export default function QrCodesPage() {
         });
         
         // Navigate to the device details page
-        if (qrCode && qrCode.deviceId) {
-          window.location.href = `/devices/${qrCode.deviceId}`;
+        if (result && result.qrCode && result.qrCode.deviceId) {
+          window.location.href = `/devices/${result.qrCode.deviceId}`;
         }
       })
       .catch(error => {
         console.error("Error recording QR code scan:", error);
         toast({
           title: "Error",
-          description: "Failed to record QR code scan. Please try again.",
+          description: `Failed to record QR code scan: ${error.message}`,
           variant: "destructive",
         });
       });

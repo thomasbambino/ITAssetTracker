@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Camera, CheckCircle, QrCode, FileInput } from "lucide-react";
+import { AlertCircle, Camera, CheckCircle, QrCode, FileInput, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface QrCodeScannerProps {
@@ -15,6 +15,8 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [availableCameras, setAvailableCameras] = useState<any[]>([]);
+  const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
   
   // Store scanner instance in a ref for access across renders
   const scannerRef = useRef<any>(null);
@@ -39,6 +41,30 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     setScannedCode(null);
     setManualCode("");
     setError(null);
+  };
+
+  // Switch to next camera
+  const switchCamera = async () => {
+    if (availableCameras.length <= 1) return;
+    
+    const nextIndex = (currentCameraIndex + 1) % availableCameras.length;
+    setCurrentCameraIndex(nextIndex);
+    
+    // Stop current scanner and restart with new camera
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      try {
+        await scannerRef.current.stop();
+        scannerInitializedRef.current = false;
+        
+        // Small delay to ensure camera is released
+        setTimeout(() => {
+          setShowCamera(false);
+          setTimeout(() => setShowCamera(true), 100);
+        }, 100);
+      } catch (err) {
+        console.error("Error switching camera:", err);
+      }
+    }
   };
   
   // Handle manual code submission
@@ -147,15 +173,43 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
             return;
           }
           
+          // Store available cameras
+          setAvailableCameras(devices);
+          
           // Skip if component was unmounted
           if (!mountedRef.current) return;
           
-          // Start scanner with first camera
+          // Prioritize back-facing cameras for mobile devices
+          let selectedCameraId = devices[0].id;
+          let selectedIndex = 0;
+          
+          // Look for back-facing camera (environment)
+          const backCamera = devices.find((device, index) => {
+            const label = device.label.toLowerCase();
+            if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
+              selectedIndex = index;
+              return true;
+            }
+            return false;
+          });
+          
+          if (backCamera) {
+            selectedCameraId = backCamera.id;
+            setCurrentCameraIndex(selectedIndex);
+          } else {
+            // If no explicit back camera found, use current camera index
+            selectedCameraId = devices[currentCameraIndex]?.id || devices[0].id;
+          }
+          
+          console.log(`Starting camera: ${selectedCameraId} (${devices[selectedIndex]?.label || 'Unknown'})`);
+          
+          // Start scanner with selected camera
           await scannerRef.current.start(
-            devices[0].id,
+            selectedCameraId,
             {
               fps: 10,
               qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0, // Square aspect ratio
             },
             (decodedText: string) => {
               console.log(`QR Code detected: ${decodedText}`);
@@ -206,7 +260,7 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     return () => {
       cleanupScanner();
     };
-  }, [showCamera, scannedCode, onScanSuccess]);
+  }, [showCamera, scannedCode, onScanSuccess, currentCameraIndex]);
   
   // Cleanup on navigation
   useEffect(() => {
@@ -240,6 +294,38 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
           {showCamera ? (
             <div className="aspect-video relative bg-black camera-container">
               {/* Scanner will be attached to this div by the useEffect hook */}
+              
+              {/* Camera Controls Overlay */}
+              <div className="absolute top-4 right-4 z-10 flex gap-2">
+                {availableCameras.length > 1 && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={switchCamera}
+                    className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" />
+                    Switch Camera
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={stopCamera}
+                  className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+                >
+                  Stop Camera
+                </Button>
+              </div>
+              
+              {/* Camera Info */}
+              {availableCameras.length > 0 && (
+                <div className="absolute bottom-4 left-4 z-10">
+                  <div className="bg-black/50 text-white text-xs px-2 py-1 rounded">
+                    Camera: {availableCameras[currentCameraIndex]?.label || 'Unknown'} ({currentCameraIndex + 1}/{availableCameras.length})
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-4">
