@@ -17,6 +17,7 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
   const [showCamera, setShowCamera] = useState(false);
   const [availableCameras, setAvailableCameras] = useState<any[]>([]);
   const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
+  const [showScanFlash, setShowScanFlash] = useState(false);
   
   // Store scanner instance in a ref for access across renders
   const scannerRef = useRef<any>(null);
@@ -67,12 +68,52 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
     }
   };
   
+  // Haptic feedback function with audio cue
+  const triggerHapticFeedback = () => {
+    try {
+      // Haptic feedback
+      if ('vibrate' in navigator) {
+        // Pattern: short-pause-medium for success
+        navigator.vibrate([100, 50, 200]);
+      }
+      // Fallback for older devices
+      else if ('webkitVibrate' in navigator) {
+        (navigator as any).webkitVibrate([100, 50, 200]);
+      }
+      
+      // Audio feedback - success beep
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // High pitch
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+      
+    } catch (error) {
+      // Silently fail if haptic/audio feedback is not supported
+      console.log('Haptic/audio feedback not supported:', error);
+    }
+  };
+
   // Handle manual code submission
   const handleManualSubmit = () => {
     if (!manualCode || manualCode.trim() === "") {
       setError("Please enter a QR code value");
       return;
     }
+    
+    // Trigger haptic feedback for manual scan success
+    triggerHapticFeedback();
     
     setScannedCode(manualCode);
     onScanSuccess(manualCode);
@@ -213,6 +254,13 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
             },
             (decodedText: string) => {
               console.log(`QR Code detected: ${decodedText}`);
+              
+              // Trigger visual flash effect
+              setShowScanFlash(true);
+              setTimeout(() => setShowScanFlash(false), 500);
+              
+              // Trigger haptic feedback for successful scan
+              triggerHapticFeedback();
               
               // Ensure scanner is stopped before navigation
               try {

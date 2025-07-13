@@ -108,6 +108,24 @@ export default function QrCodesPage() {
     queryClient.invalidateQueries({ queryKey: ['/api/qrcodes'] });
   };
 
+  // Haptic feedback function for successful scan recording
+  const triggerSuccessHapticFeedback = () => {
+    try {
+      // Try modern Vibration API first
+      if ('vibrate' in navigator) {
+        // Pattern: double pulse for successful recording
+        navigator.vibrate([200, 100, 200]);
+      }
+      // Fallback for older devices
+      else if ('webkitVibrate' in navigator) {
+        (navigator as any).webkitVibrate([200, 100, 200]);
+      }
+    } catch (error) {
+      // Silently fail if haptic feedback is not supported
+      console.log('Haptic feedback not supported:', error);
+    }
+  };
+
   const handleScanSuccess = (code: string) => {
     // Record the scan using the correct API endpoint
     fetch(`/api/qrcodes/scan/${code}`, { 
@@ -124,6 +142,9 @@ export default function QrCodesPage() {
         throw new Error(`Failed to record scan: ${response.status} ${response.statusText}`);
       })
       .then(result => {
+        // Trigger haptic feedback for successful scan recording
+        triggerSuccessHapticFeedback();
+        
         // Invalidate queries to refresh the list
         queryClient.invalidateQueries({ queryKey: ['/api/qrcodes'] });
         
