@@ -343,6 +343,11 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
             <div className="aspect-video relative bg-black camera-container">
               {/* Scanner will be attached to this div by the useEffect hook */}
               
+              {/* Success Flash Overlay */}
+              {showScanFlash && (
+                <div className="absolute inset-0 bg-green-400 opacity-70 z-20 animate-pulse" />
+              )}
+              
               {/* Camera Controls Overlay */}
               <div className="absolute top-4 right-4 z-10 flex gap-2">
                 {availableCameras.length > 1 && (
