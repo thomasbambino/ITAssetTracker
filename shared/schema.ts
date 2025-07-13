@@ -373,14 +373,31 @@ export const qrCodes = pgTable("qr_codes", {
   scanCount: integer("scan_count").default(0),
 });
 
+export const qrCodeScanHistory = pgTable("qr_code_scan_history", {
+  id: serial("id").primaryKey(),
+  qrCodeId: integer("qr_code_id").references(() => qrCodes.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  scannedAt: timestamp("scanned_at").defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  location: text("location"),
+});
+
 export const insertQrCodeSchema = createInsertSchema(qrCodes).omit({
   id: true,
   generatedAt: true,
   scanCount: true,
 });
 
+export const insertQrCodeScanHistorySchema = createInsertSchema(qrCodeScanHistory).omit({
+  id: true,
+  scannedAt: true,
+});
+
 export type InsertQrCode = z.infer<typeof insertQrCodeSchema>;
 export type QrCode = typeof qrCodes.$inferSelect;
+export type InsertQrCodeScanHistory = z.infer<typeof insertQrCodeScanHistorySchema>;
+export type QrCodeScanHistory = typeof qrCodeScanHistory.$inferSelect;
 
 // Notifications
 export const notifications = pgTable("notifications", {

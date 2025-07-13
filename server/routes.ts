@@ -2597,6 +2597,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionData = req.session as any;
       const loggedInUserId = sessionData.userId;
       
+      // Get client IP and user agent for scan history
+      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+      const userAgent = req.get('User-Agent') || 'unknown';
+      
       // Find the QR code
       const qrCode = await storage.getQrCodeByCode(code);
       
@@ -2605,7 +2609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Record the scan
-      const updatedQrCode = await storage.recordQrCodeScan(qrCode.id, loggedInUserId);
+      const updatedQrCode = await storage.recordQrCodeScan(qrCode.id, loggedInUserId, ipAddress, userAgent);
       
       // Get the associated device
       let device = null;
@@ -2620,6 +2624,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error scanning QR code:", error);
       res.status(500).json({ message: "Error scanning QR code" });
+    }
+  });
+
+  // Get QR code scan history
+  app.get('/api/qrcodes/:id/history', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const history = await storage.getQrCodeScanHistory(id);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching QR code scan history:", error);
+      res.status(500).json({ message: "Error fetching QR code scan history" });
     }
   });
 

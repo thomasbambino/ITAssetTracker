@@ -3056,7 +3056,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async recordQrCodeScan(id: number, loggedInUserId?: number): Promise<QrCode | undefined> {
+  async recordQrCodeScan(id: number, loggedInUserId?: number, ipAddress?: string, userAgent?: string): Promise<QrCode | undefined> {
     try {
       // Update the scan count and last scanned time
       const updatedQrCode = await db.one(`
@@ -3072,6 +3072,12 @@ export class DatabaseStorage implements IStorage {
           last_scanned as "lastScanned", 
           scan_count as "scanCount"
       `, [id]);
+      
+      // Create scan history record
+      await db.none(`
+        INSERT INTO qr_code_scan_history (qr_code_id, user_id, ip_address, user_agent, scanned_at)
+        VALUES ($1, $2, $3, $4, NOW())
+      `, [id, loggedInUserId, ipAddress, userAgent]);
       
       // Get device information if available
       let device;
@@ -3111,6 +3117,44 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error recording QR code scan:', error);
       return undefined;
+    }
+  }
+
+  async getQrCodeScanHistory(qrCodeId: number): Promise<any[]> {
+    try {
+      const history = await db.any(`
+        SELECT 
+          h.id,
+          h.qr_code_id as "qrCodeId",
+          h.user_id as "userId",
+          h.scanned_at as "timestamp",
+          h.ip_address as "ipAddress",
+          h.user_agent as "userAgent",
+          h.location,
+          u.first_name as "firstName",
+          u.last_name as "lastName"
+        FROM qr_code_scan_history h
+        LEFT JOIN users u ON h.user_id = u.id
+        WHERE h.qr_code_id = $1
+        ORDER BY h.scanned_at DESC
+      `, [qrCodeId]);
+      
+      return history.map(scan => ({
+        id: scan.id,
+        qrCodeId: scan.qrCodeId,
+        userId: scan.userId,
+        timestamp: scan.timestamp,
+        ipAddress: scan.ipAddress,
+        userAgent: scan.userAgent,
+        location: scan.location,
+        scannedBy: scan.firstName && scan.lastName ? {
+          id: scan.userId,
+          name: `${scan.firstName} ${scan.lastName}`
+        } : null
+      }));
+    } catch (error) {
+      console.error('Error fetching QR code scan history:', error);
+      return [];
     }
   }
 
