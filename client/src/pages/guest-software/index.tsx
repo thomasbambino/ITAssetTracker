@@ -116,7 +116,7 @@ export default function GuestSoftware() {
       <div className="space-y-6">
         {assignedSoftware.map((assignment) => (
           <Card key={assignment.id} className="overflow-hidden">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 px-4 md:px-6">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-2 sm:space-y-0">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2 flex-wrap">
@@ -124,18 +124,18 @@ export default function GuestSoftware() {
                       <img
                         src={assignment.software.icon}
                         alt={`${assignment.software.name} icon`}
-                        className="h-5 w-5 rounded object-cover"
+                        className="h-5 w-5 rounded object-cover flex-shrink-0"
                       />
                     ) : (
-                      <Package className="h-5 w-5 text-primary" />
+                      <Package className="h-5 w-5 text-primary flex-shrink-0" />
                     )}
-                    <span>{assignment.software.name}</span>
+                    <span className="break-words">{assignment.software.name}</span>
                     {assignment.software.url && (
                       <a
                         href={assignment.software.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary transition-colors"
+                        className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
                         title="Open software website"
                       >
                         <ExternalLink className="h-4 w-4" />
@@ -144,7 +144,7 @@ export default function GuestSoftware() {
                   </CardTitle>
                   <CardDescription className="text-base mt-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span>{assignment.software.vendor}</span>
+                      <span className="break-words">{assignment.software.vendor}</span>
                       {assignment.software.version && (
                         <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
                           v{assignment.software.version}
@@ -153,14 +153,14 @@ export default function GuestSoftware() {
                     </div>
                   </CardDescription>
                 </div>
-                <Badge className={`${getStatusColor(assignment.software.status || 'active')} mt-2 sm:mt-0`}>
+                <Badge className={`${getStatusColor(assignment.software.status || 'active')} mt-2 sm:mt-0 self-start`}>
                   {formatStatus(assignment.software.status)}
                 </Badge>
               </div>
             </CardHeader>
 
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            <CardContent className="pt-0 px-4 md:px-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
                 {/* License Information */}
                 <div className="space-y-4">
@@ -171,21 +171,21 @@ export default function GuestSoftware() {
                   
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-muted-foreground min-w-[80px]">Type:</span>
-                      <span className="text-sm">{assignment.software.licenseType}</span>
+                      <span className="text-sm font-medium text-muted-foreground min-w-[80px] flex-shrink-0">Type:</span>
+                      <span className="text-sm break-words">{assignment.software.licenseType}</span>
                     </div>
                     
                     {assignment.software.expiryDate && (
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-muted-foreground min-w-[80px]">Expires:</span>
+                        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm font-medium text-muted-foreground min-w-[80px] flex-shrink-0">Expires:</span>
                         <span className="text-sm">{formatDate(assignment.software.expiryDate)}</span>
                       </div>
                     )}
                     
                     {assignment.licenseKey && (
                       <div className="flex items-start gap-2">
-                        <span className="text-sm font-medium text-muted-foreground min-w-[80px] mt-0.5">License Key:</span>
+                        <span className="text-sm font-medium text-muted-foreground min-w-[80px] mt-0.5 flex-shrink-0">License Key:</span>
                         <span className="text-sm font-mono bg-muted px-2 py-1 rounded break-all">
                           {assignment.licenseKey}
                         </span>
@@ -203,16 +203,16 @@ export default function GuestSoftware() {
                   
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-muted-foreground min-w-[80px]">Assigned:</span>
+                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm font-medium text-muted-foreground min-w-[80px] flex-shrink-0">Assigned:</span>
                       <span className="text-sm">{formatDate(assignment.assignedAt)}</span>
                     </div>
                     
                     {assignment.deviceAssetTag && (
                       <div className="flex items-center gap-2">
-                        <Monitor className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-muted-foreground min-w-[80px]">Device:</span>
-                        <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                        <Monitor className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm font-medium text-muted-foreground min-w-[80px] flex-shrink-0">Device:</span>
+                        <span className="text-sm font-mono bg-muted px-2 py-1 rounded break-all">
                           #{assignment.deviceAssetTag}
                         </span>
                       </div>
@@ -230,8 +230,8 @@ export default function GuestSoftware() {
                   <div className="space-y-3">
                     {assignment.software.url && (
                       <div className="flex items-start gap-2">
-                        <ExternalLink className="h-4 w-4 text-muted-foreground mt-0.5" />
-                        <div className="flex-1">
+                        <ExternalLink className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
                           <span className="text-sm font-medium text-muted-foreground">Website:</span>
                           <div className="mt-1">
                             <a
@@ -249,8 +249,8 @@ export default function GuestSoftware() {
                     
                     {assignment.notes && (
                       <div className="flex items-start gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                        <div className="flex-1">
+                        <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
                           <span className="text-sm font-medium text-muted-foreground">Notes:</span>
                           <p className="text-sm mt-1 text-muted-foreground leading-relaxed">
                             {assignment.notes}

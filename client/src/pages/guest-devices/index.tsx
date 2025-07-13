@@ -169,8 +169,8 @@ export default function GuestDevices() {
                 </div>
               </CardHeader>
 
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+              <CardContent className="pt-0 px-4 md:px-6">
+                <div className="grid grid-cols-1 gap-6">
                   
                   {/* Device Specifications */}
                   <div className="space-y-4">
@@ -181,11 +181,11 @@ export default function GuestDevices() {
                     
                     <div className="space-y-3">
                       {parsedSpecs && Object.keys(parsedSpecs).length > 0 ? (
-                        <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {/* Display RAM - try multiple field names */}
                           {(parsedSpecs.ram || parsedSpecs.RAM || parsedSpecs.memory) && (
                             <div className="flex items-start gap-3">
-                              <span className="text-sm font-medium text-muted-foreground w-16 sm:w-20 flex-shrink-0">RAM:</span>
+                              <span className="text-sm font-medium text-muted-foreground w-16 flex-shrink-0">RAM:</span>
                               <span className="text-sm">{parsedSpecs.ram || parsedSpecs.RAM || parsedSpecs.memory}</span>
                             </div>
                           )}
@@ -193,7 +193,7 @@ export default function GuestDevices() {
                           {/* Display Storage */}
                           {(parsedSpecs.storage || parsedSpecs.Storage) && (
                             <div className="flex items-start gap-3">
-                              <span className="text-sm font-medium text-muted-foreground w-16 sm:w-20 flex-shrink-0">Storage:</span>
+                              <span className="text-sm font-medium text-muted-foreground w-16 flex-shrink-0">Storage:</span>
                               <span className="text-sm">{parsedSpecs.storage || parsedSpecs.Storage}</span>
                             </div>
                           )}
@@ -201,7 +201,7 @@ export default function GuestDevices() {
                           {/* Display Graphics */}
                           {(parsedSpecs.graphics || parsedSpecs.Graphics) && (
                             <div className="flex items-start gap-3">
-                              <span className="text-sm font-medium text-muted-foreground w-16 sm:w-20 flex-shrink-0">Graphics:</span>
+                              <span className="text-sm font-medium text-muted-foreground w-16 flex-shrink-0">Graphics:</span>
                               <span className="text-sm">{parsedSpecs.graphics || parsedSpecs.Graphics}</span>
                             </div>
                           )}
@@ -209,7 +209,7 @@ export default function GuestDevices() {
                           {/* Display Display/Screen */}
                           {(parsedSpecs.display || parsedSpecs.Display || parsedSpecs.screen) && (
                             <div className="flex items-start gap-3">
-                              <span className="text-sm font-medium text-muted-foreground w-16 sm:w-20 flex-shrink-0">Display:</span>
+                              <span className="text-sm font-medium text-muted-foreground w-16 flex-shrink-0">Display:</span>
                               <span className="text-sm">{parsedSpecs.display || parsedSpecs.Display || parsedSpecs.screen}</span>
                             </div>
                           )}
@@ -232,95 +232,100 @@ export default function GuestDevices() {
                             
                             return (
                               <div key={key} className="flex items-start gap-3">
-                                <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">
+                                <span className="text-sm font-medium text-muted-foreground w-16 flex-shrink-0">
                                   {displayKey}:
                                 </span>
                                 <span className="text-sm">{value}</span>
                               </div>
                             );
                           })}
-                        </>
+                        </div>
                       ) : (
                         <p className="text-sm text-muted-foreground">No specifications available</p>
                       )}
                       
                       {device.serialNumber && (
-                        <div className="flex items-start gap-3 pt-2 border-t">
-                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Serial:</span>
-                          <span className="text-sm font-mono">{device.serialNumber}</span>
+                        <div className="flex items-start gap-3 pt-3 border-t">
+                          <span className="text-sm font-medium text-muted-foreground w-16 flex-shrink-0">Serial:</span>
+                          <span className="text-sm font-mono break-all">{device.serialNumber}</span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Location & Management */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      Location & Management
-                    </h3>
-                    
-                    <div className="space-y-3">
-                      {device.site && (
-                        <div className="flex items-start gap-3">
-                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Site:</span>
-                          <span className="text-sm">{device.site.name}</span>
-                        </div>
-                      )}
+                  {/* Additional Information Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Location & Management */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        Location & Management
+                      </h3>
                       
-                      {device.address && (
+                      <div className="space-y-3">
+                        {device.site && (
+                          <div className="flex items-start gap-3">
+                            <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Site:</span>
+                            <span className="text-sm">{device.site.name}</span>
+                          </div>
+                        )}
+                        
+                        {device.address && (
+                          <div className="flex items-start gap-3">
+                            <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Address:</span>
+                            <span className="text-sm break-words">{device.address}</span>
+                          </div>
+                        )}
+                        
                         <div className="flex items-start gap-3">
-                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Address:</span>
-                          <span className="text-sm">{device.address}</span>
+                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Assigned:</span>
+                          <span className="text-sm">{formatDate(device.assignedAt)}</span>
                         </div>
-                      )}
+                      </div>
+                    </div>
+
+                    {/* Financial & Warranty */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Financial & Warranty
+                      </h3>
                       
-                      <div className="flex items-start gap-3">
-                        <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Assigned:</span>
-                        <span className="text-sm">{formatDate(device.assignedAt)}</span>
+                      <div className="space-y-3">
+                        {device.purchaseCost !== null && (
+                          <div className="flex items-start gap-3">
+                            <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Cost:</span>
+                            <span className="text-sm">{formatCurrency(device.purchaseCost)}</span>
+                          </div>
+                        )}
+                        
+                        {device.purchaseDate && (
+                          <div className="flex items-start gap-3">
+                            <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Purchased:</span>
+                            <span className="text-sm">{formatDate(device.purchaseDate)}</span>
+                          </div>
+                        )}
+                        
+                        {device.warrantyEOL && (
+                          <div className="flex items-start gap-3">
+                            <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Warranty:</span>
+                            <span className="text-sm">{formatDate(device.warrantyEOL)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Financial & Warranty */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Financial & Warranty
-                    </h3>
-                    
-                    <div className="space-y-3">
-                      {device.purchaseCost !== null && (
-                        <div className="flex items-start gap-3">
-                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Cost:</span>
-                          <span className="text-sm">{formatCurrency(device.purchaseCost)}</span>
-                        </div>
-                      )}
-                      
-                      {device.purchaseDate && (
-                        <div className="flex items-start gap-3">
-                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Purchased:</span>
-                          <span className="text-sm">{formatDate(device.purchaseDate)}</span>
-                        </div>
-                      )}
-                      
-                      {device.warrantyEOL && (
-                        <div className="flex items-start gap-3">
-                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Warranty:</span>
-                          <span className="text-sm">{formatDate(device.warrantyEOL)}</span>
-                        </div>
-                      )}
+                  {/* Notes Section */}
+                  {device.notes && (
+                    <div className="pt-4 border-t">
+                      <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2 mb-3">
+                        <FileText className="h-4 w-4" />
+                        Notes
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{device.notes}</p>
                     </div>
-
-                    {device.notes && (
-                      <div className="pt-3 border-t">
-                        <div className="flex items-start gap-3">
-                          <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Notes:</span>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{device.notes}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

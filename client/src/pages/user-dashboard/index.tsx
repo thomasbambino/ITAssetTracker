@@ -280,56 +280,53 @@ export default function UserDashboard() {
               {assignedDevices.map((device, index) => (
                 <Card 
                   key={device.id} 
-                  className={`p-6 transition-all duration-300 delay-${index * 100 + 600} ${
+                  className={`p-4 md:p-6 transition-all duration-300 delay-${index * 100 + 600} ${
                     isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                   }`}
                 >
-                  {/* Responsive Layout - Stack on mobile, horizontal on larger screens */}
-                  <div className="flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-8">
+                  {/* Mobile-First Responsive Layout */}
+                  <div className="space-y-4">
                     
-                    {/* Left Side - Device Name and Serial */}
-                    <div className="flex-shrink-0 space-y-2 lg:w-80">
-                      <div className="space-y-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                          <CardTitle className="text-lg font-semibold">{device.name || `${device.brand} ${device.model}`}</CardTitle>
-                          <Badge className={getStatusColor(device.status)}>
-                            {device.status?.charAt(0).toUpperCase() + device.status?.slice(1).toLowerCase() || device.status}
-                          </Badge>
-                        </div>
+                    {/* Device Header - Name, Model, Status */}
+                    <div className="flex flex-col space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                        <CardTitle className="text-lg sm:text-xl font-semibold">
+                          {device.name || `${device.brand} ${device.model}`}
+                        </CardTitle>
+                        <Badge className={getStatusColor(device.status)}>
+                          {device.status?.charAt(0).toUpperCase() + device.status?.slice(1).toLowerCase() || device.status}
+                        </Badge>
                       </div>
                       
                       {/* Serial Number prominently displayed */}
                       {device.serialNumber && (
-                        <div className="bg-muted/30 rounded-md px-3 py-2 mt-3">
+                        <div className="bg-muted/30 rounded-md px-3 py-2">
                           <div className="text-xs text-muted-foreground font-medium">Serial Number</div>
                           <div className="font-mono text-sm font-medium">{device.serialNumber}</div>
                         </div>
                       )}
                     </div>
 
-                    {/* Right Side - Basic Info and Location */}
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                      
-                      {/* Empty spacer column on large screens only */}
-                      <div className="hidden lg:block"></div>
+                    {/* Device Information Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       
                       {/* Basic Information */}
-                      <div>
-                        <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-sm text-muted-foreground flex items-center space-x-2">
                           <Package className="h-4 w-4" />
                           <span>Basic Information</span>
                         </h4>
                         <div className="space-y-2 text-sm">
                           {device.assetTag && (
                             <div className="flex items-center space-x-2">
-                              <Tag className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground font-medium">Asset Tag:</span>
+                              <Tag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground font-medium min-w-0">Asset Tag:</span>
                               <span className="break-all">{device.assetTag}</span>
                             </div>
                           )}
                           {device.assignedAt && (
                             <div className="flex items-center space-x-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                               <span className="text-muted-foreground font-medium">Assigned:</span>
                               <span>{formatDate(device.assignedAt)}</span>
                             </div>
@@ -338,38 +335,31 @@ export default function UserDashboard() {
                       </div>
 
                       {/* Location & Management */}
-                      <div>
-                        {(device.site || device.address || device.warrantyEOL) ? (
-                          <>
-                            <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
-                              <Building2 className="h-4 w-4" />
-                              <span>Location & Management</span>
-                            </h4>
-                            <div className="space-y-2 text-sm">
-                              {device.site && (
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-muted-foreground font-medium">Site:</span>
-                                  <span>{device.site.name}</span>
-                                </div>
-                              )}
-                              {device.address && (
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-muted-foreground font-medium">Address:</span>
-                                  <span className="break-words">{device.address}</span>
-                                </div>
-                              )}
-                              {device.warrantyEOL && (
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-muted-foreground font-medium">Warranty:</span>
-                                  <span>Until {formatDate(device.warrantyEOL)}</span>
-                                </div>
-                              )}
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-sm text-muted-foreground flex items-center space-x-2">
+                          <Building2 className="h-4 w-4" />
+                          <span>Location & Management</span>
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          {device.site && (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-muted-foreground font-medium">Site:</span>
+                              <span>{device.site.name}</span>
                             </div>
-                          </>
-                        ) : (
-                          /* Empty placeholder to maintain grid structure */
-                          <div></div>
-                        )}
+                          )}
+                          {device.address && (
+                            <div className="flex items-start space-x-2">
+                              <span className="text-muted-foreground font-medium flex-shrink-0">Address:</span>
+                              <span className="break-words">{device.address}</span>
+                            </div>
+                          )}
+                          {device.warrantyEOL && (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-muted-foreground font-medium">Warranty:</span>
+                              <span>Until {formatDate(device.warrantyEOL)}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                     </div>
