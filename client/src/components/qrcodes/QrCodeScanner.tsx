@@ -378,29 +378,7 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
                 )}
               </div>
               
-              {/* Camera Controls - positioned in bottom-right of camera area */}
-              <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
-                {availableCameras.length > 1 && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={switchCamera}
-                    className="bg-black/90 text-white border-white/30 hover:bg-black shadow-xl backdrop-blur-sm"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Switch
-                  </Button>
-                )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={stopCamera}
-                  className="bg-red-600/90 text-white border-white/30 hover:bg-red-700 shadow-xl backdrop-blur-sm"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Stop
-                </Button>
-              </div>
+
             </>
           ) : (
             <div className="p-4">
@@ -460,9 +438,17 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       
       <div className="flex justify-center space-x-2">
         {showCamera ? (
-          <Button onClick={stopCamera} variant="outline">
-            Stop Camera
-          </Button>
+          <>
+            {availableCameras.length > 1 && (
+              <Button onClick={switchCamera} variant="outline">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Switch Camera
+              </Button>
+            )}
+            <Button onClick={stopCamera} variant="outline">
+              Stop Camera
+            </Button>
+          </>
         ) : scannedCode ? (
           <Button onClick={resetScanner}>
             <QrCode className="h-4 w-4 mr-2" />
