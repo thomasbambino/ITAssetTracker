@@ -413,10 +413,10 @@ export function MobileNav() {
 
       {/* Sidebar */}
       <div className={cn(
-        "md:hidden fixed inset-y-0 left-0 transform bg-background w-72 z-50 transition-transform duration-300 ease-in-out overflow-y-auto overflow-x-hidden",
+        "md:hidden fixed inset-y-0 left-0 transform bg-background w-72 z-50 transition-transform duration-300 ease-in-out flex flex-col",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex items-center justify-between h-16 px-4 bg-muted border-b border-border">
+        <div className="flex items-center justify-between h-16 px-4 bg-muted border-b border-border flex-shrink-0">
           <div className="flex items-center">
             {branding?.logo ? (
               <div className="w-9 h-9 bg-card rounded-md flex items-center justify-center border border-border">
@@ -455,7 +455,7 @@ export function MobileNav() {
           </Button>
         </div>
         
-        <div className="px-2 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4 space-y-4">
           {/* Main Group */}
           <div>
             <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -542,74 +542,75 @@ export function MobileNav() {
               )}
             </>
           )}
+          
+          {/* Add some bottom padding to prevent content from being hidden behind user section */}
+          <div className="h-20"></div>
         </div>
         
-        <div className="absolute bottom-0 w-full">
-          <div className="flex-shrink-0 border-t border-border p-4 bg-muted">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                {currentUser?.profilePhoto ? (
-                  <img 
-                    src={currentUser.profilePhoto} 
-                    alt={`${currentUser.firstName} ${currentUser.lastName}`}
-                    className="h-9 w-9 rounded-full object-cover shadow-sm"
-                  />
-                ) : (
-                  <div className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium shadow-sm">
-                    {currentUser ? (
-                      <span>{currentUser.firstName[0]}{currentUser.lastName[0]}</span>
-                    ) : (
-                      <CircleUserIcon className="h-6 w-6" />
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-foreground">
-                  {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Loading...'}
-                </p>
-                <p className="text-xs font-medium text-muted-foreground mt-0.5">
+        <div className="flex-shrink-0 border-t border-border p-4 bg-muted">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              {currentUser?.profilePhoto ? (
+                <img 
+                  src={currentUser.profilePhoto} 
+                  alt={`${currentUser.firstName} ${currentUser.lastName}`}
+                  className="h-9 w-9 rounded-full object-cover shadow-sm"
+                />
+              ) : (
+                <div className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium shadow-sm">
                   {currentUser ? (
-                    currentUser.role === 'admin' ? 'Administrator' :
-                    currentUser.isManager ? 'Manager' :
-                    'User'
-                  ) : ''}
-                </p>
-              </div>
-              <div className="ml-auto">
-                <button
-                  onClick={async () => {
-                    try {
-                      // Clear user data immediately to prevent flash
-                      queryClient.removeQueries({ queryKey: ['/api/users/me'] });
-                      
-                      await apiRequest({
-                        url: '/api/auth/logout',
-                        method: 'POST'
-                      });
-                      
-                      // Clear all queries from cache
-                      queryClient.clear();
-                      
-                      // Redirect immediately without showing toast to prevent flash
-                      navigate('/');
-                      
-                      // Reload the page to ensure clean state
-                      window.location.reload();
-                    } catch (error) {
-                      toast({
-                        title: "Error",
-                        description: "Failed to log out. Please try again.",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
-                  className="text-muted-foreground hover:text-destructive transition-colors"
-                  title="Logout"
-                >
-                  <LogOutIcon className="h-5 w-5" />
-                </button>
-              </div>
+                    <span>{currentUser.firstName[0]}{currentUser.lastName[0]}</span>
+                  ) : (
+                    <CircleUserIcon className="h-6 w-6" />
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-foreground">
+                {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Loading...'}
+              </p>
+              <p className="text-xs font-medium text-muted-foreground mt-0.5">
+                {currentUser ? (
+                  currentUser.role === 'admin' ? 'Administrator' :
+                  currentUser.isManager ? 'Manager' :
+                  'User'
+                ) : ''}
+              </p>
+            </div>
+            <div className="ml-auto">
+              <button
+                onClick={async () => {
+                  try {
+                    // Clear user data immediately to prevent flash
+                    queryClient.removeQueries({ queryKey: ['/api/users/me'] });
+                    
+                    await apiRequest({
+                      url: '/api/auth/logout',
+                      method: 'POST'
+                    });
+                    
+                    // Clear all queries from cache
+                    queryClient.clear();
+                    
+                    // Redirect immediately without showing toast to prevent flash
+                    navigate('/');
+                    
+                    // Reload the page to ensure clean state
+                    window.location.reload();
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to log out. Please try again.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+                className="text-muted-foreground hover:text-destructive transition-colors"
+                title="Logout"
+              >
+                <LogOutIcon className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>
