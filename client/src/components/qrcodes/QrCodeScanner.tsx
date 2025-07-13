@@ -378,15 +378,14 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
                 )}
               </div>
               
-              {/* Fixed Position Camera Controls - Outside the HTML5-QrCode container */}
-              <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-2">
+              {/* Camera Controls - positioned in bottom-right of camera area */}
+              <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
                 {availableCameras.length > 1 && (
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={switchCamera}
                     className="bg-black/90 text-white border-white/30 hover:bg-black shadow-xl backdrop-blur-sm"
-                    style={{ position: 'fixed', top: '20px', right: '20px' }}
                   >
                     <RotateCcw className="h-4 w-4 mr-1" />
                     Switch
@@ -397,7 +396,6 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
                   size="sm"
                   onClick={stopCamera}
                   className="bg-red-600/90 text-white border-white/30 hover:bg-red-700 shadow-xl backdrop-blur-sm"
-                  style={{ position: 'fixed', top: availableCameras.length > 1 ? '60px' : '20px', right: '20px' }}
                 >
                   <X className="h-4 w-4 mr-1" />
                   Stop
