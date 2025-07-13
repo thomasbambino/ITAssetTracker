@@ -428,10 +428,10 @@ export default function QrCodesPage() {
       
       {/* QR Code Details Dialog */}
       <Dialog open={isQrDetailsOpen} onOpenChange={setIsQrDetailsOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col">
           {selectedQrCode && (
             <>
-              <DialogHeader>
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle>QR Code Details</DialogTitle>
                 <DialogDescription>
                   {selectedQrCode.device ? (
@@ -445,18 +445,19 @@ export default function QrCodesPage() {
                 </DialogDescription>
               </DialogHeader>
               
-              {/* QR Code Display - Always visible in both tabs */}
-              <div className="flex flex-col items-center justify-center pt-2 pb-4">
-                <div className="bg-white p-6 rounded-md shadow-sm mb-2">
-                  <QrCodeDisplay 
-                    value={selectedQrCode.code}
-                    size={180}
-                    label={selectedQrCode.device?.assetTag || ''}
-                    assetTag={selectedQrCode.device ? `${selectedQrCode.device.brand} ${selectedQrCode.device.model}` : ''}
-                    id="qr-code-img"
-                  />
+              <div className="flex-1 overflow-y-auto">
+                {/* QR Code Display - Always visible in both tabs */}
+                <div className="flex flex-col items-center justify-center pt-2 pb-4">
+                  <div className="bg-white p-4 sm:p-6 rounded-md shadow-sm mb-2">
+                    <QrCodeDisplay 
+                      value={selectedQrCode.code}
+                      size={160}
+                      label={selectedQrCode.device?.assetTag || ''}
+                      assetTag={selectedQrCode.device ? `${selectedQrCode.device.brand} ${selectedQrCode.device.model}` : ''}
+                      id="qr-code-img"
+                    />
+                  </div>
                 </div>
-              </div>
               
               {/* Tabs for Details and History */}
               <Tabs defaultValue="details" value={activeTab} onValueChange={(value) => setActiveTab(value as 'details' | 'history')}>
@@ -506,18 +507,18 @@ export default function QrCodesPage() {
                   </div>
                   
                   {/* Action Buttons */}
-                  <div className="flex space-x-2 justify-center">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 justify-center">
                     <Button variant="outline" size="sm" onClick={() => {
                       // Add a small delay to ensure QR code is fully loaded
                       setTimeout(printQrCode, 100);
-                    }}>
+                    }} className="w-full sm:w-auto">
                       <Printer className="h-4 w-4 mr-2" />
                       Print
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => {
                       // Add a small delay to ensure QR code is fully loaded
                       setTimeout(downloadQrCode, 100);
-                    }}>
+                    }} className="w-full sm:w-auto">
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>
@@ -541,7 +542,7 @@ export default function QrCodesPage() {
                       <p className="text-sm text-muted-foreground mt-1">This QR code has not been scanned yet.</p>
                     </div>
                   ) : (
-                    <div className="max-h-[300px] overflow-y-auto">
+                    <div className="max-h-[200px] sm:max-h-[300px] overflow-y-auto">
                       <div className="space-y-3">
                         {scanHistory.map((scan: any) => (
                           <div key={scan.id} className="flex items-start border-b pb-3">
@@ -579,6 +580,7 @@ export default function QrCodesPage() {
                   )}
                 </TabsContent>
               </Tabs>
+              </div>
             </>
           )}
         </DialogContent>
