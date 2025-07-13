@@ -46,9 +46,18 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
 
   // Switch to next camera
   const switchCamera = async () => {
-    if (availableCameras.length <= 1) return;
+    console.log('Switch camera clicked!');
+    console.log('Available cameras count:', availableCameras.length);
+    console.log('Available cameras:', availableCameras);
+    console.log('Current camera index:', currentCameraIndex);
+    
+    if (availableCameras.length <= 1) {
+      console.log('Not enough cameras to switch');
+      return;
+    }
     
     const nextIndex = (currentCameraIndex + 1) % availableCameras.length;
+    console.log('Switching to camera index:', nextIndex);
     setCurrentCameraIndex(nextIndex);
     
     // Stop current scanner and restart with new camera
@@ -215,6 +224,12 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
           }
           
           // Store available cameras
+          console.log('Available cameras found:', devices);
+          console.log('Camera count:', devices.length);
+          devices.forEach((device, index) => {
+            console.log(`Camera ${index + 1}: ${device.label} (ID: ${device.id})`);
+          });
+          
           setAvailableCameras(devices);
           
           // Skip if component was unmounted
@@ -349,33 +364,34 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
               )}
               
               {/* Camera Controls Overlay */}
-              <div className="absolute top-4 right-4 z-10 flex gap-2">
+              <div className="absolute top-2 right-2 z-30 flex flex-col gap-2">
                 {availableCameras.length > 1 && (
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={switchCamera}
-                    className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+                    className="bg-black/80 text-white border-white/30 hover:bg-black/90 shadow-lg"
                   >
                     <RotateCcw className="h-4 w-4 mr-1" />
-                    Switch Camera
+                    Switch
                   </Button>
                 )}
                 <Button
                   variant="secondary"
                   size="sm"
                   onClick={stopCamera}
-                  className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+                  className="bg-red-600/80 text-white border-white/30 hover:bg-red-700/90 shadow-lg"
                 >
-                  Stop Camera
+                  Stop
                 </Button>
               </div>
               
               {/* Camera Info */}
               {availableCameras.length > 0 && (
-                <div className="absolute bottom-4 left-4 z-10">
-                  <div className="bg-black/50 text-white text-xs px-2 py-1 rounded">
-                    Camera: {availableCameras[currentCameraIndex]?.label || 'Unknown'} ({currentCameraIndex + 1}/{availableCameras.length})
+                <div className="absolute bottom-2 left-2 z-30">
+                  <div className="bg-black/80 text-white text-xs px-3 py-2 rounded shadow-lg">
+                    <div>Camera: {availableCameras[currentCameraIndex]?.label || 'Unknown'}</div>
+                    <div>({currentCameraIndex + 1}/{availableCameras.length}) - {availableCameras.length > 1 ? 'Switch available' : 'Single camera'}</div>
                   </div>
                 </div>
               )}
