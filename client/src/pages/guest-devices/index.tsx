@@ -150,9 +150,9 @@ export default function GuestDevices() {
           return (
             <Card key={device.id} className="overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-2 sm:space-y-0">
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-xl font-bold">
+                    <CardTitle className="text-lg sm:text-xl font-bold">
                       {device.brand} {device.model}
                     </CardTitle>
                     <CardDescription className="text-base mt-1">
@@ -163,14 +163,14 @@ export default function GuestDevices() {
                       )}
                     </CardDescription>
                   </div>
-                  <Badge className={getStatusColor(device.status)}>
+                  <Badge className={`${getStatusColor(device.status)} mt-2 sm:mt-0`}>
                     {formatStatus(device.status)}
                   </Badge>
                 </div>
               </CardHeader>
 
               <CardContent className="pt-0">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                   
                   {/* Device Specifications */}
                   <div className="space-y-4">
@@ -185,7 +185,7 @@ export default function GuestDevices() {
                           {/* Display RAM - try multiple field names */}
                           {(parsedSpecs.ram || parsedSpecs.RAM || parsedSpecs.memory) && (
                             <div className="flex items-start gap-3">
-                              <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">RAM:</span>
+                              <span className="text-sm font-medium text-muted-foreground w-16 sm:w-20 flex-shrink-0">RAM:</span>
                               <span className="text-sm">{parsedSpecs.ram || parsedSpecs.RAM || parsedSpecs.memory}</span>
                             </div>
                           )}
@@ -193,7 +193,7 @@ export default function GuestDevices() {
                           {/* Display Storage */}
                           {(parsedSpecs.storage || parsedSpecs.Storage) && (
                             <div className="flex items-start gap-3">
-                              <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Storage:</span>
+                              <span className="text-sm font-medium text-muted-foreground w-16 sm:w-20 flex-shrink-0">Storage:</span>
                               <span className="text-sm">{parsedSpecs.storage || parsedSpecs.Storage}</span>
                             </div>
                           )}
@@ -201,7 +201,7 @@ export default function GuestDevices() {
                           {/* Display Graphics */}
                           {(parsedSpecs.graphics || parsedSpecs.Graphics) && (
                             <div className="flex items-start gap-3">
-                              <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Graphics:</span>
+                              <span className="text-sm font-medium text-muted-foreground w-16 sm:w-20 flex-shrink-0">Graphics:</span>
                               <span className="text-sm">{parsedSpecs.graphics || parsedSpecs.Graphics}</span>
                             </div>
                           )}
@@ -209,7 +209,7 @@ export default function GuestDevices() {
                           {/* Display Display/Screen */}
                           {(parsedSpecs.display || parsedSpecs.Display || parsedSpecs.screen) && (
                             <div className="flex items-start gap-3">
-                              <span className="text-sm font-medium text-muted-foreground w-20 flex-shrink-0">Display:</span>
+                              <span className="text-sm font-medium text-muted-foreground w-16 sm:w-20 flex-shrink-0">Display:</span>
                               <span className="text-sm">{parsedSpecs.display || parsedSpecs.Display || parsedSpecs.screen}</span>
                             </div>
                           )}

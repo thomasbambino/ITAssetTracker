@@ -117,9 +117,9 @@ export default function GuestSoftware() {
         {assignedSoftware.map((assignment) => (
           <Card key={assignment.id} className="overflow-hidden">
             <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-2 sm:space-y-0">
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-xl font-bold flex items-center gap-2">
+                  <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2 flex-wrap">
                     {assignment.software.icon ? (
                       <img
                         src={assignment.software.icon}
@@ -129,13 +129,13 @@ export default function GuestSoftware() {
                     ) : (
                       <Package className="h-5 w-5 text-primary" />
                     )}
-                    {assignment.software.name}
+                    <span>{assignment.software.name}</span>
                     {assignment.software.url && (
                       <a
                         href={assignment.software.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-2 text-muted-foreground hover:text-primary transition-colors"
+                        className="text-muted-foreground hover:text-primary transition-colors"
                         title="Open software website"
                       >
                         <ExternalLink className="h-4 w-4" />
@@ -143,22 +143,24 @@ export default function GuestSoftware() {
                     )}
                   </CardTitle>
                   <CardDescription className="text-base mt-1">
-                    {assignment.software.vendor}
-                    {assignment.software.version && (
-                      <span className="ml-2 font-mono text-xs bg-muted px-2 py-1 rounded">
-                        v{assignment.software.version}
-                      </span>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>{assignment.software.vendor}</span>
+                      {assignment.software.version && (
+                        <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                          v{assignment.software.version}
+                        </span>
+                      )}
+                    </div>
                   </CardDescription>
                 </div>
-                <Badge className={getStatusColor(assignment.software.status || 'active')}>
+                <Badge className={`${getStatusColor(assignment.software.status || 'active')} mt-2 sm:mt-0`}>
                   {formatStatus(assignment.software.status)}
                 </Badge>
               </div>
             </CardHeader>
 
             <CardContent className="pt-0">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 
                 {/* License Information */}
                 <div className="space-y-4">

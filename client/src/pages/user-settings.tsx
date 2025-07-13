@@ -218,7 +218,7 @@ export default function UserSettings() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg space-y-3 sm:space-y-0">
                     <div className="space-y-1">
                       <h4 className="text-sm font-medium">Two-Factor Authentication</h4>
                       <p className="text-sm text-muted-foreground">
@@ -229,7 +229,7 @@ export default function UserSettings() {
                       </p>
                     </div>
                     <Link href="/settings/two-factor">
-                      <Button variant="outline">
+                      <Button variant="outline" className="w-full sm:w-auto">
                         <Shield className="h-4 w-4 mr-2" />
                         {twoFactorStatus?.enabled ? 'Manage 2FA' : 'Setup 2FA'}
                       </Button>
@@ -335,7 +335,7 @@ export default function UserSettings() {
               {/* Profile Photo Section */}
               <div className="space-y-4">
                 <Label>Profile Photo</Label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="relative group">
                     <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-2 border-border overflow-hidden">
                       {user?.profilePhoto ? (
@@ -360,12 +360,13 @@ export default function UserSettings() {
                       )}
                     </button>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={handlePhotoClick}
                       disabled={uploadPhotoMutation.isPending}
+                      className="w-full sm:w-auto"
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       {uploadPhotoMutation.isPending ? 'Uploading...' : 'Upload Photo'}
@@ -376,6 +377,7 @@ export default function UserSettings() {
                         size="sm"
                         onClick={handleDeletePhoto}
                         disabled={deletePhotoMutation.isPending}
+                        className="w-full sm:w-auto"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         {deletePhotoMutation.isPending ? 'Deleting...' : 'Remove'}

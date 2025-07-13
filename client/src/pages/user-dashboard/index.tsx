@@ -174,7 +174,7 @@ export default function UserDashboard() {
       <div className="space-y-8">
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {(devicesLoading || softwareLoading) ? (
             <>
               <SkeletonCard delay={0} />
@@ -284,13 +284,13 @@ export default function UserDashboard() {
                     isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                   }`}
                 >
-                  {/* Horizontal Layout - Name/Serial on left, Info on right */}
-                  <div className="flex items-start gap-8">
+                  {/* Responsive Layout - Stack on mobile, horizontal on larger screens */}
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-8">
                     
                     {/* Left Side - Device Name and Serial */}
-                    <div className="flex-shrink-0 space-y-2 w-80">
+                    <div className="flex-shrink-0 space-y-2 lg:w-80">
                       <div className="space-y-1">
-                        <div className="flex items-center space-x-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                           <CardTitle className="text-lg font-semibold">{device.name || `${device.brand} ${device.model}`}</CardTitle>
                           <Badge className={getStatusColor(device.status)}>
                             {device.status?.charAt(0).toUpperCase() + device.status?.slice(1).toLowerCase() || device.status}
@@ -308,12 +308,12 @@ export default function UserDashboard() {
                     </div>
 
                     {/* Right Side - Basic Info and Location */}
-                    <div className="flex-1 grid grid-cols-3 gap-6">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                       
-                      {/* Empty spacer column */}
-                      <div></div>
+                      {/* Empty spacer column on large screens only */}
+                      <div className="hidden lg:block"></div>
                       
-                      {/* Basic Information - Now in second column */}
+                      {/* Basic Information */}
                       <div>
                         <h4 className="font-medium text-sm mb-3 flex items-center space-x-2">
                           <Package className="h-4 w-4" />
@@ -324,7 +324,7 @@ export default function UserDashboard() {
                             <div className="flex items-center space-x-2">
                               <Tag className="h-4 w-4 text-muted-foreground" />
                               <span className="text-muted-foreground font-medium">Asset Tag:</span>
-                              <span>{device.assetTag}</span>
+                              <span className="break-all">{device.assetTag}</span>
                             </div>
                           )}
                           {device.assignedAt && (
@@ -337,7 +337,7 @@ export default function UserDashboard() {
                         </div>
                       </div>
 
-                      {/* Location & Management - Now in third column */}
+                      {/* Location & Management */}
                       <div>
                         {(device.site || device.address || device.warrantyEOL) ? (
                           <>
@@ -355,7 +355,7 @@ export default function UserDashboard() {
                               {device.address && (
                                 <div className="flex items-center space-x-2">
                                   <span className="text-muted-foreground font-medium">Address:</span>
-                                  <span>{device.address}</span>
+                                  <span className="break-words">{device.address}</span>
                                 </div>
                               )}
                               {device.warrantyEOL && (
