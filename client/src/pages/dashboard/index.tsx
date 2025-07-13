@@ -246,21 +246,21 @@ export default function Dashboard() {
       </div>
       
       {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
+      <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6">
         <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '0ms' }}>
           <ActionButton
             icon={<PlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />}
-            label="Add Device"
+            label="Device"
             onClick={handleAddDevice}
-            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+            className="text-xs px-2 py-1.5 sm:px-3 sm:py-2 sm:text-sm"
           />
         </div>
         <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '100ms' }}>
           <ActionButton
             icon={<UserPlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />}
-            label="Add User"
+            label="User"
             onClick={handleAddUser}
-            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+            className="text-xs px-2 py-1.5 sm:px-3 sm:py-2 sm:text-sm"
           />
         </div>
         <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '200ms' }}>
@@ -269,7 +269,7 @@ export default function Dashboard() {
             entityName="Users"
             buttonText="Import"
             buttonVariant="outline"
-            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+            className="text-xs px-2 py-1.5 sm:px-3 sm:py-2 sm:text-sm"
           />
         </div>
         <div className="animate-in fade-in slide-in-from-left-4 duration-300" style={{ animationDelay: '300ms' }}>
@@ -278,7 +278,7 @@ export default function Dashboard() {
             label="Export"
             onClick={handleExport}
             variant="secondary"
-            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+            className="text-xs px-2 py-1.5 sm:px-3 sm:py-2 sm:text-sm"
           />
         </div>
       </div>

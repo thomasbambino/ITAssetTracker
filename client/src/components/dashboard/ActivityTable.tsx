@@ -145,28 +145,72 @@ export function ActivityTable({
   const pageNumbers = getVisiblePageNumbers();
 
   return (
-    <Card>
-      <CardHeader className="px-4 py-5 border-b border-border sm:px-6">
-        <CardTitle className="text-lg leading-6 font-medium text-foreground">Recent Activity</CardTitle>
+    <Card className="shadow-sm">
+      <CardHeader className="px-4 py-4 border-b border-border/50 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <CardTitle className="text-lg leading-6 font-medium text-foreground">Recent Activity</CardTitle>
+          </div>
+          <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+            Live updates
+          </div>
+        </div>
       </CardHeader>
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Action</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Details</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Action</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">User</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Details</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-6">Loading activities...</TableCell>
-              </TableRow>
+              <>
+                {[...Array(3)].map((_, i) => (
+                  <TableRow key={i} className="border-b border-border/30">
+                    <TableCell className="py-3">
+                      <div className="animate-pulse">
+                        <div className="h-4 bg-muted rounded w-20 mb-1"></div>
+                        <div className="h-3 bg-muted/60 rounded w-16"></div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="animate-pulse">
+                        <div className="h-6 bg-muted rounded-full w-20"></div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="animate-pulse flex items-center">
+                        <div className="h-7 w-7 bg-muted rounded-full"></div>
+                        <div className="ml-3">
+                          <div className="h-4 bg-muted rounded w-24 mb-1"></div>
+                          <div className="h-3 bg-muted/60 rounded w-16"></div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="animate-pulse">
+                        <div className="h-4 bg-muted rounded w-32"></div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </>
             ) : currentActivities.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-6">No activities found</TableCell>
+                <TableCell colSpan={4} className="text-center py-12">
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
+                      <div className="w-6 h-6 bg-muted-foreground/30 rounded-full"></div>
+                    </div>
+                    <p className="text-muted-foreground font-medium">No activities found</p>
+                    <p className="text-sm text-muted-foreground/70 mt-1">Activity will appear here as users interact with the system</p>
+                  </div>
+                </TableCell>
               </TableRow>
             ) : (
               currentActivities.map((activity) => {
@@ -177,39 +221,49 @@ export function ActivityTable({
                 return (
                   <TableRow 
                     key={activity.id}
-                    className="hover:bg-muted/50"
+                    className="hover:bg-muted/30 transition-colors duration-150 border-b border-border/30"
                   >
-                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                      {formatDateTime(activity.timestamp)}
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground py-3">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{formatDateTime(activity.timestamp).split(', ')[0]}</span>
+                        <span className="text-xs text-muted-foreground/70">{formatDateTime(activity.timestamp).split(', ')[1]}</span>
+                      </div>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="whitespace-nowrap py-3">
                       <Badge 
                         variant="outline" 
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${style.bg} ${style.text} border-0`}
+                        className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${style.bg} ${style.text} border-0 shadow-sm`}
                       >
                         {formatActionType(activity.actionType)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="whitespace-nowrap py-3">
                       {activity.user ? (
                         <div className="flex items-center">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>
+                          <Avatar className="h-7 w-7 ring-2 ring-primary/10">
+                            <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
                               {activity.user.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="ml-4">
+                          <div className="ml-3">
                             <div className="text-sm font-medium text-foreground">{activity.user.name}</div>
                             {activity.user.department && (
-                              <div className="text-sm text-muted-foreground">{activity.user.department}</div>
+                              <div className="text-xs text-muted-foreground">{activity.user.department}</div>
                             )}
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground">System</span>
+                        <div className="flex items-center">
+                          <div className="h-7 w-7 bg-muted rounded-full flex items-center justify-center ring-2 ring-muted/20">
+                            <span className="text-xs font-medium text-muted-foreground">SYS</span>
+                          </div>
+                          <div className="ml-3">
+                            <span className="text-sm font-medium text-muted-foreground">System</span>
+                          </div>
+                        </div>
                       )}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground py-3 max-w-xs">
                       {isDeviceRelated ? (
                         <div>
                           {/* Extract device name and make only that part clickable */}
