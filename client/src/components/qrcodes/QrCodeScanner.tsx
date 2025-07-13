@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Camera, CheckCircle, QrCode, FileInput, RotateCcw } from "lucide-react";
+import { AlertCircle, Camera, CheckCircle, QrCode, FileInput, RotateCcw, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface QrCodeScannerProps {
@@ -355,22 +355,38 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
       ) : (
         <div className="border rounded-md overflow-hidden">
           {showCamera ? (
-            <div className="aspect-video relative bg-black camera-container">
-              {/* Scanner will be attached to this div by the useEffect hook */}
+            <>
+              <div className="aspect-video relative bg-black">
+                {/* Camera Container */}
+                <div className="camera-container w-full h-full">
+                  {/* Scanner will be attached to this div by the useEffect hook */}
+                </div>
+                
+                {/* Success Flash Overlay */}
+                {showScanFlash && (
+                  <div className="absolute inset-0 bg-green-400 opacity-70 z-40 animate-pulse pointer-events-none" />
+                )}
+                
+                {/* Camera Info */}
+                {availableCameras.length > 0 && (
+                  <div className="absolute bottom-2 left-2 z-50 pointer-events-none">
+                    <div className="bg-black/80 text-white text-xs px-3 py-2 rounded shadow-lg backdrop-blur-sm">
+                      <div>Camera: {availableCameras[currentCameraIndex]?.label || 'Unknown'}</div>
+                      <div>({currentCameraIndex + 1}/{availableCameras.length}) - {availableCameras.length > 1 ? 'Switch available' : 'Single camera'}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
               
-              {/* Success Flash Overlay */}
-              {showScanFlash && (
-                <div className="absolute inset-0 bg-green-400 opacity-70 z-20 animate-pulse" />
-              )}
-              
-              {/* Camera Controls Overlay */}
-              <div className="absolute top-2 right-2 z-30 flex flex-col gap-2">
+              {/* Fixed Position Camera Controls - Outside the HTML5-QrCode container */}
+              <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-2">
                 {availableCameras.length > 1 && (
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={switchCamera}
-                    className="bg-black/80 text-white border-white/30 hover:bg-black/90 shadow-lg"
+                    className="bg-black/90 text-white border-white/30 hover:bg-black shadow-xl backdrop-blur-sm"
+                    style={{ position: 'fixed', top: '20px', right: '20px' }}
                   >
                     <RotateCcw className="h-4 w-4 mr-1" />
                     Switch
@@ -380,22 +396,14 @@ export function QrCodeScanner({ onScanSuccess }: QrCodeScannerProps) {
                   variant="secondary"
                   size="sm"
                   onClick={stopCamera}
-                  className="bg-red-600/80 text-white border-white/30 hover:bg-red-700/90 shadow-lg"
+                  className="bg-red-600/90 text-white border-white/30 hover:bg-red-700 shadow-xl backdrop-blur-sm"
+                  style={{ position: 'fixed', top: availableCameras.length > 1 ? '60px' : '20px', right: '20px' }}
                 >
+                  <X className="h-4 w-4 mr-1" />
                   Stop
                 </Button>
               </div>
-              
-              {/* Camera Info */}
-              {availableCameras.length > 0 && (
-                <div className="absolute bottom-2 left-2 z-30">
-                  <div className="bg-black/80 text-white text-xs px-3 py-2 rounded shadow-lg">
-                    <div>Camera: {availableCameras[currentCameraIndex]?.label || 'Unknown'}</div>
-                    <div>({currentCameraIndex + 1}/{availableCameras.length}) - {availableCameras.length > 1 ? 'Switch available' : 'Single camera'}</div>
-                  </div>
-                </div>
-              )}
-            </div>
+            </>
           ) : (
             <div className="p-4">
               <div className="text-center mb-6">
