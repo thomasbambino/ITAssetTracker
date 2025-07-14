@@ -166,7 +166,6 @@ export default function FlappyHelp() {
     setGameRunning(false);
     setBackgroundOffset(0);
     setInvincibilityTime(0);
-    setSlowMotionTime(0);
     setShowNameInput(false);
     setShowLeaderboard(false);
     setFlashRed(false);
@@ -180,7 +179,6 @@ export default function FlappyHelp() {
     setGameOver(false);
     setGameRunning(true);
     setInvincibilityTime(0);
-    setSlowMotionTime(0);
     setBackgroundOffset(0);
     setShowNameInput(false);
     setShowLeaderboard(false);
