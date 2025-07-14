@@ -26,7 +26,7 @@ interface Obstacle {
 interface PowerUp {
   x: number;
   y: number;
-  type: 'invincibility' | 'slowMotion';
+  type: 'invincibility';
   collected: boolean;
 }
 
@@ -41,7 +41,6 @@ export default function FlappyHelp() {
   const [gameOver, setGameOver] = useState(false);
   const [backgroundOffset, setBackgroundOffset] = useState(0);
   const [invincibilityTime, setInvincibilityTime] = useState(0);
-  const [slowMotionTime, setSlowMotionTime] = useState(0);
   const [playerName, setPlayerName] = useState('');
   const [showNameInput, setShowNameInput] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -64,7 +63,6 @@ export default function FlappyHelp() {
   const POWERUP_SIZE = 20;
   const POWERUP_SPEED = 1.5;
   const INVINCIBILITY_DURATION = 3000; // 3 seconds
-  const SLOW_MOTION_DURATION = 4000; // 4 seconds
 
   // Load tree and cloud images, fetch high score
   useEffect(() => {
@@ -249,7 +247,7 @@ export default function FlappyHelp() {
     if (!gameRunning || gameOver) return;
 
     // Apply slow motion effect
-    const timeMultiplier = slowMotionTime > 0 ? 0.5 : 1;
+    const timeMultiplier = 1;
 
     setBird(prev => {
       const newBird = {
@@ -297,7 +295,7 @@ export default function FlappyHelp() {
 
       // Add new power-up occasionally
       if (Math.random() < 0.003 && newPowerUps.length < 2) {
-        const types: ('invincibility' | 'slowMotion')[] = ['invincibility', 'slowMotion'];
+        const types: ('invincibility')[] = ['invincibility'];
         const type = types[Math.floor(Math.random() * types.length)];
         newPowerUps.push({
           x: CANVAS_WIDTH,
@@ -317,9 +315,8 @@ export default function FlappyHelp() {
           powerUp.collected = true;
           
           if (powerUp.type === 'invincibility') {
-            setInvincibilityTime(INVINCIBILITY_DURATION);
-          } else if (powerUp.type === 'slowMotion') {
-            setSlowMotionTime(SLOW_MOTION_DURATION);
+            // Stack power-ups by adding to existing time
+            setInvincibilityTime(prev => prev + INVINCIBILITY_DURATION);
           }
         }
       });
@@ -332,8 +329,7 @@ export default function FlappyHelp() {
     
     // Update power-up timers
     setInvincibilityTime(prev => Math.max(0, prev - 16));
-    setSlowMotionTime(prev => Math.max(0, prev - 16));
-  }, [gameRunning, gameOver, bird.x, bird.y, slowMotionTime]);
+  }, [gameRunning, gameOver, bird.x, bird.y]);
 
   // Game loop effect
   useEffect(() => {
@@ -547,26 +543,6 @@ export default function FlappyHelp() {
       ctx.beginPath();
       ctx.arc(powerUp.x + offset + size/2, powerUp.y + offset + size/2, size/4, 0, Math.PI * 2);
       ctx.fill();
-    } else if (powerUp.type === 'slowMotion') {
-      // Draw clock/time icon
-      ctx.fillStyle = '#00BFFF';
-      ctx.shadowBlur = 5;
-      ctx.shadowColor = '#00BFFF';
-      
-      // Draw circle
-      ctx.beginPath();
-      ctx.arc(powerUp.x + offset + size/2, powerUp.y + offset + size/2, size/3, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Draw clock hands
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(powerUp.x + offset + size/2, powerUp.y + offset + size/2);
-      ctx.lineTo(powerUp.x + offset + size/2, powerUp.y + offset + size/2 - size/4);
-      ctx.moveTo(powerUp.x + offset + size/2, powerUp.y + offset + size/2);
-      ctx.lineTo(powerUp.x + offset + size/2 + size/6, powerUp.y + offset + size/2);
-      ctx.stroke();
     }
     
     ctx.restore();
@@ -580,15 +556,10 @@ export default function FlappyHelp() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas with sky gradient (tinted if slow motion is active)
+    // Clear canvas with sky gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-    if (slowMotionTime > 0) {
-      gradient.addColorStop(0, '#5F9EFF');
-      gradient.addColorStop(1, '#8FC7FF');
-    } else {
-      gradient.addColorStop(0, '#87CEEB');
-      gradient.addColorStop(1, '#B0E0E6');
-    }
+    gradient.addColorStop(0, '#87CEEB');
+    gradient.addColorStop(1, '#B0E0E6');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -612,7 +583,7 @@ export default function FlappyHelp() {
     // Draw ground
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(0, CANVAS_HEIGHT - 10, CANVAS_WIDTH, 10);
-  }, [bird, obstacles, powerUps, backgroundOffset, invincibilityTime, slowMotionTime]);
+  }, [bird, obstacles, powerUps, backgroundOffset, invincibilityTime]);
 
   // Keyboard controls
   useEffect(() => {
@@ -669,12 +640,7 @@ export default function FlappyHelp() {
               <span>{Math.ceil(invincibilityTime / 1000)}s</span>
             </div>
           )}
-          {slowMotionTime > 0 && (
-            <div className="flex items-center space-x-1 bg-blue-500 text-white px-2 py-1 rounded text-xs">
-              <span>⏰</span>
-              <span>{Math.ceil(slowMotionTime / 1000)}s</span>
-            </div>
-          )}
+
         </div>
         <Button
           variant="ghost"
@@ -707,7 +673,7 @@ export default function FlappyHelp() {
               <p className="text-sm mb-2">Press Space to start!</p>
               <p className="text-xs mb-1">Help the satellite phone avoid clouds and trees</p>
               <p className="text-xs opacity-75">
-                Collect power-ups: 🛡️ Invincibility • ⏰ Slow Motion
+                Collect power-ups: 🛡️ Invincibility (stacks!)
               </p>
             </div>
           </div>
@@ -720,11 +686,7 @@ export default function FlappyHelp() {
               ⚡ {Math.ceil(invincibilityTime / 1000)}s
             </div>
           )}
-          {slowMotionTime > 0 && (
-            <div className="bg-blue-400 text-white px-2 py-1 rounded text-xs font-bold">
-              🕰️ {Math.ceil(slowMotionTime / 1000)}s
-            </div>
-          )}
+
         </div>
 
         {/* Name Input Modal */}
