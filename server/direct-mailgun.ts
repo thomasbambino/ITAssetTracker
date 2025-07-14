@@ -318,7 +318,7 @@ export class DirectMailgunService {
               <!-- Security Notice -->
               <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
                 <h4 style="margin: 0 0 8px 0; color: #92400e; font-size: 14px; font-weight: 600;">
-                  🔒 Security Notice
+                  Security Notice
                 </h4>
                 <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;">
                   You'll be required to change this password when you first sign in. Choose a strong, unique password for your security.
@@ -442,7 +442,7 @@ export class DirectMailgunService {
               <!-- Getting Started -->
               <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
                 <h4 style="margin: 0 0 8px 0; color: #0c4a6e; font-size: 14px; font-weight: 600;">
-                  🚀 Getting Started
+                  Getting Started
                 </h4>
                 <p style="margin: 0 0 8px 0; color: #0c4a6e; font-size: 13px; line-height: 1.5;">
                   Once you sign in, you'll be able to:
@@ -458,7 +458,7 @@ export class DirectMailgunService {
               <!-- Security Notice -->
               <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
                 <h4 style="margin: 0 0 8px 0; color: #92400e; font-size: 14px; font-weight: 600;">
-                  🔒 Security First
+                  Security First
                 </h4>
                 <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;">
                   You'll need to change this password when you first sign in. Consider enabling two-factor authentication for extra security.
