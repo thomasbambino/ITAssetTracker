@@ -534,46 +534,24 @@ export type ProblemReportMessage = typeof problemReportMessages.$inferSelect;
 export type InsertProblemReportAttachment = z.infer<typeof insertProblemReportAttachmentSchema>;
 export type ProblemReportAttachment = typeof problemReportAttachments.$inferSelect;
 
-// Game High Scores Table (supports multiple scores per game)
+// Game High Scores Table
 export const gameHighScores = pgTable("game_high_scores", {
   id: serial("id").primaryKey(),
   gameName: text("game_name").notNull(),
-  score: integer("score").notNull(),
-  playerName: text("player_name").notNull(),
+  highScore: integer("high_score").notNull(),
+  playerName: text("player_name"),
   userId: integer("user_id").references(() => users.id),
   achievedAt: timestamp("achieved_at").defaultNow(),
-  combo: integer("combo").default(0),
-  distance: integer("distance").default(0),
-  weatherCondition: text("weather_condition").default("clear"),
-  timeOfDay: text("time_of_day").default("day"),
-});
-
-// Game Achievements Table
-export const gameAchievements = pgTable("game_achievements", {
-  id: serial("id").primaryKey(),
-  gameName: text("game_name").notNull(),
-  achievementId: text("achievement_id").notNull(),
-  playerName: text("player_name").notNull(),
-  userId: integer("user_id").references(() => users.id),
-  achievedAt: timestamp("achieved_at").defaultNow(),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  icon: text("icon").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  uniquePlayerAchievement: unique().on(table.gameName, table.achievementId, table.playerName),
+  uniqueGameName: unique().on(table.gameName),
 }));
 
 export const insertGameHighScoreSchema = createInsertSchema(gameHighScores).omit({
   id: true,
   achievedAt: true,
-});
-
-export const insertGameAchievementSchema = createInsertSchema(gameAchievements).omit({
-  id: true,
-  achievedAt: true,
+  updatedAt: true,
 });
 
 export type InsertGameHighScore = z.infer<typeof insertGameHighScoreSchema>;
 export type GameHighScore = typeof gameHighScores.$inferSelect;
-export type InsertGameAchievement = z.infer<typeof insertGameAchievementSchema>;
-export type GameAchievement = typeof gameAchievements.$inferSelect;
