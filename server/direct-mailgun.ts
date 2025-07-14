@@ -244,13 +244,18 @@ export class DirectMailgunService {
   // Send password reset email with beautiful HTML formatting
   public async sendPasswordResetEmail(to: string, tempPassword: string, userName: string): Promise<{ success: boolean; message: string }> {
     try {
-      // Try to get company name from branding settings and use optimized logo
+      // Try to get company name from branding settings and use actual logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
       
-      // Use your actual optimized logo (4KB base64, 80x80 pixels)
-      const logoUrl = `${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/email-assets/email-logo.png`;
-      const logoHtml = `<img src="${logoUrl}" alt="${companyName} Logo" width="80" height="80" style="display: block; border-radius: 8px;">`;
+      // Use actual company logo from database if available
+      const logoHtml = branding?.logo 
+        ? `<img src="${branding.logo}" alt="${companyName} Logo" width="48" height="48" style="display: block; border-radius: 8px;">`
+        : `<div style="width: 48px; height: 48px; background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative;">
+             <div style="position: absolute; top: 6px; left: 6px; width: 36px; height: 36px; background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+               <div style="color: #dc2626; font-size: 18px; font-weight: 900; font-family: Arial, sans-serif;">S</div>
+             </div>
+           </div>`;
       
       const subject = `${companyName} - Your Temporary Password`;
       const text = `Hello ${userName}, A password reset has been requested for your account. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;
@@ -363,13 +368,18 @@ export class DirectMailgunService {
   // Send welcome email for new user creation with beautiful HTML formatting
   public async sendWelcomeEmail(to: string, tempPassword: string, userName: string): Promise<{ success: boolean; message: string }> {
     try {
-      // Try to get company name from branding settings and use optimized logo
+      // Try to get company name from branding settings and use actual logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
       
-      // Use your actual optimized logo (4KB base64, 80x80 pixels)
-      const logoUrl = `${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/email-assets/email-logo.png`;
-      const logoHtml = `<img src="${logoUrl}" alt="${companyName} Logo" width="80" height="80" style="display: block; border-radius: 8px;">`;
+      // Use actual company logo from database if available
+      const logoHtml = branding?.logo 
+        ? `<img src="${branding.logo}" alt="${companyName} Logo" width="48" height="48" style="display: block; border-radius: 8px;">`
+        : `<div style="width: 48px; height: 48px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative;">
+             <div style="position: absolute; top: 6px; left: 6px; width: 36px; height: 36px; background: radial-gradient(circle, #34d399 0%, #22c55e 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+               <div style="color: #059669; font-size: 18px; font-weight: 900; font-family: Arial, sans-serif;">S</div>
+             </div>
+           </div>`;
       
       const subject = `Welcome to ${companyName} - Your Account is Ready`;
       const text = `Hello ${userName}, Welcome to ${companyName}! Your account has been created and is ready to use. Your temporary password is: ${tempPassword}. You will be required to change this password the first time you log in.`;

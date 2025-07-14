@@ -243,8 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register 2FA routes
   app.use('/api/2fa', twoFactorRoutes);
   
-  // Serve email logo as static file
-  app.use('/email-assets', express.static(path.join(__dirname, 'public')));
+  // Email templates now use database-stored logo directly
   
   // Initialize API routes
   const apiRouter = app.route('/api');
