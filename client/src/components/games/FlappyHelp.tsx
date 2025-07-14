@@ -312,9 +312,9 @@ export default function FlappyHelp() {
         
 
         
-        // Add size variability - clouds 8% bigger or smaller, trees up to 60% taller
+        // Add size variability - clouds 8% bigger or smaller, trees up to 10% taller (limited for tree4)
         const cloudSizeVariation = Math.random() * 0.16 - 0.08; // -8% to +8%
-        const treeSizeVariation = Math.random() * 0.6; // 0% to +60% taller
+        const treeSizeVariation = Math.random() * 0.1; // 0% to +10% taller
         const cloudScale = 1 + cloudSizeVariation;
         const treeScale = 1 + treeSizeVariation;
         
