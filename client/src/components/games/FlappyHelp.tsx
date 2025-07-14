@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import treeUpwardImg from '@/assets/tree-upward.png';
+import stormCloudImg from '@/assets/storm-cloud.png';
+import cloudDarkImg from '@/assets/cloud-dark.png';
+import cloudLightImg from '@/assets/cloud-light.png';
 
 interface Bird {
   x: number;
@@ -9,11 +12,12 @@ interface Bird {
   velocity: number;
 }
 
-interface Tree {
+interface Obstacle {
   x: number;
   topHeight: number;
   bottomY: number;
   scored: boolean;
+  cloudType?: 'storm' | 'dark' | 'light';
 }
 
 interface PowerUp {
@@ -26,7 +30,7 @@ interface PowerUp {
 export default function FlappyHelp() {
   const [isOpen, setIsOpen] = useState(false);
   const [bird, setBird] = useState<Bird>({ x: 50, y: 150, velocity: 0 });
-  const [trees, setTrees] = useState<Tree[]>([]);
+  const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
@@ -38,6 +42,7 @@ export default function FlappyHelp() {
   const gameLoopRef = useRef<number>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const treeImageRef = useRef<HTMLImageElement>();
+  const cloudImagesRef = useRef<{ [key: string]: HTMLImageElement }>({});
 
   const CANVAS_WIDTH = 280;
   const CANVAS_HEIGHT = 200;
@@ -53,13 +58,28 @@ export default function FlappyHelp() {
   const INVINCIBILITY_DURATION = 3000; // 3 seconds
   const SLOW_MOTION_DURATION = 4000; // 4 seconds
 
-  // Load tree image and fetch high score
+  // Load tree and cloud images, fetch high score
   useEffect(() => {
     const img = new Image();
     img.src = treeUpwardImg;
     img.onload = () => {
       treeImageRef.current = img;
     };
+    
+    // Load cloud images
+    const cloudImages = {
+      storm: stormCloudImg,
+      dark: cloudDarkImg,
+      light: cloudLightImg
+    };
+    
+    Object.entries(cloudImages).forEach(([key, src]) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        cloudImagesRef.current[key] = img;
+      };
+    });
     
     // Fetch high score when component mounts
     fetchHighScore();
@@ -98,7 +118,7 @@ export default function FlappyHelp() {
 
   const resetGame = useCallback(() => {
     setBird({ x: 50, y: 150, velocity: 0 });
-    setTrees([]);
+    setObstacles([]);
     setPowerUps([]);
     setScore(0);
     setGameOver(false);
@@ -117,7 +137,7 @@ export default function FlappyHelp() {
     }
   }, [gameRunning, gameOver, JUMP_FORCE]);
 
-  const checkCollision = useCallback((bird: Bird, trees: Tree[]) => {
+  const checkCollision = useCallback((bird: Bird, obstacles: Obstacle[]) => {
     // If invincible, no collision
     if (invincibilityTime > 0) {
       return false;
@@ -137,18 +157,18 @@ export default function FlappyHelp() {
       return true;
     }
 
-    // Check tree collision with improved precision
-    for (const tree of trees) {
-      // Tree hitbox boundaries
-      const treeLeft = tree.x + COLLISION_BUFFER;
-      const treeRight = tree.x + TREE_WIDTH - COLLISION_BUFFER;
-      const topTreeBottom = tree.topHeight - COLLISION_BUFFER;
-      const bottomTreeTop = tree.bottomY + COLLISION_BUFFER;
+    // Check obstacle collision with improved precision
+    for (const obstacle of obstacles) {
+      // Obstacle hitbox boundaries
+      const obstacleLeft = obstacle.x + COLLISION_BUFFER;
+      const obstacleRight = obstacle.x + TREE_WIDTH - COLLISION_BUFFER;
+      const topObstacleBottom = obstacle.topHeight - COLLISION_BUFFER;
+      const bottomObstacleTop = obstacle.bottomY + COLLISION_BUFFER;
       
-      // Check if bird is horizontally within tree bounds
-      if (birdRight > treeLeft && birdLeft < treeRight) {
-        // Check if bird hits top tree or bottom tree
-        if (birdTop < topTreeBottom || birdBottom > bottomTreeTop) {
+      // Check if bird is horizontally within obstacle bounds
+      if (birdRight > obstacleLeft && birdLeft < obstacleRight) {
+        // Check if bird hits top obstacle or bottom obstacle
+        if (birdTop < topObstacleBottom || birdBottom > bottomObstacleTop) {
           return true;
         }
       }
@@ -172,30 +192,33 @@ export default function FlappyHelp() {
       return newBird;
     });
 
-    setTrees(prev => {
-      let newTrees = prev.map(tree => ({ ...tree, x: tree.x - TREE_SPEED * timeMultiplier }))
-        .filter(tree => tree.x > -TREE_WIDTH);
+    setObstacles(prev => {
+      let newObstacles = prev.map(obstacle => ({ ...obstacle, x: obstacle.x - TREE_SPEED * timeMultiplier }))
+        .filter(obstacle => obstacle.x > -TREE_WIDTH);
 
-      // Add new tree
-      if (newTrees.length === 0 || newTrees[newTrees.length - 1].x < CANVAS_WIDTH - 150) {
+      // Add new obstacle
+      if (newObstacles.length === 0 || newObstacles[newObstacles.length - 1].x < CANVAS_WIDTH - 150) {
         const topHeight = Math.random() * (CANVAS_HEIGHT - TREE_GAP - 40) + 20;
-        newTrees.push({
+        const cloudTypes: ('storm' | 'dark' | 'light')[] = ['storm', 'dark', 'light'];
+        const cloudType = cloudTypes[Math.floor(Math.random() * cloudTypes.length)];
+        newObstacles.push({
           x: CANVAS_WIDTH,
           topHeight,
           bottomY: topHeight + TREE_GAP,
-          scored: false
+          scored: false,
+          cloudType
         });
       }
 
       // Check for scoring
-      newTrees.forEach(tree => {
-        if (!tree.scored && tree.x + TREE_WIDTH < bird.x) {
-          tree.scored = true;
+      newObstacles.forEach(obstacle => {
+        if (!obstacle.scored && obstacle.x + TREE_WIDTH < bird.x) {
+          obstacle.scored = true;
           setScore(s => s + 1);
         }
       });
 
-      return newTrees;
+      return newObstacles;
     });
 
     // Update power-ups
@@ -262,7 +285,7 @@ export default function FlappyHelp() {
 
   // Collision detection
   useEffect(() => {
-    if (gameRunning && checkCollision(bird, trees)) {
+    if (gameRunning && checkCollision(bird, obstacles)) {
       setGameOver(true);
       setGameRunning(false);
       // Update high score when game ends
@@ -270,7 +293,7 @@ export default function FlappyHelp() {
         updateHighScore(score);
       }
     }
-  }, [bird, trees, checkCollision, gameRunning, score]);
+  }, [bird, obstacles, checkCollision, gameRunning, score]);
 
   // Draw moving mountain background
   const drawMountainBackground = (ctx: CanvasRenderingContext2D) => {
@@ -320,6 +343,26 @@ export default function FlappyHelp() {
         ctx.fill();
       }
     });
+  };
+
+  // Draw cloud using the provided images
+  const drawCloud = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, cloudType: 'storm' | 'dark' | 'light') => {
+    const img = cloudImagesRef.current[cloudType];
+    if (!img) return;
+    
+    const width = TREE_WIDTH;
+    
+    ctx.save();
+    
+    if (isTop) {
+      // Top cloud (hanging from top)
+      ctx.drawImage(img, x, y, width, height);
+    } else {
+      // Bottom cloud (normal orientation)
+      ctx.drawImage(img, x, y, width, height);
+    }
+    
+    ctx.restore();
   };
 
   // Draw tree using the provided image
@@ -476,10 +519,10 @@ export default function FlappyHelp() {
     // Draw moving mountain background
     drawMountainBackground(ctx);
 
-    // Draw trees
-    trees.forEach(tree => {
-      drawTree(ctx, tree.x, 0, tree.topHeight, true); // Top tree
-      drawTree(ctx, tree.x, tree.bottomY, CANVAS_HEIGHT - tree.bottomY, false); // Bottom tree
+    // Draw obstacles
+    obstacles.forEach(obstacle => {
+      drawCloud(ctx, obstacle.x, 0, obstacle.topHeight, true, obstacle.cloudType || 'light'); // Top cloud
+      drawTree(ctx, obstacle.x, obstacle.bottomY, CANVAS_HEIGHT - obstacle.bottomY, false); // Bottom tree
     });
 
     // Draw power-ups
@@ -493,7 +536,7 @@ export default function FlappyHelp() {
     // Draw ground
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(0, CANVAS_HEIGHT - 10, CANVAS_WIDTH, 10);
-  }, [bird, trees, powerUps, backgroundOffset, invincibilityTime, slowMotionTime]);
+  }, [bird, obstacles, powerUps, backgroundOffset, invincibilityTime, slowMotionTime]);
 
   // Keyboard controls
   useEffect(() => {
@@ -574,7 +617,7 @@ export default function FlappyHelp() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="text-center text-white">
               <p className="text-sm mb-2">Press Space to start!</p>
-              <p className="text-xs mb-1">Help the satellite phone avoid trees</p>
+              <p className="text-xs mb-1">Help the satellite phone avoid clouds and trees</p>
               <p className="text-xs opacity-75">
                 Collect power-ups: 🛡️ Invincibility • ⏰ Slow Motion
               </p>
