@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import treeUpwardImg from '@/assets/tree-upward.png';
+import tree2Img from '@/assets/tree2.png';
 import stormCloudImg from '@/assets/storm-cloud.png';
 import cloudDarkImg from '@/assets/cloud-dark.png';
 import cloudLightImg from '@/assets/cloud-light.png';
+import cloud2Img from '@/assets/cloud2.png';
 
 interface Bird {
   x: number;
@@ -20,7 +22,8 @@ interface Obstacle {
   topHeight: number;
   bottomY: number;
   scored: boolean;
-  cloudType?: 'storm' | 'dark' | 'light';
+  cloudType?: 'storm' | 'dark' | 'light' | 'cloud2';
+  treeType?: 'tree1' | 'tree2';
 }
 
 interface PowerUp {
@@ -48,7 +51,7 @@ export default function FlappyHelp() {
   const [flashRed, setFlashRed] = useState(false);
   const gameLoopRef = useRef<number>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const treeImageRef = useRef<HTMLImageElement>();
+  const treeImagesRef = useRef<{ [key: string]: HTMLImageElement }>({});
   const cloudImagesRef = useRef<{ [key: string]: HTMLImageElement }>({});
 
   const CANVAS_WIDTH = 280;
@@ -66,17 +69,26 @@ export default function FlappyHelp() {
 
   // Load tree and cloud images, fetch high score
   useEffect(() => {
-    const img = new Image();
-    img.src = treeUpwardImg;
-    img.onload = () => {
-      treeImageRef.current = img;
+    // Load tree images
+    const treeImages = {
+      tree1: treeUpwardImg,
+      tree2: tree2Img
     };
+    
+    Object.entries(treeImages).forEach(([key, src]) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        treeImagesRef.current[key] = img;
+      };
+    });
     
     // Load cloud images
     const cloudImages = {
       storm: stormCloudImg,
       dark: cloudDarkImg,
-      light: cloudLightImg
+      light: cloudLightImg,
+      cloud2: cloud2Img
     };
     
     Object.entries(cloudImages).forEach(([key, src]) => {
@@ -269,14 +281,17 @@ export default function FlappyHelp() {
         const heightVariation = maxHeight * 0.15; // 15% variation
         const centerHeight = baseHeight + (maxHeight - baseHeight) * 0.5; // Center point
         const topHeight = centerHeight + (Math.random() - 0.5) * 2 * heightVariation;
-        const cloudTypes: ('storm' | 'dark' | 'light')[] = ['storm', 'dark', 'light'];
+        const cloudTypes: ('storm' | 'dark' | 'light' | 'cloud2')[] = ['storm', 'dark', 'light', 'cloud2'];
         const cloudType = cloudTypes[Math.floor(Math.random() * cloudTypes.length)];
+        const treeTypes: ('tree1' | 'tree2')[] = ['tree1', 'tree2'];
+        const treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
         newObstacles.push({
           x: CANVAS_WIDTH,
           topHeight,
           bottomY: topHeight + TREE_GAP,
           scored: false,
-          cloudType
+          cloudType,
+          treeType
         });
       }
 
@@ -421,7 +436,7 @@ export default function FlappyHelp() {
   };
 
   // Draw cloud using the provided images
-  const drawCloud = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, cloudType: 'storm' | 'dark' | 'light') => {
+  const drawCloud = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, cloudType: 'storm' | 'dark' | 'light' | 'cloud2') => {
     const img = cloudImagesRef.current[cloudType];
     if (!img) return;
     
@@ -441,10 +456,10 @@ export default function FlappyHelp() {
   };
 
   // Draw tree using the provided image
-  const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean) => {
-    if (!treeImageRef.current) return;
+  const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, treeType: 'tree1' | 'tree2' = 'tree1') => {
+    const img = treeImagesRef.current[treeType];
+    if (!img) return;
     
-    const img = treeImageRef.current;
     const width = TREE_WIDTH;
     
     ctx.save();
@@ -572,7 +587,7 @@ export default function FlappyHelp() {
     // Draw obstacles
     obstacles.forEach(obstacle => {
       drawCloud(ctx, obstacle.x, 0, obstacle.topHeight, true, obstacle.cloudType || 'light'); // Top cloud
-      drawTree(ctx, obstacle.x, obstacle.bottomY, CANVAS_HEIGHT - obstacle.bottomY, false); // Bottom tree
+      drawTree(ctx, obstacle.x, obstacle.bottomY, CANVAS_HEIGHT - obstacle.bottomY, false, obstacle.treeType || 'tree1'); // Bottom tree
     });
 
     // Draw power-ups
