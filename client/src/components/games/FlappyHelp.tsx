@@ -500,8 +500,8 @@ export default function FlappyHelp() {
       return;
     }
     
-    // Make tree4 appear much taller than other trees
-    const heightMultiplier = treeType === 'tree4' ? 2.0 : 1;
+    // Make tree4 appear taller than other trees (30% reduction from 2.0 to 1.4)
+    const heightMultiplier = treeType === 'tree4' ? 1.4 : 1;
     const width = TREE_WIDTH * scale;
     const scaledHeight = height * scale * heightMultiplier;
     
