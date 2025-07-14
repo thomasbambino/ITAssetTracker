@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { HelpCircle, X, Award, Zap, Shield, Clock, Trophy, Star, Cloud, Sun, Moon, Wind } from 'lucide-react';
+import { HelpCircle, X, Trophy, Award, Zap, Shield, Clock, Star, Cloud, Sun, Moon, Wind } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -12,13 +12,11 @@ interface Bird {
   y: number;
   velocity: number;
   invincible: boolean;
-  slowMotion: boolean;
   invincibilityTime: number;
-  slowMotionTime: number;
   trail: Array<{ x: number; y: number; age: number }>;
 }
 
-interface Tree {
+interface Obstacle {
   x: number;
   topHeight: number;
   bottomY: number;
@@ -28,17 +26,8 @@ interface Tree {
 interface PowerUp {
   x: number;
   y: number;
-  type: 'invincibility' | 'slowMotion' | 'signalBoost';
+  type: 'invincibility' | 'signalBoost';
   active: boolean;
-}
-
-interface WeatherParticle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-  alpha: number;
 }
 
 interface Achievement {
@@ -70,24 +59,20 @@ export default function EnhancedFlappyPhone() {
   const [showNameDialog, setShowNameDialog] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
-  const [playerName, setPlayerName] = useState('');
-  const [savedPlayerName, setSavedPlayerName] = useState('');
   const [tempPlayerName, setTempPlayerName] = useState('');
+  const [savedPlayerName, setSavedPlayerName] = useState('');
   
   const [bird, setBird] = useState<Bird>({ 
     x: 50, 
     y: 150, 
     velocity: 0,
     invincible: false,
-    slowMotion: false,
     invincibilityTime: 0,
-    slowMotionTime: 0,
     trail: []
   });
   
-  const [trees, setTrees] = useState<Tree[]>([]);
+  const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
-  const [weatherParticles, setWeatherParticles] = useState<WeatherParticle[]>([]);
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
   const [distance, setDistance] = useState(0);
@@ -105,16 +90,15 @@ export default function EnhancedFlappyPhone() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const treeImageRef = useRef<HTMLImageElement>();
   const cloudImageRef = useRef<HTMLImageElement>();
-  const stormImageRef = useRef<HTMLImageElement>();
 
   const CANVAS_WIDTH = 280;
   const CANVAS_HEIGHT = 200;
   const BIRD_SIZE = 18;
-  const TREE_WIDTH = 60;
-  const TREE_GAP = 90;
+  const OBSTACLE_WIDTH = 60;
+  const OBSTACLE_GAP = 90;
   const GRAVITY = 0.4;
   const JUMP_FORCE = -6;
-  const TREE_SPEED = 2;
+  const OBSTACLE_SPEED = 2;
   const BACKGROUND_SPEED = 0.5;
   const COLLISION_BUFFER = 4;
 
@@ -134,17 +118,10 @@ export default function EnhancedFlappyPhone() {
       treeImageRef.current = img;
     };
     
-    // Load weather images
     const cloudImg = new Image();
     cloudImg.src = '/attached_assets/ChatGPT Image Jul 14, 2025, 04_18_25 PM_1752524491844.png';
     cloudImg.onload = () => {
       cloudImageRef.current = cloudImg;
-    };
-    
-    const stormImg = new Image();
-    stormImg.src = '/attached_assets/ChatGPT Image Jul 14, 2025, 04_21_01 PM_1752524495928.png';
-    stormImg.onload = () => {
-      stormImageRef.current = stormImg;
     };
     
     fetchLeaderboard();
@@ -162,15 +139,6 @@ export default function EnhancedFlappyPhone() {
         unlocked: false
       },
       {
-        id: 'tree_master',
-        title: 'Tree Master',
-        description: 'Pass through 50 trees',
-        icon: <Award className="h-4 w-4" />,
-        unlocked: false,
-        progress: 0,
-        target: 50
-      },
-      {
         id: 'combo_king',
         title: 'Combo King',
         description: 'Achieve a 10x combo',
@@ -182,29 +150,20 @@ export default function EnhancedFlappyPhone() {
       {
         id: 'weather_warrior',
         title: 'Weather Warrior',
-        description: 'Survive 30 seconds in bad weather',
+        description: 'Score 10 points in bad weather',
         icon: <Cloud className="h-4 w-4" />,
         unlocked: false,
         progress: 0,
-        target: 30
-      },
-      {
-        id: 'night_owl',
-        title: 'Night Owl',
-        description: 'Score 20 points during night time',
-        icon: <Moon className="h-4 w-4" />,
-        unlocked: false,
-        progress: 0,
-        target: 20
+        target: 10
       },
       {
         id: 'power_user',
         title: 'Power User',
-        description: 'Collect 5 power-ups in one game',
+        description: 'Collect 3 power-ups in one game',
         icon: <Zap className="h-4 w-4" />,
         unlocked: false,
         progress: 0,
-        target: 5
+        target: 3
       }
     ];
     
@@ -266,24 +225,14 @@ export default function EnhancedFlappyPhone() {
         case 'first_flight':
           if (finalScore > 0) unlocked = true;
           break;
-        case 'tree_master':
-          progress = Math.min(finalScore, achievement.target || 50);
-          if (progress >= (achievement.target || 50)) unlocked = true;
-          break;
         case 'combo_king':
           progress = Math.max(progress, finalCombo);
           if (progress >= (achievement.target || 10)) unlocked = true;
           break;
-        case 'night_owl':
-          if (timeOfDay === 'night') {
-            progress = Math.min(progress + finalScore, achievement.target || 20);
-            if (progress >= (achievement.target || 20)) unlocked = true;
-          }
-          break;
         case 'weather_warrior':
           if (weather !== 'clear') {
-            progress = Math.min(progress + (gameTime / 1000), achievement.target || 30);
-            if (progress >= (achievement.target || 30)) unlocked = true;
+            progress = Math.min(progress + finalScore, achievement.target || 10);
+            if (progress >= (achievement.target || 10)) unlocked = true;
           }
           break;
       }
@@ -295,66 +244,22 @@ export default function EnhancedFlappyPhone() {
     localStorage.setItem('flappyPhone_achievements', JSON.stringify(updatedAchievements));
   };
 
-  // Weather and time effects
+  // Weather changes
   const updateEnvironment = useCallback(() => {
-    // Change weather randomly
-    if (Math.random() < 0.001) {
+    if (Math.random() < 0.002) {
       const weathers: WeatherType[] = ['clear', 'rain', 'snow', 'storm'];
       setWeather(weathers[Math.floor(Math.random() * weathers.length)]);
     }
     
-    // Change time of day based on game time
-    const timePhase = Math.floor(gameTime / 10000) % 4;
+    const timePhase = Math.floor(gameTime / 15000) % 4;
     const times: TimeOfDay[] = ['day', 'dusk', 'night', 'dawn'];
     setTimeOfDay(times[timePhase]);
   }, [gameTime]);
 
-  // Generate weather particles
-  const generateWeatherParticles = useCallback(() => {
-    const newParticles: WeatherParticle[] = [];
-    
-    if (weather === 'rain') {
-      for (let i = 0; i < 3; i++) {
-        newParticles.push({
-          x: Math.random() * CANVAS_WIDTH,
-          y: -5,
-          vx: Math.random() * 2 - 1,
-          vy: 3 + Math.random() * 2,
-          size: 1 + Math.random(),
-          alpha: 0.6
-        });
-      }
-    } else if (weather === 'snow') {
-      for (let i = 0; i < 2; i++) {
-        newParticles.push({
-          x: Math.random() * CANVAS_WIDTH,
-          y: -5,
-          vx: Math.random() * 1 - 0.5,
-          vy: 1 + Math.random(),
-          size: 2 + Math.random() * 2,
-          alpha: 0.8
-        });
-      }
-    } else if (weather === 'storm') {
-      for (let i = 0; i < 5; i++) {
-        newParticles.push({
-          x: Math.random() * CANVAS_WIDTH,
-          y: -5,
-          vx: Math.random() * 4 - 2,
-          vy: 4 + Math.random() * 3,
-          size: 1 + Math.random() * 2,
-          alpha: 0.5
-        });
-      }
-    }
-    
-    return newParticles;
-  }, [weather]);
-
   // Generate power-ups
   const generatePowerUp = useCallback(() => {
-    if (Math.random() < 0.003 && powerUps.length < 2) {
-      const types: PowerUp['type'][] = ['invincibility', 'slowMotion', 'signalBoost'];
+    if (Math.random() < 0.005 && powerUps.length < 1) {
+      const types: PowerUp['type'][] = ['invincibility', 'signalBoost'];
       const newPowerUp: PowerUp = {
         x: CANVAS_WIDTH + 20,
         y: 50 + Math.random() * (CANVAS_HEIGHT - 100),
@@ -372,14 +277,11 @@ export default function EnhancedFlappyPhone() {
       y: 150, 
       velocity: 0,
       invincible: false,
-      slowMotion: false,
       invincibilityTime: 0,
-      slowMotionTime: 0,
       trail: []
     });
-    setTrees([]);
+    setObstacles([]);
     setPowerUps([]);
-    setWeatherParticles([]);
     setScore(0);
     setCombo(0);
     setDistance(0);
@@ -410,15 +312,10 @@ export default function EnhancedFlappyPhone() {
       switch (powerUp.type) {
         case 'invincibility':
           newBird.invincible = true;
-          newBird.invincibilityTime = 3000; // 3 seconds
-          break;
-        case 'slowMotion':
-          newBird.slowMotion = true;
-          newBird.slowMotionTime = 2000; // 2 seconds
+          newBird.invincibilityTime = 3000;
           break;
         case 'signalBoost':
-          // Instant score boost
-          setScore(prev => prev + 5);
+          setScore(prev => prev + 3);
           break;
       }
       
@@ -432,7 +329,7 @@ export default function EnhancedFlappyPhone() {
         return {
           ...achievement,
           progress: newProgress,
-          unlocked: newProgress >= (achievement.target || 5)
+          unlocked: newProgress >= (achievement.target || 3)
         };
       }
       return achievement;
@@ -441,19 +338,15 @@ export default function EnhancedFlappyPhone() {
     localStorage.setItem('flappyPhone_achievements', JSON.stringify(updatedAchievements));
   }, [achievements]);
 
-  // Game loop
+  // Game loop (using original mechanics)
   useEffect(() => {
     if (gameRunning && !gameOver) {
       gameLoopRef.current = requestAnimationFrame(() => {
-        const timeMultiplier = bird.slowMotion ? 0.5 : 1;
-        const effectiveGravity = GRAVITY * timeMultiplier;
-        const effectiveTreeSpeed = TREE_SPEED * timeMultiplier;
-        
         setBird(prev => {
           let newBird = { ...prev };
           
           // Apply gravity
-          newBird.velocity += effectiveGravity;
+          newBird.velocity += GRAVITY;
           newBird.y += newBird.velocity;
           
           // Update power-up timers
@@ -464,18 +357,11 @@ export default function EnhancedFlappyPhone() {
             }
           }
           
-          if (newBird.slowMotionTime > 0) {
-            newBird.slowMotionTime -= 16;
-            if (newBird.slowMotionTime <= 0) {
-              newBird.slowMotion = false;
-            }
-          }
-          
-          // Update trail
+          // Add trail effect
           newBird.trail.push({ x: newBird.x, y: newBird.y, age: 0 });
           newBird.trail = newBird.trail
             .map(t => ({ ...t, age: t.age + 1 }))
-            .filter(t => t.age < 10);
+            .filter(t => t.age < 8);
           
           // Check boundaries
           if (newBird.y > CANVAS_HEIGHT - 10 || newBird.y < 0) {
@@ -491,40 +377,28 @@ export default function EnhancedFlappyPhone() {
           return newBird;
         });
         
-        // Update trees
-        setTrees(prev => {
-          const newTrees = prev.map(tree => ({ ...tree, x: tree.x - effectiveTreeSpeed }));
+        // Update obstacles
+        setObstacles(prev => {
+          const newObstacles = prev.map(obstacle => ({ ...obstacle, x: obstacle.x - OBSTACLE_SPEED }));
           
-          // Add new trees
-          const lastTree = newTrees[newTrees.length - 1];
-          if (!lastTree || lastTree.x < CANVAS_WIDTH - 150) {
+          const lastObstacle = newObstacles[newObstacles.length - 1];
+          if (!lastObstacle || lastObstacle.x < CANVAS_WIDTH - 150) {
             const topHeight = 50 + Math.random() * 80;
-            newTrees.push({
-              x: CANVAS_WIDTH + TREE_WIDTH,
+            newObstacles.push({
+              x: CANVAS_WIDTH + OBSTACLE_WIDTH,
               topHeight,
-              bottomY: topHeight + TREE_GAP,
+              bottomY: topHeight + OBSTACLE_GAP,
               scored: false
             });
           }
           
-          return newTrees.filter(tree => tree.x > -TREE_WIDTH);
+          return newObstacles.filter(obstacle => obstacle.x > -OBSTACLE_WIDTH);
         });
         
         // Update power-ups
         setPowerUps(prev => {
-          return prev.map(powerUp => ({ ...powerUp, x: powerUp.x - effectiveTreeSpeed }))
+          return prev.map(powerUp => ({ ...powerUp, x: powerUp.x - OBSTACLE_SPEED }))
                     .filter(powerUp => powerUp.x > -20);
-        });
-        
-        // Update weather particles
-        setWeatherParticles(prev => {
-          const updated = prev.map(particle => ({
-            ...particle,
-            x: particle.x + particle.vx,
-            y: particle.y + particle.vy
-          })).filter(particle => particle.y < CANVAS_HEIGHT && particle.x > -10);
-          
-          return [...updated, ...generateWeatherParticles()];
         });
         
         // Update background
@@ -539,14 +413,6 @@ export default function EnhancedFlappyPhone() {
         
         // Update distance
         setDistance(prev => prev + 1);
-        
-        // Weather effects on bird
-        if (weather === 'storm') {
-          setBird(prev => ({
-            ...prev,
-            velocity: prev.velocity + (Math.random() - 0.5) * 0.5 // Wind effect
-          }));
-        }
       });
     }
     
@@ -555,17 +421,16 @@ export default function EnhancedFlappyPhone() {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gameRunning, gameOver, bird.slowMotion, score, combo, distance, weather, updateEnvironment, generatePowerUp, generateWeatherParticles, collectPowerUp, updateScore]);
+  }, [gameRunning, gameOver, score, combo, distance, weather, updateEnvironment, generatePowerUp, collectPowerUp, updateScore]);
 
   // Collision detection
   useEffect(() => {
     if (gameRunning && !gameOver && !bird.invincible) {
-      // Check tree collisions
-      trees.forEach(tree => {
+      obstacles.forEach(obstacle => {
         if (
-          bird.x + BIRD_SIZE - COLLISION_BUFFER > tree.x &&
-          bird.x + COLLISION_BUFFER < tree.x + TREE_WIDTH &&
-          (bird.y + COLLISION_BUFFER < tree.topHeight || bird.y + BIRD_SIZE - COLLISION_BUFFER > tree.bottomY)
+          bird.x + BIRD_SIZE - COLLISION_BUFFER > obstacle.x &&
+          bird.x + COLLISION_BUFFER < obstacle.x + OBSTACLE_WIDTH &&
+          (bird.y + COLLISION_BUFFER < obstacle.topHeight || bird.y + BIRD_SIZE - COLLISION_BUFFER > obstacle.bottomY)
         ) {
           setFlashRed(true);
           setTimeout(() => setFlashRed(false), 200);
@@ -588,38 +453,25 @@ export default function EnhancedFlappyPhone() {
         setPowerUps(prev => prev.filter((_, i) => i !== index));
       }
     });
-  }, [bird, trees, powerUps, gameRunning, gameOver, score, combo, distance, collectPowerUp, updateScore]);
+  }, [bird, obstacles, powerUps, gameRunning, gameOver, score, combo, distance, collectPowerUp, updateScore]);
 
   // Score tracking
   useEffect(() => {
     if (gameRunning && !gameOver) {
-      trees.forEach(tree => {
-        if (!tree.scored && bird.x > tree.x + TREE_WIDTH) {
-          tree.scored = true;
+      obstacles.forEach(obstacle => {
+        if (!obstacle.scored && bird.x > obstacle.x + OBSTACLE_WIDTH) {
+          obstacle.scored = true;
           
-          // Calculate score based on conditions
           let points = 1;
-          if (weather !== 'clear') points *= 2; // Weather bonus
-          if (timeOfDay === 'night') points *= 1.5; // Night bonus
+          if (weather !== 'clear') points *= 2;
+          if (timeOfDay === 'night') points *= 1.5;
           
           setScore(prev => prev + points);
           setCombo(prev => prev + 1);
-          
-          // Check combo achievement
-          if (combo >= 9) {
-            const updatedAchievements = achievements.map(achievement => {
-              if (achievement.id === 'combo_king') {
-                return { ...achievement, unlocked: true, progress: combo + 1 };
-              }
-              return achievement;
-            });
-            setAchievements(updatedAchievements);
-            localStorage.setItem('flappyPhone_achievements', JSON.stringify(updatedAchievements));
-          }
         }
       });
     }
-  }, [bird.x, trees, gameRunning, gameOver, combo, weather, timeOfDay, achievements]);
+  }, [bird.x, obstacles, gameRunning, gameOver, combo, weather, timeOfDay]);
 
   // Draw satellite phone
   const drawSatellitePhone = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
@@ -644,19 +496,15 @@ export default function EnhancedFlappyPhone() {
       ctx.globalAlpha = 1;
     }
     
-    // Main phone body
     ctx.fillStyle = bird.invincible ? '#FFD700' : '#2C3E50';
     ctx.fillRect(x, y, phoneWidth, phoneHeight);
     
-    // Screen
     ctx.fillStyle = bird.invincible ? '#FFF700' : '#34495E';
     ctx.fillRect(x + 2, y + 2, phoneWidth - 4, phoneHeight * 0.4);
     
-    // Antenna
     ctx.fillStyle = bird.invincible ? '#FFD700' : '#E74C3C';
     ctx.fillRect(x + phoneWidth * 0.8, y - 6, 2, 8);
     
-    // Keypad
     ctx.fillStyle = bird.invincible ? '#FFF700' : '#7F8C8D';
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
@@ -680,23 +528,15 @@ export default function EnhancedFlappyPhone() {
       case 'invincibility':
         ctx.fillStyle = '#FFD700';
         ctx.fillRect(-8, -8, 16, 16);
-        ctx.fillStyle = '#FFF';
+        ctx.fillStyle = '#000';
         ctx.font = '12px monospace';
         ctx.textAlign = 'center';
         ctx.fillText('⚡', 0, 4);
         break;
-      case 'slowMotion':
-        ctx.fillStyle = '#87CEEB';
-        ctx.fillRect(-8, -8, 16, 16);
-        ctx.fillStyle = '#FFF';
-        ctx.font = '12px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('⏱', 0, 4);
-        break;
       case 'signalBoost':
         ctx.fillStyle = '#32CD32';
         ctx.fillRect(-8, -8, 16, 16);
-        ctx.fillStyle = '#FFF';
+        ctx.fillStyle = '#000';
         ctx.font = '12px monospace';
         ctx.textAlign = 'center';
         ctx.fillText('📡', 0, 4);
@@ -704,36 +544,6 @@ export default function EnhancedFlappyPhone() {
     }
     
     ctx.restore();
-  };
-
-  // Draw weather particles
-  const drawWeatherParticles = (ctx: CanvasRenderingContext2D) => {
-    weatherParticles.forEach(particle => {
-      ctx.globalAlpha = particle.alpha;
-      
-      if (weather === 'rain') {
-        ctx.strokeStyle = '#4169E1';
-        ctx.lineWidth = particle.size;
-        ctx.beginPath();
-        ctx.moveTo(particle.x, particle.y);
-        ctx.lineTo(particle.x + particle.vx, particle.y + particle.vy);
-        ctx.stroke();
-      } else if (weather === 'snow') {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (weather === 'storm') {
-        ctx.strokeStyle = '#696969';
-        ctx.lineWidth = particle.size;
-        ctx.beginPath();
-        ctx.moveTo(particle.x, particle.y);
-        ctx.lineTo(particle.x + particle.vx, particle.y + particle.vy);
-        ctx.stroke();
-      }
-    });
-    
-    ctx.globalAlpha = 1;
   };
 
   // Draw background based on time of day
@@ -756,7 +566,7 @@ export default function EnhancedFlappyPhone() {
         gradient.addColorStop(0, '#ff8c00');
         gradient.addColorStop(1, '#ff4500');
         break;
-      default: // day
+      default:
         gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
         gradient.addColorStop(0, '#87CEEB');
         gradient.addColorStop(1, '#B0E0E6');
@@ -799,17 +609,10 @@ export default function EnhancedFlappyPhone() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Clear canvas
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    // Draw background
     drawBackground(ctx);
-    
-    // Draw mountains
     drawMountains(ctx);
-    
-    // Draw weather particles
-    drawWeatherParticles(ctx);
     
     // Flash red effect
     if (flashRed) {
@@ -817,18 +620,22 @@ export default function EnhancedFlappyPhone() {
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     }
     
-    // Draw trees
-    trees.forEach(tree => {
+    // Draw obstacles (use clouds for top, trees for bottom)
+    obstacles.forEach(obstacle => {
+      // Top cloud
+      if (cloudImageRef.current) {
+        ctx.drawImage(cloudImageRef.current, obstacle.x, 0, OBSTACLE_WIDTH, obstacle.topHeight);
+      } else {
+        ctx.fillStyle = '#E6E6FA';
+        ctx.fillRect(obstacle.x, 0, OBSTACLE_WIDTH, obstacle.topHeight);
+      }
+      
+      // Bottom tree
       if (treeImageRef.current) {
-        // Top tree (upside down)
-        ctx.save();
-        ctx.translate(tree.x + TREE_WIDTH / 2, tree.topHeight);
-        ctx.scale(1, -1);
-        ctx.drawImage(treeImageRef.current, -TREE_WIDTH / 2, -tree.topHeight, TREE_WIDTH, tree.topHeight);
-        ctx.restore();
-        
-        // Bottom tree (normal)
-        ctx.drawImage(treeImageRef.current, tree.x, tree.bottomY, TREE_WIDTH, CANVAS_HEIGHT - tree.bottomY - 10);
+        ctx.drawImage(treeImageRef.current, obstacle.x, obstacle.bottomY, OBSTACLE_WIDTH, CANVAS_HEIGHT - obstacle.bottomY - 10);
+      } else {
+        ctx.fillStyle = '#228B22';
+        ctx.fillRect(obstacle.x, obstacle.bottomY, OBSTACLE_WIDTH, CANVAS_HEIGHT - obstacle.bottomY - 10);
       }
     });
     
@@ -846,23 +653,17 @@ export default function EnhancedFlappyPhone() {
     
     // Draw power-up status
     if (bird.invincible) {
-      ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     }
     
-    if (bird.slowMotion) {
-      ctx.fillStyle = 'rgba(135, 206, 235, 0.2)';
-      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    }
-    
-  }, [bird, trees, powerUps, weatherParticles, backgroundOffset, flashRed, timeOfDay, weather]);
+  }, [bird, obstacles, powerUps, backgroundOffset, flashRed, timeOfDay]);
 
   // Handle name submission
   const handleNameSubmit = () => {
     if (tempPlayerName.trim()) {
       const name = tempPlayerName.trim();
       setSavedPlayerName(name);
-      setPlayerName('');
       setTempPlayerName('');
       localStorage.setItem('flappyPhone_playerName', name);
       setShowNameDialog(false);
@@ -955,7 +756,6 @@ export default function EnhancedFlappyPhone() {
           
           <div className="flex items-center space-x-2">
             {bird.invincible && <Badge variant="secondary" className="text-xs"><Shield className="h-3 w-3 mr-1" />Shield</Badge>}
-            {bird.slowMotion && <Badge variant="secondary" className="text-xs"><Clock className="h-3 w-3 mr-1" />Slow</Badge>}
           </div>
         </div>
 
