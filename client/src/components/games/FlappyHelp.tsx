@@ -265,7 +265,12 @@ export default function FlappyHelp() {
 
       // Add new obstacle
       if (newObstacles.length === 0 || newObstacles[newObstacles.length - 1].x < CANVAS_WIDTH - 150) {
-        const topHeight = Math.random() * (CANVAS_HEIGHT - TREE_GAP - 40) + 20;
+        // Limit cloud stretching to 15% maximum
+        const baseHeight = 40; // Base minimum height
+        const maxHeight = (CANVAS_HEIGHT - TREE_GAP - 40) * 0.6; // Max 60% of available space
+        const heightVariation = maxHeight * 0.15; // 15% variation
+        const centerHeight = baseHeight + (maxHeight - baseHeight) * 0.5; // Center point
+        const topHeight = centerHeight + (Math.random() - 0.5) * 2 * heightVariation;
         const cloudTypes: ('storm' | 'dark' | 'light')[] = ['storm', 'dark', 'light'];
         const cloudType = cloudTypes[Math.floor(Math.random() * cloudTypes.length)];
         newObstacles.push({
