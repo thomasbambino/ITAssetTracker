@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import treeUpwardImg from '@/assets/tree-upward.png';
 import tree2Img from '@/assets/tree2.png';
 import tree3Img from '@/assets/tree3.png';
+import tree4Img from '@/assets/tree4.png';
 import stormCloudImg from '@/assets/storm-cloud.png';
 import cloudDarkImg from '@/assets/cloud-dark.png';
 import cloudLightImg from '@/assets/cloud-light.png';
@@ -26,7 +27,7 @@ interface Obstacle {
   bottomY: number;
   scored: boolean;
   cloudType?: 'storm' | 'dark' | 'light' | 'cloud2' | 'cloud3' | 'cloud4';
-  treeType?: 'tree1' | 'tree2' | 'tree3';
+  treeType?: 'tree1' | 'tree2' | 'tree3' | 'tree4';
   cloudScale?: number;
   treeScale?: number;
 }
@@ -78,7 +79,8 @@ export default function FlappyHelp() {
     const treeImages = {
       tree1: treeUpwardImg,
       tree2: tree2Img,
-      tree3: tree3Img
+      tree3: tree3Img,
+      tree4: tree4Img
     };
     
     Object.entries(treeImages).forEach(([key, src]) => {
@@ -298,7 +300,7 @@ export default function FlappyHelp() {
         const topHeight = centerHeight + (Math.random() - 0.5) * 2 * heightVariation;
         const cloudTypes: ('storm' | 'dark' | 'light' | 'cloud2' | 'cloud3' | 'cloud4')[] = ['storm', 'dark', 'light', 'cloud2', 'cloud3', 'cloud4'];
         const cloudType = cloudTypes[Math.floor(Math.random() * cloudTypes.length)];
-        const treeTypes: ('tree1' | 'tree2' | 'tree3')[] = ['tree1', 'tree2', 'tree3'];
+        const treeTypes: ('tree1' | 'tree2' | 'tree3' | 'tree4')[] = ['tree1', 'tree2', 'tree3', 'tree4'];
         const treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
         
         // Add size variability - clouds 8% bigger or smaller, trees up to 60% taller
@@ -481,12 +483,14 @@ export default function FlappyHelp() {
   };
 
   // Draw tree using the provided image
-  const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, treeType: 'tree1' | 'tree2' | 'tree3' = 'tree1', scale: number = 1) => {
+  const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, treeType: 'tree1' | 'tree2' | 'tree3' | 'tree4' = 'tree1', scale: number = 1) => {
     const img = treeImagesRef.current[treeType];
     if (!img) return;
     
+    // Make tree4 appear taller than other trees
+    const heightMultiplier = treeType === 'tree4' ? 1.5 : 1;
     const width = TREE_WIDTH * scale;
-    const scaledHeight = height * scale;
+    const scaledHeight = height * scale * heightMultiplier;
     
     ctx.save();
     
