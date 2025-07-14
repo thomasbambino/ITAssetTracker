@@ -360,16 +360,13 @@ export default function FlappyHelp() {
       
       // Flash red screen on collision
       setFlashRed(true);
-      setTimeout(() => setFlashRed(false), 300);
+      setTimeout(() => setFlashRed(false), 500);
       
       // Update high score when game ends
       if (score > 0) {
         updateHighScore(score);
-      }
-      
-      // Show name input if score is high enough for leaderboard
-      if (score > 0) {
-        setShowNameInput(true);
+        // Show name input for any score > 0 
+        setTimeout(() => setShowNameInput(true), 600);
       }
     }
   }, [bird, obstacles, checkCollision, gameRunning, score]);
@@ -653,6 +650,15 @@ export default function FlappyHelp() {
         <div className="flex items-center space-x-3">
           <span className="text-xs text-muted-foreground">Score: {score}</span>
           <span className="text-xs text-muted-foreground">High: {highScore}</span>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowLeaderboard(true)}
+            className="text-xs h-6 px-2"
+          >
+            <Trophy className="h-3 w-3 mr-1" />
+            Top 5
+          </Button>
         </div>
         
         {/* Power-up indicators */}
