@@ -225,8 +225,9 @@ export default function FlappyHelp() {
   const startGame = useCallback(() => {
     if (!gameRunning && !gameOver) {
       setGameRunning(true);
+      setBird(prev => ({ ...prev, velocity: JUMP_FORCE }));
     }
-  }, [gameRunning, gameOver]);
+  }, [gameRunning, gameOver, JUMP_FORCE]);
 
   const checkCollision = useCallback((bird: Bird, obstacles: Obstacle[]) => {
     // If invincible, no collision
@@ -289,10 +290,10 @@ export default function FlappyHelp() {
 
       // Add new obstacle
       if (newObstacles.length === 0 || newObstacles[newObstacles.length - 1].x < CANVAS_WIDTH - 150) {
-        // Limit cloud stretching to 15% maximum
+        // Limit cloud stretching to 8% maximum
         const baseHeight = 40; // Base minimum height
         const maxHeight = (CANVAS_HEIGHT - TREE_GAP - 40) * 0.6; // Max 60% of available space
-        const heightVariation = maxHeight * 0.15; // 15% variation
+        const heightVariation = maxHeight * 0.08; // 8% variation
         const centerHeight = baseHeight + (maxHeight - baseHeight) * 0.5; // Center point
         const topHeight = centerHeight + (Math.random() - 0.5) * 2 * heightVariation;
         const cloudTypes: ('storm' | 'dark' | 'light' | 'cloud2' | 'cloud3' | 'cloud4')[] = ['storm', 'dark', 'light', 'cloud2', 'cloud3', 'cloud4'];
@@ -300,9 +301,9 @@ export default function FlappyHelp() {
         const treeTypes: ('tree1' | 'tree2' | 'tree3')[] = ['tree1', 'tree2', 'tree3'];
         const treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
         
-        // Add size variability - 15% bigger or smaller
-        const cloudSizeVariation = Math.random() * 0.3 - 0.15; // -15% to +15%
-        const treeSizeVariation = Math.random() * 0.3 - 0.15; // -15% to +15%
+        // Add size variability - clouds 8% bigger or smaller, trees up to 50% taller
+        const cloudSizeVariation = Math.random() * 0.16 - 0.08; // -8% to +8%
+        const treeSizeVariation = Math.random() * 0.5; // 0% to +50% taller
         const cloudScale = 1 + cloudSizeVariation;
         const treeScale = 1 + treeSizeVariation;
         
