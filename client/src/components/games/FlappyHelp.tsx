@@ -730,14 +730,14 @@ export default function FlappyHelp() {
         {/* Name Input Modal */}
         {showNameInput && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="bg-white p-4 rounded-lg shadow-lg space-y-4 max-w-xs">
-              <div className="text-center">
-                <Trophy className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
-                <h3 className="text-lg font-bold">Great Score!</h3>
-                <p className="text-sm text-gray-600">Score: {score}</p>
+            <div className="bg-white p-3 rounded-lg shadow-lg w-60">
+              <div className="text-center mb-3">
+                <Trophy className="mx-auto h-6 w-6 text-yellow-500 mb-1" />
+                <h3 className="text-sm font-bold">Great Score!</h3>
+                <p className="text-xs text-gray-600">Score: {score}</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="playerName">Enter your name:</Label>
+              <div className="space-y-2 mb-3">
+                <Label htmlFor="playerName" className="text-xs">Enter your name:</Label>
                 <Input
                   id="playerName"
                   value={playerName}
@@ -745,13 +745,14 @@ export default function FlappyHelp() {
                   placeholder="Your name"
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
+                  className="text-xs h-8"
                 />
               </div>
               <div className="flex space-x-2">
-                <Button onClick={handleNameSubmit} className="flex-1">
+                <Button onClick={handleNameSubmit} className="flex-1 text-xs h-8">
                   Submit
                 </Button>
-                <Button variant="outline" onClick={() => setShowNameInput(false)}>
+                <Button variant="outline" onClick={() => setShowNameInput(false)} className="text-xs h-8">
                   Skip
                 </Button>
               </div>
@@ -762,19 +763,19 @@ export default function FlappyHelp() {
         {/* Leaderboard Modal */}
         {showLeaderboard && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="bg-white p-4 rounded-lg shadow-lg space-y-4 max-w-xs">
-              <div className="text-center">
-                <Star className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
-                <h3 className="text-lg font-bold">Leaderboard</h3>
+            <div className="bg-white p-3 rounded-lg shadow-lg w-60">
+              <div className="text-center mb-3">
+                <Star className="mx-auto h-6 w-6 text-yellow-500 mb-1" />
+                <h3 className="text-sm font-bold">Top 5 Scores</h3>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1 mb-3">
                 {leaderboard.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center">No scores yet!</p>
+                  <p className="text-xs text-gray-500 text-center">No scores yet!</p>
                 ) : (
                   leaderboard.map((entry, index) => (
-                    <div key={entry.id} className="flex items-center justify-between text-sm">
+                    <div key={entry.id} className="flex items-center justify-between text-xs">
                       <span className="flex items-center">
-                        <span className="w-6 text-gray-500">#{index + 1}</span>
+                        <span className="w-4 text-gray-500">#{index + 1}</span>
                         <span className="font-medium">{entry.playerName}</span>
                       </span>
                       <span className="font-bold">{entry.score}</span>
@@ -783,10 +784,10 @@ export default function FlappyHelp() {
                 )}
               </div>
               <div className="flex space-x-2">
-                <Button onClick={restartGame} className="flex-1">
+                <Button onClick={restartGame} className="flex-1 text-xs h-8">
                   Play Again
                 </Button>
-                <Button variant="outline" onClick={() => setShowLeaderboard(false)}>
+                <Button variant="outline" onClick={() => setShowLeaderboard(false)} className="text-xs h-8">
                   Close
                 </Button>
               </div>
