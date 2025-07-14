@@ -16,15 +16,25 @@ interface Tree {
   scored: boolean;
 }
 
+interface PowerUp {
+  x: number;
+  y: number;
+  type: 'invincibility' | 'slowMotion';
+  collected: boolean;
+}
+
 export default function FlappyHelp() {
   const [isOpen, setIsOpen] = useState(false);
   const [bird, setBird] = useState<Bird>({ x: 50, y: 150, velocity: 0 });
   const [trees, setTrees] = useState<Tree[]>([]);
+  const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [gameRunning, setGameRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [backgroundOffset, setBackgroundOffset] = useState(0);
+  const [invincibilityTime, setInvincibilityTime] = useState(0);
+  const [slowMotionTime, setSlowMotionTime] = useState(0);
   const gameLoopRef = useRef<number>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const treeImageRef = useRef<HTMLImageElement>();
@@ -38,6 +48,10 @@ export default function FlappyHelp() {
   const JUMP_FORCE = -6;
   const TREE_SPEED = 2;
   const BACKGROUND_SPEED = 0.5;
+  const POWERUP_SIZE = 20;
+  const POWERUP_SPEED = 1.5;
+  const INVINCIBILITY_DURATION = 3000; // 3 seconds
+  const SLOW_MOTION_DURATION = 4000; // 4 seconds
 
   // Load tree image and fetch high score
   useEffect(() => {
@@ -85,10 +99,13 @@ export default function FlappyHelp() {
   const resetGame = useCallback(() => {
     setBird({ x: 50, y: 150, velocity: 0 });
     setTrees([]);
+    setPowerUps([]);
     setScore(0);
     setGameOver(false);
     setGameRunning(false);
     setBackgroundOffset(0);
+    setInvincibilityTime(0);
+    setSlowMotionTime(0);
   }, []);
 
   const jump = useCallback(() => {
@@ -101,6 +118,11 @@ export default function FlappyHelp() {
   }, [gameRunning, gameOver, JUMP_FORCE]);
 
   const checkCollision = useCallback((bird: Bird, trees: Tree[]) => {
+    // If invincible, no collision
+    if (invincibilityTime > 0) {
+      return false;
+    }
+    
     // Add collision buffer to make hitboxes more forgiving
     const COLLISION_BUFFER = 4; // Reduce effective collision area by 4 pixels on each side
     
@@ -132,23 +154,26 @@ export default function FlappyHelp() {
       }
     }
     return false;
-  }, []);
+  }, [invincibilityTime]);
 
   const gameLoop = useCallback(() => {
     if (!gameRunning || gameOver) return;
 
+    // Apply slow motion effect
+    const timeMultiplier = slowMotionTime > 0 ? 0.5 : 1;
+
     setBird(prev => {
       const newBird = {
         ...prev,
-        y: prev.y + prev.velocity,
-        velocity: prev.velocity + GRAVITY
+        y: prev.y + prev.velocity * timeMultiplier,
+        velocity: prev.velocity + GRAVITY * timeMultiplier
       };
 
       return newBird;
     });
 
     setTrees(prev => {
-      let newTrees = prev.map(tree => ({ ...tree, x: tree.x - TREE_SPEED }))
+      let newTrees = prev.map(tree => ({ ...tree, x: tree.x - TREE_SPEED * timeMultiplier }))
         .filter(tree => tree.x > -TREE_WIDTH);
 
       // Add new tree
@@ -173,9 +198,50 @@ export default function FlappyHelp() {
       return newTrees;
     });
 
+    // Update power-ups
+    setPowerUps(prev => {
+      let newPowerUps = prev.map(powerUp => ({ ...powerUp, x: powerUp.x - POWERUP_SPEED * timeMultiplier }))
+        .filter(powerUp => powerUp.x > -POWERUP_SIZE && !powerUp.collected);
+
+      // Add new power-up occasionally
+      if (Math.random() < 0.003 && newPowerUps.length < 2) {
+        const types: ('invincibility' | 'slowMotion')[] = ['invincibility', 'slowMotion'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        newPowerUps.push({
+          x: CANVAS_WIDTH,
+          y: Math.random() * (CANVAS_HEIGHT - POWERUP_SIZE - 40) + 20,
+          type,
+          collected: false
+        });
+      }
+
+      // Check for power-up collection
+      newPowerUps.forEach(powerUp => {
+        if (!powerUp.collected && 
+            bird.x + BIRD_SIZE > powerUp.x && 
+            bird.x < powerUp.x + POWERUP_SIZE &&
+            bird.y + BIRD_SIZE > powerUp.y && 
+            bird.y < powerUp.y + POWERUP_SIZE) {
+          powerUp.collected = true;
+          
+          if (powerUp.type === 'invincibility') {
+            setInvincibilityTime(INVINCIBILITY_DURATION);
+          } else if (powerUp.type === 'slowMotion') {
+            setSlowMotionTime(SLOW_MOTION_DURATION);
+          }
+        }
+      });
+
+      return newPowerUps;
+    });
+
     // Update background offset for mountain scrolling
-    setBackgroundOffset(prev => (prev + BACKGROUND_SPEED) % CANVAS_WIDTH);
-  }, [gameRunning, gameOver, bird.x]);
+    setBackgroundOffset(prev => (prev + BACKGROUND_SPEED * timeMultiplier) % CANVAS_WIDTH);
+    
+    // Update power-up timers
+    setInvincibilityTime(prev => Math.max(0, prev - 16));
+    setSlowMotionTime(prev => Math.max(0, prev - 16));
+  }, [gameRunning, gameOver, bird.x, bird.y, slowMotionTime]);
 
   // Game loop effect
   useEffect(() => {
@@ -286,6 +352,12 @@ export default function FlappyHelp() {
     // Save the current transformation
     ctx.save();
     
+    // Add glow effect if invincible
+    if (invincibilityTime > 0) {
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#FFD700';
+    }
+    
     // Rotate 90 degrees clockwise around the center of the phone
     ctx.translate(x + width/2, y + height/2);
     ctx.rotate(Math.PI / 2);
@@ -300,7 +372,7 @@ export default function FlappyHelp() {
     ctx.fillRect(0, 0, width, height);
     
     // Phone body main
-    ctx.fillStyle = '#777777';
+    ctx.fillStyle = invincibilityTime > 0 ? '#FFD700' : '#777777';
     ctx.fillRect(1, 1, width - 2, height - 2);
     
     // Screen (proportionally sized)
@@ -329,6 +401,58 @@ export default function FlappyHelp() {
     ctx.restore();
   };
 
+  // Draw power-up
+  const drawPowerUp = (ctx: CanvasRenderingContext2D, powerUp: PowerUp) => {
+    if (powerUp.collected) return;
+    
+    ctx.save();
+    
+    // Add pulsing effect
+    const pulse = Math.sin(Date.now() * 0.008) * 0.1 + 1;
+    const size = POWERUP_SIZE * pulse;
+    const offset = (POWERUP_SIZE - size) / 2;
+    
+    if (powerUp.type === 'invincibility') {
+      // Draw shield/satellite signal icon
+      ctx.fillStyle = '#FFD700';
+      ctx.shadowBlur = 5;
+      ctx.shadowColor = '#FFD700';
+      
+      // Draw satellite signal bars
+      ctx.fillRect(powerUp.x + offset + 2, powerUp.y + offset + 12, 3, 6);
+      ctx.fillRect(powerUp.x + offset + 6, powerUp.y + offset + 8, 3, 10);
+      ctx.fillRect(powerUp.x + offset + 10, powerUp.y + offset + 4, 3, 14);
+      ctx.fillRect(powerUp.x + offset + 14, powerUp.y + offset + 2, 3, 16);
+      
+      // Draw satellite dish
+      ctx.beginPath();
+      ctx.arc(powerUp.x + offset + size/2, powerUp.y + offset + size/2, size/4, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (powerUp.type === 'slowMotion') {
+      // Draw clock/time icon
+      ctx.fillStyle = '#00BFFF';
+      ctx.shadowBlur = 5;
+      ctx.shadowColor = '#00BFFF';
+      
+      // Draw circle
+      ctx.beginPath();
+      ctx.arc(powerUp.x + offset + size/2, powerUp.y + offset + size/2, size/3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw clock hands
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(powerUp.x + offset + size/2, powerUp.y + offset + size/2);
+      ctx.lineTo(powerUp.x + offset + size/2, powerUp.y + offset + size/2 - size/4);
+      ctx.moveTo(powerUp.x + offset + size/2, powerUp.y + offset + size/2);
+      ctx.lineTo(powerUp.x + offset + size/2 + size/6, powerUp.y + offset + size/2);
+      ctx.stroke();
+    }
+    
+    ctx.restore();
+  };
+
   // Canvas rendering
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -337,10 +461,15 @@ export default function FlappyHelp() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas with sky gradient
+    // Clear canvas with sky gradient (tinted if slow motion is active)
     const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-    gradient.addColorStop(0, '#87CEEB');
-    gradient.addColorStop(1, '#B0E0E6');
+    if (slowMotionTime > 0) {
+      gradient.addColorStop(0, '#5F9EFF');
+      gradient.addColorStop(1, '#8FC7FF');
+    } else {
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(1, '#B0E0E6');
+    }
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -353,13 +482,18 @@ export default function FlappyHelp() {
       drawTree(ctx, tree.x, tree.bottomY, CANVAS_HEIGHT - tree.bottomY, false); // Bottom tree
     });
 
+    // Draw power-ups
+    powerUps.forEach(powerUp => {
+      drawPowerUp(ctx, powerUp);
+    });
+
     // Draw satellite phone
     drawSatellitePhone(ctx, bird.x, bird.y);
 
     // Draw ground
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(0, CANVAS_HEIGHT - 10, CANVAS_WIDTH, 10);
-  }, [bird, trees, backgroundOffset]);
+  }, [bird, trees, powerUps, backgroundOffset, invincibilityTime, slowMotionTime]);
 
   // Keyboard controls
   useEffect(() => {
@@ -398,6 +532,22 @@ export default function FlappyHelp() {
           <span className="text-xs text-muted-foreground">Score: {score}</span>
           <span className="text-xs text-muted-foreground">High: {highScore}</span>
         </div>
+        
+        {/* Power-up indicators */}
+        <div className="flex items-center space-x-2">
+          {invincibilityTime > 0 && (
+            <div className="flex items-center space-x-1 bg-yellow-500 text-white px-2 py-1 rounded text-xs">
+              <span>🛡️</span>
+              <span>{Math.ceil(invincibilityTime / 1000)}s</span>
+            </div>
+          )}
+          {slowMotionTime > 0 && (
+            <div className="flex items-center space-x-1 bg-blue-500 text-white px-2 py-1 rounded text-xs">
+              <span>⏰</span>
+              <span>{Math.ceil(slowMotionTime / 1000)}s</span>
+            </div>
+          )}
+        </div>
         <Button
           variant="ghost"
           size="sm"
@@ -424,7 +574,10 @@ export default function FlappyHelp() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="text-center text-white">
               <p className="text-sm mb-2">Press Space to start!</p>
-              <p className="text-xs">Help the satellite phone avoid trees</p>
+              <p className="text-xs mb-1">Help the satellite phone avoid trees</p>
+              <p className="text-xs opacity-75">
+                Collect power-ups: 🛡️ Invincibility • ⏰ Slow Motion
+              </p>
             </div>
           </div>
         )}
