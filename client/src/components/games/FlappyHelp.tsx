@@ -832,11 +832,7 @@ export default function FlappyHelp() {
             <div className="text-center text-white">
               <p className="text-sm mb-2">Game Over!</p>
               <p className="text-xs mb-2">Score: {score}</p>
-              {Date.now() - gameOverTime > 2000 ? (
-                <p className="text-xs mb-3 opacity-75">Press Space to play again</p>
-              ) : (
-                <p className="text-xs mb-3 opacity-75">Wait {Math.ceil((2000 - (Date.now() - gameOverTime)) / 1000)}s to restart</p>
-              )}
+              <p className="text-xs mb-3 opacity-75">Press Space to play again</p>
               <Button
                 size="sm"
                 onClick={restartGame}
