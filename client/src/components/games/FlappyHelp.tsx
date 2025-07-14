@@ -88,6 +88,10 @@ export default function FlappyHelp() {
       img.src = src;
       img.onload = () => {
         treeImagesRef.current[key] = img;
+        console.log(`Tree image loaded: ${key}`);
+      };
+      img.onerror = (e) => {
+        console.error(`Failed to load tree image: ${key}`, e);
       };
     });
     
@@ -300,8 +304,12 @@ export default function FlappyHelp() {
         const topHeight = centerHeight + (Math.random() - 0.5) * 2 * heightVariation;
         const cloudTypes: ('storm' | 'dark' | 'light' | 'cloud2' | 'cloud3' | 'cloud4')[] = ['storm', 'dark', 'light', 'cloud2', 'cloud3', 'cloud4'];
         const cloudType = cloudTypes[Math.floor(Math.random() * cloudTypes.length)];
-        const treeTypes: ('tree1' | 'tree2' | 'tree3' | 'tree4')[] = ['tree1', 'tree2', 'tree3', 'tree4'];
+        // Increase chances of tree4 appearing - give it 40% chance, others 20% each
+        const treeTypes: ('tree1' | 'tree2' | 'tree3' | 'tree4')[] = ['tree1', 'tree2', 'tree3', 'tree4', 'tree4'];
         const treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
+        
+        // Debug: log tree type generation
+        console.log('Generated tree type:', treeType);
         
         // Add size variability - clouds 8% bigger or smaller, trees up to 60% taller
         const cloudSizeVariation = Math.random() * 0.16 - 0.08; // -8% to +8%
@@ -485,12 +493,20 @@ export default function FlappyHelp() {
   // Draw tree using the provided image
   const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, treeType: 'tree1' | 'tree2' | 'tree3' | 'tree4' = 'tree1', scale: number = 1) => {
     const img = treeImagesRef.current[treeType];
-    if (!img) return;
+    if (!img) {
+      console.warn(`Tree image not loaded for type: ${treeType}`);
+      return;
+    }
     
-    // Make tree4 appear taller than other trees
-    const heightMultiplier = treeType === 'tree4' ? 1.5 : 1;
+    // Make tree4 appear much taller than other trees
+    const heightMultiplier = treeType === 'tree4' ? 2.0 : 1;
     const width = TREE_WIDTH * scale;
     const scaledHeight = height * scale * heightMultiplier;
+    
+    // Debug tree4 drawing
+    if (treeType === 'tree4') {
+      console.log(`Drawing tree4 at x:${x}, height:${scaledHeight}, multiplier:${heightMultiplier}`);
+    }
     
     ctx.save();
     
