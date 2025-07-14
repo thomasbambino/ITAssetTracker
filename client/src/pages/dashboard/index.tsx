@@ -63,27 +63,33 @@ export default function Dashboard() {
     percentage: number;
   }
 
-  // Fetch dashboard stats
+  // Fetch dashboard stats with caching
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['/api/stats'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Fetch category distribution
+  // Fetch category distribution with caching
   const { data: categoryDistribution, isLoading: categoriesLoading } = useQuery<CategoryStats[]>({
     queryKey: ['/api/stats/categories'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Fetch department distribution
+  // Fetch department distribution with caching
   const { data: departmentDistribution, isLoading: departmentsLoading } = useQuery<DepartmentStats[]>({
     queryKey: ['/api/stats/departments'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Using ActivityLog imported at the top
-
-  // Fetch recent activity
+  // Fetch recent activity with reduced refresh interval
   const { data: activities, isLoading: activitiesLoading } = useQuery<ActivityLog[]>({
     queryKey: ['/api/activity'],
-    refetchInterval: 10000, // Auto-refresh every 10 seconds
+    refetchInterval: 30000, // Reduced to 30 seconds instead of 10
+    staleTime: 15 * 1000, // 15 seconds
+    cacheTime: 5 * 60 * 1000, // 5 minutes
   });
   
   // Set up auto-refresh of activity data

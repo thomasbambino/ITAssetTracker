@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { AlertCircle, Shield } from "lucide-react";
+import { AlertCircle, Shield, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -133,7 +133,7 @@ export default function Settings() {
               <CardContent>
                 {emailLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
                   <EmailSettingsForm 

@@ -290,6 +290,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get dashboard stats
+  // Cache for stats to improve performance
+  let statsCache: { [key: string]: { data: any; timestamp: number } } = {};
+  const STATS_CACHE_DURATION = 60 * 1000; // 1 minute cache
+
   app.get('/api/stats', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const sessionData = req.session as any;
@@ -300,10 +304,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not found" });
       }
       
-      let devices = await storage.getDevices();
-      let unassignedDevices = await storage.getUnassignedDevices();
-      let expiringWarranties = await storage.getDevicesWithWarrantyExpiring(30);
-      let allTickets = await storage.getProblemReports();
+      // Create cache key based on user role and department
+      const cacheKey = `stats_${currentUser.role}_${currentUser.isManager ? currentUser.department : 'all'}`;
+      const now = Date.now();
+      
+      // Check cache first
+      if (statsCache[cacheKey] && (now - statsCache[cacheKey].timestamp) < STATS_CACHE_DURATION) {
+        return res.json(statsCache[cacheKey].data);
+      }
+      
+      // Fetch data in parallel for better performance
+      const [devices, unassignedDevices, expiringWarranties, allTickets] = await Promise.all([
+        storage.getDevices(),
+        storage.getUnassignedDevices(),
+        storage.getDevicesWithWarrantyExpiring(30),
+        storage.getProblemReports()
+      ]);
+      
+      let filteredDevices = devices;
+      let filteredExpiringWarranties = expiringWarranties;
+      let filteredTickets = allTickets;
       
       // Filter data for managers by their department
       if (currentUser.isManager && currentUser.role !== 'admin') {
@@ -312,32 +332,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const departmentUserIds = departmentUsers.map(user => user.id);
         
         // Filter devices assigned to users in the manager's department
-        devices = devices.filter(device => 
+        filteredDevices = devices.filter(device => 
           device.userId && departmentUserIds.includes(device.userId)
         );
         
-        // Unassigned devices should not be filtered by department for managers
-        // Leave unassignedDevices as-is since they're not assigned to anyone
-        
-        expiringWarranties = expiringWarranties.filter(device => 
+        filteredExpiringWarranties = expiringWarranties.filter(device => 
           device.userId && departmentUserIds.includes(device.userId)
         );
         
         // Filter tickets from users in the manager's department
-        allTickets = allTickets.filter(ticket => 
+        filteredTickets = allTickets.filter(ticket => 
           departmentUserIds.includes(ticket.userId)
         );
       }
       
-      const openTickets = allTickets.filter(ticket => ticket.status !== 'closed');
+      const openTickets = filteredTickets.filter(ticket => ticket.status !== 'closed');
       
       const stats = {
-        totalDevices: devices.length,
-        assignedDevices: devices.length - unassignedDevices.length,
+        totalDevices: filteredDevices.length,
+        assignedDevices: filteredDevices.length - unassignedDevices.length,
         unassignedDevices: unassignedDevices.length,
-        expiringWarranties: expiringWarranties.length,
+        expiringWarranties: filteredExpiringWarranties.length,
         openTickets: openTickets.length
       };
+      
+      // Cache the result
+      statsCache[cacheKey] = { data: stats, timestamp: now };
       
       res.json(stats);
     } catch (error) {
@@ -345,6 +365,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching stats" });
     }
   });
+
+  // Cache for category stats
+  let categoryStatsCache: { [key: string]: { data: any; timestamp: number } } = {};
 
   // Get category distribution for devices
   app.get('/api/stats/categories', isAuthenticated, async (req: Request, res: Response) => {
@@ -357,7 +380,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not found" });
       }
       
-      let devices = await storage.getDevices();
+      // Create cache key based on user role and department
+      const cacheKey = `categories_${currentUser.role}_${currentUser.isManager ? currentUser.department : 'all'}`;
+      const now = Date.now();
+      
+      // Check cache first
+      if (categoryStatsCache[cacheKey] && (now - categoryStatsCache[cacheKey].timestamp) < STATS_CACHE_DURATION) {
+        return res.json(categoryStatsCache[cacheKey].data);
+      }
+      
+      // Fetch data in parallel
+      const [devices, categories] = await Promise.all([
+        storage.getDevices(),
+        storage.getCategories()
+      ]);
+      
+      let filteredDevices = devices;
       
       // Filter data for managers by their department
       if (currentUser.isManager && currentUser.role !== 'admin') {
@@ -366,15 +404,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const departmentUserIds = departmentUsers.map(user => user.id);
         
         // Filter devices assigned to users in the manager's department
-        devices = devices.filter(device => 
+        filteredDevices = devices.filter(device => 
           device.userId && departmentUserIds.includes(device.userId)
         );
       }
       
-      const categories = await storage.getCategories();
-      
       const distribution = categories.map(category => {
-        const categoryDevices = devices.filter(device => device.categoryId === category.id);
+        const categoryDevices = filteredDevices.filter(device => device.categoryId === category.id);
         const count = categoryDevices.length;
         
         // Calculate total value (purchase cost) for the category
@@ -428,10 +464,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: category.id,
           name: category.name,
           count,
-          percentage: devices.length > 0 ? Math.round((count / devices.length) * 100) : 0,
+          percentage: filteredDevices.length > 0 ? Math.round((count / filteredDevices.length) * 100) : 0,
           totalValue: totalValueSum // Include total value in cents
         };
       });
+      
+      // Cache the result
+      categoryStatsCache[cacheKey] = { data: distribution, timestamp: now };
       
       res.json(distribution);
     } catch (error) {
@@ -439,6 +478,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching category distribution" });
     }
   });
+
+  // Cache for department stats
+  let departmentStatsCache: { [key: string]: { data: any; timestamp: number } } = {};
 
   // Get department distribution for devices
   app.get('/api/stats/departments', isAuthenticated, async (req: Request, res: Response) => {
@@ -451,8 +493,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not found" });
       }
       
-      let users = await storage.getUsers();
-      let devices = await storage.getDevices();
+      // Create cache key based on user role and department
+      const cacheKey = `departments_${currentUser.role}_${currentUser.isManager ? currentUser.department : 'all'}`;
+      const now = Date.now();
+      
+      // Check cache first
+      if (departmentStatsCache[cacheKey] && (now - departmentStatsCache[cacheKey].timestamp) < STATS_CACHE_DURATION) {
+        return res.json(departmentStatsCache[cacheKey].data);
+      }
+      
+      // Fetch data in parallel
+      const [users, devices] = await Promise.all([
+        storage.getUsers(),
+        storage.getDevices()
+      ]);
+      
+      let filteredUsers = users;
+      let filteredDevices = devices;
       
       // Filter data for managers by their department
       if (currentUser.isManager && currentUser.role !== 'admin') {
@@ -460,33 +517,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const departmentUserIds = departmentUsers.map(user => user.id);
         
         // Filter devices assigned to users in the manager's department
-        devices = devices.filter(device => 
+        filteredDevices = devices.filter(device => 
           device.userId && departmentUserIds.includes(device.userId)
         );
         
         // Filter users to only show those in the manager's department
-        users = departmentUsers;
+        filteredUsers = departmentUsers;
       }
       
       // Get unique departments
-      const departmentsArray = users.map(user => user.department).filter(Boolean) as string[];
+      const departmentsArray = filteredUsers.map(user => user.department).filter(Boolean) as string[];
       const departmentsSet = new Set<string>(departmentsArray);
       const departments = Array.from(departmentsSet);
       
       const distribution = departments.map(department => {
         // Get users in this department
-        const departmentUsers = users.filter(user => user.department === department);
+        const departmentUsers = filteredUsers.filter(user => user.department === department);
         const userIds = departmentUsers.map(user => user.id);
         
         // Count devices assigned to users in this department
-        const count = devices.filter(device => device.userId && userIds.includes(device.userId)).length;
+        const count = filteredDevices.filter(device => device.userId && userIds.includes(device.userId)).length;
         
         return {
           department,
           count,
-          percentage: devices.length > 0 ? Math.round((count / devices.length) * 100) : 0
+          percentage: filteredDevices.length > 0 ? Math.round((count / filteredDevices.length) * 100) : 0
         };
       });
+      
+      // Cache the result
+      departmentStatsCache[cacheKey] = { data: distribution, timestamp: now };
       
       res.json(distribution);
     } catch (error) {
