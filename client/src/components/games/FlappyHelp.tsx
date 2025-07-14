@@ -730,29 +730,26 @@ export default function FlappyHelp() {
         {/* Name Input Modal */}
         {showNameInput && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="bg-white p-3 rounded-lg shadow-lg w-60">
-              <div className="text-center mb-3">
-                <Trophy className="mx-auto h-6 w-6 text-yellow-500 mb-1" />
-                <h3 className="text-sm font-bold">Great Score!</h3>
-                <p className="text-xs text-gray-600">Score: {score}</p>
+            <div className="bg-white p-2 rounded shadow-lg w-52">
+              <div className="text-center mb-2">
+                <Trophy className="mx-auto h-4 w-4 text-yellow-500 mb-1" />
+                <h3 className="text-xs font-bold">Great Score: {score}</h3>
               </div>
-              <div className="space-y-2 mb-3">
-                <Label htmlFor="playerName" className="text-xs">Enter your name:</Label>
+              <div className="mb-2">
                 <Input
-                  id="playerName"
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Your name"
+                  placeholder="Enter your name"
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
-                  className="text-xs h-8"
+                  className="text-xs h-6"
                 />
               </div>
-              <div className="flex space-x-2">
-                <Button onClick={handleNameSubmit} className="flex-1 text-xs h-8">
+              <div className="flex space-x-1">
+                <Button onClick={handleNameSubmit} className="flex-1 text-xs h-6">
                   Submit
                 </Button>
-                <Button variant="outline" onClick={() => setShowNameInput(false)} className="text-xs h-8">
+                <Button variant="outline" onClick={() => setShowNameInput(false)} className="text-xs h-6">
                   Skip
                 </Button>
               </div>
@@ -763,12 +760,12 @@ export default function FlappyHelp() {
         {/* Leaderboard Modal */}
         {showLeaderboard && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="bg-white p-3 rounded-lg shadow-lg w-60">
-              <div className="text-center mb-3">
-                <Star className="mx-auto h-6 w-6 text-yellow-500 mb-1" />
-                <h3 className="text-sm font-bold">Top 5 Scores</h3>
+            <div className="bg-white p-2 rounded shadow-lg w-52">
+              <div className="text-center mb-2">
+                <Star className="mx-auto h-4 w-4 text-yellow-500 mb-1" />
+                <h3 className="text-xs font-bold">Top 5 Scores</h3>
               </div>
-              <div className="space-y-1 mb-3">
+              <div className="space-y-1 mb-2">
                 {leaderboard.length === 0 ? (
                   <p className="text-xs text-gray-500 text-center">No scores yet!</p>
                 ) : (
@@ -783,11 +780,11 @@ export default function FlappyHelp() {
                   ))
                 )}
               </div>
-              <div className="flex space-x-2">
-                <Button onClick={restartGame} className="flex-1 text-xs h-8">
+              <div className="flex space-x-1">
+                <Button onClick={restartGame} className="flex-1 text-xs h-6">
                   Play Again
                 </Button>
-                <Button variant="outline" onClick={() => setShowLeaderboard(false)} className="text-xs h-8">
+                <Button variant="outline" onClick={() => setShowLeaderboard(false)} className="text-xs h-6">
                   Close
                 </Button>
               </div>
