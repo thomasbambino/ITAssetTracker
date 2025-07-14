@@ -248,6 +248,10 @@ export class DirectMailgunService {
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
       
+      // Get application URL from branding settings, with fallback to environment/localhost
+      const applicationUrl = branding?.applicationUrl || 
+        (process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000");
+      
       // Use actual company logo from database if available
       const logoHtml = branding?.logo 
         ? `<img src="${branding.logo}" alt="${companyName} Logo" width="48" height="48" style="display: block; border-radius: 8px;">`
@@ -330,7 +334,7 @@ export class DirectMailgunService {
                 <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                   <tr>
                     <td style="background-color: #1E40AF; border-radius: 8px; padding: 0;">
-                      <a href="${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/login" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 12px 24px; font-weight: 600; font-size: 16px; font-family: Arial, sans-serif; border-radius: 8px;">
+                      <a href="${applicationUrl}/login" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 12px 24px; font-weight: 600; font-size: 16px; font-family: Arial, sans-serif; border-radius: 8px;">
                         Sign In Now
                       </a>
                     </td>
@@ -371,6 +375,10 @@ export class DirectMailgunService {
       // Try to get company name from branding settings and use actual logo
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
+      
+      // Get application URL from branding settings, with fallback to environment/localhost
+      const applicationUrl = branding?.applicationUrl || 
+        (process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000");
       
       // Use actual company logo from database if available
       const logoHtml = branding?.logo 
@@ -470,7 +478,7 @@ export class DirectMailgunService {
                 <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                   <tr>
                     <td style="background-color: #1E40AF; border-radius: 8px; padding: 0;">
-                      <a href="${process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000"}/login" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 12px 24px; font-weight: 600; font-size: 16px; font-family: Arial, sans-serif; border-radius: 8px;">
+                      <a href="${applicationUrl}/login" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 12px 24px; font-weight: 600; font-size: 16px; font-family: Arial, sans-serif; border-radius: 8px;">
                         Get Started Now
                       </a>
                     </td>

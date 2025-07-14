@@ -41,6 +41,10 @@ const formSchema = z.object({
   supportPhone: z.string().optional().nullable(),
   siteTitle: z.string().optional().nullable(),
   siteDescription: z.string().max(160, "Description should be 160 characters or less for best SEO results").optional().nullable(),
+  applicationUrl: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().url("Please enter a valid URL").optional().nullable()
+  ),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -236,6 +240,27 @@ export function BrandingForm({ initialData, onSuccess }: BrandingFormProps) {
                   </FormControl>
                   <FormDescription>
                     This will appear throughout the application
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="applicationUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Application URL (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="https://yourdomain.com" 
+                      {...field} 
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Custom domain for email links. Leave empty to use default Replit domain.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

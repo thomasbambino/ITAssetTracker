@@ -436,6 +436,7 @@ export const brandingSettings = pgTable("branding_settings", {
   supportPhone: text("support_phone"),
   siteTitle: text("site_title").default('IT Asset Manager'),
   siteDescription: text("site_description").default('A comprehensive IT asset management system for tracking hardware, software, and maintenance.'),
+  applicationUrl: text("application_url"), // Custom domain URL for email links
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
