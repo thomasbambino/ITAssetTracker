@@ -4503,19 +4503,56 @@ export class DatabaseStorage implements IStorage {
 
   async addGameLeaderboardEntry(gameName: string, score: number, playerName: string, userId?: number): Promise<any> {
     try {
-      const entry = await db.one(`
-        INSERT INTO game_leaderboard (game_name, score, player_name, user_id)
-        VALUES ($1, $2, $3, $4)
-        RETURNING 
+      // First check if player already exists
+      const existingEntry = await db.oneOrNone(`
+        SELECT 
           id,
           game_name as "gameName",
           score,
           player_name as "playerName",
           user_id as "userId",
           achieved_at as "achievedAt"
-      `, [gameName, score, playerName, userId || null]);
+        FROM game_leaderboard 
+        WHERE game_name = $1 AND player_name = $2
+      `, [gameName, playerName]);
       
-      return entry;
+      if (existingEntry) {
+        // Update existing entry if new score is higher
+        if (score > existingEntry.score) {
+          const updatedEntry = await db.one(`
+            UPDATE game_leaderboard 
+            SET score = $3, achieved_at = NOW()
+            WHERE game_name = $1 AND player_name = $2
+            RETURNING 
+              id,
+              game_name as "gameName",
+              score,
+              player_name as "playerName",
+              user_id as "userId",
+              achieved_at as "achievedAt"
+          `, [gameName, playerName, score]);
+          
+          return updatedEntry;
+        } else {
+          // Return existing entry if score is not higher
+          return existingEntry;
+        }
+      } else {
+        // Create new entry if player doesn't exist
+        const entry = await db.one(`
+          INSERT INTO game_leaderboard (game_name, score, player_name, user_id)
+          VALUES ($1, $2, $3, $4)
+          RETURNING 
+            id,
+            game_name as "gameName",
+            score,
+            player_name as "playerName",
+            user_id as "userId",
+            achieved_at as "achievedAt"
+        `, [gameName, score, playerName, userId || null]);
+        
+        return entry;
+      }
     } catch (error) {
       console.error('Error adding game leaderboard entry:', error);
       throw error;
