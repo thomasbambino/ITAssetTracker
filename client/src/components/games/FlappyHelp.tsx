@@ -55,6 +55,7 @@ export default function FlappyHelp() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [flashRed, setFlashRed] = useState(false);
+  const [gameOverTime, setGameOverTime] = useState(0);
   const gameLoopRef = useRef<number>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const treeImagesRef = useRef<{ [key: string]: HTMLImageElement }>({});
@@ -88,7 +89,7 @@ export default function FlappyHelp() {
       img.src = src;
       img.onload = () => {
         treeImagesRef.current[key] = img;
-        console.log(`Tree image loaded: ${key}`);
+
       };
       img.onerror = (e) => {
         console.error(`Failed to load tree image: ${key}`, e);
@@ -209,6 +210,7 @@ export default function FlappyHelp() {
     setShowNameInput(false);
     setShowLeaderboard(false);
     setFlashRed(false);
+    setGameOverTime(0);
   };
 
   const handleNameSubmit = async () => {
@@ -308,8 +310,7 @@ export default function FlappyHelp() {
         const treeTypes: ('tree1' | 'tree2' | 'tree3' | 'tree4')[] = ['tree1', 'tree2', 'tree3', 'tree4', 'tree4'];
         const treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
         
-        // Debug: log tree type generation
-        console.log('Generated tree type:', treeType);
+
         
         // Add size variability - clouds 8% bigger or smaller, trees up to 60% taller
         const cloudSizeVariation = Math.random() * 0.16 - 0.08; // -8% to +8%
@@ -405,6 +406,7 @@ export default function FlappyHelp() {
     if (gameRunning && checkCollision(bird, obstacles) && invincibilityTime <= 0) {
       setGameOver(true);
       setGameRunning(false);
+      setGameOverTime(Date.now()); // Set game over time for spacebar delay
       
       // Flash red screen on collision
       setFlashRed(true);
@@ -503,10 +505,7 @@ export default function FlappyHelp() {
     const width = TREE_WIDTH * scale;
     const scaledHeight = height * scale * heightMultiplier;
     
-    // Debug tree4 drawing
-    if (treeType === 'tree4') {
-      console.log(`Drawing tree4 at x:${x}, height:${scaledHeight}, multiplier:${heightMultiplier}`);
-    }
+
     
     ctx.save();
     
@@ -516,8 +515,9 @@ export default function FlappyHelp() {
       ctx.scale(1, -1);
       ctx.drawImage(img, -width / 2, -scaledHeight / 2, width, scaledHeight);
     } else {
-      // Bottom tree (facing up) - normal orientation
-      ctx.drawImage(img, x, y, width, scaledHeight);
+      // Bottom tree (facing up) - adjust y position for taller trees to start at ground level
+      const adjustedY = treeType === 'tree4' ? y - (scaledHeight - height * scale) : y;
+      ctx.drawImage(img, x, adjustedY, width, scaledHeight);
     }
     
     ctx.restore();
@@ -660,8 +660,8 @@ export default function FlappyHelp() {
         } else if (gameRunning && !gameOver) {
           // Jump if game is running
           jump();
-        } else if (gameOver) {
-          // Restart game if game is over
+        } else if (gameOver && Date.now() - gameOverTime > 2000) {
+          // Restart game if game is over and 2 seconds have passed
           restartGame();
         }
       }
@@ -832,7 +832,11 @@ export default function FlappyHelp() {
             <div className="text-center text-white">
               <p className="text-sm mb-2">Game Over!</p>
               <p className="text-xs mb-2">Score: {score}</p>
-              <p className="text-xs mb-3 opacity-75">Press Space to play again</p>
+              {Date.now() - gameOverTime > 2000 ? (
+                <p className="text-xs mb-3 opacity-75">Press Space to play again</p>
+              ) : (
+                <p className="text-xs mb-3 opacity-75">Wait {Math.ceil((2000 - (Date.now() - gameOverTime)) / 1000)}s to restart</p>
+              )}
               <Button
                 size="sm"
                 onClick={restartGame}
