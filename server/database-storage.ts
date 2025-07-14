@@ -4429,13 +4429,18 @@ export class DatabaseStorage implements IStorage {
         SELECT 
           id,
           game_name as "gameName",
-          high_score as "highScore",
+          score as "highScore",
           player_name as "playerName",
           user_id as "userId",
           achieved_at as "achievedAt",
-          updated_at as "updatedAt"
+          combo,
+          distance,
+          weather_condition as "weatherCondition",
+          time_of_day as "timeOfDay"
         FROM game_high_scores 
         WHERE game_name = $1
+        ORDER BY score DESC
+        LIMIT 1
       `, [gameName]);
       return highScore;
     } catch (error) {
@@ -4445,35 +4450,147 @@ export class DatabaseStorage implements IStorage {
 
   async updateGameHighScore(gameName: string, score: number, playerName?: string, userId?: number): Promise<any> {
     try {
-      // Try to update existing record
-      const result = await db.result(`
-        UPDATE game_high_scores 
-        SET 
-          high_score = $2,
-          player_name = $3,
-          user_id = $4,
-          achieved_at = NOW(),
-          updated_at = NOW()
-        WHERE game_name = $1 AND high_score < $2
-      `, [gameName, score, playerName || null, userId || null]);
-
-      if (result.rowCount === 0) {
-        // No existing record or score wasn't higher, try to insert or get existing
-        try {
-          await db.one(`
-            INSERT INTO game_high_scores (game_name, high_score, player_name, user_id)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id
-          `, [gameName, score, playerName || null, userId || null]);
-        } catch (insertError) {
-          // Record exists but score wasn't higher, just return current high score
-        }
-      }
-
-      // Return the current high score
-      return await this.getGameHighScore(gameName);
+      // For backward compatibility - just submit a basic score
+      return await this.submitGameScore(gameName, {
+        score,
+        playerName: playerName || 'Anonymous',
+        combo: 0,
+        distance: 0,
+        weatherCondition: 'clear',
+        timeOfDay: 'day',
+        userId
+      });
     } catch (error) {
       console.error('Error updating game high score:', error);
+      throw error;
+    }
+  }
+
+  async submitGameScore(gameName: string, scoreData: {
+    score: number;
+    playerName: string;
+    combo: number;
+    distance: number;
+    weatherCondition: string;
+    timeOfDay: string;
+    userId?: number;
+  }): Promise<any> {
+    try {
+      // Insert the new score
+      const newScore = await db.one(`
+        INSERT INTO game_high_scores (
+          game_name, 
+          score, 
+          player_name, 
+          user_id,
+          combo,
+          distance,
+          weather_condition,
+          time_of_day
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING 
+          id,
+          game_name as "gameName",
+          score,
+          player_name as "playerName",
+          user_id as "userId",
+          achieved_at as "achievedAt",
+          combo,
+          distance,
+          weather_condition as "weatherCondition",
+          time_of_day as "timeOfDay"
+      `, [
+        gameName,
+        scoreData.score,
+        scoreData.playerName,
+        scoreData.userId || null,
+        scoreData.combo,
+        scoreData.distance,
+        scoreData.weatherCondition,
+        scoreData.timeOfDay
+      ]);
+
+      return newScore;
+    } catch (error) {
+      console.error('Error submitting game score:', error);
+      throw error;
+    }
+  }
+
+  async getGameLeaderboard(gameName: string, limit: number = 10): Promise<any[]> {
+    try {
+      const leaderboard = await db.manyOrNone(`
+        SELECT 
+          id,
+          game_name as "gameName",
+          score,
+          player_name as "playerName",
+          user_id as "userId",
+          achieved_at as "achievedAt",
+          combo,
+          distance,
+          weather_condition as "weatherCondition",
+          time_of_day as "timeOfDay"
+        FROM game_high_scores 
+        WHERE game_name = $1
+        ORDER BY score DESC, achieved_at ASC
+        LIMIT $2
+      `, [gameName, limit]);
+      
+      return leaderboard || [];
+    } catch (error) {
+      console.error('Error fetching game leaderboard:', error);
+      return [];
+    }
+  }
+
+  async unlockAchievement(gameName: string, achievementData: {
+    achievementId: string;
+    playerName: string;
+    title: string;
+    description: string;
+    icon: string;
+    userId?: number;
+  }): Promise<any> {
+    try {
+      // Try to insert the achievement (unique constraint will prevent duplicates)
+      const achievement = await db.one(`
+        INSERT INTO game_achievements (
+          game_name,
+          achievement_id,
+          player_name,
+          user_id,
+          title,
+          description,
+          icon
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (game_name, achievement_id, player_name) DO UPDATE SET
+          achieved_at = NOW()
+        RETURNING 
+          id,
+          game_name as "gameName",
+          achievement_id as "achievementId",
+          player_name as "playerName",
+          user_id as "userId",
+          achieved_at as "achievedAt",
+          title,
+          description,
+          icon
+      `, [
+        gameName,
+        achievementData.achievementId,
+        achievementData.playerName,
+        achievementData.userId || null,
+        achievementData.title,
+        achievementData.description,
+        achievementData.icon
+      ]);
+
+      return achievement;
+    } catch (error) {
+      console.error('Error unlocking achievement:', error);
       throw error;
     }
   }

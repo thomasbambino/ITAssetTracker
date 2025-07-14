@@ -4010,6 +4010,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced leaderboard endpoint
+  app.get('/api/game/:gameName/leaderboard', async (req: Request, res: Response) => {
+    try {
+      const { gameName } = req.params;
+      const leaderboard = await storage.getGameLeaderboard(gameName);
+      res.json({ leaderboard });
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      res.status(500).json({ message: 'Error fetching leaderboard' });
+    }
+  });
+
+  // Enhanced score submission endpoint
+  app.post('/api/game/:gameName/score', async (req: Request, res: Response) => {
+    try {
+      const { gameName } = req.params;
+      const { score, playerName, combo, distance, weatherCondition, timeOfDay } = req.body;
+      
+      if (!score || score < 0) {
+        return res.status(400).json({ message: 'Invalid score' });
+      }
+      
+      if (!playerName || !playerName.trim()) {
+        return res.status(400).json({ message: 'Player name required' });
+      }
+      
+      // Get current user ID if logged in
+      const userId = req.session.userId;
+      
+      const result = await storage.submitGameScore(gameName, {
+        score,
+        playerName: playerName.trim(),
+        combo: combo || 0,
+        distance: distance || 0,
+        weatherCondition: weatherCondition || 'clear',
+        timeOfDay: timeOfDay || 'day',
+        userId
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error submitting score:', error);
+      res.status(500).json({ message: 'Error submitting score' });
+    }
+  });
+
+  // Legacy high score endpoint (for backward compatibility)
   app.post('/api/game/:gameName/highscore', async (req: Request, res: Response) => {
     try {
       const { gameName } = req.params;
@@ -4027,6 +4074,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating high score:', error);
       res.status(500).json({ message: 'Error updating high score' });
+    }
+  });
+
+  // Achievement tracking endpoint
+  app.post('/api/game/:gameName/achievement', async (req: Request, res: Response) => {
+    try {
+      const { gameName } = req.params;
+      const { achievementId, playerName, title, description, icon } = req.body;
+      
+      if (!achievementId || !playerName || !title) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      // Get current user ID if logged in
+      const userId = req.session.userId;
+      
+      const result = await storage.unlockAchievement(gameName, {
+        achievementId,
+        playerName: playerName.trim(),
+        title,
+        description: description || '',
+        icon: icon || '🏆',
+        userId
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error unlocking achievement:', error);
+      res.status(500).json({ message: 'Error unlocking achievement' });
     }
   });
 

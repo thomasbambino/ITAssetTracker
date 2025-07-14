@@ -129,6 +129,28 @@ export interface IStorage {
   deleteDepartment(id: number, loggedInUserId?: number): Promise<boolean>;
   getUsersByDepartmentId(departmentId: number): Promise<User[]>;
   getDepartmentManager(departmentId: number): Promise<User | undefined>;
+
+  // Game operations
+  getGameHighScore(gameName: string): Promise<any | undefined>;
+  updateGameHighScore(gameName: string, score: number, playerName?: string, userId?: number): Promise<any>;
+  submitGameScore(gameName: string, scoreData: {
+    score: number;
+    playerName: string;
+    combo: number;
+    distance: number;
+    weatherCondition: string;
+    timeOfDay: string;
+    userId?: number;
+  }): Promise<any>;
+  getGameLeaderboard(gameName: string, limit?: number): Promise<any[]>;
+  unlockAchievement(gameName: string, achievementData: {
+    achievementId: string;
+    playerName: string;
+    title: string;
+    description: string;
+    icon: string;
+    userId?: number;
+  }): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
