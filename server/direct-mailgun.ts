@@ -248,9 +248,8 @@ export class DirectMailgunService {
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
       
-      // Get application URL from branding settings, with fallback to environment/localhost
-      const applicationUrl = branding?.applicationUrl || 
-        (process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000");
+      // Get application URL from branding settings, with fallback to localhost only
+      const applicationUrl = branding?.applicationUrl || "http://localhost:5000";
       
       // Use actual company logo from database if available
       const logoHtml = branding?.logo 
@@ -376,9 +375,8 @@ export class DirectMailgunService {
       const branding = await storage.getBrandingSettings();
       const companyName = branding?.companyName || 'AssetTrack';
       
-      // Get application URL from branding settings, with fallback to environment/localhost
-      const applicationUrl = branding?.applicationUrl || 
-        (process.env.REPLIT_DOMAINS ? "https://" + process.env.REPLIT_DOMAINS.split(",")[0] : "http://localhost:5000");
+      // Get application URL from branding settings, with fallback to localhost only
+      const applicationUrl = branding?.applicationUrl || "http://localhost:5000";
       
       // Use actual company logo from database if available
       const logoHtml = branding?.logo 
