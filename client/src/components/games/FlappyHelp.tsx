@@ -6,10 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import treeUpwardImg from '@/assets/tree-upward.png';
 import tree2Img from '@/assets/tree2.png';
+import tree3Img from '@/assets/tree3.png';
 import stormCloudImg from '@/assets/storm-cloud.png';
 import cloudDarkImg from '@/assets/cloud-dark.png';
 import cloudLightImg from '@/assets/cloud-light.png';
 import cloud2Img from '@/assets/cloud2.png';
+import cloud3Img from '@/assets/cloud3.png';
+import cloud4Img from '@/assets/cloud4.png';
 
 interface Bird {
   x: number;
@@ -22,8 +25,10 @@ interface Obstacle {
   topHeight: number;
   bottomY: number;
   scored: boolean;
-  cloudType?: 'storm' | 'dark' | 'light' | 'cloud2';
-  treeType?: 'tree1' | 'tree2';
+  cloudType?: 'storm' | 'dark' | 'light' | 'cloud2' | 'cloud3' | 'cloud4';
+  treeType?: 'tree1' | 'tree2' | 'tree3';
+  cloudScale?: number;
+  treeScale?: number;
 }
 
 interface PowerUp {
@@ -72,7 +77,8 @@ export default function FlappyHelp() {
     // Load tree images
     const treeImages = {
       tree1: treeUpwardImg,
-      tree2: tree2Img
+      tree2: tree2Img,
+      tree3: tree3Img
     };
     
     Object.entries(treeImages).forEach(([key, src]) => {
@@ -88,7 +94,9 @@ export default function FlappyHelp() {
       storm: stormCloudImg,
       dark: cloudDarkImg,
       light: cloudLightImg,
-      cloud2: cloud2Img
+      cloud2: cloud2Img,
+      cloud3: cloud3Img,
+      cloud4: cloud4Img
     };
     
     Object.entries(cloudImages).forEach(([key, src]) => {
@@ -214,6 +222,12 @@ export default function FlappyHelp() {
     }
   }, [gameRunning, gameOver, JUMP_FORCE]);
 
+  const startGame = useCallback(() => {
+    if (!gameRunning && !gameOver) {
+      setGameRunning(true);
+    }
+  }, [gameRunning, gameOver]);
+
   const checkCollision = useCallback((bird: Bird, obstacles: Obstacle[]) => {
     // If invincible, no collision
     if (invincibilityTime > 0) {
@@ -281,17 +295,26 @@ export default function FlappyHelp() {
         const heightVariation = maxHeight * 0.15; // 15% variation
         const centerHeight = baseHeight + (maxHeight - baseHeight) * 0.5; // Center point
         const topHeight = centerHeight + (Math.random() - 0.5) * 2 * heightVariation;
-        const cloudTypes: ('storm' | 'dark' | 'light' | 'cloud2')[] = ['storm', 'dark', 'light', 'cloud2'];
+        const cloudTypes: ('storm' | 'dark' | 'light' | 'cloud2' | 'cloud3' | 'cloud4')[] = ['storm', 'dark', 'light', 'cloud2', 'cloud3', 'cloud4'];
         const cloudType = cloudTypes[Math.floor(Math.random() * cloudTypes.length)];
-        const treeTypes: ('tree1' | 'tree2')[] = ['tree1', 'tree2'];
+        const treeTypes: ('tree1' | 'tree2' | 'tree3')[] = ['tree1', 'tree2', 'tree3'];
         const treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
+        
+        // Add size variability - 15% bigger or smaller
+        const cloudSizeVariation = Math.random() * 0.3 - 0.15; // -15% to +15%
+        const treeSizeVariation = Math.random() * 0.3 - 0.15; // -15% to +15%
+        const cloudScale = 1 + cloudSizeVariation;
+        const treeScale = 1 + treeSizeVariation;
+        
         newObstacles.push({
           x: CANVAS_WIDTH,
           topHeight,
           bottomY: topHeight + TREE_GAP,
           scored: false,
           cloudType,
-          treeType
+          treeType,
+          cloudScale,
+          treeScale
         });
       }
 
@@ -436,42 +459,44 @@ export default function FlappyHelp() {
   };
 
   // Draw cloud using the provided images
-  const drawCloud = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, cloudType: 'storm' | 'dark' | 'light' | 'cloud2') => {
+  const drawCloud = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, cloudType: 'storm' | 'dark' | 'light' | 'cloud2' | 'cloud3' | 'cloud4', scale: number = 1) => {
     const img = cloudImagesRef.current[cloudType];
     if (!img) return;
     
-    const width = TREE_WIDTH;
+    const width = TREE_WIDTH * scale;
+    const scaledHeight = height * scale;
     
     ctx.save();
     
     if (isTop) {
       // Top cloud (hanging from top)
-      ctx.drawImage(img, x, y, width, height);
+      ctx.drawImage(img, x, y, width, scaledHeight);
     } else {
       // Bottom cloud (normal orientation)
-      ctx.drawImage(img, x, y, width, height);
+      ctx.drawImage(img, x, y, width, scaledHeight);
     }
     
     ctx.restore();
   };
 
   // Draw tree using the provided image
-  const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, treeType: 'tree1' | 'tree2' = 'tree1') => {
+  const drawTree = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, isTop: boolean, treeType: 'tree1' | 'tree2' | 'tree3' = 'tree1', scale: number = 1) => {
     const img = treeImagesRef.current[treeType];
     if (!img) return;
     
-    const width = TREE_WIDTH;
+    const width = TREE_WIDTH * scale;
+    const scaledHeight = height * scale;
     
     ctx.save();
     
     if (isTop) {
       // Top tree (facing down) - flip vertically
-      ctx.translate(x + width / 2, y + height / 2);
+      ctx.translate(x + width / 2, y + scaledHeight / 2);
       ctx.scale(1, -1);
-      ctx.drawImage(img, -width / 2, -height / 2, width, height);
+      ctx.drawImage(img, -width / 2, -scaledHeight / 2, width, scaledHeight);
     } else {
       // Bottom tree (facing up) - normal orientation
-      ctx.drawImage(img, x, y, width, height);
+      ctx.drawImage(img, x, y, width, scaledHeight);
     }
     
     ctx.restore();
@@ -586,8 +611,8 @@ export default function FlappyHelp() {
 
     // Draw obstacles
     obstacles.forEach(obstacle => {
-      drawCloud(ctx, obstacle.x, 0, obstacle.topHeight, true, obstacle.cloudType || 'light'); // Top cloud
-      drawTree(ctx, obstacle.x, obstacle.bottomY, CANVAS_HEIGHT - obstacle.bottomY, false, obstacle.treeType || 'tree1'); // Bottom tree
+      drawCloud(ctx, obstacle.x, 0, obstacle.topHeight, true, obstacle.cloudType || 'light', obstacle.cloudScale || 1); // Top cloud
+      drawTree(ctx, obstacle.x, obstacle.bottomY, CANVAS_HEIGHT - obstacle.bottomY, false, obstacle.treeType || 'tree1', obstacle.treeScale || 1); // Bottom tree
     });
 
     // Draw power-ups
@@ -608,7 +633,13 @@ export default function FlappyHelp() {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (isOpen && e.code === 'Space') {
         e.preventDefault();
-        jump();
+        if (!gameRunning && !gameOver) {
+          // Start the game if not running
+          startGame();
+        } else {
+          // Jump if game is running
+          jump();
+        }
       }
     };
 
@@ -619,7 +650,7 @@ export default function FlappyHelp() {
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [isOpen, jump]);
+  }, [isOpen, jump, startGame, gameRunning, gameOver]);
 
   if (!isOpen) {
     return (
@@ -643,7 +674,7 @@ export default function FlappyHelp() {
             variant="outline" 
             size="sm"
             onClick={() => setShowLeaderboard(true)}
-            className="text-xs h-6 px-2"
+            className="text-xs h-6 px-2 mr-4"
           >
             <Trophy className="h-3 w-3 mr-1" />
             Top 5
