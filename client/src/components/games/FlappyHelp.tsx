@@ -301,9 +301,9 @@ export default function FlappyHelp() {
         const treeTypes: ('tree1' | 'tree2' | 'tree3')[] = ['tree1', 'tree2', 'tree3'];
         const treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
         
-        // Add size variability - clouds 8% bigger or smaller, trees up to 50% taller
+        // Add size variability - clouds 8% bigger or smaller, trees up to 60% taller
         const cloudSizeVariation = Math.random() * 0.16 - 0.08; // -8% to +8%
-        const treeSizeVariation = Math.random() * 0.5; // 0% to +50% taller
+        const treeSizeVariation = Math.random() * 0.6; // 0% to +60% taller
         const cloudScale = 1 + cloudSizeVariation;
         const treeScale = 1 + treeSizeVariation;
         
@@ -637,9 +637,12 @@ export default function FlappyHelp() {
         if (!gameRunning && !gameOver) {
           // Start the game if not running
           startGame();
-        } else {
+        } else if (gameRunning && !gameOver) {
           // Jump if game is running
           jump();
+        } else if (gameOver) {
+          // Restart game if game is over
+          restartGame();
         }
       }
     };
@@ -651,7 +654,7 @@ export default function FlappyHelp() {
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [isOpen, jump, startGame, gameRunning, gameOver]);
+  }, [isOpen, jump, startGame, restartGame, gameRunning, gameOver]);
 
   if (!isOpen) {
     return (
@@ -808,7 +811,8 @@ export default function FlappyHelp() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="text-center text-white">
               <p className="text-sm mb-2">Game Over!</p>
-              <p className="text-xs mb-3">Score: {score}</p>
+              <p className="text-xs mb-2">Score: {score}</p>
+              <p className="text-xs mb-3 opacity-75">Press Space to play again</p>
               <Button
                 size="sm"
                 onClick={restartGame}
