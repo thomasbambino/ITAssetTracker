@@ -129,6 +129,12 @@ export interface IStorage {
   deleteDepartment(id: number, loggedInUserId?: number): Promise<boolean>;
   getUsersByDepartmentId(departmentId: number): Promise<User[]>;
   getDepartmentManager(departmentId: number): Promise<User | undefined>;
+  
+  // Game operations
+  getGameHighScore(gameName: string): Promise<any>;
+  updateGameHighScore(gameName: string, score: number, playerName: string, userId?: number): Promise<any>;
+  getGameLeaderboard(gameName: string, limit?: number): Promise<any[]>;
+  addGameLeaderboardEntry(gameName: string, score: number, playerName: string, userId?: number): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -577,6 +583,23 @@ export class MemStorage implements IStorage {
   
   async getDepartmentManager(departmentId: number): Promise<User | undefined> {
     return undefined;
+  }
+  
+  // Game operations - stub implementations
+  async getGameHighScore(gameName: string): Promise<any> {
+    return { gameName, highScore: 0, playerName: null };
+  }
+  
+  async updateGameHighScore(gameName: string, score: number, playerName: string, userId?: number): Promise<any> {
+    return { gameName, highScore: score, playerName, userId };
+  }
+  
+  async getGameLeaderboard(gameName: string, limit: number = 5): Promise<any[]> {
+    return [];
+  }
+  
+  async addGameLeaderboardEntry(gameName: string, score: number, playerName: string, userId?: number): Promise<any> {
+    return { gameName, score, playerName, userId, achievedAt: new Date() };
   }
 }
 

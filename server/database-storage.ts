@@ -4477,4 +4477,48 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  async getGameLeaderboard(gameName: string, limit: number = 5): Promise<any[]> {
+    try {
+      const leaderboard = await db.any(`
+        SELECT 
+          id,
+          game_name as "gameName",
+          score,
+          player_name as "playerName",
+          user_id as "userId",
+          achieved_at as "achievedAt"
+        FROM game_leaderboard 
+        WHERE game_name = $1 
+        ORDER BY score DESC 
+        LIMIT $2
+      `, [gameName, limit]);
+      
+      return leaderboard;
+    } catch (error) {
+      console.error('Error getting game leaderboard:', error);
+      return [];
+    }
+  }
+
+  async addGameLeaderboardEntry(gameName: string, score: number, playerName: string, userId?: number): Promise<any> {
+    try {
+      const entry = await db.one(`
+        INSERT INTO game_leaderboard (game_name, score, player_name, user_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING 
+          id,
+          game_name as "gameName",
+          score,
+          player_name as "playerName",
+          user_id as "userId",
+          achieved_at as "achievedAt"
+      `, [gameName, score, playerName, userId || null]);
+      
+      return entry;
+    } catch (error) {
+      console.error('Error adding game leaderboard entry:', error);
+      throw error;
+    }
+  }
 }

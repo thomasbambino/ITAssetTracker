@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { HelpCircle, X } from 'lucide-react';
+import { HelpCircle, X, Trophy, Star, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 import treeUpwardImg from '@/assets/tree-upward.png';
 import stormCloudImg from '@/assets/storm-cloud.png';
 import cloudDarkImg from '@/assets/cloud-dark.png';
@@ -39,6 +42,11 @@ export default function FlappyHelp() {
   const [backgroundOffset, setBackgroundOffset] = useState(0);
   const [invincibilityTime, setInvincibilityTime] = useState(0);
   const [slowMotionTime, setSlowMotionTime] = useState(0);
+  const [playerName, setPlayerName] = useState('');
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [flashRed, setFlashRed] = useState(false);
   const gameLoopRef = useRef<number>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const treeImageRef = useRef<HTMLImageElement>();
@@ -81,8 +89,9 @@ export default function FlappyHelp() {
       };
     });
     
-    // Fetch high score when component mounts
+    // Fetch high score and leaderboard when component mounts
     fetchHighScore();
+    fetchLeaderboard();
   }, []);
 
   // Fetch high score from API
@@ -93,6 +102,17 @@ export default function FlappyHelp() {
       setHighScore(data.highScore || 0);
     } catch (error) {
       console.error('Error fetching high score:', error);
+    }
+  };
+
+  // Fetch leaderboard from API
+  const fetchLeaderboard = async () => {
+    try {
+      const response = await fetch('/api/game/flappy-help/leaderboard?limit=5');
+      const data = await response.json();
+      setLeaderboard(data);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
     }
   };
 
@@ -116,6 +136,29 @@ export default function FlappyHelp() {
     }
   };
 
+  // Add to leaderboard
+  const addToLeaderboard = async (score: number, playerName: string) => {
+    try {
+      const response = await fetch('/api/game/flappy-help/leaderboard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          score, 
+          playerName 
+        }),
+      });
+      
+      if (response.ok) {
+        // Refresh leaderboard after adding entry
+        fetchLeaderboard();
+      }
+    } catch (error) {
+      console.error('Error adding to leaderboard:', error);
+    }
+  };
+
   const resetGame = useCallback(() => {
     setBird({ x: 50, y: 150, velocity: 0 });
     setObstacles([]);
@@ -126,7 +169,33 @@ export default function FlappyHelp() {
     setBackgroundOffset(0);
     setInvincibilityTime(0);
     setSlowMotionTime(0);
+    setShowNameInput(false);
+    setShowLeaderboard(false);
+    setFlashRed(false);
   }, []);
+
+  const restartGame = () => {
+    setBird({ x: 50, y: 150, velocity: 0 });
+    setObstacles([]);
+    setPowerUps([]);
+    setScore(0);
+    setGameOver(false);
+    setGameRunning(true);
+    setInvincibilityTime(0);
+    setSlowMotionTime(0);
+    setBackgroundOffset(0);
+    setShowNameInput(false);
+    setShowLeaderboard(false);
+    setFlashRed(false);
+  };
+
+  const handleNameSubmit = async () => {
+    if (playerName.trim()) {
+      await addToLeaderboard(score, playerName.trim());
+      setShowNameInput(false);
+      setShowLeaderboard(true);
+    }
+  };
 
   const jump = useCallback(() => {
     if (!gameOver) {
@@ -285,12 +354,22 @@ export default function FlappyHelp() {
 
   // Collision detection
   useEffect(() => {
-    if (gameRunning && checkCollision(bird, obstacles)) {
+    if (gameRunning && checkCollision(bird, obstacles) && invincibilityTime <= 0) {
       setGameOver(true);
       setGameRunning(false);
+      
+      // Flash red screen on collision
+      setFlashRed(true);
+      setTimeout(() => setFlashRed(false), 300);
+      
       // Update high score when game ends
       if (score > 0) {
         updateHighScore(score);
+      }
+      
+      // Show name input if score is high enough for leaderboard
+      if (score > 0) {
+        setShowNameInput(true);
       }
     }
   }, [bird, obstacles, checkCollision, gameRunning, score]);
@@ -610,7 +689,10 @@ export default function FlappyHelp() {
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
           onClick={jump}
-          className="cursor-pointer bg-sky-200 block"
+          className={`cursor-pointer bg-sky-200 block ${
+            flashRed ? 'animate-pulse' : ''
+          }`}
+          style={flashRed ? { backgroundColor: 'rgba(255, 0, 0, 0.3)' } : {}}
         />
 
         {!gameRunning && !gameOver && (
@@ -625,14 +707,95 @@ export default function FlappyHelp() {
           </div>
         )}
 
-        {gameOver && (
+        {/* Power-up status indicators */}
+        <div className="absolute top-2 right-2 space-y-1">
+          {invincibilityTime > 0 && (
+            <div className="bg-yellow-400 text-black px-2 py-1 rounded text-xs font-bold">
+              ⚡ {Math.ceil(invincibilityTime / 1000)}s
+            </div>
+          )}
+          {slowMotionTime > 0 && (
+            <div className="bg-blue-400 text-white px-2 py-1 rounded text-xs font-bold">
+              🕰️ {Math.ceil(slowMotionTime / 1000)}s
+            </div>
+          )}
+        </div>
+
+        {/* Name Input Modal */}
+        {showNameInput && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="bg-white p-4 rounded-lg shadow-lg space-y-4 max-w-xs">
+              <div className="text-center">
+                <Trophy className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+                <h3 className="text-lg font-bold">Great Score!</h3>
+                <p className="text-sm text-gray-600">Score: {score}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="playerName">Enter your name:</Label>
+                <Input
+                  id="playerName"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder="Your name"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
+                />
+              </div>
+              <div className="flex space-x-2">
+                <Button onClick={handleNameSubmit} className="flex-1">
+                  Submit
+                </Button>
+                <Button variant="outline" onClick={() => setShowNameInput(false)}>
+                  Skip
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Leaderboard Modal */}
+        {showLeaderboard && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="bg-white p-4 rounded-lg shadow-lg space-y-4 max-w-xs">
+              <div className="text-center">
+                <Star className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+                <h3 className="text-lg font-bold">Leaderboard</h3>
+              </div>
+              <div className="space-y-2">
+                {leaderboard.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center">No scores yet!</p>
+                ) : (
+                  leaderboard.map((entry, index) => (
+                    <div key={entry.id} className="flex items-center justify-between text-sm">
+                      <span className="flex items-center">
+                        <span className="w-6 text-gray-500">#{index + 1}</span>
+                        <span className="font-medium">{entry.playerName}</span>
+                      </span>
+                      <span className="font-bold">{entry.score}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="flex space-x-2">
+                <Button onClick={restartGame} className="flex-1">
+                  Play Again
+                </Button>
+                <Button variant="outline" onClick={() => setShowLeaderboard(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {gameOver && !showNameInput && !showLeaderboard && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="text-center text-white">
               <p className="text-sm mb-2">Game Over!</p>
               <p className="text-xs mb-3">Score: {score}</p>
               <Button
                 size="sm"
-                onClick={resetGame}
+                onClick={restartGame}
                 className="text-xs h-7"
               >
                 Play Again

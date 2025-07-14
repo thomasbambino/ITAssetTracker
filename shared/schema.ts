@@ -555,3 +555,21 @@ export const insertGameHighScoreSchema = createInsertSchema(gameHighScores).omit
 
 export type InsertGameHighScore = z.infer<typeof insertGameHighScoreSchema>;
 export type GameHighScore = typeof gameHighScores.$inferSelect;
+
+// Game Leaderboard Table (for multiple scores per game)
+export const gameLeaderboard = pgTable("game_leaderboard", {
+  id: serial("id").primaryKey(),
+  gameName: text("game_name").notNull(),
+  score: integer("score").notNull(),
+  playerName: text("player_name").notNull(),
+  userId: integer("user_id").references(() => users.id),
+  achievedAt: timestamp("achieved_at").defaultNow(),
+});
+
+export const insertGameLeaderboardSchema = createInsertSchema(gameLeaderboard).omit({
+  id: true,
+  achievedAt: true,
+});
+
+export type InsertGameLeaderboard = z.infer<typeof insertGameLeaderboardSchema>;
+export type GameLeaderboard = typeof gameLeaderboard.$inferSelect;

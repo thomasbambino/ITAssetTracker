@@ -4030,6 +4030,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Game Leaderboard routes
+  app.get('/api/game/:gameName/leaderboard', async (req: Request, res: Response) => {
+    try {
+      const { gameName } = req.params;
+      const limit = parseInt(req.query.limit as string) || 5;
+      const leaderboard = await storage.getGameLeaderboard(gameName, limit);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      res.status(500).json({ message: 'Error fetching leaderboard' });
+    }
+  });
+
+  app.post('/api/game/:gameName/leaderboard', async (req: Request, res: Response) => {
+    try {
+      const { gameName } = req.params;
+      const { score, playerName } = req.body;
+      
+      if (!score || score < 0) {
+        return res.status(400).json({ message: 'Invalid score' });
+      }
+      
+      if (!playerName || playerName.trim() === '') {
+        return res.status(400).json({ message: 'Player name is required' });
+      }
+      
+      // Get current user ID if logged in
+      const userId = req.session.userId;
+      
+      const result = await storage.addGameLeaderboardEntry(gameName, score, playerName.trim(), userId);
+      res.json(result);
+    } catch (error) {
+      console.error('Error adding leaderboard entry:', error);
+      res.status(500).json({ message: 'Error adding leaderboard entry' });
+    }
+  });
+
   // AI-powered API endpoints
   
   // Test endpoint to verify AI service is working
