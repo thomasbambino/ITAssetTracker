@@ -4503,7 +4503,7 @@ export class DatabaseStorage implements IStorage {
 
   async addGameLeaderboardEntry(gameName: string, score: number, playerName: string, userId?: number): Promise<any> {
     try {
-      // First check if player already exists
+      // First check if player already exists - get the highest score entry for this player
       const existingEntry = await db.oneOrNone(`
         SELECT 
           id,
@@ -4514,15 +4514,23 @@ export class DatabaseStorage implements IStorage {
           achieved_at as "achievedAt"
         FROM game_leaderboard 
         WHERE game_name = $1 AND player_name = $2
+        ORDER BY score DESC, achieved_at DESC
+        LIMIT 1
       `, [gameName, playerName]);
       
       if (existingEntry) {
         // Update existing entry if new score is higher
         if (score > existingEntry.score) {
-          const updatedEntry = await db.one(`
-            UPDATE game_leaderboard 
-            SET score = $3, achieved_at = NOW()
+          // First, delete all existing entries for this player to avoid duplicates
+          await db.none(`
+            DELETE FROM game_leaderboard 
             WHERE game_name = $1 AND player_name = $2
+          `, [gameName, playerName]);
+          
+          // Then create a new entry with the higher score
+          const updatedEntry = await db.one(`
+            INSERT INTO game_leaderboard (game_name, score, player_name, user_id)
+            VALUES ($1, $2, $3, $4)
             RETURNING 
               id,
               game_name as "gameName",
@@ -4530,7 +4538,7 @@ export class DatabaseStorage implements IStorage {
               player_name as "playerName",
               user_id as "userId",
               achieved_at as "achievedAt"
-          `, [gameName, playerName, score]);
+          `, [gameName, score, playerName, userId || null]);
           
           return updatedEntry;
         } else {
