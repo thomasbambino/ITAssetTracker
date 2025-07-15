@@ -704,17 +704,6 @@ export default function FlappyHelp() {
             Top 5
           </Button>
         </div>
-        
-        {/* Power-up indicators */}
-        <div className="flex items-center space-x-2">
-          {invincibilityTime > 0 && (
-            <div className="flex items-center space-x-1 bg-yellow-500 text-white px-2 py-1 rounded text-xs">
-              <span>🛡️</span>
-              <span>{Math.ceil(invincibilityTime / 1000)}s</span>
-            </div>
-          )}
-
-        </div>
         <Button
           variant="ghost"
           size="sm"
