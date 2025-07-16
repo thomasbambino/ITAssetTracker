@@ -3587,69 +3587,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/problem-reports/:id/attachments', isAuthenticated, attachmentUpload.array('files', 5), async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      const sessionData = req.session as any;
-      const files = req.files as Express.Multer.File[];
-      
-      console.log('Attachment upload request received for problem report:', id);
-      console.log('Files received:', files?.length || 0);
-      console.log('Request body:', req.body);
-      console.log('Request files:', req.files);
-      
-      if (!files || files.length === 0) {
-        console.log('No files found in request');
-        return res.status(400).json({ message: "No files uploaded" });
+  app.post('/api/problem-reports/:id/attachments', isAuthenticated, (req: Request, res: Response) => {
+    console.log('Attachment upload request received for problem report:', req.params.id);
+    console.log('Request headers:', req.headers);
+    console.log('Content-Type:', req.headers['content-type']);
+    
+    // Use multer middleware with error handling
+    attachmentUpload.array('files', 5)(req, res, async (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ message: "File size exceeds 10MB limit" });
+        } else if (err.code === 'LIMIT_FILE_COUNT') {
+          return res.status(400).json({ message: "Maximum 5 files allowed" });
+        } else if (err.message.includes('Only images')) {
+          return res.status(400).json({ message: err.message });
+        } else {
+          return res.status(400).json({ message: "File upload error: " + err.message });
+        }
       }
       
-      // Check if user has access to this problem report
-      const report = await storage.getProblemReportById(parseInt(id));
-      if (!report) {
-        return res.status(404).json({ message: "Problem report not found" });
-      }
-      
-      // Users can only upload to their own reports, admins can upload to any
-      if (sessionData.userRole !== 'admin' && report.userId !== sessionData.userId) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-      
-      // Create attachments directory if it doesn't exist
-      const attachmentsDir = path.join(process.cwd(), 'uploads', 'attachments');
-      if (!fs.existsSync(attachmentsDir)) {
-        fs.mkdirSync(attachmentsDir, { recursive: true });
-      }
-      
-      const attachments = [];
-      
-      for (const file of files) {
-        // Generate unique filename
-        const fileExtension = path.extname(file.originalname);
-        const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(2)}${fileExtension}`;
-        const finalPath = path.join(attachmentsDir, uniqueFileName);
+      try {
+        const { id } = req.params;
+        const sessionData = req.session as any;
+        const files = req.files as Express.Multer.File[];
         
-        // Move file to final location
-        fs.renameSync(file.path, finalPath);
+        console.log('Files received:', files?.length || 0);
+        console.log('Request body:', req.body);
+        console.log('Request files:', req.files);
         
-        // Save attachment record to database
-        const attachment = await storage.createProblemReportAttachment({
-          problemReportId: parseInt(id),
-          fileName: uniqueFileName,
-          originalName: file.originalname,
-          fileType: file.mimetype,
-          fileSize: file.size,
-          filePath: finalPath,
-          uploadedBy: sessionData.userId
-        });
-        
-        attachments.push(attachment);
-      }
+        if (!files || files.length === 0) {
+          console.log('No files found in request');
+          return res.status(400).json({ message: "No files uploaded" });
+        }
       
-      res.status(201).json({ message: "Files uploaded successfully", attachments });
-    } catch (error) {
-      console.error('Error uploading attachments:', error);
-      res.status(500).json({ message: "Error uploading files" });
-    }
+        // Check if user has access to this problem report
+        const report = await storage.getProblemReportById(parseInt(id));
+        if (!report) {
+          return res.status(404).json({ message: "Problem report not found" });
+        }
+        
+        // Users can only upload to their own reports, admins can upload to any
+        if (sessionData.userRole !== 'admin' && report.userId !== sessionData.userId) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+        
+        // Create attachments directory if it doesn't exist
+        const attachmentsDir = path.join(process.cwd(), 'uploads', 'attachments');
+        if (!fs.existsSync(attachmentsDir)) {
+          fs.mkdirSync(attachmentsDir, { recursive: true });
+        }
+        
+        const attachments = [];
+        
+        for (const file of files) {
+          try {
+            // Generate unique filename
+            const fileExtension = path.extname(file.originalname);
+            const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(2)}${fileExtension}`;
+            const finalPath = path.join(attachmentsDir, uniqueFileName);
+            
+            // Move file to final location
+            if (fs.existsSync(file.path)) {
+              fs.renameSync(file.path, finalPath);
+            } else {
+              console.error('Source file not found:', file.path);
+              throw new Error('Source file not found');
+            }
+            
+            // Save attachment record to database
+            const attachment = await storage.createProblemReportAttachment({
+              problemReportId: parseInt(id),
+              fileName: uniqueFileName,
+              originalName: file.originalname,
+              fileType: file.mimetype,
+              fileSize: file.size,
+              filePath: finalPath,
+              uploadedBy: sessionData.userId
+            });
+            
+            attachments.push(attachment);
+          } catch (fileError) {
+            console.error('Error processing file:', file.originalname, fileError);
+            // Continue with other files
+          }
+        }
+        
+        if (attachments.length === 0) {
+          return res.status(400).json({ message: "No files were successfully uploaded" });
+        }
+        
+        res.status(201).json({ message: "Files uploaded successfully", attachments });
+      } catch (error) {
+        console.error('Error uploading attachments:', error);
+        res.status(500).json({ message: "Error uploading attachments: " + error.message });
+      }
+    });
   });
 
   app.get('/api/attachments/:id/download', isAuthenticated, async (req: Request, res: Response) => {

@@ -137,31 +137,48 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
   // Submit mutation
   const submitMutation = useMutation({
     mutationFn: async (data: ProblemReportFormData) => {
-      // First create the problem report
-      const response = await apiRequest({
-        url: '/api/problem-reports',
-        method: 'POST',
-        data: data,
-      });
-      
-      // If there are attachments, upload them
-      if (attachments.length > 0) {
-        const formData = new FormData();
-        attachments.forEach((file) => {
-          formData.append('files', file);
+      try {
+        // First create the problem report
+        const response = await apiRequest({
+          url: '/api/problem-reports',
+          method: 'POST',
+          data: data,
         });
         
-        await apiRequest({
-          url: `/api/problem-reports/${response.id}/attachments`,
-          method: "POST",
-          data: formData,
-          headers: {
-            // Don't set Content-Type header - let the browser set it for FormData
-          },
-        });
+        // If there are attachments, upload them
+        if (attachments.length > 0) {
+          try {
+            const formData = new FormData();
+            attachments.forEach((file) => {
+              formData.append('files', file);
+            });
+            
+            console.log('Uploading attachments:', attachments.map(f => f.name));
+            
+            const uploadResponse = await apiRequest({
+              url: `/api/problem-reports/${response.id}/attachments`,
+              method: "POST",
+              data: formData,
+            });
+            
+            console.log('Attachment upload response:', uploadResponse);
+          } catch (attachmentError) {
+            console.error('Error uploading attachments:', attachmentError);
+            // Don't fail the entire submission if attachments fail
+            // Show a warning toast instead
+            toast({
+              variant: "destructive",
+              title: "Attachment Upload Failed",
+              description: "Your problem report was created but attachments couldn't be uploaded. You can add them later in the conversation.",
+            });
+          }
+        }
+        
+        return response;
+      } catch (error) {
+        console.error('Error submitting problem report:', error);
+        throw error;
       }
-      
-      return response;
     },
     onSuccess: () => {
       toast({
