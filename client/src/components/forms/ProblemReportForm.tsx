@@ -119,8 +119,18 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
       return response;
     },
     onSuccess: (data) => {
-      setAiAnalysis(data);
-      setShowAiSuggestions(true);
+      try {
+        setAiAnalysis(data);
+        setShowAiSuggestions(true);
+      } catch (error) {
+        console.error('Error setting AI analysis result:', error);
+      }
+    },
+    onError: (error) => {
+      console.error('AI analysis error:', error);
+      // Silently fail AI analysis - don't show error to user since it's optional
+      setAiAnalysis(null);
+      setShowAiSuggestions(false);
     }
   });
 
@@ -181,45 +191,57 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
   };
 
   const handleTypeChange = (type: "device" | "software") => {
-    setReportType(type);
-    form.setValue("type", type);
-    form.setValue("itemId", ""); // Reset item selection when type changes
-    setAiAnalysis(null);
-    setShowAiSuggestions(false);
+    try {
+      setReportType(type);
+      form.setValue("type", type);
+      form.setValue("itemId", ""); // Reset item selection when type changes
+      setAiAnalysis(null);
+      setShowAiSuggestions(false);
+    } catch (error) {
+      console.error('Error changing report type:', error);
+    }
   };
 
   // Trigger AI analysis when subject and description have sufficient content
   useEffect(() => {
-    const subject = form.watch("subject");
-    const description = form.watch("description");
-    const itemId = form.watch("itemId");
-    
-    if (subject && description && subject.length > 5 && description.length > 20) {
-      const timeoutId = setTimeout(() => {
-        let deviceType = "";
-        let softwareName = "";
-        
-        if (reportType === "device" && itemId) {
-          const device = assignedDevices.find(d => d.id === parseInt(itemId));
-          if (device) {
-            deviceType = `${device.brand} ${device.model}`;
-          }
-        } else if (reportType === "software" && itemId) {
-          const software = assignedSoftware.find(s => s.software.id === parseInt(itemId));
-          if (software) {
-            softwareName = software.software.name;
-          }
-        }
-        
-        aiAnalysisMutation.mutate({
-          title: subject,
-          description: description,
-          deviceType,
-          softwareName
-        });
-      }, 1000);
+    try {
+      const subject = form.watch("subject");
+      const description = form.watch("description");
+      const itemId = form.watch("itemId");
       
-      return () => clearTimeout(timeoutId);
+      if (subject && description && subject.length > 5 && description.length > 20) {
+        const timeoutId = setTimeout(() => {
+          try {
+            let deviceType = "";
+            let softwareName = "";
+            
+            if (reportType === "device" && itemId && assignedDevices) {
+              const device = assignedDevices.find(d => d.id === parseInt(itemId));
+              if (device) {
+                deviceType = `${device.brand || 'Unknown Brand'} ${device.model || 'Unknown Model'}`;
+              }
+            } else if (reportType === "software" && itemId && assignedSoftware) {
+              const software = assignedSoftware.find(s => s.software && s.software.id === parseInt(itemId));
+              if (software && software.software) {
+                softwareName = software.software.name || 'Unknown Software';
+              }
+            }
+            
+            aiAnalysisMutation.mutate({
+              title: subject,
+              description: description,
+              deviceType,
+              softwareName
+            });
+          } catch (error) {
+            console.error('Error in AI analysis timeout:', error);
+          }
+        }, 1000);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    } catch (error) {
+      console.error('Error in AI analysis useEffect:', error);
     }
   }, [form.watch("subject"), form.watch("description"), form.watch("itemId"), reportType, assignedDevices, assignedSoftware]);
 
@@ -291,12 +313,12 @@ export function ProblemReportForm({ onSuccess }: ProblemReportFormProps) {
                   <SelectContent>
                     {reportType === "device" && assignedDevices.map((device) => (
                       <SelectItem key={device.id} value={device.id.toString()}>
-                        {device.brand} {device.model} {device.assetTag ? `(${device.assetTag})` : ""}
+                        {device.brand || 'Unknown Brand'} {device.model || 'Unknown Model'} {device.assetTag ? `(${device.assetTag})` : ""}
                       </SelectItem>
                     ))}
                     {reportType === "software" && assignedSoftware.map((assignment) => (
-                      <SelectItem key={assignment.software.id} value={assignment.software.id.toString()}>
-                        {assignment.software.name} ({assignment.software.vendor})
+                      <SelectItem key={assignment.software?.id || assignment.id} value={assignment.software?.id?.toString() || assignment.id.toString()}>
+                        {assignment.software?.name || 'Unknown Software'} ({assignment.software?.vendor || 'Unknown Vendor'})
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ProblemReportForm } from '@/components/forms/ProblemReportForm';
+import { SafeProblemReportForm } from '@/components/forms/SafeProblemReportForm';
 
 interface AssignedDevice {
   id: number;
@@ -166,7 +166,7 @@ export default function UserDashboard() {
             <DialogHeader>
               <DialogTitle>Report a Problem</DialogTitle>
             </DialogHeader>
-            <ProblemReportForm onSuccess={() => setIsProblemReportOpen(false)} />
+            <SafeProblemReportForm onSuccess={() => setIsProblemReportOpen(false)} />
           </DialogContent>
         </Dialog>
       }
