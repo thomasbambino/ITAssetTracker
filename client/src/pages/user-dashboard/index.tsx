@@ -191,7 +191,7 @@ export default function UserDashboard() {
                   title="My Devices"
                   value={assignedDevices.length}
                   footerText="View all"
-                  footerLink="/guest-devices"
+                  footerLink="/devices"
                 />
               </div>
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms' }}>
@@ -201,7 +201,7 @@ export default function UserDashboard() {
                   title="Software & Portals"
                   value={assignedSoftware.length}
                   footerText="View all"
-                  footerLink="/guest-software"
+                  footerLink="/software"
                 />
               </div>
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
