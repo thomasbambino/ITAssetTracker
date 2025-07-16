@@ -60,6 +60,7 @@ export default function FlappyHelp() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const treeImagesRef = useRef<{ [key: string]: HTMLImageElement }>({});
   const cloudImagesRef = useRef<{ [key: string]: HTMLImageElement }>({});
+  const lastTimeRef = useRef<number>(0);
 
   const CANVAS_WIDTH = 280;
   const CANVAS_HEIGHT = 200;
@@ -196,6 +197,7 @@ export default function FlappyHelp() {
     setShowNameInput(false);
     setShowLeaderboard(false);
     setFlashRed(false);
+    lastTimeRef.current = 0; // Reset timing
   }, []);
 
   const restartGame = () => {
@@ -211,6 +213,7 @@ export default function FlappyHelp() {
     setShowLeaderboard(false);
     setFlashRed(false);
     setGameOverTime(0);
+    lastTimeRef.current = 0; // Reset timing
   };
 
   const handleNameSubmit = async () => {
@@ -276,11 +279,15 @@ export default function FlappyHelp() {
     return false;
   }, [invincibilityTime]);
 
-  const gameLoop = useCallback(() => {
+  const gameLoop = useCallback((currentTime: number) => {
     if (!gameRunning || gameOver) return;
 
-    // Apply slow motion effect
-    const timeMultiplier = 1;
+    // Calculate delta time for consistent frame-rate independent animation
+    const deltaTime = lastTimeRef.current ? currentTime - lastTimeRef.current : 16.67; // Default to 60 FPS
+    lastTimeRef.current = currentTime;
+    
+    // Normalize delta time to 60 FPS (16.67ms per frame)
+    const timeMultiplier = deltaTime / 16.67;
 
     setBird(prev => {
       const newBird = {
@@ -380,15 +387,15 @@ export default function FlappyHelp() {
     // Update background offset for mountain scrolling
     setBackgroundOffset(prev => (prev + BACKGROUND_SPEED * timeMultiplier) % CANVAS_WIDTH);
     
-    // Update power-up timers
-    setInvincibilityTime(prev => Math.max(0, prev - 16));
+    // Update power-up timers using delta time
+    setInvincibilityTime(prev => Math.max(0, prev - deltaTime));
   }, [gameRunning, gameOver, bird.x, bird.y]);
 
   // Game loop effect
   useEffect(() => {
     if (gameRunning && !gameOver) {
-      const loop = () => {
-        gameLoop();
+      const loop = (currentTime: number) => {
+        gameLoop(currentTime);
         gameLoopRef.current = requestAnimationFrame(loop);
       };
       gameLoopRef.current = requestAnimationFrame(loop);
