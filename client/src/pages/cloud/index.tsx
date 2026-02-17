@@ -1,21 +1,37 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
-import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { DataTable } from '@/components/ui/data-table';
+import { PlusIcon, Trash2Icon, EditIcon, Download, CloudIcon } from 'lucide-react';
+import { ActionButton } from '@/components/dashboard/ActionButton';
+import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { Icons } from '@/components/icons';
-import { Loader2, Download, Cloud } from 'lucide-react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,22 +93,21 @@ const cloudAssetSchema = z.object({
 type CloudAssetFormValues = z.infer<typeof cloudAssetSchema>;
 
 export default function CloudAssets() {
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<CloudAsset | null>(null);
-  const [filterResourceType, setFilterResourceType] = useState<string>('all');
-  const [filterSite, setFilterSite] = useState<string>('all');
+  const [editingAsset, setEditingAsset] = useState<CloudAsset | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<number | null>(null);
+  const [filterResourceType, setFilterResourceType] = useState<string>('');
+  const [filterSite, setFilterSite] = useState<string>('');
 
   // Fetch cloud assets
-  const { data: cloudAssets = [], isLoading, isError } = useQuery<CloudAsset[]>({
+  const { data: cloudAssets = [], isLoading } = useQuery<CloudAsset[]>({
     queryKey: ['/api/cloud-assets'],
-    retry: 1,
   });
 
   // Fetch sites for dropdown
   const { data: sites = [] } = useQuery<Site[]>({
     queryKey: ['/api/sites'],
-    retry: 1,
   });
 
   const form = useForm<CloudAssetFormValues>({
@@ -123,6 +138,7 @@ export default function CloudAssets() {
     },
   });
 
+  // Create mutation
   const createMutation = useMutation({
     mutationFn: (values: CloudAssetFormValues) => {
       return apiRequest({
@@ -130,7 +146,7 @@ export default function CloudAssets() {
         method: 'POST',
         data: {
           ...values,
-          siteId: values.siteId ? parseInt(values.siteId) : null,
+          siteId: values.siteId && values.siteId !== 'none' ? parseInt(values.siteId) : null,
         }
       });
     },
@@ -145,6 +161,7 @@ export default function CloudAssets() {
     },
   });
 
+  // Update mutation
   const updateMutation = useMutation({
     mutationFn: (values: CloudAssetFormValues & { id: number }) => {
       return apiRequest({
@@ -152,13 +169,13 @@ export default function CloudAssets() {
         method: 'PATCH',
         data: {
           ...values,
-          siteId: values.siteId ? parseInt(values.siteId) : null,
+          siteId: values.siteId && values.siteId !== 'none' ? parseInt(values.siteId) : null,
         }
       });
     },
     onSuccess: () => {
       toast({ title: 'Success', description: 'Cloud asset updated successfully' });
-      setIsEditDialogOpen(false);
+      setEditingAsset(null);
       editForm.reset();
       queryClient.invalidateQueries({ queryKey: ['/api/cloud-assets'] });
     },
@@ -167,15 +184,18 @@ export default function CloudAssets() {
     },
   });
 
+  // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => {
-      return apiRequest({
+    mutationFn: async (id: number) => {
+      await apiRequest({
         url: `/api/cloud-assets/${id}`,
         method: 'DELETE'
       });
+      return id;
     },
     onSuccess: () => {
       toast({ title: 'Success', description: 'Cloud asset deleted successfully' });
+      setAssetToDelete(null);
       queryClient.invalidateQueries({ queryKey: ['/api/cloud-assets'] });
     },
     onError: (error: any) => {
@@ -188,12 +208,11 @@ export default function CloudAssets() {
   };
 
   const onEdit = (values: CloudAssetFormValues) => {
-    if (!selectedAsset) return;
-    updateMutation.mutate({ ...values, id: selectedAsset.id });
+    if (!editingAsset) return;
+    updateMutation.mutate({ ...values, id: editingAsset.id });
   };
 
   const handleEditClick = (asset: CloudAsset) => {
-    setSelectedAsset(asset);
     editForm.reset({
       resourceName: asset.resourceName || '',
       resourceType: asset.resourceType || '',
@@ -204,13 +223,7 @@ export default function CloudAssets() {
       status: asset.status || 'active',
       notes: asset.notes || '',
     });
-    setIsEditDialogOpen(true);
-  };
-
-  const handleDeleteClick = (assetId: number) => {
-    if (confirm('Are you sure you want to delete this cloud asset? This action cannot be undone.')) {
-      deleteMutation.mutate(assetId);
-    }
+    setEditingAsset(asset);
   };
 
   const handleExportCloudAssets = () => {
@@ -223,10 +236,10 @@ export default function CloudAssets() {
 
   // Filter cloud assets
   const filteredAssets = cloudAssets.filter(asset => {
-    if (filterResourceType !== 'all' && asset.resourceType !== filterResourceType) {
+    if (filterResourceType && asset.resourceType !== filterResourceType) {
       return false;
     }
-    if (filterSite !== 'all') {
+    if (filterSite) {
       if (filterSite === 'unassigned' && asset.siteId !== null) {
         return false;
       }
@@ -240,7 +253,7 @@ export default function CloudAssets() {
   // Get unique resource types from data for filter dropdown
   const uniqueResourceTypes = Array.from(new Set(cloudAssets.map(a => a.resourceType))).filter(Boolean);
 
-  const getStatusBadgeVariant = (status: string | null) => {
+  const getStatusBadgeVariant = (status: string | null): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case 'active':
         return 'default';
@@ -252,6 +265,75 @@ export default function CloudAssets() {
         return 'outline';
     }
   };
+
+  // Table columns
+  const columns = [
+    {
+      header: "Resource Name",
+      accessor: "resourceName",
+      cell: (asset: CloudAsset) => (
+        <div className="font-medium">{asset.resourceName}</div>
+      ),
+    },
+    {
+      header: "Type",
+      accessor: "resourceType",
+      cell: (asset: CloudAsset) => (
+        <Badge variant="outline">{asset.resourceType}</Badge>
+      ),
+    },
+    {
+      header: "Subscription ID",
+      accessor: "subscriptionId",
+      cell: (asset: CloudAsset) => (
+        <span className="font-mono text-xs" title={asset.subscriptionId || ''}>
+          {asset.subscriptionId
+            ? asset.subscriptionId.length > 16
+              ? `${asset.subscriptionId.slice(0, 8)}...${asset.subscriptionId.slice(-4)}`
+              : asset.subscriptionId
+            : '-'}
+        </span>
+      ),
+    },
+    {
+      header: "Resource Group",
+      accessor: "resourceGroup",
+      cell: (asset: CloudAsset) => asset.resourceGroup || '-',
+    },
+    {
+      header: "Region",
+      accessor: "region",
+      cell: (asset: CloudAsset) => asset.region || '-',
+    },
+    {
+      header: "Site",
+      accessor: "siteName",
+      cell: (asset: CloudAsset) => asset.siteName || '-',
+    },
+    {
+      header: "Status",
+      accessor: "status",
+      cell: (asset: CloudAsset) => (
+        <Badge variant={getStatusBadgeVariant(asset.status)}>
+          {asset.status || 'unknown'}
+        </Badge>
+      ),
+    },
+  ];
+
+  // Table actions
+  const actions = [
+    {
+      label: "Edit",
+      icon: <EditIcon className="h-4 w-4" />,
+      onClick: (asset: CloudAsset) => handleEditClick(asset),
+    },
+    {
+      label: "Delete",
+      icon: <Trash2Icon className="h-4 w-4" />,
+      onClick: (asset: CloudAsset) => setAssetToDelete(asset.id),
+    },
+  ];
 
   // Form fields component (used for both create and edit dialogs)
   const renderFormFields = (formInstance: typeof form | typeof editForm) => (
@@ -341,14 +423,14 @@ export default function CloudAssets() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Site</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || "none"}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select site" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No site assigned</SelectItem>
+                  <SelectItem value="none">No site assigned</SelectItem>
                   {sites.map(site => (
                     <SelectItem key={site.id} value={String(site.id)}>
                       {site.name}
@@ -367,7 +449,7 @@ export default function CloudAssets() {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Status</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value || "active"}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -406,13 +488,16 @@ export default function CloudAssets() {
   );
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
-          <Cloud className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Cloud Assets</h1>
+    <div className="px-4 py-6 sm:px-6 lg:px-8 mt-10 md:mt-0">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Cloud Assets</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage Azure and cloud resources</p>
         </div>
-        <div className="flex gap-2">
+
+        {/* Actions */}
+        <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
@@ -429,179 +514,145 @@ export default function CloudAssets() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Icons.plus className="mr-2 h-4 w-4" />
-                Add Cloud Asset
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Add New Cloud Asset</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  {renderFormFields(form)}
-                  <DialogFooter>
-                    <Button type="submit" disabled={createMutation.isPending}>
-                      {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Save
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+          <ActionButton
+            icon={<PlusIcon className="h-4 w-4" />}
+            label="Add Cloud Asset"
+            onClick={() => setIsAddDialogOpen(true)}
+          />
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 mb-4">
-        <div className="w-48">
-          <Select value={filterResourceType} onValueChange={setFilterResourceType}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {uniqueResourceTypes.map(type => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="w-48">
-          <Select value={filterSite} onValueChange={setFilterSite}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by site" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sites</SelectItem>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {sites.map(site => (
-                <SelectItem key={site.id} value={String(site.id)}>
-                  {site.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex flex-wrap gap-4 mb-4">
+        <Select value={filterResourceType || "all_types"} onValueChange={(v) => setFilterResourceType(v === "all_types" ? "" : v)}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all_types">All Types</SelectItem>
+            {uniqueResourceTypes.map(type => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterSite || "all_sites"} onValueChange={(v) => setFilterSite(v === "all_sites" ? "" : v)}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by site" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all_sites">All Sites</SelectItem>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
+            {sites.map(site => (
+              <SelectItem key={site.id} value={String(site.id)}>
+                {site.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-40">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      ) : isError ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-red-500">Failed to load cloud assets</p>
-          </CardContent>
-        </Card>
-      ) : filteredAssets.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
+      {/* Cloud Assets Table */}
+      <DataTable
+        data={filteredAssets}
+        columns={columns}
+        keyField="id"
+        loading={isLoading}
+        actions={actions}
+        emptyState={
+          <div className="text-center py-10">
+            <CloudIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-sm font-semibold text-foreground">No cloud assets</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
               {cloudAssets.length === 0
-                ? 'No cloud assets found. Add your first cloud asset using the button above.'
+                ? 'Get started by adding a new cloud asset.'
                 : 'No cloud assets match the selected filters.'}
             </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Edit Dialog */}
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Edit Cloud Asset</DialogTitle>
-              </DialogHeader>
-              <Form {...editForm}>
-                <form onSubmit={editForm.handleSubmit(onEdit)} className="space-y-4">
-                  {renderFormFields(editForm)}
-                  <DialogFooter>
-                    <Button type="submit" disabled={updateMutation.isPending}>
-                      {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Save Changes
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Resource Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Subscription ID</TableHead>
-                    <TableHead>Resource Group</TableHead>
-                    <TableHead>Region</TableHead>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAssets.map((asset) => (
-                    <TableRow key={asset.id}>
-                      <TableCell className="font-medium">{asset.resourceName}</TableCell>
-                      <TableCell>{asset.resourceType}</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {asset.subscriptionId ? (
-                          <span title={asset.subscriptionId}>
-                            {asset.subscriptionId.length > 16
-                              ? `${asset.subscriptionId.slice(0, 8)}...${asset.subscriptionId.slice(-4)}`
-                              : asset.subscriptionId}
-                          </span>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>{asset.resourceGroup || '-'}</TableCell>
-                      <TableCell>{asset.region || '-'}</TableCell>
-                      <TableCell>{asset.siteName || '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(asset.status)}>
-                          {asset.status || 'unknown'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditClick(asset)}
-                          className="h-8 px-2"
-                        >
-                          <Icons.edit className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteClick(asset.id)}
-                          className="h-8 px-2"
-                        >
-                          <Icons.trash className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <div className="mt-4 text-sm text-muted-foreground">
-            Showing {filteredAssets.length} of {cloudAssets.length} cloud assets
+            {cloudAssets.length === 0 && (
+              <div className="mt-6">
+                <Button onClick={() => setIsAddDialogOpen(true)}>
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Cloud Asset
+                </Button>
+              </div>
+            )}
           </div>
-        </>
-      )}
+        }
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!assetToDelete} onOpenChange={(open) => !open && setAssetToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the cloud asset.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => assetToDelete && deleteMutation.mutate(assetToDelete)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add Cloud Asset Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Cloud Asset</DialogTitle>
+            <DialogDescription>
+              Create a new cloud resource entry
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {renderFormFields(form)}
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createMutation.isPending}>
+                  {createMutation.isPending ? 'Creating...' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Cloud Asset Dialog */}
+      <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Cloud Asset</DialogTitle>
+            <DialogDescription>
+              Update the cloud resource details
+            </DialogDescription>
+          </DialogHeader>
+          {editingAsset && (
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEdit)} className="space-y-4">
+                {renderFormFields(editForm)}
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setEditingAsset(null)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={updateMutation.isPending}>
+                    {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
