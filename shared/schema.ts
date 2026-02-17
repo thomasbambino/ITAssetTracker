@@ -573,3 +573,38 @@ export const insertGameLeaderboardSchema = createInsertSchema(gameLeaderboard).o
 
 export type InsertGameLeaderboard = z.infer<typeof insertGameLeaderboardSchema>;
 export type GameLeaderboard = typeof gameLeaderboard.$inferSelect;
+
+// Cloud Assets Table for Azure/Cloud resource management
+export const cloudAssets = pgTable("cloud_assets", {
+  id: serial("id").primaryKey(),
+  resourceName: text("resource_name").notNull(),
+  resourceType: text("resource_type").notNull(),
+  subscriptionId: text("subscription_id"),
+  resourceGroup: text("resource_group"),
+  region: text("region"),
+  siteId: integer("site_id").references(() => sites.id),
+  status: text("status").default('active'),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCloudAssetSchema = createInsertSchema(cloudAssets).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  // Add support for siteId as string or number
+  siteId: z.union([
+    z.string().transform((str) => {
+      if (str === '' || str === null || str === undefined) return null;
+      const num = parseInt(str);
+      return isNaN(num) ? null : num;
+    }),
+    z.number(),
+    z.null()
+  ]).optional().nullable(),
+  // Status field with default
+  status: z.string().optional().default('active'),
+});
+
+export type InsertCloudAsset = z.infer<typeof insertCloudAssetSchema>;
+export type CloudAsset = typeof cloudAssets.$inferSelect;

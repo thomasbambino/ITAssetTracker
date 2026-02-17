@@ -38,7 +38,7 @@ import {
 
 const categoryGroups = {
   main: ['/', '/users', '/devices', '/categories', '/sites', '/departments'],
-  management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune', '/management/status'],
+  management: ['/software', '/maintenance', '/qrcodes', '/warranties', '/management/intune', '/management/status', '/cloud'],
   system: ['/notifications', '/history', '/reports', '/branding', '/settings'],
 };
 
@@ -197,6 +197,12 @@ export function MobileNav() {
       href: '/problem-reports',
       label: 'Problem Reports',
       icon: AlertTriangleIcon,
+      category: 'management',
+    },
+    {
+      href: '/cloud',
+      label: 'Cloud Assets',
+      icon: CloudIcon,
       category: 'management',
     },
     {

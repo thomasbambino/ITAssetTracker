@@ -1,13 +1,13 @@
-import { 
+import {
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
   type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
   type Notification, type BrandingSettings, type EmailSettings, type Site,
-  type GameHighScore,
-  type InsertCategory, type InsertDevice, type InsertUser, 
+  type GameHighScore, type CloudAsset,
+  type InsertCategory, type InsertDevice, type InsertUser,
   type InsertAssignmentHistory, type InsertActivityLog,
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
-  type InsertQrCode, type InsertNotification, type InsertBrandingSettings, 
-  type InsertEmailSettings, type InsertSite, type InsertGameHighScore
+  type InsertQrCode, type InsertNotification, type InsertBrandingSettings,
+  type InsertEmailSettings, type InsertSite, type InsertGameHighScore, type InsertCloudAsset
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
@@ -4565,5 +4565,227 @@ export class DatabaseStorage implements IStorage {
       console.error('Error adding game leaderboard entry:', error);
       throw error;
     }
+  }
+
+  // Cloud Asset operations
+  async getCloudAssets(): Promise<CloudAsset[]> {
+    const cloudAssets = await db.any(`
+      SELECT
+        id,
+        resource_name as "resourceName",
+        resource_type as "resourceType",
+        subscription_id as "subscriptionId",
+        resource_group as "resourceGroup",
+        region,
+        site_id as "siteId",
+        status,
+        notes,
+        created_at as "createdAt"
+      FROM cloud_assets
+      ORDER BY resource_name
+    `);
+    return cloudAssets;
+  }
+
+  async getCloudAssetById(id: number): Promise<CloudAsset | undefined> {
+    try {
+      const cloudAsset = await db.one(`
+        SELECT
+          id,
+          resource_name as "resourceName",
+          resource_type as "resourceType",
+          subscription_id as "subscriptionId",
+          resource_group as "resourceGroup",
+          region,
+          site_id as "siteId",
+          status,
+          notes,
+          created_at as "createdAt"
+        FROM cloud_assets
+        WHERE id = $1
+      `, [id]);
+      return cloudAsset;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async createCloudAsset(asset: InsertCloudAsset, loggedInUserId?: number): Promise<CloudAsset> {
+    const newCloudAsset = await db.one(`
+      INSERT INTO cloud_assets (
+        resource_name,
+        resource_type,
+        subscription_id,
+        resource_group,
+        region,
+        site_id,
+        status,
+        notes
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8
+      ) RETURNING
+        id,
+        resource_name as "resourceName",
+        resource_type as "resourceType",
+        subscription_id as "subscriptionId",
+        resource_group as "resourceGroup",
+        region,
+        site_id as "siteId",
+        status,
+        notes,
+        created_at as "createdAt"
+    `, [
+      asset.resourceName,
+      asset.resourceType,
+      asset.subscriptionId || null,
+      asset.resourceGroup || null,
+      asset.region || null,
+      asset.siteId || null,
+      asset.status || 'active',
+      asset.notes || null
+    ]);
+
+    // Log activity
+    await this.createActivityLog({
+      userId: loggedInUserId || null,
+      actionType: 'cloud_asset_added',
+      details: `Cloud asset created: ${asset.resourceName} (${asset.resourceType})`
+    });
+
+    return newCloudAsset;
+  }
+
+  async updateCloudAsset(id: number, asset: Partial<InsertCloudAsset>, loggedInUserId?: number): Promise<CloudAsset | undefined> {
+    try {
+      // Build dynamic update query
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+
+      if (asset.resourceName !== undefined) {
+        updates.push(`resource_name = $${paramCount++}`);
+        values.push(asset.resourceName);
+      }
+
+      if (asset.resourceType !== undefined) {
+        updates.push(`resource_type = $${paramCount++}`);
+        values.push(asset.resourceType);
+      }
+
+      if (asset.subscriptionId !== undefined) {
+        updates.push(`subscription_id = $${paramCount++}`);
+        values.push(asset.subscriptionId);
+      }
+
+      if (asset.resourceGroup !== undefined) {
+        updates.push(`resource_group = $${paramCount++}`);
+        values.push(asset.resourceGroup);
+      }
+
+      if (asset.region !== undefined) {
+        updates.push(`region = $${paramCount++}`);
+        values.push(asset.region);
+      }
+
+      if (asset.siteId !== undefined) {
+        updates.push(`site_id = $${paramCount++}`);
+        values.push(asset.siteId);
+      }
+
+      if (asset.status !== undefined) {
+        updates.push(`status = $${paramCount++}`);
+        values.push(asset.status);
+      }
+
+      if (asset.notes !== undefined) {
+        updates.push(`notes = $${paramCount++}`);
+        values.push(asset.notes);
+      }
+
+      // If no updates, return the cloud asset
+      if (updates.length === 0) {
+        return this.getCloudAssetById(id);
+      }
+
+      values.push(id); // Add id as the last parameter
+
+      const updatedCloudAsset = await db.one(`
+        UPDATE cloud_assets SET
+          ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING
+          id,
+          resource_name as "resourceName",
+          resource_type as "resourceType",
+          subscription_id as "subscriptionId",
+          resource_group as "resourceGroup",
+          region,
+          site_id as "siteId",
+          status,
+          notes,
+          created_at as "createdAt"
+      `, values);
+
+      // Log activity
+      await this.createActivityLog({
+        userId: loggedInUserId || null,
+        actionType: 'cloud_asset_updated',
+        details: `Cloud asset updated: ${updatedCloudAsset.resourceName}`
+      });
+
+      return updatedCloudAsset;
+    } catch (error) {
+      console.error('Error updating cloud asset:', error);
+      return undefined;
+    }
+  }
+
+  async deleteCloudAsset(id: number, loggedInUserId?: number): Promise<boolean> {
+    try {
+      // First, get cloud asset for logging
+      const cloudAsset = await this.getCloudAssetById(id);
+      if (!cloudAsset) return false;
+
+      // Delete cloud asset
+      const result = await db.result(`
+        DELETE FROM cloud_assets
+        WHERE id = $1
+      `, [id]);
+
+      if (result.rowCount > 0) {
+        // Log activity
+        await this.createActivityLog({
+          userId: loggedInUserId || null,
+          actionType: 'cloud_asset_deleted',
+          details: `Cloud asset deleted: ${cloudAsset.resourceName}`
+        });
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error deleting cloud asset:', error);
+      return false;
+    }
+  }
+
+  async getCloudAssetsBySite(siteId: number): Promise<CloudAsset[]> {
+    const cloudAssets = await db.any(`
+      SELECT
+        id,
+        resource_name as "resourceName",
+        resource_type as "resourceType",
+        subscription_id as "subscriptionId",
+        resource_group as "resourceGroup",
+        region,
+        site_id as "siteId",
+        status,
+        notes,
+        created_at as "createdAt"
+      FROM cloud_assets
+      WHERE site_id = $1
+      ORDER BY resource_name
+    `, [siteId]);
+    return cloudAssets;
   }
 }

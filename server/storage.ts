@@ -1,15 +1,16 @@
-import { 
+import {
   categories, devices, users, assignmentHistory, activityLog,
-  software, softwareAssignments, maintenanceRecords, qrCodes, 
-  notifications, brandingSettings, emailSettings, sites, departments,
+  software, softwareAssignments, maintenanceRecords, qrCodes,
+  notifications, brandingSettings, emailSettings, sites, departments, cloudAssets,
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
   type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
   type Notification, type BrandingSettings, type EmailSettings, type Site, type Department,
-  type InsertCategory, type InsertDevice, type InsertUser, 
+  type CloudAsset,
+  type InsertCategory, type InsertDevice, type InsertUser,
   type InsertAssignmentHistory, type InsertActivityLog,
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
   type InsertQrCode, type InsertNotification, type InsertBrandingSettings, type InsertEmailSettings,
-  type InsertSite, type InsertDepartment
+  type InsertSite, type InsertDepartment, type InsertCloudAsset
 } from "@shared/schema";
 
 export interface IStorage {
@@ -135,6 +136,14 @@ export interface IStorage {
   updateGameHighScore(gameName: string, score: number, playerName: string, userId?: number): Promise<any>;
   getGameLeaderboard(gameName: string, limit?: number): Promise<any[]>;
   addGameLeaderboardEntry(gameName: string, score: number, playerName: string, userId?: number): Promise<any>;
+
+  // Cloud Asset operations
+  getCloudAssets(): Promise<CloudAsset[]>;
+  getCloudAssetById(id: number): Promise<CloudAsset | undefined>;
+  createCloudAsset(asset: InsertCloudAsset, loggedInUserId?: number): Promise<CloudAsset>;
+  updateCloudAsset(id: number, asset: Partial<InsertCloudAsset>, loggedInUserId?: number): Promise<CloudAsset | undefined>;
+  deleteCloudAsset(id: number, loggedInUserId?: number): Promise<boolean>;
+  getCloudAssetsBySite(siteId: number): Promise<CloudAsset[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -600,6 +609,31 @@ export class MemStorage implements IStorage {
   
   async addGameLeaderboardEntry(gameName: string, score: number, playerName: string, userId?: number): Promise<any> {
     return { gameName, score, playerName, userId, achievedAt: new Date() };
+  }
+
+  // Cloud Asset operations - stub implementations
+  async getCloudAssets(): Promise<CloudAsset[]> {
+    return [];
+  }
+
+  async getCloudAssetById(id: number): Promise<CloudAsset | undefined> {
+    return undefined;
+  }
+
+  async createCloudAsset(asset: InsertCloudAsset, loggedInUserId?: number): Promise<CloudAsset> {
+    throw new Error("Cloud Asset operations not implemented in MemStorage");
+  }
+
+  async updateCloudAsset(id: number, asset: Partial<InsertCloudAsset>, loggedInUserId?: number): Promise<CloudAsset | undefined> {
+    return undefined;
+  }
+
+  async deleteCloudAsset(id: number, loggedInUserId?: number): Promise<boolean> {
+    return false;
+  }
+
+  async getCloudAssetsBySite(siteId: number): Promise<CloudAsset[]> {
+    return [];
   }
 }
 

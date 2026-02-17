@@ -21,11 +21,11 @@ import { isAuthenticated, isAdmin } from "./auth";
 import mailgunService, { updateMailgunService } from "./direct-mailgun";
 import { AIService } from "./ai-service";
 
-import { 
+import {
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
   insertSoftwareSchema, insertSoftwareAssignmentSchema, insertMaintenanceRecordSchema,
   insertQrCodeSchema, insertNotificationSchema, insertBrandingSettingsSchema, insertSiteSchema,
-  insertDepartmentSchema
+  insertDepartmentSchema, insertCloudAssetSchema
 } from "@shared/schema";
 
 // Define the session data type to fix type errors
@@ -4232,16 +4232,256 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/search/suggestions', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { query } = req.body;
-      
+
       if (!query || typeof query !== 'string') {
         return res.status(400).json({ message: 'Query is required' });
       }
-      
+
       const suggestions = await AIService.generateSearchSuggestions(query);
       res.json({ suggestions });
     } catch (error) {
       console.error('Search suggestions error:', error);
       res.status(500).json({ message: 'Error generating suggestions' });
+    }
+  });
+
+  // ==========================================
+  // Cloud Assets Routes
+  // ==========================================
+
+  // Get all cloud assets (enriched with site data)
+  app.get('/api/cloud-assets', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const cloudAssets = await storage.getCloudAssets();
+      const sites = await storage.getSites();
+
+      // Enrich cloud assets with site names
+      const enrichedAssets = cloudAssets.map(asset => {
+        const site = asset.siteId ? sites.find(s => s.id === asset.siteId) : null;
+        return {
+          ...asset,
+          siteName: site ? site.name : null
+        };
+      });
+
+      res.json(enrichedAssets);
+    } catch (error) {
+      console.error('Error fetching cloud assets:', error);
+      res.status(500).json({ message: "Error fetching cloud assets" });
+    }
+  });
+
+  // Get single cloud asset
+  app.get('/api/cloud-assets/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cloudAsset = await storage.getCloudAssetById(id);
+
+      if (!cloudAsset) {
+        return res.status(404).json({ message: "Cloud asset not found" });
+      }
+
+      // Enrich with site name
+      const site = cloudAsset.siteId ? await storage.getSiteById(cloudAsset.siteId) : null;
+
+      res.json({
+        ...cloudAsset,
+        siteName: site ? site.name : null
+      });
+    } catch (error) {
+      console.error('Error fetching cloud asset:', error);
+      res.status(500).json({ message: "Error fetching cloud asset" });
+    }
+  });
+
+  // Create cloud asset (admin only)
+  app.post('/api/cloud-assets', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+
+      const validatedData = insertCloudAssetSchema.parse(req.body);
+      const cloudAsset = await storage.createCloudAsset(validatedData, loggedInUserId);
+      res.status(201).json(cloudAsset);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid cloud asset data", errors: error.errors });
+      }
+      console.error('Error creating cloud asset:', error);
+      res.status(500).json({ message: "Error creating cloud asset" });
+    }
+  });
+
+  // Update cloud asset (admin only)
+  app.patch('/api/cloud-assets/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+
+      const validatedData = insertCloudAssetSchema.partial().parse(req.body);
+      const cloudAsset = await storage.updateCloudAsset(id, validatedData, loggedInUserId);
+
+      if (!cloudAsset) {
+        return res.status(404).json({ message: "Cloud asset not found" });
+      }
+
+      res.json(cloudAsset);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid cloud asset data", errors: error.errors });
+      }
+      console.error('Error updating cloud asset:', error);
+      res.status(500).json({ message: "Error updating cloud asset" });
+    }
+  });
+
+  // Delete cloud asset (admin only)
+  app.delete('/api/cloud-assets/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+
+      const success = await storage.deleteCloudAsset(id, loggedInUserId);
+
+      if (!success) {
+        return res.status(404).json({ message: "Cloud asset not found" });
+      }
+
+      res.json({ message: "Cloud asset deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting cloud asset:', error);
+      res.status(500).json({ message: "Error deleting cloud asset" });
+    }
+  });
+
+  // Combined export (devices + cloud assets)
+  app.get('/api/export/assets', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const devices = await storage.getDevices();
+      const cloudAssets = await storage.getCloudAssets();
+      const sites = await storage.getSites();
+      const categories = await storage.getCategories();
+      const users = await storage.getUsers();
+
+      // Transform devices for export
+      const deviceRows = await Promise.all(devices.map(async (device) => {
+        const category = device.categoryId
+          ? categories.find(c => c.id === device.categoryId)
+          : null;
+        const user = device.userId
+          ? users.find(u => u.id === device.userId)
+          : null;
+        const site = device.siteId
+          ? sites.find(s => s.id === device.siteId)
+          : null;
+
+        return {
+          Type: "Device",
+          Name: device.name || `${device.brand} ${device.model}`,
+          "Category/ResourceType": category ? category.name : "",
+          SubscriptionID: "",
+          ResourceGroup: "",
+          Region: "",
+          Site: site ? site.name : "",
+          Brand: device.brand || "",
+          Model: device.model || "",
+          AssetTag: device.assetTag || "",
+          SerialNumber: device.serialNumber || "",
+          Status: device.status || "active",
+          AssignedTo: user ? `${user.firstName} ${user.lastName}` : ""
+        };
+      }));
+
+      // Transform cloud assets for export
+      const cloudAssetRows = cloudAssets.map(asset => {
+        const site = asset.siteId
+          ? sites.find(s => s.id === asset.siteId)
+          : null;
+
+        return {
+          Type: "Cloud",
+          Name: asset.resourceName,
+          "Category/ResourceType": asset.resourceType,
+          SubscriptionID: asset.subscriptionId || "",
+          ResourceGroup: asset.resourceGroup || "",
+          Region: asset.region || "",
+          Site: site ? site.name : "",
+          Brand: "Azure",
+          Model: "",
+          AssetTag: "",
+          SerialNumber: "",
+          Status: asset.status || "active",
+          AssignedTo: ""
+        };
+      });
+
+      // Combine both arrays
+      const exportData = [...deviceRows, ...cloudAssetRows];
+
+      // Convert to CSV
+      stringify(exportData, { header: true }, (err, output) => {
+        if (err) {
+          console.error("Error generating CSV:", err);
+          return res.status(500).json({ message: "Error generating CSV" });
+        }
+
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="all-assets-export-${new Date().toISOString().slice(0, 10)}.csv"`);
+
+        // Send the CSV data
+        res.send(output);
+      });
+    } catch (error) {
+      console.error("Error exporting assets:", error);
+      res.status(500).json({ message: "Error exporting assets" });
+    }
+  });
+
+  // Export cloud assets only
+  app.get('/api/export/cloud-assets', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const cloudAssets = await storage.getCloudAssets();
+      const sites = await storage.getSites();
+
+      // Transform data for CSV export
+      const exportData = cloudAssets.map(asset => {
+        const site = asset.siteId
+          ? sites.find(s => s.id === asset.siteId)
+          : null;
+
+        return {
+          ResourceName: asset.resourceName,
+          ResourceType: asset.resourceType,
+          SubscriptionID: asset.subscriptionId || "",
+          ResourceGroup: asset.resourceGroup || "",
+          Region: asset.region || "",
+          Site: site ? site.name : "",
+          Status: asset.status || "active",
+          Notes: asset.notes || "",
+          CreatedAt: asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : ""
+        };
+      });
+
+      // Convert to CSV
+      stringify(exportData, { header: true }, (err, output) => {
+        if (err) {
+          console.error("Error generating CSV:", err);
+          return res.status(500).json({ message: "Error generating CSV" });
+        }
+
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="cloud-assets-export-${new Date().toISOString().slice(0, 10)}.csv"`);
+
+        // Send the CSV data
+        res.send(output);
+      });
+    } catch (error) {
+      console.error("Error exporting cloud assets:", error);
+      res.status(500).json({ message: "Error exporting cloud assets" });
     }
   });
 

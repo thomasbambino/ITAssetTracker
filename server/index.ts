@@ -16,6 +16,7 @@ import { addSoftwareUrlField } from "./migrations/add-software-url";
 import { addTwoFactorAuthFields } from "./migrations/add-two-factor-auth";
 import { addManagerFields } from "./migrations/add-manager-fields";
 import { addApplicationUrlToBranding } from "./migrations/add-application-url-to-branding";
+import { addCloudAssetsTableMigration } from "./migrations/add-cloud-assets-table";
 
 const app = express();
 app.use(express.json());
@@ -94,6 +95,7 @@ app.use((req, res, next) => {
     await addTwoFactorAuthFields();
     await addManagerFields();
     await addApplicationUrlToBranding();
+    await addCloudAssetsTableMigration();
     log('Database migrations completed.');
     
     // Initialize direct mailgun service with settings from the database
