@@ -4485,6 +4485,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import cloud assets from CSV (supports Azure export format)
+  app.post('/api/import/cloud-assets', isAuthenticated, isAdmin, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const sessionData = req.session as any;
+      const loggedInUserId = sessionData.userId;
+
+      // Parse CSV file - handle BOM character that Azure exports include
+      let fileContent = req.file.buffer.toString('utf8');
+      // Remove BOM if present
+      if (fileContent.charCodeAt(0) === 0xFEFF) {
+        fileContent = fileContent.slice(1);
+      }
+
+      parse(fileContent, {
+        columns: true,
+        trim: true,
+        skip_empty_lines: true,
+        relax_quotes: true,
+        relax_column_count: true
+      }, async (err, records) => {
+        if (err) {
+          console.error("Error parsing CSV:", err);
+          return res.status(400).json({ message: "Error parsing CSV file", error: err.message });
+        }
+
+        try {
+          const results = {
+            success: 0,
+            failed: 0,
+            errors: [] as string[]
+          };
+
+          console.log(`Processing ${records.length} cloud asset records from CSV`);
+
+          // Helper function to extract subscription ID from Azure resource link
+          const extractSubscriptionId = (resourceLink: string): string | null => {
+            if (!resourceLink) return null;
+            const match = resourceLink.match(/\/subscriptions\/([a-f0-9-]+)/i);
+            return match ? match[1] : null;
+          };
+
+          // Helper function to map Azure status to our status
+          const mapStatus = (azureStatus: string): string => {
+            if (!azureStatus) return 'active';
+            const status = azureStatus.toLowerCase();
+            if (status === 'running' || status === 'succeeded' || status === 'available') return 'active';
+            if (status === 'stopped' || status === 'deallocated') return 'inactive';
+            if (status === 'deleted' || status === 'failed') return 'decommissioned';
+            return 'active';
+          };
+
+          // Helper function to determine resource type from Azure data
+          const determineResourceType = (record: any): string => {
+            // Check if RESOURCE LINK contains resource type hints
+            const resourceLink = record['RESOURCE LINK'] || '';
+            if (resourceLink.includes('/virtualMachines/')) return 'VM';
+            if (resourceLink.includes('/storageAccounts/')) return 'Storage Account';
+            if (resourceLink.includes('/sites/')) return 'App Service';
+            if (resourceLink.includes('/servers/')) return 'Database';
+            if (resourceLink.includes('/containerGroups/') || resourceLink.includes('/containerApps/')) return 'Container';
+            if (resourceLink.includes('/functions/')) return 'Function App';
+            if (resourceLink.includes('/virtualNetworks/') || resourceLink.includes('/networkInterfaces/')) return 'Network';
+
+            // Check if there's a TYPE or RESOURCE TYPE column
+            if (record['TYPE']) return record['TYPE'];
+            if (record['RESOURCE TYPE']) return record['RESOURCE TYPE'];
+
+            // Default to VM if operating system is present (common in Azure VM exports)
+            if (record['OPERATING SYSTEM']) return 'VM';
+
+            return 'Other';
+          };
+
+          for (let i = 0; i < records.length; i++) {
+            const record = records[i];
+            try {
+              // Map Azure CSV columns to our schema
+              // Azure columns: NAME, SUBSCRIPTION, RESOURCE GROUP, LOCATION, STATUS, OPERATING SYSTEM, SIZE, PUBLIC IP ADDRESS, DISKS, UPDATE STATUS, RESOURCE LINK
+              const resourceName = record['NAME'] || record['name'] || record['Name'] || record['RESOURCE NAME'] || record['Resource Name'];
+
+              if (!resourceName) {
+                results.failed++;
+                results.errors.push(`Row ${i + 2}: Missing resource name`);
+                continue;
+              }
+
+              // Extract subscription ID from resource link or use SUBSCRIPTION column
+              const subscriptionId = extractSubscriptionId(record['RESOURCE LINK'] || record['Resource Link']) ||
+                record['SUBSCRIPTION'] || record['Subscription'] || record['SUBSCRIPTION ID'] || record['Subscription ID'] || null;
+
+              const resourceGroup = record['RESOURCE GROUP'] || record['Resource Group'] || record['resourceGroup'] || null;
+              const region = record['LOCATION'] || record['Location'] || record['REGION'] || record['Region'] || null;
+              const status = mapStatus(record['STATUS'] || record['Status'] || '');
+              const resourceType = determineResourceType(record);
+
+              // Build notes from additional Azure fields
+              const notesParts = [];
+              if (record['OPERATING SYSTEM']) notesParts.push(`OS: ${record['OPERATING SYSTEM']}`);
+              if (record['SIZE']) notesParts.push(`Size: ${record['SIZE']}`);
+              if (record['PUBLIC IP ADDRESS'] && record['PUBLIC IP ADDRESS'] !== ' -') notesParts.push(`Public IP: ${record['PUBLIC IP ADDRESS']}`);
+              if (record['DISKS']) notesParts.push(`Disks: ${record['DISKS']}`);
+              const notes = notesParts.length > 0 ? notesParts.join(' | ') : null;
+
+              // Check if cloud asset with same name already exists
+              const existingAssets = await storage.getCloudAssets();
+              const existingAsset = existingAssets.find(a =>
+                a.resourceName.toLowerCase() === resourceName.toLowerCase() &&
+                a.resourceGroup?.toLowerCase() === resourceGroup?.toLowerCase()
+              );
+
+              if (existingAsset) {
+                // Update existing asset
+                await storage.updateCloudAsset(existingAsset.id, {
+                  resourceType,
+                  subscriptionId,
+                  resourceGroup,
+                  region,
+                  status,
+                  notes
+                }, loggedInUserId);
+                results.success++;
+              } else {
+                // Create new asset
+                await storage.createCloudAsset({
+                  resourceName,
+                  resourceType,
+                  subscriptionId,
+                  resourceGroup,
+                  region,
+                  status,
+                  notes
+                }, loggedInUserId);
+                results.success++;
+              }
+            } catch (recordError: any) {
+              results.failed++;
+              results.errors.push(`Row ${i + 2}: ${recordError.message || 'Unknown error'}`);
+              console.error(`Error processing row ${i + 2}:`, recordError);
+            }
+          }
+
+          const message = `Imported ${results.success} cloud assets successfully${results.failed > 0 ? `, ${results.failed} failed` : ''}`;
+          console.log(message);
+
+          res.json({
+            message,
+            success: results.success,
+            failed: results.failed,
+            errors: results.errors.slice(0, 10) // Return first 10 errors
+          });
+        } catch (processError: any) {
+          console.error("Error processing CSV records:", processError);
+          res.status(500).json({ message: "Error processing CSV records", error: processError.message });
+        }
+      });
+    } catch (error: any) {
+      console.error("Error importing cloud assets:", error);
+      res.status(500).json({ message: "Error importing cloud assets", error: error.message });
+    }
+  });
+
   // Start the server
   const server = createServer(app);
   return server;

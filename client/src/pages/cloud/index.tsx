@@ -3,8 +3,9 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { DataTable } from '@/components/ui/data-table';
-import { PlusIcon, Trash2Icon, EditIcon, Download, CloudIcon } from 'lucide-react';
+import { PlusIcon, Trash2Icon, EditIcon, Download, CloudIcon, UploadIcon } from 'lucide-react';
 import { ActionButton } from '@/components/dashboard/ActionButton';
+import { CsvImport } from '@/components/ui/csv-import';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -498,6 +499,14 @@ export default function CloudAssets() {
 
         {/* Actions */}
         <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
+          <CsvImport
+            url="/api/import/cloud-assets"
+            entityName="Cloud Assets"
+            buttonText="Import from Azure"
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['/api/cloud-assets'] });
+            }}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
