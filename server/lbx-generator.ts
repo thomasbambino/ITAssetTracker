@@ -18,7 +18,7 @@ function escapeXml(text: string): string {
     .replace(/'/g, '&apos;');
 }
 
-// Generate QR code as BMP buffer
+// Generate QR code as 24-bit BMP buffer
 async function generateQrCodeBmp(value: string, size: number): Promise<Buffer> {
   const qrPngBuffer = await QRCode.toBuffer(value, {
     type: 'png',
@@ -30,108 +30,84 @@ async function generateQrCodeBmp(value: string, size: number): Promise<Buffer> {
     }
   });
 
-  // Convert to 1-bit BMP (monochrome) which Brother printers expect
-  const bmpBuffer = await sharp(qrPngBuffer)
+  // Convert to raw RGB data
+  const { data, info } = await sharp(qrPngBuffer)
     .resize(size, size)
-    .threshold(128)
-    .toColorspace('b-w')
+    .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
 
-  // Create BMP manually for 1-bit monochrome
-  return createMonochromeBmp(bmpBuffer.data, size, size);
+  return create24BitBmp(data, info.width, info.height);
 }
 
-// Generate logo as BMP buffer
+// Generate logo as 24-bit BMP buffer
 async function generateLogoBmp(logoBase64: string, size: number): Promise<Buffer> {
   const base64Data = logoBase64.replace(/^data:image\/\w+;base64,/, '');
   const logoBuffer = Buffer.from(base64Data, 'base64');
 
-  const processedBuffer = await sharp(logoBuffer)
+  const { data, info } = await sharp(logoBuffer)
     .resize(size, size, { fit: 'contain', background: { r: 255, g: 255, b: 255 } })
-    .threshold(128)
-    .toColorspace('b-w')
+    .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
 
-  return createMonochromeBmp(processedBuffer.data, size, size);
+  return create24BitBmp(data, info.width, info.height);
 }
 
-// Create a 1-bit monochrome BMP file
-function createMonochromeBmp(rawData: Buffer, width: number, height: number): Buffer {
+// Create a 24-bit BMP file (Windows 3.x format)
+function create24BitBmp(rgbData: Buffer, width: number, height: number): Buffer {
   // BMP row stride must be multiple of 4 bytes
-  const bitsPerPixel = 1;
-  const rowSize = Math.ceil(width / 8);
+  const bytesPerPixel = 3;
+  const rowSize = width * bytesPerPixel;
   const paddedRowSize = Math.ceil(rowSize / 4) * 4;
   const pixelDataSize = paddedRowSize * height;
 
-  // BMP file header (14 bytes) + DIB header (40 bytes) + color table (8 bytes for 2 colors)
-  const headerSize = 14 + 40 + 8;
+  // BMP file header (14 bytes) + DIB header (40 bytes), no color table for 24-bit
+  const headerSize = 54;
   const fileSize = headerSize + pixelDataSize;
 
   const bmp = Buffer.alloc(fileSize);
   let offset = 0;
 
   // BMP File Header (14 bytes)
-  bmp.write('BM', offset); offset += 2;           // Signature
+  bmp.write('BM', offset); offset += 2;              // Signature
   bmp.writeUInt32LE(fileSize, offset); offset += 4;  // File size
-  bmp.writeUInt16LE(0, offset); offset += 2;      // Reserved
-  bmp.writeUInt16LE(0, offset); offset += 2;      // Reserved
+  bmp.writeUInt16LE(0, offset); offset += 2;         // Reserved
+  bmp.writeUInt16LE(0, offset); offset += 2;         // Reserved
   bmp.writeUInt32LE(headerSize, offset); offset += 4; // Pixel data offset
 
   // DIB Header (BITMAPINFOHEADER - 40 bytes)
-  bmp.writeUInt32LE(40, offset); offset += 4;     // DIB header size
-  bmp.writeInt32LE(width, offset); offset += 4;   // Width
-  bmp.writeInt32LE(height, offset); offset += 4;  // Height (positive = bottom-up)
-  bmp.writeUInt16LE(1, offset); offset += 2;      // Color planes
-  bmp.writeUInt16LE(bitsPerPixel, offset); offset += 2; // Bits per pixel
-  bmp.writeUInt32LE(0, offset); offset += 4;      // Compression (none)
+  bmp.writeUInt32LE(40, offset); offset += 4;        // DIB header size
+  bmp.writeInt32LE(width, offset); offset += 4;      // Width
+  bmp.writeInt32LE(height, offset); offset += 4;     // Height (positive = bottom-up)
+  bmp.writeUInt16LE(1, offset); offset += 2;         // Color planes
+  bmp.writeUInt16LE(24, offset); offset += 2;        // Bits per pixel
+  bmp.writeUInt32LE(0, offset); offset += 4;         // Compression (none)
   bmp.writeUInt32LE(pixelDataSize, offset); offset += 4; // Image size
-  bmp.writeInt32LE(2835, offset); offset += 4;    // Horizontal resolution (72 DPI)
-  bmp.writeInt32LE(2835, offset); offset += 4;    // Vertical resolution (72 DPI)
-  bmp.writeUInt32LE(2, offset); offset += 4;      // Colors in palette
-  bmp.writeUInt32LE(0, offset); offset += 4;      // Important colors
+  bmp.writeInt32LE(3780, offset); offset += 4;       // Horizontal resolution (96 DPI)
+  bmp.writeInt32LE(3780, offset); offset += 4;       // Vertical resolution (96 DPI)
+  bmp.writeUInt32LE(0, offset); offset += 4;         // Colors in palette
+  bmp.writeUInt32LE(0, offset); offset += 4;         // Important colors
 
-  // Color table (2 colors: black and white)
-  // Color 0: Black (BGR + reserved)
-  bmp.writeUInt8(0, offset); offset += 1;
-  bmp.writeUInt8(0, offset); offset += 1;
-  bmp.writeUInt8(0, offset); offset += 1;
-  bmp.writeUInt8(0, offset); offset += 1;
-  // Color 1: White (BGR + reserved)
-  bmp.writeUInt8(255, offset); offset += 1;
-  bmp.writeUInt8(255, offset); offset += 1;
-  bmp.writeUInt8(255, offset); offset += 1;
-  bmp.writeUInt8(0, offset); offset += 1;
-
-  // Pixel data (bottom-up, 1 bit per pixel)
+  // Pixel data (bottom-up, BGR format)
   for (let y = height - 1; y >= 0; y--) {
-    let byteVal = 0;
-    let bitIndex = 7;
-    let rowOffset = 0;
-
     for (let x = 0; x < width; x++) {
-      const pixelIndex = y * width + x;
-      // rawData is grayscale, 0 = black, 255 = white
-      // In 1-bit BMP: 0 = color 0 (black), 1 = color 1 (white)
-      const isWhite = rawData[pixelIndex] > 128 ? 1 : 0;
-      byteVal |= (isWhite << bitIndex);
-      bitIndex--;
+      const srcIdx = (y * width + x) * 3;
+      const r = rgbData[srcIdx];
+      const g = rgbData[srcIdx + 1];
+      const b = rgbData[srcIdx + 2];
 
-      if (bitIndex < 0 || x === width - 1) {
-        bmp.writeUInt8(byteVal, offset + rowOffset);
-        rowOffset++;
-        byteVal = 0;
-        bitIndex = 7;
-      }
+      // BMP uses BGR order
+      bmp.writeUInt8(b, offset); offset += 1;
+      bmp.writeUInt8(g, offset); offset += 1;
+      bmp.writeUInt8(r, offset); offset += 1;
     }
 
     // Add padding bytes to make row size multiple of 4
-    while (rowOffset < paddedRowSize) {
-      bmp.writeUInt8(0, offset + rowOffset);
-      rowOffset++;
+    const padding = paddedRowSize - rowSize;
+    for (let p = 0; p < padding; p++) {
+      bmp.writeUInt8(0, offset); offset += 1;
     }
-    offset += paddedRowSize;
   }
 
   return bmp;
