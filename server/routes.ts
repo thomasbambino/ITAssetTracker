@@ -2698,6 +2698,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Label Settings routes for P-Touch label generation
+  app.get('/api/qrcodes/label-settings', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getLabelSettings();
+      res.json(settings || { logo: null });
+    } catch (error) {
+      console.error("Error fetching label settings:", error);
+      res.status(500).json({ message: "Error fetching label settings" });
+    }
+  });
+
+  app.post('/api/qrcodes/label-settings', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { logo } = req.body;
+      const settings = await storage.updateLabelSettings({ logo });
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating label settings:", error);
+      res.status(500).json({ message: "Error updating label settings" });
+    }
+  });
+
+  // Download P-Touch label (.lbx file) for a QR code
+  app.get('/api/qrcodes/:id/download-label', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+
+      // Get the QR code
+      const qrCode = await storage.getQrCodeById(id);
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+
+      // Get the associated device
+      let deviceName = "Unknown Device";
+      if (qrCode.deviceId) {
+        const device = await storage.getDeviceById(qrCode.deviceId);
+        if (device) {
+          deviceName = device.name || `${device.brand} ${device.model}`;
+        }
+      }
+
+      // Get label settings for logo
+      const labelSettings = await storage.getLabelSettings();
+
+      // Import the LBX generator dynamically
+      const { generateLbxFile } = await import('./lbx-generator');
+
+      // Generate the LBX file
+      const lbxBuffer = await generateLbxFile({
+        deviceName,
+        qrCodeValue: qrCode.code,
+        logo: labelSettings?.logo || undefined
+      });
+
+      // Set response headers for file download
+      const filename = `label-${qrCode.code.substring(0, 20)}.lbx`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', lbxBuffer.length);
+
+      res.send(lbxBuffer);
+    } catch (error) {
+      console.error("Error generating P-Touch label:", error);
+      res.status(500).json({ message: "Error generating P-Touch label" });
+    }
+  });
+
   // Notification routes
   app.get('/api/users/:id/notifications', isAuthenticated, async (req: Request, res: Response) => {
     try {

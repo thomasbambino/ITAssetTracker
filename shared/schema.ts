@@ -608,3 +608,18 @@ export const insertCloudAssetSchema = createInsertSchema(cloudAssets).omit({
 
 export type InsertCloudAsset = z.infer<typeof insertCloudAssetSchema>;
 export type CloudAsset = typeof cloudAssets.$inferSelect;
+
+// Label Settings Table for P-Touch label generation
+export const labelSettings = pgTable("label_settings", {
+  id: serial("id").primaryKey(),
+  logo: text("logo"), // Base64 encoded logo image
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertLabelSettingsSchema = createInsertSchema(labelSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertLabelSettings = z.infer<typeof insertLabelSettingsSchema>;
+export type LabelSettings = typeof labelSettings.$inferSelect;

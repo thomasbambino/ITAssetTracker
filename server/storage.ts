@@ -1,16 +1,16 @@
 import {
   categories, devices, users, assignmentHistory, activityLog,
   software, softwareAssignments, maintenanceRecords, qrCodes,
-  notifications, brandingSettings, emailSettings, sites, departments, cloudAssets,
+  notifications, brandingSettings, emailSettings, sites, departments, cloudAssets, labelSettings,
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
   type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
   type Notification, type BrandingSettings, type EmailSettings, type Site, type Department,
-  type CloudAsset,
+  type CloudAsset, type LabelSettings,
   type InsertCategory, type InsertDevice, type InsertUser,
   type InsertAssignmentHistory, type InsertActivityLog,
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
   type InsertQrCode, type InsertNotification, type InsertBrandingSettings, type InsertEmailSettings,
-  type InsertSite, type InsertDepartment, type InsertCloudAsset
+  type InsertSite, type InsertDepartment, type InsertCloudAsset, type InsertLabelSettings
 } from "@shared/schema";
 
 export interface IStorage {
@@ -144,6 +144,10 @@ export interface IStorage {
   updateCloudAsset(id: number, asset: Partial<InsertCloudAsset>, loggedInUserId?: number): Promise<CloudAsset | undefined>;
   deleteCloudAsset(id: number, loggedInUserId?: number): Promise<boolean>;
   getCloudAssetsBySite(siteId: number): Promise<CloudAsset[]>;
+
+  // Label Settings operations
+  getLabelSettings(): Promise<LabelSettings | undefined>;
+  updateLabelSettings(settings: Partial<InsertLabelSettings>): Promise<LabelSettings>;
 }
 
 export class MemStorage implements IStorage {
@@ -634,6 +638,15 @@ export class MemStorage implements IStorage {
 
   async getCloudAssetsBySite(siteId: number): Promise<CloudAsset[]> {
     return [];
+  }
+
+  // Label Settings operations - stub implementations
+  async getLabelSettings(): Promise<LabelSettings | undefined> {
+    return undefined;
+  }
+
+  async updateLabelSettings(settings: Partial<InsertLabelSettings>): Promise<LabelSettings> {
+    throw new Error("Label Settings operations not implemented in MemStorage");
   }
 }
 

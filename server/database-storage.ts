@@ -2,12 +2,13 @@ import {
   type Category, type Device, type User, type AssignmentHistory, type ActivityLog,
   type Software, type SoftwareAssignment, type MaintenanceRecord, type QrCode,
   type Notification, type BrandingSettings, type EmailSettings, type Site,
-  type GameHighScore, type CloudAsset,
+  type GameHighScore, type CloudAsset, type LabelSettings,
   type InsertCategory, type InsertDevice, type InsertUser,
   type InsertAssignmentHistory, type InsertActivityLog,
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
   type InsertQrCode, type InsertNotification, type InsertBrandingSettings,
-  type InsertEmailSettings, type InsertSite, type InsertGameHighScore, type InsertCloudAsset
+  type InsertEmailSettings, type InsertSite, type InsertGameHighScore, type InsertCloudAsset,
+  type InsertLabelSettings
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
@@ -4787,5 +4788,106 @@ export class DatabaseStorage implements IStorage {
       ORDER BY resource_name
     `, [siteId]);
     return cloudAssets;
+  }
+
+  // Label Settings operations
+  async getLabelSettings(): Promise<LabelSettings | undefined> {
+    try {
+      // First ensure the table exists
+      await this.ensureLabelSettingsTable();
+
+      const settings = await db.oneOrNone(`
+        SELECT
+          id,
+          logo,
+          updated_at as "updatedAt"
+        FROM label_settings
+        ORDER BY id ASC
+        LIMIT 1
+      `);
+
+      return settings || undefined;
+    } catch (error) {
+      console.error('Error getting label settings:', error);
+      return undefined;
+    }
+  }
+
+  private async ensureLabelSettingsTable(): Promise<void> {
+    try {
+      // Check if the table exists
+      const tableExists = await db.oneOrNone(`
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_name = 'label_settings'
+      `);
+
+      if (!tableExists) {
+        await db.none(`
+          CREATE TABLE IF NOT EXISTS label_settings (
+            id SERIAL PRIMARY KEY,
+            logo TEXT,
+            updated_at TIMESTAMP DEFAULT NOW()
+          )
+        `);
+        console.log('Created label_settings table');
+      }
+    } catch (error) {
+      console.error('Error ensuring label_settings table exists:', error);
+    }
+  }
+
+  async updateLabelSettings(settings: Partial<InsertLabelSettings>): Promise<LabelSettings> {
+    try {
+      await this.ensureLabelSettingsTable();
+
+      // Check if settings already exist
+      const existingSettings = await db.oneOrNone(`
+        SELECT id FROM label_settings LIMIT 1
+      `);
+
+      if (existingSettings) {
+        // Update existing settings
+        const updates: string[] = [];
+        const values: any[] = [];
+        let paramCount = 1;
+
+        if (settings.logo !== undefined) {
+          updates.push(`logo = $${paramCount++}`);
+          values.push(settings.logo);
+        }
+
+        updates.push(`updated_at = NOW()`);
+
+        values.push(existingSettings.id);
+
+        const updated = await db.one(`
+          UPDATE label_settings SET
+            ${updates.join(', ')}
+          WHERE id = $${paramCount}
+          RETURNING
+            id,
+            logo,
+            updated_at as "updatedAt"
+        `, values);
+
+        return updated;
+      } else {
+        // Insert new settings
+        const inserted = await db.one(`
+          INSERT INTO label_settings (logo, updated_at)
+          VALUES ($1, NOW())
+          RETURNING
+            id,
+            logo,
+            updated_at as "updatedAt"
+        `, [settings.logo || null]);
+
+        return inserted;
+      }
+    } catch (error) {
+      console.error('Error updating label settings:', error);
+      throw error;
+    }
   }
 }

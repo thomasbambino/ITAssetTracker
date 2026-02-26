@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { QrCode as QrCodeIcon, Download, Plus, Printer, Smartphone, Clock, CheckCircle, Info, Trash } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { QrCode as QrCodeIcon, Download, Plus, Printer, Smartphone, Clock, CheckCircle, Info, Trash, Settings, Upload, X, FileImage, Tag, Loader2 } from "lucide-react";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +16,13 @@ import { QrCodeForm } from "@/components/forms/QrCodeForm";
 import { QrCodeScanner } from "@/components/qrcodes/QrCodeScanner";
 import { QrCodeDisplay } from "@/components/qrcodes/QrCodeDisplay";
 import { PageContainer } from "@/components/layout/PageContainer";
+
+// Label Settings interface
+interface LabelSettings {
+  id?: number;
+  logo: string | null;
+  updatedAt?: Date;
+}
 
 // Define the QR code type based on our schema
 interface QrCode {
@@ -34,8 +43,24 @@ interface QrCode {
 export default function QrCodesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isScannerDialogOpen, setIsScannerDialogOpen] = useState(false);
+  const [isLabelSettingsOpen, setIsLabelSettingsOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState<QrCode | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Query for fetching label settings
+  const { data: labelSettings, isLoading: isLabelSettingsLoading } = useQuery<LabelSettings>({
+    queryKey: ['/api/qrcodes/label-settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/qrcodes/label-settings');
+      if (!response.ok) {
+        throw new Error('Failed to fetch label settings');
+      }
+      return response.json();
+    }
+  });
   
   // Query for fetching all QR codes
   const { data: qrCodes = [], isLoading: isQrCodesLoading } = useQuery<QrCode[]>({
@@ -106,6 +131,154 @@ export default function QrCodesPage() {
     setSelectedQrCode(null);
     // Invalidate queries to refresh the list
     queryClient.invalidateQueries({ queryKey: ['/api/qrcodes'] });
+  };
+
+  // Handle logo upload for label settings
+  const handleLogoUpload = async (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JPG, PNG, or GIF image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 1MB)
+    if (file.size > 1 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Logo must be smaller than 1MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    setUploadProgress(0);
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string;
+
+        // Simulate progress
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => Math.min(prev + 10, 90));
+        }, 100);
+
+        try {
+          const response = await fetch('/api/qrcodes/label-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logo: base64 }),
+          });
+
+          clearInterval(progressInterval);
+          setUploadProgress(100);
+
+          if (!response.ok) {
+            throw new Error('Failed to upload logo');
+          }
+
+          queryClient.invalidateQueries({ queryKey: ['/api/qrcodes/label-settings'] });
+          toast({
+            title: "Logo uploaded",
+            description: "Your label logo has been saved successfully.",
+          });
+        } catch (error) {
+          clearInterval(progressInterval);
+          throw error;
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload logo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setTimeout(() => {
+        setIsUploadingLogo(false);
+        setUploadProgress(0);
+      }, 500);
+    }
+  };
+
+  // Remove logo from label settings
+  const handleRemoveLogo = async () => {
+    try {
+      const response = await fetch('/api/qrcodes/label-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logo: null }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove logo');
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['/api/qrcodes/label-settings'] });
+      toast({
+        title: "Logo removed",
+        description: "Your label logo has been removed.",
+      });
+    } catch (error) {
+      console.error("Error removing logo:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove logo. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Download P-Touch label (.lbx file)
+  const handleDownloadPTouchLabel = async (qrCode: QrCode) => {
+    try {
+      toast({
+        title: "Generating label...",
+        description: "Please wait while we create your P-Touch label file.",
+      });
+
+      const response = await fetch(`/api/qrcodes/${qrCode.id}/download-label`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate label');
+      }
+
+      // Get the blob and create download link
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `label-${qrCode.code.substring(0, 20)}.lbx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Label downloaded",
+        description: "Your P-Touch label file has been downloaded. Open it with Brother P-Touch Editor.",
+      });
+    } catch (error) {
+      console.error("Error downloading P-Touch label:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate P-Touch label. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Haptic feedback function for successful scan recording
@@ -325,6 +498,105 @@ export default function QrCodesPage() {
 
   const pageActions = (
     <div className="flex space-x-2">
+      <Dialog open={isLabelSettingsOpen} onOpenChange={setIsLabelSettingsOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <Settings className="h-4 w-4 mr-2" /> Label Settings
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>P-Touch Label Settings</DialogTitle>
+            <DialogDescription>
+              Configure your company logo for P-Touch labels. The logo will appear on all generated label files.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Company Logo</Label>
+              <Card className="p-4 border-dashed flex flex-col items-center justify-center">
+                {isUploadingLogo ? (
+                  <div className="flex flex-col items-center w-full py-4">
+                    <Loader2 className="h-10 w-10 text-primary mb-2 animate-spin" />
+                    <p className="text-sm text-muted-foreground mb-2">Uploading logo...</p>
+                    <div className="w-full max-w-xs">
+                      <Progress value={uploadProgress} className="h-2" />
+                    </div>
+                  </div>
+                ) : labelSettings?.logo ? (
+                  <div className="flex flex-col items-center">
+                    <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center mb-3 relative overflow-hidden">
+                      <img
+                        src={labelSettings.logo}
+                        alt="Label logo"
+                        className="h-full w-full object-contain p-1"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        type="button"
+                        size="sm"
+                        onClick={handleRemoveLogo}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Remove
+                      </Button>
+                      <Button
+                        variant="outline"
+                        type="button"
+                        size="sm"
+                        onClick={() => logoInputRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-1" />
+                        Change
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center py-4">
+                    <input
+                      type="file"
+                      ref={logoInputRef}
+                      className="hidden"
+                      accept="image/png,image/jpeg,image/gif"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          handleLogoUpload(e.target.files[0]);
+                        }
+                      }}
+                    />
+                    <FileImage className="h-10 w-10 text-muted-foreground mb-3" />
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Upload your company logo for labels
+                    </p>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      size="sm"
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-1" />
+                      Upload Logo
+                    </Button>
+                  </div>
+                )}
+              </Card>
+              <p className="text-xs text-muted-foreground">
+                Upload a PNG, JPG, or GIF (max 1MB). The logo will be converted to monochrome for P-Touch printing.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLabelSettingsOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isScannerDialogOpen} onOpenChange={setIsScannerDialogOpen}>
         <DialogTrigger asChild>
           <Button variant="outline">
@@ -341,7 +613,7 @@ export default function QrCodesPage() {
           <QrCodeScanner onScanSuccess={handleScanSuccess} />
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogTrigger asChild>
           <Button>
@@ -392,6 +664,11 @@ export default function QrCodesPage() {
                 label: "Download",
                 onClick: handleDownloadClick,
                 icon: <Download className="h-4 w-4" />
+              },
+              {
+                label: "P-Touch Label",
+                onClick: handleDownloadPTouchLabel,
+                icon: <Tag className="h-4 w-4" />
               },
               {
                 label: "Delete",
