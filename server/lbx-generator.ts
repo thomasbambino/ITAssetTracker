@@ -1,6 +1,6 @@
-import * as archiver from 'archiver';
-import * as sharp from 'sharp';
-import * as QRCode from 'qrcode';
+import archiver from 'archiver';
+import sharp from 'sharp';
+import QRCode from 'qrcode';
 import { PassThrough } from 'stream';
 
 interface LbxGeneratorParams {

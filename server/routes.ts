@@ -2571,6 +2571,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Label Settings routes for P-Touch label generation (must be before :id routes)
+  app.get('/api/qrcodes/label-settings', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getLabelSettings();
+      res.json(settings || { logo: null });
+    } catch (error) {
+      console.error("Error fetching label settings:", error);
+      res.status(500).json({ message: "Error fetching label settings" });
+    }
+  });
+
+  app.post('/api/qrcodes/label-settings', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { logo } = req.body;
+      const settings = await storage.updateLabelSettings({ logo });
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating label settings:", error);
+      res.status(500).json({ message: "Error updating label settings" });
+    }
+  });
+
   app.get('/api/qrcodes/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -2695,28 +2717,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching QR code scan history:", error);
       res.status(500).json({ message: "Error fetching QR code scan history" });
-    }
-  });
-
-  // Label Settings routes for P-Touch label generation
-  app.get('/api/qrcodes/label-settings', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const settings = await storage.getLabelSettings();
-      res.json(settings || { logo: null });
-    } catch (error) {
-      console.error("Error fetching label settings:", error);
-      res.status(500).json({ message: "Error fetching label settings" });
-    }
-  });
-
-  app.post('/api/qrcodes/label-settings', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const { logo } = req.body;
-      const settings = await storage.updateLabelSettings({ logo });
-      res.json(settings);
-    } catch (error) {
-      console.error("Error updating label settings:", error);
-      res.status(500).json({ message: "Error updating label settings" });
     }
   });
 
