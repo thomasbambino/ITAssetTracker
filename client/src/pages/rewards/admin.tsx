@@ -90,16 +90,12 @@ export default function RewardsAdmin() {
   const { data: rewardSettings } = useQuery<RewardSettingsConfig>({ queryKey: ['/api/rewards/settings'] });
 
   // Points activity log state
-  const [activityFilterUser, setActivityFilterUser] = useState<string>('');
+  const [activityFilterUser, setActivityFilterUser] = useState<string>('all');
+  const pointsLogUrl = activityFilterUser && activityFilterUser !== 'all'
+    ? `/api/rewards/points-log?limit=200&userId=${activityFilterUser}`
+    : '/api/rewards/points-log?limit=200';
   const { data: pointsLog, isLoading: pointsLogLoading } = useQuery<PointsLogEntry[]>({
-    queryKey: ['/api/rewards/points-log', activityFilterUser],
-    queryFn: async () => {
-      const params = new URLSearchParams({ limit: '200' });
-      if (activityFilterUser) params.set('userId', activityFilterUser);
-      const res = await fetch(`/api/rewards/points-log?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
-      return res.json();
-    },
+    queryKey: [pointsLogUrl],
   });
 
   // Settings mutation
@@ -610,7 +606,7 @@ export default function RewardsAdmin() {
                     <SelectValue placeholder="All Users" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Users</SelectItem>
+                    <SelectItem value="all">All Users</SelectItem>
                     {users?.map(u => (
                       <SelectItem key={u.id} value={String(u.id)}>{u.firstName} {u.lastName}</SelectItem>
                     ))}
