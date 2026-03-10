@@ -667,13 +667,15 @@ export default function RewardsAdmin() {
                       {pointsLog.map(entry => (
                         <TableRow key={entry.id}>
                           <TableCell className="whitespace-nowrap text-sm">
-                            {new Date(entry.createdAt).toLocaleDateString()}{' '}
-                            <span className="text-muted-foreground">{new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {(() => {
+                              const d = new Date(entry.periodStart || entry.createdAt);
+                              return <>{d.toLocaleDateString()}{' '}<span className="text-muted-foreground">{d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></>;
+                            })()}
                           </TableCell>
                           <TableCell className="font-medium">{entry.firstName} {entry.lastName}</TableCell>
                           <TableCell>
                             <Badge variant={entry.type === 'earned' ? 'default' : entry.type === 'bonus' ? 'secondary' : 'outline'}>
-                              {entry.type}
+                              {entry.type.charAt(0).toUpperCase() + entry.type.slice(1)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">{entry.metricName || '—'}</TableCell>
@@ -681,7 +683,14 @@ export default function RewardsAdmin() {
                             {entry.description || '—'}
                           </TableCell>
                           <TableCell className="text-sm font-mono">
-                            {entry.referenceId || '—'}
+                            {(() => {
+                              if (!entry.referenceId) return '—';
+                              const ticketMatch = entry.referenceId.match(/zendesk_(?:solved|frt)_(\d+)/);
+                              if (ticketMatch) {
+                                return <a href={`https://satellitephonestore.zendesk.com/agent/tickets/${ticketMatch[1]}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">#{ticketMatch[1]}</a>;
+                              }
+                              return entry.referenceId;
+                            })()}
                           </TableCell>
                           <TableCell className="text-right font-bold">
                             <span className={entry.points >= 0 ? 'text-green-600' : 'text-red-600'}>
