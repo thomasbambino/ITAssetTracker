@@ -7,7 +7,7 @@ interface ZendeskConfig {
   fastReplyThresholdMinutes: number;
   agentEmails?: string[];   // Only track these agent emails (empty = all)
   groupIds?: number[];      // Only track tickets from these Zendesk group IDs (empty = all)
-  syncStartDate?: string;   // Earliest date to sync from (YYYY-MM-DD). Overrides default "last 24h" on first sync.
+  syncStartDate?: string;   // Earliest date to sync from (YYYY-MM-DD)
 }
 
 // Cache of Zendesk agent ID -> email
@@ -63,9 +63,25 @@ function formatDate(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 
-const RATE_LIMIT_DELAY = 100; // ms between requests
+const RATE_LIMIT_DELAY = 100;
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Generate monthly date ranges between start and end
+function getMonthlyChunks(start: Date, end: Date): Array<{ from: string; to: string }> {
+  const chunks: Array<{ from: string; to: string }> = [];
+  const current = new Date(start);
+
+  while (current < end) {
+    const chunkStart = formatDate(current);
+    // Move to next month
+    current.setMonth(current.getMonth() + 1);
+    const chunkEnd = current < end ? formatDate(current) : formatDate(end);
+    chunks.push({ from: chunkStart, to: chunkEnd });
+  }
+
+  return chunks;
 }
 
 export class ZendeskSyncProvider implements KPISyncProvider {
@@ -91,15 +107,14 @@ export class ZendeskSyncProvider implements KPISyncProvider {
     const thresholdMinutes = config.fastReplyThresholdMinutes || 30;
     const authHeader = buildAuthHeader(config.adminEmail, apiToken);
 
-    // Use syncStartDate from config if this is the first sync (no lastSyncAt)
+    // Use syncStartDate if configured and it's earlier than `since`
     let effectiveSince = since;
-    if (!source.lastSyncAt && config.syncStartDate) {
+    if (config.syncStartDate) {
       const parsed = new Date(config.syncStartDate);
-      if (!isNaN(parsed.getTime())) {
+      if (!isNaN(parsed.getTime()) && parsed < since) {
         effectiveSince = parsed;
       }
     }
-    const sinceDate = formatDate(effectiveSince);
 
     // Normalize filter lists
     const filterEmails = (config.agentEmails || []).map(e => e.toLowerCase().trim()).filter(Boolean);
@@ -108,81 +123,88 @@ export class ZendeskSyncProvider implements KPISyncProvider {
     const dataPoints: KPIDataPoint[] = [];
     const now = new Date();
 
-    // Build search query with optional group filter
-    let query = `type:ticket status:solved solved>=${sinceDate}`;
-    if (filterGroupIds.length === 1) {
-      query += ` group:${filterGroupIds[0]}`;
-    }
+    // Break into monthly chunks to avoid Zendesk's 1000-result search limit
+    const chunks = getMonthlyChunks(effectiveSince, now);
 
-    let searchUrl = `/api/v2/search.json?query=${encodeURIComponent(query)}`;
+    for (const chunk of chunks) {
+      // Build search query for this chunk
+      let query = `type:ticket status:solved solved>=${chunk.from} solved<${chunk.to}`;
+      if (filterGroupIds.length === 1) {
+        query += ` group:${filterGroupIds[0]}`;
+      }
 
-    while (searchUrl) {
-      const searchData = await zendeskFetch(subdomain, searchUrl, authHeader);
-      const tickets = searchData.results || [];
+      let searchUrl: string | null = `/api/v2/search.json?query=${encodeURIComponent(query)}`;
 
-      for (const ticket of tickets) {
-        if (!ticket.assignee_id) continue;
+      while (searchUrl) {
+        const searchData = await zendeskFetch(subdomain, searchUrl, authHeader);
+        const tickets = searchData.results || [];
 
-        // Filter by group IDs (use string comparison to handle type mismatches)
-        if (filterGroupIds.length > 0 && !filterGroupIds.map(String).includes(String(ticket.group_id))) continue;
+        for (const ticket of tickets) {
+          if (!ticket.assignee_id) continue;
 
-        await delay(RATE_LIMIT_DELAY);
+          // Filter by group IDs
+          if (filterGroupIds.length > 0 && !filterGroupIds.map(String).includes(String(ticket.group_id))) continue;
 
-        // Get agent email and match to app user
-        const agentEmail = await getAgentEmail(subdomain, ticket.assignee_id, authHeader);
-        if (!agentEmail) continue;
-
-        // Filter by agent emails if configured
-        if (filterEmails.length > 0 && !filterEmails.includes(agentEmail.toLowerCase())) continue;
-
-        const appUser = await storage.getUserByEmail(agentEmail);
-        if (!appUser) continue;
-
-        const ticketDate = new Date(ticket.solved_at || ticket.updated_at);
-
-        // Emit tickets_solved data point
-        dataPoints.push({
-          userId: appUser.id,
-          metricKey: "tickets_solved",
-          quantity: 1,
-          referenceId: `zendesk_solved_${ticket.id}`,
-          description: `Solved ticket #${ticket.id}: ${ticket.subject || "No subject"}`,
-          periodStart: ticketDate,
-          periodEnd: ticketDate,
-        });
-
-        // Check first reply time for fast response bonus
-        try {
           await delay(RATE_LIMIT_DELAY);
-          const metricsData = await zendeskFetch(
-            subdomain,
-            `/api/v2/tickets/${ticket.id}/metrics.json`,
-            authHeader
-          );
 
-          const replyTimeMinutes = metricsData.ticket_metric?.reply_time_in_minutes?.calendar;
+          // Get agent email and match to app user
+          const agentEmail = await getAgentEmail(subdomain, ticket.assignee_id, authHeader);
+          if (!agentEmail) continue;
 
-          if (replyTimeMinutes != null && replyTimeMinutes < thresholdMinutes) {
-            dataPoints.push({
-              userId: appUser.id,
-              metricKey: "fast_first_reply",
-              quantity: 1,
-              referenceId: `zendesk_frt_${ticket.id}`,
-              description: `Fast first reply on ticket #${ticket.id} (${replyTimeMinutes}min)`,
-              periodStart: ticketDate,
-              periodEnd: ticketDate,
-            });
+          // Filter by agent emails if configured
+          if (filterEmails.length > 0 && !filterEmails.includes(agentEmail.toLowerCase())) continue;
+
+          const appUser = await storage.getUserByEmail(agentEmail);
+          if (!appUser) continue;
+
+          const ticketDate = new Date(ticket.solved_at || ticket.updated_at);
+
+          // Emit tickets_solved data point
+          dataPoints.push({
+            userId: appUser.id,
+            metricKey: "tickets_solved",
+            quantity: 1,
+            referenceId: `zendesk_solved_${ticket.id}`,
+            description: `Solved ticket #${ticket.id}: ${ticket.subject || "No subject"}`,
+            periodStart: ticketDate,
+            periodEnd: ticketDate,
+          });
+
+          // Check first reply time for fast response bonus
+          try {
+            await delay(RATE_LIMIT_DELAY);
+            const metricsData = await zendeskFetch(
+              subdomain,
+              `/api/v2/tickets/${ticket.id}/metrics.json`,
+              authHeader
+            );
+
+            const replyTimeMinutes = metricsData.ticket_metric?.reply_time_in_minutes?.calendar;
+
+            if (replyTimeMinutes != null && replyTimeMinutes < thresholdMinutes) {
+              dataPoints.push({
+                userId: appUser.id,
+                metricKey: "fast_first_reply",
+                quantity: 1,
+                referenceId: `zendesk_frt_${ticket.id}`,
+                description: `Fast first reply on ticket #${ticket.id} (${replyTimeMinutes}min)`,
+                periodStart: ticketDate,
+                periodEnd: ticketDate,
+              });
+            }
+          } catch {
+            // Skip metrics if unavailable for this ticket
           }
-        } catch {
-          // Skip metrics if unavailable for this ticket
+        }
+
+        // Follow pagination within this chunk
+        searchUrl = searchData.next_page || null;
+        if (searchUrl) {
+          await delay(RATE_LIMIT_DELAY);
         }
       }
 
-      // Follow pagination
-      searchUrl = searchData.next_page || null;
-      if (searchUrl) {
-        await delay(RATE_LIMIT_DELAY);
-      }
+      await delay(RATE_LIMIT_DELAY);
     }
 
     return dataPoints;

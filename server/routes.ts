@@ -4772,6 +4772,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/rewards/sources/:id/reset-sync', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      await storage.updateRewardKpiSource(parseInt(req.params.id), { lastSyncAt: null as any });
+      res.json({ message: "Last sync timestamp cleared. Next sync will use the configured start date." });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error resetting sync", error: error.message });
+    }
+  });
+
   // --- Admin-only: KPI Metrics ---
   app.get('/api/rewards/sources/:id/metrics', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {

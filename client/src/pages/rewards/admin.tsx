@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   PlusCircle, Edit, Trash2, Database, BarChart3, Award, ShoppingBag,
-  CheckCircle, XCircle, Package, UserPlus, RefreshCw,
+  CheckCircle, XCircle, Package, UserPlus, RefreshCw, RotateCcw,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -106,6 +106,17 @@ export default function RewardsAdmin() {
       }
     },
     onError: (e: any) => toast({ title: "Sync failed", description: e.message, variant: "destructive" }),
+  });
+
+  const resetSyncMutation = useMutation({
+    mutationFn: async (sourceId: number) => {
+      return apiRequest({ url: `/api/rewards/sources/${sourceId}/reset-sync`, method: 'POST' });
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast({ title: "Sync reset", description: "Next sync will pull from the configured start date." });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   // Add Zendesk default metrics
@@ -290,6 +301,11 @@ export default function RewardsAdmin() {
                             <Button variant="outline" size="sm" onClick={() => syncMutation.mutate(s.id)} disabled={syncMutation.isPending}>
                               <RefreshCw className={`h-4 w-4 mr-1 ${syncMutation.isPending ? 'animate-spin' : ''}`} /> Sync Now
                             </Button>
+                            {s.lastSyncAt && (
+                              <Button variant="ghost" size="icon" title="Reset sync — re-pull from start date" onClick={() => resetSyncMutation.mutate(s.id)} disabled={resetSyncMutation.isPending}>
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" onClick={() => {
                               setEditItem(s);
                               const fd: any = { name: s.name, type: s.type, apiKey: s.apiKey || '', apiSecret: s.apiSecret || '', accountId: s.accountId || '', config: s.config || '', isActive: s.isActive, syncIntervalMinutes: s.syncIntervalMinutes };
