@@ -88,6 +88,37 @@ export default function RewardsAdmin() {
   // Manual adjust state
   const [adjustData, setAdjustData] = useState({ userId: '', points: '', description: '', type: 'bonus' });
 
+  // Sync Now mutation
+  const syncMutation = useMutation({
+    mutationFn: async (sourceId: number) => {
+      return apiRequest({ url: `/api/rewards/sources/${sourceId}/sync`, method: 'POST' });
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast({ title: "Sync completed" });
+    },
+    onError: (e: any) => toast({ title: "Sync failed", description: e.message, variant: "destructive" }),
+  });
+
+  // Add Zendesk default metrics
+  const addZendeskDefaultsMutation = useMutation({
+    mutationFn: async (sourceId: number) => {
+      await apiRequest({
+        url: '/api/rewards/metrics', method: 'POST',
+        data: { sourceId, key: 'tickets_solved', name: 'Tickets Solved', pointsPerUnit: 10, description: 'Points for each Zendesk ticket solved', isActive: true },
+      });
+      await apiRequest({
+        url: '/api/rewards/metrics', method: 'POST',
+        data: { sourceId, key: 'fast_first_reply', name: 'Fast First Reply (<30min)', pointsPerUnit: 5, description: 'Bonus points for responding to a ticket within 30 minutes', isActive: true },
+      });
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast({ title: "Zendesk default metrics created" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   // Helpers
   const resetForm = () => { setFormData({}); setEditItem(null); };
   const invalidateAll = () => {
@@ -248,14 +279,8 @@ export default function RewardsAdmin() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" onClick={async () => {
-                              try {
-                                await apiRequest({ url: `/api/rewards/sources/${s.id}/sync`, method: 'POST' });
-                                toast({ title: "Sync triggered" });
-                                invalidateAll();
-                              } catch { toast({ title: "Sync failed", variant: "destructive" }); }
-                            }}>
-                              <RefreshCw className="h-4 w-4" />
+                            <Button variant="outline" size="sm" onClick={() => syncMutation.mutate(s.id)} disabled={syncMutation.isPending}>
+                              <RefreshCw className={`h-4 w-4 mr-1 ${syncMutation.isPending ? 'animate-spin' : ''}`} /> Sync Now
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => {
                               setEditItem(s);
@@ -283,9 +308,19 @@ export default function RewardsAdmin() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">KPI Metrics</CardTitle>
-              <Button size="sm" onClick={() => { resetForm(); setMetricDialog(true); }}>
-                <PlusCircle className="h-4 w-4 mr-1" /> Add Metric
-              </Button>
+              <div className="flex gap-2">
+                {sources?.some(s => s.type === 'zendesk') && (
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const zendeskSource = sources?.find(s => s.type === 'zendesk');
+                    if (zendeskSource) addZendeskDefaultsMutation.mutate(zendeskSource.id);
+                  }} disabled={addZendeskDefaultsMutation.isPending}>
+                    <Database className="h-4 w-4 mr-1" /> Add Zendesk Defaults
+                  </Button>
+                )}
+                <Button size="sm" onClick={() => { resetForm(); setMetricDialog(true); }}>
+                  <PlusCircle className="h-4 w-4 mr-1" /> Add Metric
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {!metrics?.length ? (
@@ -543,7 +578,13 @@ export default function RewardsAdmin() {
           <div className="space-y-4">
             <div><Label>Name</Label><Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} /></div>
             <div><Label>Type</Label>
-              <Select value={formData.type || ''} onValueChange={v => setFormData({ ...formData, type: v })}>
+              <Select value={formData.type || ''} onValueChange={v => {
+                const updates: any = { ...formData, type: v };
+                if (v === 'zendesk' && !formData.config) {
+                  updates.config = '{"adminEmail":"","fastReplyThresholdMinutes":30}';
+                }
+                setFormData(updates);
+              }}>
                 <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="manual">Manual</SelectItem>
@@ -553,8 +594,27 @@ export default function RewardsAdmin() {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>API Key (optional)</Label><Input value={formData.apiKey || ''} onChange={e => setFormData({ ...formData, apiKey: e.target.value })} /></div>
-            <div><Label>Account ID (optional)</Label><Input value={formData.accountId || ''} onChange={e => setFormData({ ...formData, accountId: e.target.value })} /></div>
+            <div>
+              <Label>{formData.type === 'zendesk' ? 'API Token' : 'API Key (optional)'}</Label>
+              <Input value={formData.apiKey || ''} onChange={e => setFormData({ ...formData, apiKey: e.target.value })} placeholder={formData.type === 'zendesk' ? 'Zendesk API token' : ''} />
+            </div>
+            <div>
+              <Label>{formData.type === 'zendesk' ? 'Zendesk Subdomain' : 'Account ID (optional)'}</Label>
+              <Input value={formData.accountId || ''} onChange={e => setFormData({ ...formData, accountId: e.target.value })} placeholder={formData.type === 'zendesk' ? 'mycompany' : ''} />
+              {formData.type === 'zendesk' && <p className="text-xs text-muted-foreground mt-1">The subdomain from your Zendesk URL (mycompany.zendesk.com)</p>}
+            </div>
+            {formData.type === 'zendesk' && (
+              <div>
+                <Label>Config (JSON)</Label>
+                <Textarea
+                  value={formData.config || ''}
+                  onChange={e => setFormData({ ...formData, config: e.target.value })}
+                  placeholder='{"adminEmail":"admin@company.com","fastReplyThresholdMinutes":30}'
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground mt-1">adminEmail: Zendesk admin email for API auth. fastReplyThresholdMinutes: max reply time for bonus points.</p>
+              </div>
+            )}
             <div><Label>Sync Interval (minutes)</Label><Input type="number" value={formData.syncIntervalMinutes || 60} onChange={e => setFormData({ ...formData, syncIntervalMinutes: parseInt(e.target.value) })} /></div>
             <div className="flex items-center gap-2">
               <Switch checked={formData.isActive ?? true} onCheckedChange={v => setFormData({ ...formData, isActive: v })} />

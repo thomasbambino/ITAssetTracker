@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import type { RewardKpiSource } from "@shared/schema";
+import { ZendeskSyncProvider } from "./zendesk-sync";
 
 // Data point returned by a KPI sync provider
 export interface KPIDataPoint {
@@ -23,6 +24,9 @@ const syncProviders: Record<string, KPISyncProvider> = {};
 export function registerSyncProvider(type: string, provider: KPISyncProvider) {
   syncProviders[type] = provider;
 }
+
+// Register built-in providers
+registerSyncProvider('zendesk', new ZendeskSyncProvider());
 
 // Sync a single source: fetch new data points, deduplicate, and award points
 async function syncSource(source: RewardKpiSource) {
