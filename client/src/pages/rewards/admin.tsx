@@ -24,7 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   PlusCircle, Edit, Trash2, Database, BarChart3, Award, ShoppingBag,
-  CheckCircle, XCircle, Package, UserPlus, RefreshCw, RotateCcw, Settings,
+  CheckCircle, XCircle, Package, UserPlus, RefreshCw, RotateCcw, Settings, ClipboardList,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -59,6 +59,12 @@ type UserEntry = {
 type Department = {
   id: number; name: string;
 };
+type PointsLogEntry = {
+  id: number; userId: number; metricId: number | null; points: number;
+  quantity: number; description: string | null; type: string;
+  referenceId: string | null; periodStart: string | null; periodEnd: string | null;
+  createdAt: string; firstName: string; lastName: string; metricName: string | null;
+};
 type RewardSettingsConfig = {
   enabledDepartmentIds: number[];
 };
@@ -82,6 +88,19 @@ export default function RewardsAdmin() {
   const { data: users } = useQuery<UserEntry[]>({ queryKey: ['/api/users'] });
   const { data: departments } = useQuery<Department[]>({ queryKey: ['/api/departments'] });
   const { data: rewardSettings } = useQuery<RewardSettingsConfig>({ queryKey: ['/api/rewards/settings'] });
+
+  // Points activity log state
+  const [activityFilterUser, setActivityFilterUser] = useState<string>('');
+  const { data: pointsLog, isLoading: pointsLogLoading } = useQuery<PointsLogEntry[]>({
+    queryKey: ['/api/rewards/points-log', activityFilterUser],
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: '200' });
+      if (activityFilterUser) params.set('userId', activityFilterUser);
+      const res = await fetch(`/api/rewards/points-log?${params}`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
+  });
 
   // Settings mutation
   const settingsMutation = useMutation({
@@ -279,6 +298,7 @@ export default function RewardsAdmin() {
           <TabsTrigger value="badges" className="flex items-center gap-1"><Award className="h-4 w-4" /> Badges</TabsTrigger>
           <TabsTrigger value="catalog" className="flex items-center gap-1"><ShoppingBag className="h-4 w-4" /> Catalog</TabsTrigger>
           <TabsTrigger value="redemptions" className="flex items-center gap-1"><Package className="h-4 w-4" /> Redemptions</TabsTrigger>
+          <TabsTrigger value="activity" className="flex items-center gap-1"><ClipboardList className="h-4 w-4" /> Points Activity</TabsTrigger>
           <TabsTrigger value="adjust" className="flex items-center gap-1"><UserPlus className="h-4 w-4" /> Manual Adjust</TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-1"><Settings className="h-4 w-4" /> Settings</TabsTrigger>
         </TabsList>
@@ -574,6 +594,77 @@ export default function RewardsAdmin() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ==================== POINTS ACTIVITY TAB ==================== */}
+        <TabsContent value="activity">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Points Activity Log</CardTitle>
+              <div className="flex items-center gap-2">
+                <Select value={activityFilterUser} onValueChange={setActivityFilterUser}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="All Users" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Users</SelectItem>
+                    {users?.map(u => (
+                      <SelectItem key={u.id} value={String(u.id)}>{u.firstName} {u.lastName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {pointsLogLoading ? <Skeleton className="h-40" /> : !pointsLog?.length ? (
+                <p className="text-center text-muted-foreground py-8">No points activity yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Metric</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Reference</TableHead>
+                        <TableHead className="text-right">Points</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pointsLog.map(entry => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="whitespace-nowrap text-sm">
+                            {new Date(entry.createdAt).toLocaleDateString()}{' '}
+                            <span className="text-muted-foreground">{new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </TableCell>
+                          <TableCell className="font-medium">{entry.firstName} {entry.lastName}</TableCell>
+                          <TableCell>
+                            <Badge variant={entry.type === 'earned' ? 'default' : entry.type === 'bonus' ? 'secondary' : 'outline'}>
+                              {entry.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{entry.metricName || '—'}</TableCell>
+                          <TableCell className="text-sm max-w-[300px] truncate" title={entry.description || ''}>
+                            {entry.description || '—'}
+                          </TableCell>
+                          <TableCell className="text-sm font-mono">
+                            {entry.referenceId || '—'}
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            <span className={entry.points >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {entry.points >= 0 ? '+' : ''}{entry.points}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>

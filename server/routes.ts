@@ -4976,6 +4976,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Admin: Points Activity Log ---
+  app.get('/api/rewards/points-log', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const log = await storage.getAllRewardPointsLog(limit, offset, userId);
+      res.json(log);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching points log", error: error.message });
+    }
+  });
+
   // --- Reward Settings (admin) ---
   app.get('/api/rewards/settings', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {

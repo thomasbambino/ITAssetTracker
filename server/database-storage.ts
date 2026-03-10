@@ -5068,6 +5068,24 @@ export class DatabaseStorage implements IStorage {
     `, [userId, limit, offset]);
   }
 
+  async getAllRewardPointsLog(limit: number = 100, offset: number = 0, userId?: number): Promise<(RewardPointsLog & { firstName: string; lastName: string })[]> {
+    const userFilter = userId ? 'AND pl.user_id = $3' : '';
+    const params = userId ? [limit, offset, userId] : [limit, offset];
+    return await db.any(`
+      SELECT pl.id, pl.user_id as "userId", pl.metric_id as "metricId", pl.points, pl.quantity,
+        pl.description, pl.type, pl.reference_id as "referenceId",
+        pl.period_start as "periodStart", pl.period_end as "periodEnd", pl.created_at as "createdAt",
+        u.first_name as "firstName", u.last_name as "lastName",
+        m.name as "metricName"
+      FROM reward_points_log pl
+      JOIN users u ON u.id = pl.user_id
+      LEFT JOIN reward_kpi_metrics m ON m.id = pl.metric_id
+      WHERE 1=1 ${userFilter}
+      ORDER BY pl.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, params);
+  }
+
   async getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined> {
     try {
       return await db.one(`

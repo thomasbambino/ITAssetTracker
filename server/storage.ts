@@ -177,6 +177,7 @@ export interface IStorage {
   createRewardPointsLog(entry: InsertRewardPointsLog): Promise<RewardPointsLog>;
   getRewardPointsLogByUser(userId: number, limit?: number, offset?: number): Promise<RewardPointsLog[]>;
   getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined>;
+  getAllRewardPointsLog(limit?: number, offset?: number, userId?: number): Promise<(RewardPointsLog & { firstName: string; lastName: string })[]>;
 
   // Reward Balance operations
   getRewardBalance(userId: number): Promise<RewardBalance | undefined>;
@@ -724,6 +725,7 @@ export class MemStorage implements IStorage {
   async createRewardPointsLog(entry: InsertRewardPointsLog): Promise<RewardPointsLog> { throw new Error("Not implemented in MemStorage"); }
   async getRewardPointsLogByUser(userId: number, limit?: number, offset?: number): Promise<RewardPointsLog[]> { return []; }
   async getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined> { return undefined; }
+  async getAllRewardPointsLog(limit?: number, offset?: number, userId?: number): Promise<any[]> { return []; }
   async getRewardBalance(userId: number): Promise<RewardBalance | undefined> { return undefined; }
   async updateRewardBalance(userId: number, earnedDelta: number, redeemedDelta: number): Promise<RewardBalance> { throw new Error("Not implemented in MemStorage"); }
   async getRewardLeaderboard(): Promise<any[]> { return []; }
