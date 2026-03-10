@@ -298,6 +298,9 @@ export default function RewardsAdmin() {
                                   const cfg = JSON.parse(s.config);
                                   fd._zendeskAdminEmail = cfg.adminEmail || '';
                                   fd._zendeskFastReplyMinutes = cfg.fastReplyThresholdMinutes ?? 30;
+                                  fd._zendeskAgentEmails = (cfg.agentEmails || []).join(', ');
+                                  fd._zendeskGroupIds = (cfg.groupIds || []).join(', ');
+                                  fd._zendeskSyncStartDate = cfg.syncStartDate || '';
                                 } catch {}
                               }
                               setFormData(fd);
@@ -626,6 +629,34 @@ export default function RewardsAdmin() {
                   <p className="text-xs text-muted-foreground mt-1">The Zendesk admin email used for API authentication</p>
                 </div>
                 <div>
+                  <Label>Agent Emails (optional filter)</Label>
+                  <Textarea
+                    value={formData._zendeskAgentEmails || ''}
+                    onChange={e => setFormData({ ...formData, _zendeskAgentEmails: e.target.value })}
+                    placeholder="agent1@company.com, agent2@company.com"
+                    rows={2}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Comma-separated. Only these agents' tickets will be tracked. Leave empty for all agents.</p>
+                </div>
+                <div>
+                  <Label>Group IDs (optional filter)</Label>
+                  <Input
+                    value={formData._zendeskGroupIds || ''}
+                    onChange={e => setFormData({ ...formData, _zendeskGroupIds: e.target.value })}
+                    placeholder="e.g. 12345678, 87654321"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Comma-separated Zendesk group IDs. Only tickets from these groups will be tracked. Leave empty for all groups.</p>
+                </div>
+                <div>
+                  <Label>Sync Start Date</Label>
+                  <Input
+                    type="date"
+                    value={formData._zendeskSyncStartDate || ''}
+                    onChange={e => setFormData({ ...formData, _zendeskSyncStartDate: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Pull tickets solved from this date onward on first sync. Leave empty for last 24 hours.</p>
+                </div>
+                <div>
                   <Label>Fast Reply Threshold (minutes)</Label>
                   <Input
                     type="number"
@@ -645,12 +676,17 @@ export default function RewardsAdmin() {
           <DialogFooter>
             <Button variant="outline" onClick={() => { setSourceDialog(false); resetForm(); }}>Cancel</Button>
             <Button onClick={() => {
-              const { _zendeskAdminEmail, _zendeskFastReplyMinutes, ...rest } = formData;
+              const { _zendeskAdminEmail, _zendeskFastReplyMinutes, _zendeskAgentEmails, _zendeskGroupIds, _zendeskSyncStartDate, ...rest } = formData;
               const payload = { ...rest, _editId: editItem?.id };
               if (formData.type === 'zendesk') {
+                const agentEmails = (_zendeskAgentEmails || '').split(',').map((e: string) => e.trim()).filter(Boolean);
+                const groupIds = (_zendeskGroupIds || '').split(',').map((s: string) => parseInt(s.trim())).filter((n: number) => !isNaN(n));
                 payload.config = JSON.stringify({
                   adminEmail: _zendeskAdminEmail || '',
                   fastReplyThresholdMinutes: _zendeskFastReplyMinutes ?? 30,
+                  ...(agentEmails.length > 0 && { agentEmails }),
+                  ...(groupIds.length > 0 && { groupIds }),
+                  ...(_zendeskSyncStartDate && { syncStartDate: _zendeskSyncStartDate }),
                 });
               }
               sourcesMutation.mutate(payload);

@@ -5,6 +5,9 @@ import { storage } from "./storage";
 interface ZendeskConfig {
   adminEmail: string;
   fastReplyThresholdMinutes: number;
+  agentEmails?: string[];   // Only track these agent emails (empty = all)
+  groupIds?: number[];      // Only track tickets from these Zendesk group IDs (empty = all)
+  syncStartDate?: string;   // Earliest date to sync from (YYYY-MM-DD). Overrides default "last 24h" on first sync.
 }
 
 // Cache of Zendesk agent ID -> email
@@ -87,13 +90,31 @@ export class ZendeskSyncProvider implements KPISyncProvider {
 
     const thresholdMinutes = config.fastReplyThresholdMinutes || 30;
     const authHeader = buildAuthHeader(config.adminEmail, apiToken);
-    const sinceDate = formatDate(since);
+
+    // Use syncStartDate from config if this is the first sync (no lastSyncAt)
+    let effectiveSince = since;
+    if (!source.lastSyncAt && config.syncStartDate) {
+      const parsed = new Date(config.syncStartDate);
+      if (!isNaN(parsed.getTime())) {
+        effectiveSince = parsed;
+      }
+    }
+    const sinceDate = formatDate(effectiveSince);
+
+    // Normalize filter lists
+    const filterEmails = (config.agentEmails || []).map(e => e.toLowerCase().trim()).filter(Boolean);
+    const filterGroupIds = (config.groupIds || []).filter(Boolean);
 
     const dataPoints: KPIDataPoint[] = [];
     const now = new Date();
 
-    // Fetch solved tickets with pagination
-    let searchUrl = `/api/v2/search.json?query=${encodeURIComponent(`type:ticket status:solved solved>=${sinceDate}`)}`;
+    // Build search query with optional group filter
+    let query = `type:ticket status:solved solved>=${sinceDate}`;
+    if (filterGroupIds.length === 1) {
+      query += ` group_id:${filterGroupIds[0]}`;
+    }
+
+    let searchUrl = `/api/v2/search.json?query=${encodeURIComponent(query)}`;
 
     while (searchUrl) {
       const searchData = await zendeskFetch(subdomain, searchUrl, authHeader);
@@ -102,11 +123,17 @@ export class ZendeskSyncProvider implements KPISyncProvider {
       for (const ticket of tickets) {
         if (!ticket.assignee_id) continue;
 
+        // Filter by group IDs (for multiple groups, filter client-side since Zendesk search supports one)
+        if (filterGroupIds.length > 1 && !filterGroupIds.includes(ticket.group_id)) continue;
+
         await delay(RATE_LIMIT_DELAY);
 
         // Get agent email and match to app user
         const agentEmail = await getAgentEmail(subdomain, ticket.assignee_id, authHeader);
         if (!agentEmail) continue;
+
+        // Filter by agent emails if configured
+        if (filterEmails.length > 0 && !filterEmails.includes(agentEmail.toLowerCase())) continue;
 
         const appUser = await storage.getUserByEmail(agentEmail);
         if (!appUser) continue;
