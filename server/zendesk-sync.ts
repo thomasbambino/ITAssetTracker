@@ -111,7 +111,7 @@ export class ZendeskSyncProvider implements KPISyncProvider {
     // Build search query with optional group filter
     let query = `type:ticket status:solved solved>=${sinceDate}`;
     if (filterGroupIds.length === 1) {
-      query += ` group_id:${filterGroupIds[0]}`;
+      query += ` group:${filterGroupIds[0]}`;
     }
 
     let searchUrl = `/api/v2/search.json?query=${encodeURIComponent(query)}`;
@@ -123,8 +123,8 @@ export class ZendeskSyncProvider implements KPISyncProvider {
       for (const ticket of tickets) {
         if (!ticket.assignee_id) continue;
 
-        // Filter by group IDs (for multiple groups, filter client-side since Zendesk search supports one)
-        if (filterGroupIds.length > 1 && !filterGroupIds.includes(ticket.group_id)) continue;
+        // Filter by group IDs (use string comparison to handle type mismatches)
+        if (filterGroupIds.length > 0 && !filterGroupIds.map(String).includes(String(ticket.group_id))) continue;
 
         await delay(RATE_LIMIT_DELAY);
 
