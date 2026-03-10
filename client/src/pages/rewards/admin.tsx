@@ -206,6 +206,25 @@ export default function RewardsAdmin() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  // Add Zoom Phone default metrics
+  const addZoomDefaultsMutation = useMutation({
+    mutationFn: async (sourceId: number) => {
+      await apiRequest({
+        url: '/api/rewards/metrics', method: 'POST',
+        data: { sourceId, key: 'calls_handled', name: 'Calls Handled', pointsPerUnit: 5, description: 'Points for each answered Zoom Phone call', isActive: true },
+      });
+      await apiRequest({
+        url: '/api/rewards/metrics', method: 'POST',
+        data: { sourceId, key: 'call_duration', name: 'Call Duration (minutes)', pointsPerUnit: 1, description: 'Points per minute of call time', isActive: true },
+      });
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast({ title: "Zoom Phone default metrics created" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   // Helpers
   const resetForm = () => { setFormData({}); setEditItem(null); };
   const invalidateAll = () => {
@@ -394,6 +413,15 @@ export default function RewardsAdmin() {
                                   fd._zendeskSyncStartDate = cfg.syncStartDate || '';
                                 } catch {}
                               }
+                              if (s.type === 'zoom_phone' && s.config) {
+                                try {
+                                  const cfg = JSON.parse(s.config);
+                                  fd._zoomAgentEmails = (cfg.agentEmails || []).join(', ');
+                                  fd._zoomSyncStartDate = cfg.syncStartDate || '';
+                                  fd._zoomCallDirection = cfg.callDirection || 'all';
+                                  fd._zoomMinDuration = cfg.minDurationSeconds ?? 0;
+                                } catch {}
+                              }
                               setFormData(fd);
                               setSourceDialog(true);
                             }}>
@@ -425,6 +453,14 @@ export default function RewardsAdmin() {
                     if (zendeskSource) addZendeskDefaultsMutation.mutate(zendeskSource.id);
                   }} disabled={addZendeskDefaultsMutation.isPending}>
                     <Database className="h-4 w-4 mr-1" /> Add Zendesk Defaults
+                  </Button>
+                )}
+                {sources?.some(s => s.type === 'zoom_phone') && (
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const zoomSource = sources?.find(s => s.type === 'zoom_phone');
+                    if (zoomSource) addZoomDefaultsMutation.mutate(zoomSource.id);
+                  }} disabled={addZoomDefaultsMutation.isPending}>
+                    <Database className="h-4 w-4 mr-1" /> Add Zoom Defaults
                   </Button>
                 )}
                 <Button size="sm" onClick={() => { resetForm(); setMetricDialog(true); }}>
@@ -831,13 +867,20 @@ export default function RewardsAdmin() {
               </Select>
             </div>
             <div>
-              <Label>{formData.type === 'zendesk' ? 'API Token' : 'API Key (optional)'}</Label>
-              <Input value={formData.apiKey || ''} onChange={e => setFormData({ ...formData, apiKey: e.target.value })} placeholder={formData.type === 'zendesk' ? 'Zendesk API token' : ''} />
+              <Label>{formData.type === 'zendesk' ? 'API Token' : formData.type === 'zoom_phone' ? 'Client ID' : 'API Key (optional)'}</Label>
+              <Input value={formData.apiKey || ''} onChange={e => setFormData({ ...formData, apiKey: e.target.value })} placeholder={formData.type === 'zendesk' ? 'Zendesk API token' : formData.type === 'zoom_phone' ? 'Zoom Client ID' : ''} />
             </div>
+            {formData.type === 'zoom_phone' && (
+              <div>
+                <Label>Client Secret</Label>
+                <Input type="password" value={formData.apiSecret || ''} onChange={e => setFormData({ ...formData, apiSecret: e.target.value })} placeholder="Zoom Client Secret" />
+              </div>
+            )}
             <div>
-              <Label>{formData.type === 'zendesk' ? 'Zendesk Subdomain' : 'Account ID (optional)'}</Label>
-              <Input value={formData.accountId || ''} onChange={e => setFormData({ ...formData, accountId: e.target.value })} placeholder={formData.type === 'zendesk' ? 'mycompany' : ''} />
+              <Label>{formData.type === 'zendesk' ? 'Zendesk Subdomain' : formData.type === 'zoom_phone' ? 'Zoom Account ID' : 'Account ID (optional)'}</Label>
+              <Input value={formData.accountId || ''} onChange={e => setFormData({ ...formData, accountId: e.target.value })} placeholder={formData.type === 'zendesk' ? 'mycompany' : formData.type === 'zoom_phone' ? 'Zoom Account ID' : ''} />
               {formData.type === 'zendesk' && <p className="text-xs text-muted-foreground mt-1">The subdomain from your Zendesk URL (mycompany.zendesk.com)</p>}
+              {formData.type === 'zoom_phone' && <p className="text-xs text-muted-foreground mt-1">Found in the Zoom Server-to-Server OAuth app settings</p>}
             </div>
             {formData.type === 'zendesk' && (
               <>
@@ -890,6 +933,49 @@ export default function RewardsAdmin() {
                 </div>
               </>
             )}
+            {formData.type === 'zoom_phone' && (
+              <>
+                <div>
+                  <Label>Agent Emails (optional filter)</Label>
+                  <Textarea
+                    value={formData._zoomAgentEmails || ''}
+                    onChange={e => setFormData({ ...formData, _zoomAgentEmails: e.target.value })}
+                    placeholder="agent1@company.com, agent2@company.com"
+                    rows={2}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Comma-separated. Only these agents' calls will be tracked. Leave empty for all agents.</p>
+                </div>
+                <div>
+                  <Label>Sync Start Date</Label>
+                  <Input
+                    type="date"
+                    value={formData._zoomSyncStartDate || ''}
+                    onChange={e => setFormData({ ...formData, _zoomSyncStartDate: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Pull calls from this date onward on first sync. Leave empty for last 24 hours.</p>
+                </div>
+                <div>
+                  <Label>Call Direction</Label>
+                  <Select value={formData._zoomCallDirection || 'all'} onValueChange={v => setFormData({ ...formData, _zoomCallDirection: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="inbound">Inbound</SelectItem>
+                      <SelectItem value="outbound">Outbound</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Min Duration (seconds)</Label>
+                  <Input
+                    type="number"
+                    value={formData._zoomMinDuration ?? 0}
+                    onChange={e => setFormData({ ...formData, _zoomMinDuration: parseInt(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Skip calls shorter than this duration. Default: 0 (include all).</p>
+                </div>
+              </>
+            )}
             <div><Label>Sync Interval (minutes)</Label><Input type="number" value={formData.syncIntervalMinutes || 60} onChange={e => setFormData({ ...formData, syncIntervalMinutes: parseInt(e.target.value) })} /></div>
             <div className="flex items-center gap-2">
               <Switch checked={formData.isActive ?? true} onCheckedChange={v => setFormData({ ...formData, isActive: v })} />
@@ -899,7 +985,7 @@ export default function RewardsAdmin() {
           <DialogFooter>
             <Button variant="outline" onClick={() => { setSourceDialog(false); resetForm(); }}>Cancel</Button>
             <Button onClick={() => {
-              const { _zendeskAdminEmail, _zendeskFastReplyMinutes, _zendeskAgentEmails, _zendeskGroupIds, _zendeskSyncStartDate, ...rest } = formData;
+              const { _zendeskAdminEmail, _zendeskFastReplyMinutes, _zendeskAgentEmails, _zendeskGroupIds, _zendeskSyncStartDate, _zoomAgentEmails, _zoomSyncStartDate, _zoomCallDirection, _zoomMinDuration, ...rest } = formData;
               const payload = { ...rest, _editId: editItem?.id };
               if (formData.type === 'zendesk') {
                 const agentEmails = (_zendeskAgentEmails || '').split(',').map((e: string) => e.trim()).filter(Boolean);
@@ -910,6 +996,15 @@ export default function RewardsAdmin() {
                   ...(agentEmails.length > 0 && { agentEmails }),
                   ...(groupIds.length > 0 && { groupIds }),
                   ...(_zendeskSyncStartDate && { syncStartDate: _zendeskSyncStartDate }),
+                });
+              }
+              if (formData.type === 'zoom_phone') {
+                const agentEmails = (_zoomAgentEmails || '').split(',').map((e: string) => e.trim()).filter(Boolean);
+                payload.config = JSON.stringify({
+                  ...(agentEmails.length > 0 && { agentEmails }),
+                  ...(_zoomSyncStartDate && { syncStartDate: _zoomSyncStartDate }),
+                  ...(_zoomCallDirection && _zoomCallDirection !== 'all' && { callDirection: _zoomCallDirection }),
+                  ...(_zoomMinDuration && { minDurationSeconds: _zoomMinDuration }),
                 });
               }
               sourcesMutation.mutate(payload);

@@ -1,6 +1,7 @@
 import { storage } from "./storage";
 import type { RewardKpiSource } from "@shared/schema";
 import { ZendeskSyncProvider } from "./zendesk-sync";
+import { ZoomSyncProvider } from "./zoom-sync";
 
 // Data point returned by a KPI sync provider
 export interface KPIDataPoint {
@@ -27,6 +28,7 @@ export function registerSyncProvider(type: string, provider: KPISyncProvider) {
 
 // Register built-in providers
 registerSyncProvider('zendesk', new ZendeskSyncProvider());
+registerSyncProvider('zoom_phone', new ZoomSyncProvider());
 
 // Result returned from a sync operation
 export interface SyncResult {
