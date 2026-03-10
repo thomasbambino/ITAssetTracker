@@ -223,6 +223,27 @@ export async function addRewardsSystemMigration() {
       console.log('reward_redemptions table already exists, skipping');
     }
 
+    // 9. reward_settings
+    const checkSettings = await db.one(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'reward_settings'
+      ) as exists;
+    `);
+
+    if (!checkSettings.exists) {
+      await db.none(`
+        CREATE TABLE reward_settings (
+          id SERIAL PRIMARY KEY,
+          config TEXT NOT NULL DEFAULT '{}',
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log('Created reward_settings table');
+    } else {
+      console.log('reward_settings table already exists, skipping');
+    }
+
     console.log('Rewards system migration completed successfully');
     return true;
   } catch (error) {
