@@ -80,6 +80,8 @@ export default function RewardsAdmin() {
   const [badgeDialog, setBadgeDialog] = useState(false);
   const [catalogDialog, setCatalogDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{ type: string; id: number; name: string } | null>(null);
+  const [syncResultDialog, setSyncResultDialog] = useState(false);
+  const [syncResult, setSyncResult] = useState<any>(null);
 
   // Form state
   const [editItem, setEditItem] = useState<any>(null);
@@ -93,9 +95,15 @@ export default function RewardsAdmin() {
     mutationFn: async (sourceId: number) => {
       return apiRequest({ url: `/api/rewards/sources/${sourceId}/sync`, method: 'POST' });
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       invalidateAll();
-      toast({ title: "Sync completed" });
+      setSyncResult(data);
+      setSyncResultDialog(true);
+      if (data.errors?.length) {
+        toast({ title: "Sync completed with errors", variant: "destructive" });
+      } else {
+        toast({ title: "Sync completed" });
+      }
     },
     onError: (e: any) => toast({ title: "Sync failed", description: e.message, variant: "destructive" }),
   });
@@ -713,6 +721,58 @@ export default function RewardsAdmin() {
           <DialogFooter>
             <Button variant="outline" onClick={() => { setCatalogDialog(false); resetForm(); }}>Cancel</Button>
             <Button onClick={() => catalogMutation.mutate({ ...formData, _editId: editItem?.id })} disabled={catalogMutation.isPending}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sync Result Dialog */}
+      <Dialog open={syncResultDialog} onOpenChange={setSyncResultDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Sync Results — {syncResult?.sourceName}</DialogTitle></DialogHeader>
+          {syncResult && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-muted">
+                  <p className="text-sm text-muted-foreground">Data Points Fetched</p>
+                  <p className="text-2xl font-bold">{syncResult.dataPointsFetched}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted">
+                  <p className="text-sm text-muted-foreground">Points Awarded</p>
+                  <p className="text-2xl font-bold text-green-600">{syncResult.pointsAwarded}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted">
+                  <p className="text-sm text-muted-foreground">Duplicates Skipped</p>
+                  <p className="text-2xl font-bold text-muted-foreground">{syncResult.duplicatesSkipped}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted">
+                  <p className="text-sm text-muted-foreground">Unmatched Metrics</p>
+                  <p className="text-2xl font-bold text-yellow-600">{syncResult.unmatchedMetrics}</p>
+                </div>
+              </div>
+
+              {syncResult.errors?.length > 0 && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <p className="text-sm font-medium text-destructive mb-1">Errors</p>
+                  {syncResult.errors.map((err: string, i: number) => (
+                    <p key={i} className="text-sm text-destructive">{err}</p>
+                  ))}
+                </div>
+              )}
+
+              {syncResult.details?.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-1">Activity Log</p>
+                  <div className="max-h-48 overflow-y-auto rounded-lg border bg-muted/50 p-2 space-y-1">
+                    {syncResult.details.map((line: string, i: number) => (
+                      <p key={i} className="text-xs font-mono">{line}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setSyncResultDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

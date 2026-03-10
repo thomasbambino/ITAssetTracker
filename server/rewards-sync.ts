@@ -28,28 +28,60 @@ export function registerSyncProvider(type: string, provider: KPISyncProvider) {
 // Register built-in providers
 registerSyncProvider('zendesk', new ZendeskSyncProvider());
 
+// Result returned from a sync operation
+export interface SyncResult {
+  sourceName: string;
+  dataPointsFetched: number;
+  pointsAwarded: number;
+  duplicatesSkipped: number;
+  unmatchedMetrics: number;
+  errors: string[];
+  details: string[];
+}
+
 // Sync a single source: fetch new data points, deduplicate, and award points
-async function syncSource(source: RewardKpiSource) {
+async function syncSource(source: RewardKpiSource): Promise<SyncResult> {
+  const result: SyncResult = {
+    sourceName: source.name,
+    dataPointsFetched: 0,
+    pointsAwarded: 0,
+    duplicatesSkipped: 0,
+    unmatchedMetrics: 0,
+    errors: [],
+    details: [],
+  };
+
   const provider = syncProviders[source.type];
   if (!provider) {
-    console.log(`No sync provider registered for type: ${source.type}`);
-    return;
+    result.errors.push(`No sync provider registered for type: ${source.type}`);
+    return result;
   }
 
   const since = source.lastSyncAt || new Date(Date.now() - 24 * 60 * 60 * 1000); // Default: last 24 hours
+  result.details.push(`Syncing since: ${since.toISOString()}`);
 
   try {
     const dataPoints = await provider.fetchMetrics(source, since);
+    result.dataPointsFetched = dataPoints.length;
+    result.details.push(`Fetched ${dataPoints.length} data points from ${source.type}`);
+
     const metrics = await storage.getRewardKpiMetricsBySource(source.id);
 
     for (const dp of dataPoints) {
       // Find the matching metric
       const metric = metrics.find(m => m.key === dp.metricKey && m.isActive);
-      if (!metric) continue;
+      if (!metric) {
+        result.unmatchedMetrics++;
+        result.details.push(`No active metric for key "${dp.metricKey}" — skipped`);
+        continue;
+      }
 
       // Deduplicate by referenceId
       const existing = await storage.getRewardPointsLogByReference(dp.referenceId);
-      if (existing) continue;
+      if (existing) {
+        result.duplicatesSkipped++;
+        continue;
+      }
 
       const points = dp.quantity * metric.pointsPerUnit;
 
@@ -71,15 +103,22 @@ async function syncSource(source: RewardKpiSource) {
 
       // Check for badge eligibility
       await storage.checkAndAwardBadges(dp.userId);
+
+      result.pointsAwarded += points;
+      result.details.push(`+${points} pts to user #${dp.userId}: ${dp.description}`);
     }
 
     // Update last sync timestamp
     await storage.updateRewardKpiSource(source.id, { lastSyncAt: new Date() });
 
-    console.log(`Synced source "${source.name}": processed ${dataPoints.length} data points`);
-  } catch (error) {
+    console.log(`Synced source "${source.name}": ${dataPoints.length} fetched, ${result.pointsAwarded} pts awarded, ${result.duplicatesSkipped} duplicates skipped`);
+  } catch (error: any) {
+    const msg = error?.message || String(error);
+    result.errors.push(msg);
     console.error(`Error syncing source "${source.name}":`, error);
   }
+
+  return result;
 }
 
 // Sync all active sources
@@ -125,10 +164,10 @@ export function stopRewardsSyncScheduler() {
 }
 
 // Manual sync trigger for a specific source
-export async function triggerManualSync(sourceId: number) {
+export async function triggerManualSync(sourceId: number): Promise<SyncResult> {
   const source = await storage.getRewardKpiSourceById(sourceId);
   if (!source) {
     throw new Error('Source not found');
   }
-  await syncSource(source);
+  return syncSource(source);
 }

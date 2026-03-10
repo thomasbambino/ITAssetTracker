@@ -4765,8 +4765,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/rewards/sources/:id/sync', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
-      await triggerManualSync(parseInt(req.params.id));
-      res.json({ message: "Sync triggered successfully" });
+      const result = await triggerManualSync(parseInt(req.params.id));
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: "Error triggering sync", error: error.message });
     }
