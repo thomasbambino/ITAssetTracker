@@ -292,7 +292,15 @@ export default function RewardsAdmin() {
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => {
                               setEditItem(s);
-                              setFormData({ name: s.name, type: s.type, apiKey: s.apiKey || '', apiSecret: s.apiSecret || '', accountId: s.accountId || '', config: s.config || '', isActive: s.isActive, syncIntervalMinutes: s.syncIntervalMinutes });
+                              const fd: any = { name: s.name, type: s.type, apiKey: s.apiKey || '', apiSecret: s.apiSecret || '', accountId: s.accountId || '', config: s.config || '', isActive: s.isActive, syncIntervalMinutes: s.syncIntervalMinutes };
+                              if (s.type === 'zendesk' && s.config) {
+                                try {
+                                  const cfg = JSON.parse(s.config);
+                                  fd._zendeskAdminEmail = cfg.adminEmail || '';
+                                  fd._zendeskFastReplyMinutes = cfg.fastReplyThresholdMinutes ?? 30;
+                                } catch {}
+                              }
+                              setFormData(fd);
                               setSourceDialog(true);
                             }}>
                               <Edit className="h-4 w-4" />
@@ -586,13 +594,7 @@ export default function RewardsAdmin() {
           <div className="space-y-4">
             <div><Label>Name</Label><Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} /></div>
             <div><Label>Type</Label>
-              <Select value={formData.type || ''} onValueChange={v => {
-                const updates: any = { ...formData, type: v };
-                if (v === 'zendesk' && !formData.config) {
-                  updates.config = '{"adminEmail":"","fastReplyThresholdMinutes":30}';
-                }
-                setFormData(updates);
-              }}>
+              <Select value={formData.type || ''} onValueChange={v => setFormData({ ...formData, type: v })}>
                 <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="manual">Manual</SelectItem>
@@ -612,16 +614,27 @@ export default function RewardsAdmin() {
               {formData.type === 'zendesk' && <p className="text-xs text-muted-foreground mt-1">The subdomain from your Zendesk URL (mycompany.zendesk.com)</p>}
             </div>
             {formData.type === 'zendesk' && (
-              <div>
-                <Label>Config (JSON)</Label>
-                <Textarea
-                  value={formData.config || ''}
-                  onChange={e => setFormData({ ...formData, config: e.target.value })}
-                  placeholder='{"adminEmail":"admin@company.com","fastReplyThresholdMinutes":30}'
-                  rows={3}
-                />
-                <p className="text-xs text-muted-foreground mt-1">adminEmail: Zendesk admin email for API auth. fastReplyThresholdMinutes: max reply time for bonus points.</p>
-              </div>
+              <>
+                <div>
+                  <Label>Admin Email</Label>
+                  <Input
+                    type="email"
+                    value={formData._zendeskAdminEmail || ''}
+                    onChange={e => setFormData({ ...formData, _zendeskAdminEmail: e.target.value })}
+                    placeholder="admin@company.com"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">The Zendesk admin email used for API authentication</p>
+                </div>
+                <div>
+                  <Label>Fast Reply Threshold (minutes)</Label>
+                  <Input
+                    type="number"
+                    value={formData._zendeskFastReplyMinutes ?? 30}
+                    onChange={e => setFormData({ ...formData, _zendeskFastReplyMinutes: parseInt(e.target.value) || 30 })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Replies faster than this earn bonus points</p>
+                </div>
+              </>
             )}
             <div><Label>Sync Interval (minutes)</Label><Input type="number" value={formData.syncIntervalMinutes || 60} onChange={e => setFormData({ ...formData, syncIntervalMinutes: parseInt(e.target.value) })} /></div>
             <div className="flex items-center gap-2">
@@ -631,7 +644,17 @@ export default function RewardsAdmin() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setSourceDialog(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={() => sourcesMutation.mutate({ ...formData, _editId: editItem?.id })} disabled={sourcesMutation.isPending}>Save</Button>
+            <Button onClick={() => {
+              const { _zendeskAdminEmail, _zendeskFastReplyMinutes, ...rest } = formData;
+              const payload = { ...rest, _editId: editItem?.id };
+              if (formData.type === 'zendesk') {
+                payload.config = JSON.stringify({
+                  adminEmail: _zendeskAdminEmail || '',
+                  fastReplyThresholdMinutes: _zendeskFastReplyMinutes ?? 30,
+                });
+              }
+              sourcesMutation.mutate(payload);
+            }} disabled={sourcesMutation.isPending}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
