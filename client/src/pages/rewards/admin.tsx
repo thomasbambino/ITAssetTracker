@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { CustomDropdown, type DropdownOption } from "@/components/ui/custom-dropdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,6 +99,17 @@ export default function RewardsAdmin() {
     queryKey: [pointsLogUrl],
   });
 
+  // Build user dropdown options (alphabetical with "All Users" first)
+  const userDropdownOptions: DropdownOption[] = useMemo(() => {
+    const allOption: DropdownOption = { id: 'all', label: 'All Users' };
+    const userOpts = (users || []).map(u => ({
+      id: String(u.id),
+      label: `${u.firstName} ${u.lastName}`,
+      sublabel: u.email,
+    }));
+    return [allOption, ...userOpts];
+  }, [users]);
+
   // Settings mutation
   const settingsMutation = useMutation({
     mutationFn: async (config: RewardSettingsConfig) => {
@@ -126,6 +138,25 @@ export default function RewardsAdmin() {
 
   // Manual adjust state
   const [adjustData, setAdjustData] = useState({ userId: '', points: '', description: '', type: 'bonus' });
+
+  // Zendesk groups state
+  const [groupsDialog, setGroupsDialog] = useState(false);
+  const [zendeskGroups, setZendeskGroups] = useState<{ id: number; name: string }[] | null>(null);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+
+  const fetchGroups = async (sourceId: number) => {
+    setGroupsLoading(true);
+    try {
+      const res = await fetch(`/api/rewards/sources/${sourceId}/groups`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      const data = await res.json();
+      setZendeskGroups(data);
+      setGroupsDialog(true);
+    } catch (e: any) {
+      toast({ title: "Error fetching groups", description: e.message, variant: "destructive" });
+    }
+    setGroupsLoading(false);
+  };
 
   // Sync Now mutation
   const syncMutation = useMutation({
@@ -340,6 +371,11 @@ export default function RewardsAdmin() {
                             <Button variant="outline" size="sm" onClick={() => syncMutation.mutate(s.id)} disabled={syncMutation.isPending}>
                               <RefreshCw className={`h-4 w-4 mr-1 ${syncMutation.isPending ? 'animate-spin' : ''}`} /> Sync Now
                             </Button>
+                            {s.type === 'zendesk' && (
+                              <Button variant="outline" size="sm" onClick={() => fetchGroups(s.id)} disabled={groupsLoading}>
+                                Groups
+                              </Button>
+                            )}
                             {s.lastSyncAt && (
                               <Button variant="ghost" size="icon" title="Reset sync — re-pull from start date" onClick={() => resetSyncMutation.mutate(s.id)} disabled={resetSyncMutation.isPending}>
                                 <RotateCcw className="h-4 w-4" />
@@ -600,18 +636,14 @@ export default function RewardsAdmin() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Points Activity Log</CardTitle>
-              <div className="flex items-center gap-2">
-                <Select value={activityFilterUser} onValueChange={setActivityFilterUser}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="All Users" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Users</SelectItem>
-                    {users?.map(u => (
-                      <SelectItem key={u.id} value={String(u.id)}>{u.firstName} {u.lastName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-2 w-[220px]">
+                <CustomDropdown
+                  options={userDropdownOptions}
+                  value={activityFilterUser}
+                  onChange={(v) => setActivityFilterUser(String(v))}
+                  placeholder="All Users"
+                  searchPlaceholder="Search users..."
+                />
               </div>
             </CardHeader>
             <CardContent>
@@ -1014,6 +1046,39 @@ export default function RewardsAdmin() {
           )}
           <DialogFooter>
             <Button onClick={() => setSyncResultDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Zendesk Groups Dialog */}
+      <Dialog open={groupsDialog} onOpenChange={setGroupsDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Zendesk Groups</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground mb-2">
+            Use these group IDs in your source config to filter tickets by group.
+          </p>
+          {zendeskGroups && zendeskGroups.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Group Name</TableHead>
+                  <TableHead>Group ID</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {zendeskGroups.map(g => (
+                  <TableRow key={g.id}>
+                    <TableCell className="font-medium">{g.name}</TableCell>
+                    <TableCell className="font-mono text-sm">{g.id}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-sm text-muted-foreground">No groups found.</p>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setGroupsDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

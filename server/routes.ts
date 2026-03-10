@@ -30,6 +30,7 @@ import {
   insertRewardBadgeSchema, insertRewardCatalogSchema, insertRewardRedemptionSchema,
 } from "@shared/schema";
 import { triggerManualSync } from "./rewards-sync";
+import { fetchZendeskGroups } from "./zendesk-sync";
 
 // Define the session data type to fix type errors
 interface SessionData {
@@ -4769,6 +4770,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: "Error triggering sync", error: error.message });
+    }
+  });
+
+  // Fetch available Zendesk groups for a source (helps admin validate group IDs)
+  app.get('/api/rewards/sources/:id/groups', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const source = await storage.getRewardKpiSourceById(parseInt(req.params.id));
+      if (!source) return res.status(404).json({ message: "Source not found" });
+      if (source.type !== 'zendesk') return res.status(400).json({ message: "Only Zendesk sources support group listing" });
+      const groups = await fetchZendeskGroups(source);
+      res.json(groups);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching Zendesk groups", error: error.message });
     }
   });
 

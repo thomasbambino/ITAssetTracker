@@ -15,7 +15,7 @@ export interface KPIDataPoint {
 
 // Abstract interface for KPI sync providers
 export interface KPISyncProvider {
-  fetchMetrics(source: RewardKpiSource, since: Date): Promise<KPIDataPoint[]>;
+  fetchMetrics(source: RewardKpiSource, since: Date, log?: (msg: string) => void): Promise<KPIDataPoint[]>;
 }
 
 // Registry of sync providers by source type
@@ -61,7 +61,8 @@ async function syncSource(source: RewardKpiSource): Promise<SyncResult> {
   result.details.push(`Syncing since: ${since.toISOString()}`);
 
   try {
-    const dataPoints = await provider.fetchMetrics(source, since);
+    const logToDetails = (msg: string) => result.details.push(msg);
+    const dataPoints = await provider.fetchMetrics(source, since, logToDetails);
     result.dataPointsFetched = dataPoints.length;
     result.details.push(`Fetched ${dataPoints.length} data points from ${source.type}`);
 

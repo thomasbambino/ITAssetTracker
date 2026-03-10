@@ -84,8 +84,24 @@ function getMonthlyChunks(start: Date, end: Date): Array<{ from: string; to: str
   return chunks;
 }
 
+// Fetch available Zendesk groups for validation
+export async function fetchZendeskGroups(source: RewardKpiSource): Promise<{ id: number; name: string }[]> {
+  const subdomain = source.accountId;
+  const apiToken = source.apiKey;
+  if (!subdomain || !apiToken) throw new Error("Missing subdomain or API token");
+
+  let config: ZendeskConfig;
+  try { config = JSON.parse(source.config || "{}"); } catch { throw new Error("Invalid config JSON"); }
+  if (!config.adminEmail) throw new Error("Missing admin email");
+
+  const authHeader = buildAuthHeader(config.adminEmail, apiToken);
+  const data = await zendeskFetch(subdomain, "/api/v2/groups.json", authHeader);
+  return (data.groups || []).map((g: any) => ({ id: g.id, name: g.name }));
+}
+
 export class ZendeskSyncProvider implements KPISyncProvider {
-  async fetchMetrics(source: RewardKpiSource, since: Date): Promise<KPIDataPoint[]> {
+  async fetchMetrics(source: RewardKpiSource, since: Date, log?: (msg: string) => void): Promise<KPIDataPoint[]> {
+    const emit = log || (() => {});
     const subdomain = source.accountId;
     const apiToken = source.apiKey;
 
@@ -120,11 +136,42 @@ export class ZendeskSyncProvider implements KPISyncProvider {
     const filterEmails = (config.agentEmails || []).map(e => e.toLowerCase().trim()).filter(Boolean);
     const filterGroupIds = (config.groupIds || []).filter(Boolean);
 
+    emit(`Config: subdomain=${subdomain}, adminEmail=${config.adminEmail}`);
+    emit(`Date range: ${formatDate(effectiveSince)} → ${formatDate(new Date())}`);
+    emit(`Group filter: ${filterGroupIds.length > 0 ? filterGroupIds.join(', ') : '(none — all groups)'}`);
+    emit(`Agent email filter: ${filterEmails.length > 0 ? filterEmails.join(', ') : '(none — all agents)'}`);
+    emit(`Fast reply threshold: ${thresholdMinutes} minutes`);
+
+    // Fetch and log available groups for reference
+    try {
+      const groups = await fetchZendeskGroups(source);
+      emit(`Available Zendesk groups: ${groups.map(g => `${g.name} (${g.id})`).join(', ')}`);
+      if (filterGroupIds.length > 0) {
+        const matchedGroups = groups.filter(g => filterGroupIds.map(String).includes(String(g.id)));
+        const unmatchedIds = filterGroupIds.filter(id => !groups.find(g => String(g.id) === String(id)));
+        emit(`Matched groups: ${matchedGroups.map(g => `${g.name} (${g.id})`).join(', ') || '(none!)'}`);
+        if (unmatchedIds.length > 0) {
+          emit(`WARNING: Group IDs not found in Zendesk: ${unmatchedIds.join(', ')}`);
+        }
+      }
+    } catch (e: any) {
+      emit(`Could not fetch group list: ${e.message}`);
+    }
+
     const dataPoints: KPIDataPoint[] = [];
     const now = new Date();
 
+    // Tracking for skip reasons
+    let totalTicketsSeen = 0;
+    let skippedNoAssignee = 0;
+    let skippedGroupFilter = 0;
+    let skippedNoAgentEmail = 0;
+    let skippedAgentEmailFilter = 0;
+    let skippedNoAppUser = 0;
+
     // Break into monthly chunks to avoid Zendesk's 1000-result search limit
     const chunks = getMonthlyChunks(effectiveSince, now);
+    emit(`Processing ${chunks.length} monthly chunk(s)`);
 
     for (const chunk of chunks) {
       // Build search query for this chunk
@@ -133,29 +180,58 @@ export class ZendeskSyncProvider implements KPISyncProvider {
         query += ` group:${filterGroupIds[0]}`;
       }
 
+      emit(`Chunk ${chunk.from} → ${chunk.to}: query="${query}"`);
+
       let searchUrl: string | null = `/api/v2/search.json?query=${encodeURIComponent(query)}`;
+      let chunkTickets = 0;
+      let pageNum = 0;
 
       while (searchUrl) {
+        pageNum++;
         const searchData = await zendeskFetch(subdomain, searchUrl, authHeader);
         const tickets = searchData.results || [];
+        const totalCount = searchData.count;
+
+        if (pageNum === 1) {
+          emit(`  Zendesk returned ${totalCount ?? '?'} total results for this chunk`);
+        }
 
         for (const ticket of tickets) {
-          if (!ticket.assignee_id) continue;
+          totalTicketsSeen++;
+          chunkTickets++;
+
+          if (!ticket.assignee_id) {
+            skippedNoAssignee++;
+            continue;
+          }
 
           // Filter by group IDs
-          if (filterGroupIds.length > 0 && !filterGroupIds.map(String).includes(String(ticket.group_id))) continue;
+          if (filterGroupIds.length > 0 && !filterGroupIds.map(String).includes(String(ticket.group_id))) {
+            skippedGroupFilter++;
+            continue;
+          }
 
           await delay(RATE_LIMIT_DELAY);
 
           // Get agent email and match to app user
           const agentEmail = await getAgentEmail(subdomain, ticket.assignee_id, authHeader);
-          if (!agentEmail) continue;
+          if (!agentEmail) {
+            skippedNoAgentEmail++;
+            continue;
+          }
 
           // Filter by agent emails if configured
-          if (filterEmails.length > 0 && !filterEmails.includes(agentEmail.toLowerCase())) continue;
+          if (filterEmails.length > 0 && !filterEmails.includes(agentEmail.toLowerCase())) {
+            skippedAgentEmailFilter++;
+            continue;
+          }
 
           const appUser = await storage.getUserByEmail(agentEmail);
-          if (!appUser) continue;
+          if (!appUser) {
+            skippedNoAppUser++;
+            emit(`  Ticket #${ticket.id}: agent ${agentEmail} not found in app users`);
+            continue;
+          }
 
           const ticketDate = new Date(ticket.solved_at || ticket.updated_at);
 
@@ -204,8 +280,18 @@ export class ZendeskSyncProvider implements KPISyncProvider {
         }
       }
 
+      emit(`  Chunk done: ${chunkTickets} tickets processed`);
       await delay(RATE_LIMIT_DELAY);
     }
+
+    emit(`--- Summary ---`);
+    emit(`Total tickets seen: ${totalTicketsSeen}`);
+    emit(`Skipped (no assignee): ${skippedNoAssignee}`);
+    emit(`Skipped (group filter): ${skippedGroupFilter}`);
+    emit(`Skipped (agent email lookup failed): ${skippedNoAgentEmail}`);
+    emit(`Skipped (agent email filter): ${skippedAgentEmailFilter}`);
+    emit(`Skipped (agent not in app): ${skippedNoAppUser}`);
+    emit(`Data points generated: ${dataPoints.length}`);
 
     return dataPoints;
   }
