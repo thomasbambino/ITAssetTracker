@@ -10,7 +10,15 @@ import {
   type InsertAssignmentHistory, type InsertActivityLog,
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
   type InsertQrCode, type InsertNotification, type InsertBrandingSettings, type InsertEmailSettings,
-  type InsertSite, type InsertDepartment, type InsertCloudAsset, type InsertLabelSettings
+  type InsertSite, type InsertDepartment, type InsertCloudAsset, type InsertLabelSettings,
+  type RewardKpiSource, type InsertRewardKpiSource,
+  type RewardKpiMetric, type InsertRewardKpiMetric,
+  type RewardPointsLog, type InsertRewardPointsLog,
+  type RewardBalance, type InsertRewardBalance,
+  type RewardBadge, type InsertRewardBadge,
+  type RewardUserBadge, type InsertRewardUserBadge,
+  type RewardCatalog, type InsertRewardCatalog,
+  type RewardRedemption, type InsertRewardRedemption,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -148,6 +156,53 @@ export interface IStorage {
   // Label Settings operations
   getLabelSettings(): Promise<LabelSettings | undefined>;
   updateLabelSettings(settings: Partial<InsertLabelSettings>): Promise<LabelSettings>;
+
+  // Reward KPI Source operations
+  getRewardKpiSources(): Promise<RewardKpiSource[]>;
+  getRewardKpiSourceById(id: number): Promise<RewardKpiSource | undefined>;
+  createRewardKpiSource(source: InsertRewardKpiSource): Promise<RewardKpiSource>;
+  updateRewardKpiSource(id: number, source: Partial<RewardKpiSource>): Promise<RewardKpiSource | undefined>;
+  deleteRewardKpiSource(id: number): Promise<boolean>;
+
+  // Reward KPI Metric operations
+  getRewardKpiMetrics(): Promise<RewardKpiMetric[]>;
+  getRewardKpiMetricsBySource(sourceId: number): Promise<RewardKpiMetric[]>;
+  getRewardKpiMetricById(id: number): Promise<RewardKpiMetric | undefined>;
+  createRewardKpiMetric(metric: InsertRewardKpiMetric): Promise<RewardKpiMetric>;
+  updateRewardKpiMetric(id: number, metric: Partial<InsertRewardKpiMetric>): Promise<RewardKpiMetric | undefined>;
+  deleteRewardKpiMetric(id: number): Promise<boolean>;
+
+  // Reward Points Log operations
+  createRewardPointsLog(entry: InsertRewardPointsLog): Promise<RewardPointsLog>;
+  getRewardPointsLogByUser(userId: number, limit?: number, offset?: number): Promise<RewardPointsLog[]>;
+  getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined>;
+
+  // Reward Balance operations
+  getRewardBalance(userId: number): Promise<RewardBalance | undefined>;
+  updateRewardBalance(userId: number, earnedDelta: number, redeemedDelta: number): Promise<RewardBalance>;
+  getRewardLeaderboard(): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null })[]>;
+
+  // Reward Badge operations
+  getRewardBadges(): Promise<RewardBadge[]>;
+  createRewardBadge(badge: InsertRewardBadge): Promise<RewardBadge>;
+  updateRewardBadge(id: number, badge: Partial<InsertRewardBadge>): Promise<RewardBadge | undefined>;
+  deleteRewardBadge(id: number): Promise<boolean>;
+  getRewardUserBadges(userId: number): Promise<(RewardUserBadge & { badge: RewardBadge })[]>;
+  awardRewardBadge(userId: number, badgeId: number): Promise<RewardUserBadge>;
+  checkAndAwardBadges(userId: number): Promise<void>;
+
+  // Reward Catalog operations
+  getRewardCatalog(activeOnly?: boolean): Promise<RewardCatalog[]>;
+  getRewardCatalogById(id: number): Promise<RewardCatalog | undefined>;
+  createRewardCatalogItem(item: InsertRewardCatalog): Promise<RewardCatalog>;
+  updateRewardCatalogItem(id: number, item: Partial<InsertRewardCatalog>): Promise<RewardCatalog | undefined>;
+  deleteRewardCatalogItem(id: number): Promise<boolean>;
+
+  // Reward Redemption operations
+  createRewardRedemption(redemption: InsertRewardRedemption): Promise<RewardRedemption>;
+  getRewardRedemptionsByUser(userId: number): Promise<RewardRedemption[]>;
+  getRewardRedemptions(status?: string): Promise<(RewardRedemption & { firstName: string; lastName: string; itemName: string })[]>;
+  updateRewardRedemption(id: number, data: Partial<RewardRedemption>): Promise<RewardRedemption | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -648,6 +703,41 @@ export class MemStorage implements IStorage {
   async updateLabelSettings(settings: Partial<InsertLabelSettings>): Promise<LabelSettings> {
     throw new Error("Label Settings operations not implemented in MemStorage");
   }
+
+  // Reward operations - stub implementations
+  async getRewardKpiSources(): Promise<RewardKpiSource[]> { return []; }
+  async getRewardKpiSourceById(id: number): Promise<RewardKpiSource | undefined> { return undefined; }
+  async createRewardKpiSource(source: InsertRewardKpiSource): Promise<RewardKpiSource> { throw new Error("Not implemented in MemStorage"); }
+  async updateRewardKpiSource(id: number, source: Partial<RewardKpiSource>): Promise<RewardKpiSource | undefined> { return undefined; }
+  async deleteRewardKpiSource(id: number): Promise<boolean> { return false; }
+  async getRewardKpiMetrics(): Promise<RewardKpiMetric[]> { return []; }
+  async getRewardKpiMetricsBySource(sourceId: number): Promise<RewardKpiMetric[]> { return []; }
+  async getRewardKpiMetricById(id: number): Promise<RewardKpiMetric | undefined> { return undefined; }
+  async createRewardKpiMetric(metric: InsertRewardKpiMetric): Promise<RewardKpiMetric> { throw new Error("Not implemented in MemStorage"); }
+  async updateRewardKpiMetric(id: number, metric: Partial<InsertRewardKpiMetric>): Promise<RewardKpiMetric | undefined> { return undefined; }
+  async deleteRewardKpiMetric(id: number): Promise<boolean> { return false; }
+  async createRewardPointsLog(entry: InsertRewardPointsLog): Promise<RewardPointsLog> { throw new Error("Not implemented in MemStorage"); }
+  async getRewardPointsLogByUser(userId: number, limit?: number, offset?: number): Promise<RewardPointsLog[]> { return []; }
+  async getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined> { return undefined; }
+  async getRewardBalance(userId: number): Promise<RewardBalance | undefined> { return undefined; }
+  async updateRewardBalance(userId: number, earnedDelta: number, redeemedDelta: number): Promise<RewardBalance> { throw new Error("Not implemented in MemStorage"); }
+  async getRewardLeaderboard(): Promise<any[]> { return []; }
+  async getRewardBadges(): Promise<RewardBadge[]> { return []; }
+  async createRewardBadge(badge: InsertRewardBadge): Promise<RewardBadge> { throw new Error("Not implemented in MemStorage"); }
+  async updateRewardBadge(id: number, badge: Partial<InsertRewardBadge>): Promise<RewardBadge | undefined> { return undefined; }
+  async deleteRewardBadge(id: number): Promise<boolean> { return false; }
+  async getRewardUserBadges(userId: number): Promise<any[]> { return []; }
+  async awardRewardBadge(userId: number, badgeId: number): Promise<RewardUserBadge> { throw new Error("Not implemented in MemStorage"); }
+  async checkAndAwardBadges(userId: number): Promise<void> { }
+  async getRewardCatalog(activeOnly?: boolean): Promise<RewardCatalog[]> { return []; }
+  async getRewardCatalogById(id: number): Promise<RewardCatalog | undefined> { return undefined; }
+  async createRewardCatalogItem(item: InsertRewardCatalog): Promise<RewardCatalog> { throw new Error("Not implemented in MemStorage"); }
+  async updateRewardCatalogItem(id: number, item: Partial<InsertRewardCatalog>): Promise<RewardCatalog | undefined> { return undefined; }
+  async deleteRewardCatalogItem(id: number): Promise<boolean> { return false; }
+  async createRewardRedemption(redemption: InsertRewardRedemption): Promise<RewardRedemption> { throw new Error("Not implemented in MemStorage"); }
+  async getRewardRedemptionsByUser(userId: number): Promise<RewardRedemption[]> { return []; }
+  async getRewardRedemptions(status?: string): Promise<any[]> { return []; }
+  async updateRewardRedemption(id: number, data: Partial<RewardRedemption>): Promise<RewardRedemption | undefined> { return undefined; }
 }
 
 // Import DatabaseStorage

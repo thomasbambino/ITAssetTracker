@@ -623,3 +623,175 @@ export const insertLabelSettingsSchema = createInsertSchema(labelSettings).omit(
 
 export type InsertLabelSettings = z.infer<typeof insertLabelSettingsSchema>;
 export type LabelSettings = typeof labelSettings.$inferSelect;
+
+// ==========================================
+// Employee Rewards System Tables
+// ==========================================
+
+// KPI Sources - Defines connected platforms (Zoom Phone, Zendesk, Google Reviews, etc.)
+export const rewardKpiSources = pgTable("reward_kpi_sources", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // zoom_phone, zendesk, google_reviews, manual
+  apiKey: text("api_key"),
+  apiSecret: text("api_secret"),
+  accountId: text("account_id"),
+  config: text("config"), // JSON config (endpoints, field mappings, etc.)
+  isActive: boolean("is_active").default(true),
+  lastSyncAt: timestamp("last_sync_at"),
+  syncIntervalMinutes: integer("sync_interval_minutes").default(60),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRewardKpiSourceSchema = createInsertSchema(rewardKpiSources).omit({
+  id: true,
+  createdAt: true,
+  lastSyncAt: true,
+});
+
+export type InsertRewardKpiSource = z.infer<typeof insertRewardKpiSourceSchema>;
+export type RewardKpiSource = typeof rewardKpiSources.$inferSelect;
+
+// KPI Metrics - Defines what metrics are tracked per source
+export const rewardKpiMetrics = pgTable("reward_kpi_metrics", {
+  id: serial("id").primaryKey(),
+  sourceId: integer("source_id").references(() => rewardKpiSources.id),
+  name: text("name").notNull(),
+  key: text("key").notNull(), // API field key for mapping
+  pointsPerUnit: integer("points_per_unit").notNull().default(1),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRewardKpiMetricSchema = createInsertSchema(rewardKpiMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRewardKpiMetric = z.infer<typeof insertRewardKpiMetricSchema>;
+export type RewardKpiMetric = typeof rewardKpiMetrics.$inferSelect;
+
+// Points Log - Individual point transactions (audit trail)
+export const rewardPointsLog = pgTable("reward_points_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  metricId: integer("metric_id").references(() => rewardKpiMetrics.id),
+  points: integer("points").notNull(),
+  quantity: integer("quantity").default(1),
+  description: text("description"),
+  type: text("type").notNull(), // earned, redeemed, bonus, adjustment
+  referenceId: text("reference_id"), // External ID (ticket #, call ID, etc.)
+  periodStart: timestamp("period_start"),
+  periodEnd: timestamp("period_end"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRewardPointsLogSchema = createInsertSchema(rewardPointsLog).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  periodStart: z.union([z.string().transform((str) => new Date(str)), z.date(), z.null()]).optional().nullable(),
+  periodEnd: z.union([z.string().transform((str) => new Date(str)), z.date(), z.null()]).optional().nullable(),
+});
+
+export type InsertRewardPointsLog = z.infer<typeof insertRewardPointsLogSchema>;
+export type RewardPointsLog = typeof rewardPointsLog.$inferSelect;
+
+// Balances - Cached running point totals per user
+export const rewardBalances = pgTable("reward_balances", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  totalEarned: integer("total_earned").notNull().default(0),
+  totalRedeemed: integer("total_redeemed").notNull().default(0),
+  currentBalance: integer("current_balance").notNull().default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertRewardBalanceSchema = createInsertSchema(rewardBalances).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertRewardBalance = z.infer<typeof insertRewardBalanceSchema>;
+export type RewardBalance = typeof rewardBalances.$inferSelect;
+
+// Badges - Badge definitions
+export const rewardBadges = pgTable("reward_badges", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  icon: text("icon"), // Emoji or icon identifier
+  color: text("color"), // Badge color (hex)
+  threshold: integer("threshold").notNull(), // Points needed to earn
+  metricId: integer("metric_id").references(() => rewardKpiMetrics.id), // Nullable - specific metric or total points
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRewardBadgeSchema = createInsertSchema(rewardBadges).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRewardBadge = z.infer<typeof insertRewardBadgeSchema>;
+export type RewardBadge = typeof rewardBadges.$inferSelect;
+
+// User Badges - Badges earned by users
+export const rewardUserBadges = pgTable("reward_user_badges", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  badgeId: integer("badge_id").references(() => rewardBadges.id).notNull(),
+  earnedAt: timestamp("earned_at").defaultNow(),
+});
+
+export const insertRewardUserBadgeSchema = createInsertSchema(rewardUserBadges).omit({
+  id: true,
+  earnedAt: true,
+});
+
+export type InsertRewardUserBadge = z.infer<typeof insertRewardUserBadgeSchema>;
+export type RewardUserBadge = typeof rewardUserBadges.$inferSelect;
+
+// Catalog - Items available for point redemption
+export const rewardCatalog = pgTable("reward_catalog", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  pointsCost: integer("points_cost").notNull(),
+  category: text("category"), // gift_card, pto, swag, experience
+  imageUrl: text("image_url"),
+  stock: integer("stock"), // Nullable - unlimited if null
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRewardCatalogSchema = createInsertSchema(rewardCatalog).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRewardCatalog = z.infer<typeof insertRewardCatalogSchema>;
+export type RewardCatalog = typeof rewardCatalog.$inferSelect;
+
+// Redemptions - Redemption history
+export const rewardRedemptions = pgTable("reward_redemptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  catalogItemId: integer("catalog_item_id").references(() => rewardCatalog.id).notNull(),
+  pointsSpent: integer("points_spent").notNull(),
+  status: text("status").notNull().default('pending'), // pending, approved, fulfilled, denied
+  approvedBy: integer("approved_by").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  fulfilledAt: timestamp("fulfilled_at"),
+});
+
+export const insertRewardRedemptionSchema = createInsertSchema(rewardRedemptions).omit({
+  id: true,
+  createdAt: true,
+  fulfilledAt: true,
+  approvedBy: true,
+});
+
+export type InsertRewardRedemption = z.infer<typeof insertRewardRedemptionSchema>;
+export type RewardRedemption = typeof rewardRedemptions.$inferSelect;

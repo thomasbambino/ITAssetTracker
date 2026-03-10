@@ -25,8 +25,11 @@ import {
   insertUserSchema, insertDeviceSchema, insertCategorySchema,
   insertSoftwareSchema, insertSoftwareAssignmentSchema, insertMaintenanceRecordSchema,
   insertQrCodeSchema, insertNotificationSchema, insertBrandingSettingsSchema, insertSiteSchema,
-  insertDepartmentSchema, insertCloudAssetSchema
+  insertDepartmentSchema, insertCloudAssetSchema,
+  insertRewardKpiSourceSchema, insertRewardKpiMetricSchema, insertRewardPointsLogSchema,
+  insertRewardBadgeSchema, insertRewardCatalogSchema, insertRewardRedemptionSchema,
 } from "@shared/schema";
+import { triggerManualSync } from "./rewards-sync";
 
 // Define the session data type to fix type errors
 interface SessionData {
@@ -4715,6 +4718,373 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error importing cloud assets:", error);
       res.status(500).json({ message: "Error importing cloud assets", error: error.message });
+    }
+  });
+
+  // ==========================================
+  // REWARDS SYSTEM ROUTES
+  // ==========================================
+
+  // --- Admin-only: KPI Sources ---
+  app.get('/api/rewards/sources', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const sources = await storage.getRewardKpiSources();
+      res.json(sources);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching KPI sources", error: error.message });
+    }
+  });
+
+  app.post('/api/rewards/sources', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const source = await storage.createRewardKpiSource(req.body);
+      res.json(source);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error creating KPI source", error: error.message });
+    }
+  });
+
+  app.put('/api/rewards/sources/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const source = await storage.updateRewardKpiSource(parseInt(req.params.id), req.body);
+      if (!source) return res.status(404).json({ message: "Source not found" });
+      res.json(source);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error updating KPI source", error: error.message });
+    }
+  });
+
+  app.delete('/api/rewards/sources/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const deleted = await storage.deleteRewardKpiSource(parseInt(req.params.id));
+      res.json({ success: deleted });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error deleting KPI source", error: error.message });
+    }
+  });
+
+  app.post('/api/rewards/sources/:id/sync', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      await triggerManualSync(parseInt(req.params.id));
+      res.json({ message: "Sync triggered successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error triggering sync", error: error.message });
+    }
+  });
+
+  // --- Admin-only: KPI Metrics ---
+  app.get('/api/rewards/sources/:id/metrics', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const metrics = await storage.getRewardKpiMetricsBySource(parseInt(req.params.id));
+      res.json(metrics);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching metrics", error: error.message });
+    }
+  });
+
+  app.get('/api/rewards/metrics', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const metrics = await storage.getRewardKpiMetrics();
+      res.json(metrics);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching metrics", error: error.message });
+    }
+  });
+
+  app.post('/api/rewards/metrics', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const metric = await storage.createRewardKpiMetric(req.body);
+      res.json(metric);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error creating metric", error: error.message });
+    }
+  });
+
+  app.put('/api/rewards/metrics/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const metric = await storage.updateRewardKpiMetric(parseInt(req.params.id), req.body);
+      if (!metric) return res.status(404).json({ message: "Metric not found" });
+      res.json(metric);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error updating metric", error: error.message });
+    }
+  });
+
+  app.delete('/api/rewards/metrics/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const deleted = await storage.deleteRewardKpiMetric(parseInt(req.params.id));
+      res.json({ success: deleted });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error deleting metric", error: error.message });
+    }
+  });
+
+  // --- Admin-only: Badges ---
+  app.get('/api/rewards/badges', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const badges = await storage.getRewardBadges();
+      res.json(badges);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching badges", error: error.message });
+    }
+  });
+
+  app.post('/api/rewards/badges', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const badge = await storage.createRewardBadge(req.body);
+      res.json(badge);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error creating badge", error: error.message });
+    }
+  });
+
+  app.put('/api/rewards/badges/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const badge = await storage.updateRewardBadge(parseInt(req.params.id), req.body);
+      if (!badge) return res.status(404).json({ message: "Badge not found" });
+      res.json(badge);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error updating badge", error: error.message });
+    }
+  });
+
+  app.delete('/api/rewards/badges/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const deleted = await storage.deleteRewardBadge(parseInt(req.params.id));
+      res.json({ success: deleted });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error deleting badge", error: error.message });
+    }
+  });
+
+  // --- Admin-only: Catalog ---
+  app.post('/api/rewards/catalog', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const item = await storage.createRewardCatalogItem(req.body);
+      res.json(item);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error creating catalog item", error: error.message });
+    }
+  });
+
+  app.put('/api/rewards/catalog/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const item = await storage.updateRewardCatalogItem(parseInt(req.params.id), req.body);
+      if (!item) return res.status(404).json({ message: "Catalog item not found" });
+      res.json(item);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error updating catalog item", error: error.message });
+    }
+  });
+
+  app.delete('/api/rewards/catalog/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const deleted = await storage.deleteRewardCatalogItem(parseInt(req.params.id));
+      res.json({ success: deleted });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error deleting catalog item", error: error.message });
+    }
+  });
+
+  // --- Admin-only: Redemptions management ---
+  app.get('/api/rewards/redemptions', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const redemptions = await storage.getRewardRedemptions(status);
+      res.json(redemptions);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching redemptions", error: error.message });
+    }
+  });
+
+  app.put('/api/rewards/redemptions/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const redemptionId = parseInt(req.params.id);
+      const { status, notes } = req.body;
+
+      const updateData: any = { status, notes };
+      if (status === 'approved' || status === 'denied') {
+        updateData.approvedBy = sessionData.userId;
+      }
+      if (status === 'fulfilled') {
+        updateData.fulfilledAt = new Date();
+      }
+
+      // If denied, refund the points
+      if (status === 'denied') {
+        const redemption = await storage.getRewardRedemptions();
+        const thisRedemption = redemption.find(r => r.id === redemptionId);
+        if (thisRedemption && thisRedemption.status === 'pending') {
+          await storage.updateRewardBalance(thisRedemption.userId, 0, -thisRedemption.pointsSpent);
+        }
+      }
+
+      const updated = await storage.updateRewardRedemption(redemptionId, updateData);
+      if (!updated) return res.status(404).json({ message: "Redemption not found" });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error updating redemption", error: error.message });
+    }
+  });
+
+  // --- Admin-only: Manual point adjustment ---
+  app.post('/api/rewards/points/adjust', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { userId, points, description, type } = req.body;
+      if (!userId || points === undefined) {
+        return res.status(400).json({ message: "userId and points are required" });
+      }
+
+      const pointType = type || (points >= 0 ? 'bonus' : 'adjustment');
+
+      // Create points log entry
+      const entry = await storage.createRewardPointsLog({
+        userId,
+        points,
+        description: description || 'Manual adjustment',
+        type: pointType,
+        metricId: null,
+        referenceId: null,
+        periodStart: null,
+        periodEnd: null,
+        quantity: 1,
+      });
+
+      // Update balance
+      if (points >= 0) {
+        await storage.updateRewardBalance(userId, points, 0);
+      } else {
+        await storage.updateRewardBalance(userId, 0, Math.abs(points));
+      }
+
+      // Check badges
+      await storage.checkAndAwardBadges(userId);
+
+      res.json(entry);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error adjusting points", error: error.message });
+    }
+  });
+
+  // --- All authenticated users ---
+  app.get('/api/rewards/leaderboard', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const leaderboard = await storage.getRewardLeaderboard();
+      res.json(leaderboard);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching leaderboard", error: error.message });
+    }
+  });
+
+  app.get('/api/rewards/my/balance', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const balance = await storage.getRewardBalance(sessionData.userId);
+      res.json(balance || { userId: sessionData.userId, totalEarned: 0, totalRedeemed: 0, currentBalance: 0 });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching balance", error: error.message });
+    }
+  });
+
+  app.get('/api/rewards/my/history', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const history = await storage.getRewardPointsLogByUser(sessionData.userId, limit, offset);
+      res.json(history);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching history", error: error.message });
+    }
+  });
+
+  app.get('/api/rewards/my/badges', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const badges = await storage.getRewardUserBadges(sessionData.userId);
+      res.json(badges);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching badges", error: error.message });
+    }
+  });
+
+  app.get('/api/rewards/catalog', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const isAdminUser = sessionData.userRole === 'admin';
+      const catalog = await storage.getRewardCatalog(!isAdminUser);
+      res.json(catalog);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching catalog", error: error.message });
+    }
+  });
+
+  app.post('/api/rewards/redeem', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const { catalogItemId } = req.body;
+
+      // Get the catalog item
+      const item = await storage.getRewardCatalogById(catalogItemId);
+      if (!item || !item.isActive) {
+        return res.status(404).json({ message: "Catalog item not found or inactive" });
+      }
+
+      // Check stock
+      if (item.stock !== null && item.stock <= 0) {
+        return res.status(400).json({ message: "Item is out of stock" });
+      }
+
+      // Check user balance
+      const balance = await storage.getRewardBalance(sessionData.userId);
+      if (!balance || balance.currentBalance < item.pointsCost) {
+        return res.status(400).json({ message: "Insufficient points" });
+      }
+
+      // Create redemption record
+      const redemption = await storage.createRewardRedemption({
+        userId: sessionData.userId,
+        catalogItemId: item.id,
+        pointsSpent: item.pointsCost,
+        status: 'pending',
+        notes: null,
+      });
+
+      // Deduct points
+      await storage.updateRewardBalance(sessionData.userId, 0, item.pointsCost);
+
+      // Create points log entry
+      await storage.createRewardPointsLog({
+        userId: sessionData.userId,
+        points: -item.pointsCost,
+        description: `Redeemed: ${item.name}`,
+        type: 'redeemed',
+        metricId: null,
+        referenceId: `redemption-${redemption.id}`,
+        periodStart: null,
+        periodEnd: null,
+        quantity: 1,
+      });
+
+      // Decrement stock if applicable
+      if (item.stock !== null) {
+        await storage.updateRewardCatalogItem(item.id, { stock: item.stock - 1 });
+      }
+
+      res.json(redemption);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error processing redemption", error: error.message });
+    }
+  });
+
+  app.get('/api/rewards/my/redemptions', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const redemptions = await storage.getRewardRedemptionsByUser(sessionData.userId);
+      res.json(redemptions);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching redemptions", error: error.message });
     }
   });
 

@@ -25,6 +25,7 @@ import {
   CloudIcon,
   AlertCircleIcon,
   AlertTriangleIcon,
+  TrophyIcon,
 } from 'lucide-react';
 
 // Define category groups
@@ -231,6 +232,32 @@ export function DesktopSidebar() {
       icon: SettingsIcon,
       category: 'user',
     },
+    // Rewards - visible to all roles
+    {
+      href: '/rewards',
+      label: 'Leaderboard',
+      icon: TrophyIcon,
+      category: 'rewards',
+    },
+    {
+      href: '/rewards/catalog',
+      label: 'Rewards Catalog',
+      icon: TrophyIcon,
+      category: 'rewards',
+    },
+    {
+      href: '/rewards/my',
+      label: 'My Rewards',
+      icon: TrophyIcon,
+      category: 'rewards',
+    },
+    // Admin-only rewards management
+    {
+      href: '/rewards/admin',
+      label: 'Rewards Admin',
+      icon: TrophyIcon,
+      category: 'rewards-admin',
+    },
   ];
 
   // Filter routes based on user role and customize labels
@@ -239,13 +266,13 @@ export function DesktopSidebar() {
     if (!currentUser) {
       return route.href === '/';
     }
-    // Managers (users with isManager: true) can see dashboard, users, devices, software, notifications, and their personal pages
+    // Managers (users with isManager: true) can see dashboard, users, devices, software, notifications, personal pages, and rewards
     if (currentUser.isManager) {
-      return ['/', '/users', '/devices', '/software', '/notifications', '/user-dashboard', '/guest-devices', '/guest-software', '/user-settings'].includes(route.href);
+      return ['/', '/users', '/devices', '/software', '/notifications', '/user-dashboard', '/guest-devices', '/guest-software', '/user-settings', '/rewards', '/rewards/catalog', '/rewards/my'].includes(route.href);
     }
-    // Regular users can see dashboard, devices, software, notifications, and user settings
+    // Regular users can see dashboard, devices, software, notifications, user settings, and rewards
     if (currentUser.role === 'user') {
-      return ['/', '/devices', '/software', '/notifications', '/user-settings'].includes(route.href);
+      return ['/', '/devices', '/software', '/notifications', '/user-settings', '/rewards', '/rewards/catalog', '/rewards/my'].includes(route.href);
     }
     // Admins can see all routes
     return true;
@@ -372,11 +399,29 @@ export function DesktopSidebar() {
           </div>
         </div>
 
+        {/* Rewards Group for all users */}
+        {routes.some(r => r.category === 'rewards') && (
+          <>
+            <Separator className="mx-2" />
+            <div>
+              <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Rewards
+              </h3>
+              <div className="mt-1 space-y-1">
+                {routes
+                  .filter(route => route.category === 'rewards')
+                  .map(renderNavItem)
+                }
+              </div>
+            </div>
+          </>
+        )}
+
         {/* System Group for regular users only (not managers) */}
         {currentUser?.role === 'user' && !currentUser?.isManager && (
           <>
             <Separator className="mx-2" />
-            
+
             <div>
               <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 System
@@ -419,7 +464,7 @@ export function DesktopSidebar() {
                   </h3>
                   <div className="mt-1 space-y-1">
                     {routes
-                      .filter(route => route.category === 'management')
+                      .filter(route => route.category === 'management' || route.category === 'rewards-admin')
                       .map(renderNavItem)
                     }
                   </div>

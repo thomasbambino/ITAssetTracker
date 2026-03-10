@@ -8,7 +8,15 @@ import {
   type InsertSoftware, type InsertSoftwareAssignment, type InsertMaintenanceRecord,
   type InsertQrCode, type InsertNotification, type InsertBrandingSettings,
   type InsertEmailSettings, type InsertSite, type InsertGameHighScore, type InsertCloudAsset,
-  type InsertLabelSettings
+  type InsertLabelSettings,
+  type RewardKpiSource, type InsertRewardKpiSource,
+  type RewardKpiMetric, type InsertRewardKpiMetric,
+  type RewardPointsLog, type InsertRewardPointsLog,
+  type RewardBalance, type InsertRewardBalance,
+  type RewardBadge, type InsertRewardBadge,
+  type RewardUserBadge, type InsertRewardUserBadge,
+  type RewardCatalog, type InsertRewardCatalog,
+  type RewardRedemption, type InsertRewardRedemption,
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
@@ -4889,5 +4897,487 @@ export class DatabaseStorage implements IStorage {
       console.error('Error updating label settings:', error);
       throw error;
     }
+  }
+
+  // ==========================================
+  // Reward KPI Source operations
+  // ==========================================
+
+  async getRewardKpiSources(): Promise<RewardKpiSource[]> {
+    return await db.any(`
+      SELECT id, name, type, api_key as "apiKey", api_secret as "apiSecret",
+        account_id as "accountId", config, is_active as "isActive",
+        last_sync_at as "lastSyncAt", sync_interval_minutes as "syncIntervalMinutes",
+        created_at as "createdAt"
+      FROM reward_kpi_sources ORDER BY name
+    `);
+  }
+
+  async getRewardKpiSourceById(id: number): Promise<RewardKpiSource | undefined> {
+    try {
+      return await db.one(`
+        SELECT id, name, type, api_key as "apiKey", api_secret as "apiSecret",
+          account_id as "accountId", config, is_active as "isActive",
+          last_sync_at as "lastSyncAt", sync_interval_minutes as "syncIntervalMinutes",
+          created_at as "createdAt"
+        FROM reward_kpi_sources WHERE id = $1
+      `, [id]);
+    } catch { return undefined; }
+  }
+
+  async createRewardKpiSource(source: InsertRewardKpiSource): Promise<RewardKpiSource> {
+    return await db.one(`
+      INSERT INTO reward_kpi_sources (name, type, api_key, api_secret, account_id, config, is_active, sync_interval_minutes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, name, type, api_key as "apiKey", api_secret as "apiSecret",
+        account_id as "accountId", config, is_active as "isActive",
+        last_sync_at as "lastSyncAt", sync_interval_minutes as "syncIntervalMinutes",
+        created_at as "createdAt"
+    `, [source.name, source.type, source.apiKey || null, source.apiSecret || null,
+        source.accountId || null, source.config || null, source.isActive ?? true,
+        source.syncIntervalMinutes || 60]);
+  }
+
+  async updateRewardKpiSource(id: number, source: Partial<RewardKpiSource>): Promise<RewardKpiSource | undefined> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    let p = 1;
+
+    if (source.name !== undefined) { updates.push(`name = $${p++}`); values.push(source.name); }
+    if (source.type !== undefined) { updates.push(`type = $${p++}`); values.push(source.type); }
+    if (source.apiKey !== undefined) { updates.push(`api_key = $${p++}`); values.push(source.apiKey); }
+    if (source.apiSecret !== undefined) { updates.push(`api_secret = $${p++}`); values.push(source.apiSecret); }
+    if (source.accountId !== undefined) { updates.push(`account_id = $${p++}`); values.push(source.accountId); }
+    if (source.config !== undefined) { updates.push(`config = $${p++}`); values.push(source.config); }
+    if (source.isActive !== undefined) { updates.push(`is_active = $${p++}`); values.push(source.isActive); }
+    if (source.syncIntervalMinutes !== undefined) { updates.push(`sync_interval_minutes = $${p++}`); values.push(source.syncIntervalMinutes); }
+    if (source.lastSyncAt !== undefined) { updates.push(`last_sync_at = $${p++}`); values.push(source.lastSyncAt); }
+
+    if (updates.length === 0) return this.getRewardKpiSourceById(id);
+
+    values.push(id);
+    try {
+      return await db.one(`
+        UPDATE reward_kpi_sources SET ${updates.join(', ')} WHERE id = $${p}
+        RETURNING id, name, type, api_key as "apiKey", api_secret as "apiSecret",
+          account_id as "accountId", config, is_active as "isActive",
+          last_sync_at as "lastSyncAt", sync_interval_minutes as "syncIntervalMinutes",
+          created_at as "createdAt"
+      `, values);
+    } catch { return undefined; }
+  }
+
+  async deleteRewardKpiSource(id: number): Promise<boolean> {
+    const result = await db.result(`DELETE FROM reward_kpi_sources WHERE id = $1`, [id]);
+    return result.rowCount > 0;
+  }
+
+  // ==========================================
+  // Reward KPI Metric operations
+  // ==========================================
+
+  async getRewardKpiMetrics(): Promise<RewardKpiMetric[]> {
+    return await db.any(`
+      SELECT id, source_id as "sourceId", name, key, points_per_unit as "pointsPerUnit",
+        description, is_active as "isActive", created_at as "createdAt"
+      FROM reward_kpi_metrics ORDER BY name
+    `);
+  }
+
+  async getRewardKpiMetricsBySource(sourceId: number): Promise<RewardKpiMetric[]> {
+    return await db.any(`
+      SELECT id, source_id as "sourceId", name, key, points_per_unit as "pointsPerUnit",
+        description, is_active as "isActive", created_at as "createdAt"
+      FROM reward_kpi_metrics WHERE source_id = $1 ORDER BY name
+    `, [sourceId]);
+  }
+
+  async getRewardKpiMetricById(id: number): Promise<RewardKpiMetric | undefined> {
+    try {
+      return await db.one(`
+        SELECT id, source_id as "sourceId", name, key, points_per_unit as "pointsPerUnit",
+          description, is_active as "isActive", created_at as "createdAt"
+        FROM reward_kpi_metrics WHERE id = $1
+      `, [id]);
+    } catch { return undefined; }
+  }
+
+  async createRewardKpiMetric(metric: InsertRewardKpiMetric): Promise<RewardKpiMetric> {
+    return await db.one(`
+      INSERT INTO reward_kpi_metrics (source_id, name, key, points_per_unit, description, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id, source_id as "sourceId", name, key, points_per_unit as "pointsPerUnit",
+        description, is_active as "isActive", created_at as "createdAt"
+    `, [metric.sourceId || null, metric.name, metric.key, metric.pointsPerUnit || 1,
+        metric.description || null, metric.isActive ?? true]);
+  }
+
+  async updateRewardKpiMetric(id: number, metric: Partial<InsertRewardKpiMetric>): Promise<RewardKpiMetric | undefined> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    let p = 1;
+
+    if (metric.sourceId !== undefined) { updates.push(`source_id = $${p++}`); values.push(metric.sourceId); }
+    if (metric.name !== undefined) { updates.push(`name = $${p++}`); values.push(metric.name); }
+    if (metric.key !== undefined) { updates.push(`key = $${p++}`); values.push(metric.key); }
+    if (metric.pointsPerUnit !== undefined) { updates.push(`points_per_unit = $${p++}`); values.push(metric.pointsPerUnit); }
+    if (metric.description !== undefined) { updates.push(`description = $${p++}`); values.push(metric.description); }
+    if (metric.isActive !== undefined) { updates.push(`is_active = $${p++}`); values.push(metric.isActive); }
+
+    if (updates.length === 0) return this.getRewardKpiMetricById(id);
+
+    values.push(id);
+    try {
+      return await db.one(`
+        UPDATE reward_kpi_metrics SET ${updates.join(', ')} WHERE id = $${p}
+        RETURNING id, source_id as "sourceId", name, key, points_per_unit as "pointsPerUnit",
+          description, is_active as "isActive", created_at as "createdAt"
+      `, values);
+    } catch { return undefined; }
+  }
+
+  async deleteRewardKpiMetric(id: number): Promise<boolean> {
+    const result = await db.result(`DELETE FROM reward_kpi_metrics WHERE id = $1`, [id]);
+    return result.rowCount > 0;
+  }
+
+  // ==========================================
+  // Reward Points Log operations
+  // ==========================================
+
+  async createRewardPointsLog(entry: InsertRewardPointsLog): Promise<RewardPointsLog> {
+    return await db.one(`
+      INSERT INTO reward_points_log (user_id, metric_id, points, quantity, description, type, reference_id, period_start, period_end)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id, user_id as "userId", metric_id as "metricId", points, quantity,
+        description, type, reference_id as "referenceId",
+        period_start as "periodStart", period_end as "periodEnd", created_at as "createdAt"
+    `, [entry.userId, entry.metricId || null, entry.points, entry.quantity || 1,
+        entry.description || null, entry.type, entry.referenceId || null,
+        entry.periodStart || null, entry.periodEnd || null]);
+  }
+
+  async getRewardPointsLogByUser(userId: number, limit: number = 50, offset: number = 0): Promise<RewardPointsLog[]> {
+    return await db.any(`
+      SELECT id, user_id as "userId", metric_id as "metricId", points, quantity,
+        description, type, reference_id as "referenceId",
+        period_start as "periodStart", period_end as "periodEnd", created_at as "createdAt"
+      FROM reward_points_log WHERE user_id = $1
+      ORDER BY created_at DESC LIMIT $2 OFFSET $3
+    `, [userId, limit, offset]);
+  }
+
+  async getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined> {
+    try {
+      return await db.one(`
+        SELECT id, user_id as "userId", metric_id as "metricId", points, quantity,
+          description, type, reference_id as "referenceId",
+          period_start as "periodStart", period_end as "periodEnd", created_at as "createdAt"
+        FROM reward_points_log WHERE reference_id = $1
+      `, [referenceId]);
+    } catch { return undefined; }
+  }
+
+  // ==========================================
+  // Reward Balance operations
+  // ==========================================
+
+  async getRewardBalance(userId: number): Promise<RewardBalance | undefined> {
+    try {
+      return await db.one(`
+        SELECT id, user_id as "userId", total_earned as "totalEarned",
+          total_redeemed as "totalRedeemed", current_balance as "currentBalance",
+          updated_at as "updatedAt"
+        FROM reward_balances WHERE user_id = $1
+      `, [userId]);
+    } catch { return undefined; }
+  }
+
+  async updateRewardBalance(userId: number, earnedDelta: number, redeemedDelta: number): Promise<RewardBalance> {
+    // Upsert: create balance row if not exists, otherwise update
+    return await db.one(`
+      INSERT INTO reward_balances (user_id, total_earned, total_redeemed, current_balance, updated_at)
+      VALUES ($1, GREATEST(0, $2), GREATEST(0, $3), GREATEST(0, $2) - GREATEST(0, $3), NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        total_earned = reward_balances.total_earned + $2,
+        total_redeemed = reward_balances.total_redeemed + $3,
+        current_balance = reward_balances.total_earned + $2 - (reward_balances.total_redeemed + $3),
+        updated_at = NOW()
+      RETURNING id, user_id as "userId", total_earned as "totalEarned",
+        total_redeemed as "totalRedeemed", current_balance as "currentBalance",
+        updated_at as "updatedAt"
+    `, [userId, earnedDelta, redeemedDelta]);
+  }
+
+  async getRewardLeaderboard(): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null })[]> {
+    return await db.any(`
+      SELECT rb.id, rb.user_id as "userId", rb.total_earned as "totalEarned",
+        rb.total_redeemed as "totalRedeemed", rb.current_balance as "currentBalance",
+        rb.updated_at as "updatedAt",
+        u.first_name as "firstName", u.last_name as "lastName",
+        u.department, u.profile_photo as "profilePhoto"
+      FROM reward_balances rb
+      JOIN users u ON u.id = rb.user_id
+      WHERE u.active = true
+      ORDER BY rb.total_earned DESC
+    `);
+  }
+
+  // ==========================================
+  // Reward Badge operations
+  // ==========================================
+
+  async getRewardBadges(): Promise<RewardBadge[]> {
+    return await db.any(`
+      SELECT id, name, description, icon, color, threshold,
+        metric_id as "metricId", created_at as "createdAt"
+      FROM reward_badges ORDER BY threshold ASC
+    `);
+  }
+
+  async createRewardBadge(badge: InsertRewardBadge): Promise<RewardBadge> {
+    return await db.one(`
+      INSERT INTO reward_badges (name, description, icon, color, threshold, metric_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id, name, description, icon, color, threshold,
+        metric_id as "metricId", created_at as "createdAt"
+    `, [badge.name, badge.description || null, badge.icon || null, badge.color || null,
+        badge.threshold, badge.metricId || null]);
+  }
+
+  async updateRewardBadge(id: number, badge: Partial<InsertRewardBadge>): Promise<RewardBadge | undefined> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    let p = 1;
+
+    if (badge.name !== undefined) { updates.push(`name = $${p++}`); values.push(badge.name); }
+    if (badge.description !== undefined) { updates.push(`description = $${p++}`); values.push(badge.description); }
+    if (badge.icon !== undefined) { updates.push(`icon = $${p++}`); values.push(badge.icon); }
+    if (badge.color !== undefined) { updates.push(`color = $${p++}`); values.push(badge.color); }
+    if (badge.threshold !== undefined) { updates.push(`threshold = $${p++}`); values.push(badge.threshold); }
+    if (badge.metricId !== undefined) { updates.push(`metric_id = $${p++}`); values.push(badge.metricId); }
+
+    if (updates.length === 0) return undefined;
+
+    values.push(id);
+    try {
+      return await db.one(`
+        UPDATE reward_badges SET ${updates.join(', ')} WHERE id = $${p}
+        RETURNING id, name, description, icon, color, threshold,
+          metric_id as "metricId", created_at as "createdAt"
+      `, values);
+    } catch { return undefined; }
+  }
+
+  async deleteRewardBadge(id: number): Promise<boolean> {
+    const result = await db.result(`DELETE FROM reward_badges WHERE id = $1`, [id]);
+    return result.rowCount > 0;
+  }
+
+  async getRewardUserBadges(userId: number): Promise<(RewardUserBadge & { badge: RewardBadge })[]> {
+    const rows = await db.any(`
+      SELECT ub.id, ub.user_id as "userId", ub.badge_id as "badgeId",
+        ub.earned_at as "earnedAt",
+        b.name as "badgeName", b.description as "badgeDescription",
+        b.icon as "badgeIcon", b.color as "badgeColor",
+        b.threshold as "badgeThreshold", b.metric_id as "badgeMetricId",
+        b.created_at as "badgeCreatedAt"
+      FROM reward_user_badges ub
+      JOIN reward_badges b ON b.id = ub.badge_id
+      WHERE ub.user_id = $1
+      ORDER BY ub.earned_at DESC
+    `, [userId]);
+
+    return rows.map((row: any) => ({
+      id: row.id,
+      userId: row.userId,
+      badgeId: row.badgeId,
+      earnedAt: row.earnedAt,
+      badge: {
+        id: row.badgeId,
+        name: row.badgeName,
+        description: row.badgeDescription,
+        icon: row.badgeIcon,
+        color: row.badgeColor,
+        threshold: row.badgeThreshold,
+        metricId: row.badgeMetricId,
+        createdAt: row.badgeCreatedAt,
+      }
+    }));
+  }
+
+  async awardRewardBadge(userId: number, badgeId: number): Promise<RewardUserBadge> {
+    return await db.one(`
+      INSERT INTO reward_user_badges (user_id, badge_id)
+      VALUES ($1, $2)
+      ON CONFLICT (user_id, badge_id) DO NOTHING
+      RETURNING id, user_id as "userId", badge_id as "badgeId", earned_at as "earnedAt"
+    `, [userId, badgeId]);
+  }
+
+  async checkAndAwardBadges(userId: number): Promise<void> {
+    try {
+      const balance = await this.getRewardBalance(userId);
+      if (!balance) return;
+
+      const badges = await this.getRewardBadges();
+      const earnedBadges = await this.getRewardUserBadges(userId);
+      const earnedBadgeIds = new Set(earnedBadges.map(b => b.badgeId));
+
+      for (const badge of badges) {
+        if (earnedBadgeIds.has(badge.id)) continue;
+
+        // Check threshold against total earned points (or metric-specific if metricId is set)
+        if (!badge.metricId) {
+          // Total points badge
+          if (balance.totalEarned >= badge.threshold) {
+            await this.awardRewardBadge(userId, badge.id);
+          }
+        } else {
+          // Metric-specific badge - sum points for that metric
+          const metricPoints = await db.one(`
+            SELECT COALESCE(SUM(points), 0) as total
+            FROM reward_points_log
+            WHERE user_id = $1 AND metric_id = $2 AND type = 'earned'
+          `, [userId, badge.metricId]);
+          if (metricPoints.total >= badge.threshold) {
+            await this.awardRewardBadge(userId, badge.id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking badges for user', userId, error);
+    }
+  }
+
+  // ==========================================
+  // Reward Catalog operations
+  // ==========================================
+
+  async getRewardCatalog(activeOnly: boolean = false): Promise<RewardCatalog[]> {
+    const whereClause = activeOnly ? 'WHERE is_active = true' : '';
+    return await db.any(`
+      SELECT id, name, description, points_cost as "pointsCost", category,
+        image_url as "imageUrl", stock, is_active as "isActive", created_at as "createdAt"
+      FROM reward_catalog ${whereClause} ORDER BY points_cost ASC
+    `);
+  }
+
+  async getRewardCatalogById(id: number): Promise<RewardCatalog | undefined> {
+    try {
+      return await db.one(`
+        SELECT id, name, description, points_cost as "pointsCost", category,
+          image_url as "imageUrl", stock, is_active as "isActive", created_at as "createdAt"
+        FROM reward_catalog WHERE id = $1
+      `, [id]);
+    } catch { return undefined; }
+  }
+
+  async createRewardCatalogItem(item: InsertRewardCatalog): Promise<RewardCatalog> {
+    return await db.one(`
+      INSERT INTO reward_catalog (name, description, points_cost, category, image_url, stock, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, name, description, points_cost as "pointsCost", category,
+        image_url as "imageUrl", stock, is_active as "isActive", created_at as "createdAt"
+    `, [item.name, item.description || null, item.pointsCost, item.category || null,
+        item.imageUrl || null, item.stock || null, item.isActive ?? true]);
+  }
+
+  async updateRewardCatalogItem(id: number, item: Partial<InsertRewardCatalog>): Promise<RewardCatalog | undefined> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    let p = 1;
+
+    if (item.name !== undefined) { updates.push(`name = $${p++}`); values.push(item.name); }
+    if (item.description !== undefined) { updates.push(`description = $${p++}`); values.push(item.description); }
+    if (item.pointsCost !== undefined) { updates.push(`points_cost = $${p++}`); values.push(item.pointsCost); }
+    if (item.category !== undefined) { updates.push(`category = $${p++}`); values.push(item.category); }
+    if (item.imageUrl !== undefined) { updates.push(`image_url = $${p++}`); values.push(item.imageUrl); }
+    if (item.stock !== undefined) { updates.push(`stock = $${p++}`); values.push(item.stock); }
+    if (item.isActive !== undefined) { updates.push(`is_active = $${p++}`); values.push(item.isActive); }
+
+    if (updates.length === 0) return this.getRewardCatalogById(id);
+
+    values.push(id);
+    try {
+      return await db.one(`
+        UPDATE reward_catalog SET ${updates.join(', ')} WHERE id = $${p}
+        RETURNING id, name, description, points_cost as "pointsCost", category,
+          image_url as "imageUrl", stock, is_active as "isActive", created_at as "createdAt"
+      `, values);
+    } catch { return undefined; }
+  }
+
+  async deleteRewardCatalogItem(id: number): Promise<boolean> {
+    const result = await db.result(`DELETE FROM reward_catalog WHERE id = $1`, [id]);
+    return result.rowCount > 0;
+  }
+
+  // ==========================================
+  // Reward Redemption operations
+  // ==========================================
+
+  async createRewardRedemption(redemption: InsertRewardRedemption): Promise<RewardRedemption> {
+    return await db.one(`
+      INSERT INTO reward_redemptions (user_id, catalog_item_id, points_spent, status, notes)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, user_id as "userId", catalog_item_id as "catalogItemId",
+        points_spent as "pointsSpent", status, approved_by as "approvedBy",
+        notes, created_at as "createdAt", fulfilled_at as "fulfilledAt"
+    `, [redemption.userId, redemption.catalogItemId, redemption.pointsSpent,
+        redemption.status || 'pending', redemption.notes || null]);
+  }
+
+  async getRewardRedemptionsByUser(userId: number): Promise<RewardRedemption[]> {
+    return await db.any(`
+      SELECT r.id, r.user_id as "userId", r.catalog_item_id as "catalogItemId",
+        r.points_spent as "pointsSpent", r.status, r.approved_by as "approvedBy",
+        r.notes, r.created_at as "createdAt", r.fulfilled_at as "fulfilledAt",
+        c.name as "itemName"
+      FROM reward_redemptions r
+      LEFT JOIN reward_catalog c ON c.id = r.catalog_item_id
+      WHERE r.user_id = $1
+      ORDER BY r.created_at DESC
+    `, [userId]);
+  }
+
+  async getRewardRedemptions(status?: string): Promise<(RewardRedemption & { firstName: string; lastName: string; itemName: string })[]> {
+    const whereClause = status ? 'WHERE r.status = $1' : '';
+    const params = status ? [status] : [];
+    return await db.any(`
+      SELECT r.id, r.user_id as "userId", r.catalog_item_id as "catalogItemId",
+        r.points_spent as "pointsSpent", r.status, r.approved_by as "approvedBy",
+        r.notes, r.created_at as "createdAt", r.fulfilled_at as "fulfilledAt",
+        u.first_name as "firstName", u.last_name as "lastName",
+        c.name as "itemName"
+      FROM reward_redemptions r
+      JOIN users u ON u.id = r.user_id
+      LEFT JOIN reward_catalog c ON c.id = r.catalog_item_id
+      ${whereClause}
+      ORDER BY r.created_at DESC
+    `, params);
+  }
+
+  async updateRewardRedemption(id: number, data: Partial<RewardRedemption>): Promise<RewardRedemption | undefined> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    let p = 1;
+
+    if (data.status !== undefined) { updates.push(`status = $${p++}`); values.push(data.status); }
+    if (data.approvedBy !== undefined) { updates.push(`approved_by = $${p++}`); values.push(data.approvedBy); }
+    if (data.notes !== undefined) { updates.push(`notes = $${p++}`); values.push(data.notes); }
+    if (data.fulfilledAt !== undefined) { updates.push(`fulfilled_at = $${p++}`); values.push(data.fulfilledAt); }
+
+    if (updates.length === 0) return undefined;
+
+    values.push(id);
+    try {
+      return await db.one(`
+        UPDATE reward_redemptions SET ${updates.join(', ')} WHERE id = $${p}
+        RETURNING id, user_id as "userId", catalog_item_id as "catalogItemId",
+          points_spent as "pointsSpent", status, approved_by as "approvedBy",
+          notes, created_at as "createdAt", fulfilled_at as "fulfilledAt"
+      `, values);
+    } catch { return undefined; }
   }
 }

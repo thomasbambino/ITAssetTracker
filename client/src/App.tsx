@@ -31,6 +31,10 @@ import UserDashboard from "@/pages/user-dashboard";
 import GuestDevices from "@/pages/guest-devices";
 import GuestSoftware from "@/pages/guest-software";
 import UserSettings from "@/pages/user-settings";
+import RewardsLeaderboard from "@/pages/rewards/index";
+import RewardsCatalog from "@/pages/rewards/catalog";
+import MyRewards from "@/pages/rewards/my";
+import RewardsAdmin from "@/pages/rewards/admin";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import LoginPage from "@/pages/auth/login";
 import ResetPasswordPage from "@/pages/auth/reset-password";
@@ -112,6 +116,9 @@ function MainRouter() {
         <Route path="/notifications" component={() => <ProtectedPageWrapper component={Notifications} />} />
         <Route path="/user-settings" component={() => <ProtectedPageWrapper component={UserSettings} />} />
         <Route path="/settings/two-factor" component={() => <ProtectedPageWrapper component={TwoFactorSettings} />} />
+        <Route path="/rewards" component={() => <ProtectedPageWrapper component={RewardsLeaderboard} />} />
+        <Route path="/rewards/catalog" component={() => <ProtectedPageWrapper component={RewardsCatalog} />} />
+        <Route path="/rewards/my" component={() => <ProtectedPageWrapper component={MyRewards} />} />
         {/* Redirect all other routes to user dashboard */}
         <Route component={() => <ProtectedPageWrapper component={UserDashboard} />} />
       </Switch>
@@ -137,7 +144,10 @@ function MainRouter() {
         <Route path="/user-dashboard" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
         <Route path="/guest-devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
         <Route path="/guest-software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
-        
+        <Route path="/rewards" component={() => <ProtectedPageWrapper component={RewardsLeaderboard} />} />
+        <Route path="/rewards/catalog" component={() => <ProtectedPageWrapper component={RewardsCatalog} />} />
+        <Route path="/rewards/my" component={() => <ProtectedPageWrapper component={MyRewards} />} />
+
         {/* Redirect all other routes to manager dashboard */}
         <Route component={() => <ProtectedPageWrapper component={Dashboard} />} />
       </Switch>
@@ -176,6 +186,10 @@ function MainRouter() {
       <Route path="/guest-devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
       <Route path="/guest-software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
       <Route path="/user-settings" component={() => <ProtectedPageWrapper component={UserSettings} />} />
+      <Route path="/rewards" component={() => <ProtectedPageWrapper component={RewardsLeaderboard} />} />
+      <Route path="/rewards/catalog" component={() => <ProtectedPageWrapper component={RewardsCatalog} />} />
+      <Route path="/rewards/my" component={() => <ProtectedPageWrapper component={MyRewards} />} />
+      <Route path="/rewards/admin" component={() => <ProtectedPageWrapper component={RewardsAdmin} adminRequired />} />
       
       {/* Fallback to 404 - this is still inside the protected wrapper */}
       <Route component={() => <ProtectedPageWrapper component={NotFound} />} />
