@@ -175,7 +175,7 @@ export class ZendeskSyncProvider implements KPISyncProvider {
 
     for (const chunk of chunks) {
       // Build search query for this chunk
-      let query = `type:ticket status:solved solved>=${chunk.from} solved<${chunk.to}`;
+      let query = `type:ticket status>=solved solved>=${chunk.from} solved<${chunk.to}`;
       if (filterGroupIds.length === 1) {
         query += ` group:${filterGroupIds[0]}`;
       }

@@ -1052,31 +1052,33 @@ export default function RewardsAdmin() {
 
       {/* Zendesk Groups Dialog */}
       <Dialog open={groupsDialog} onOpenChange={setGroupsDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
           <DialogHeader><DialogTitle>Zendesk Groups</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground mb-2">
             Use these group IDs in your source config to filter tickets by group.
           </p>
-          {zendeskGroups && zendeskGroups.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Group Name</TableHead>
-                  <TableHead>Group ID</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {zendeskGroups.map(g => (
-                  <TableRow key={g.id}>
-                    <TableCell className="font-medium">{g.name}</TableCell>
-                    <TableCell className="font-mono text-sm">{g.id}</TableCell>
+          <div className="overflow-y-auto flex-1">
+            {zendeskGroups && zendeskGroups.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Group Name</TableHead>
+                    <TableHead>Group ID</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p className="text-sm text-muted-foreground">No groups found.</p>
-          )}
+                </TableHeader>
+                <TableBody>
+                  {zendeskGroups.map(g => (
+                    <TableRow key={g.id}>
+                      <TableCell className="font-medium">{g.name}</TableCell>
+                      <TableCell className="font-mono text-sm">{g.id}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground">No groups found.</p>
+            )}
+          </div>
           <DialogFooter>
             <Button onClick={() => setGroupsDialog(false)}>Close</Button>
           </DialogFooter>
