@@ -21,9 +21,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   PlusCircle, Edit, Trash2, Database, BarChart3, Award, ShoppingBag,
-  CheckCircle, XCircle, Package, UserPlus, RefreshCw, RotateCcw,
+  CheckCircle, XCircle, Package, UserPlus, RefreshCw, RotateCcw, Settings,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -55,6 +56,12 @@ type Redemption = {
 type UserEntry = {
   id: number; firstName: string; lastName: string; email: string;
 };
+type Department = {
+  id: number; name: string;
+};
+type RewardSettingsConfig = {
+  enabledDepartmentIds: number[];
+};
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -73,6 +80,21 @@ export default function RewardsAdmin() {
   const { data: catalog } = useQuery<CatalogItem[]>({ queryKey: ['/api/rewards/catalog'] });
   const { data: redemptions } = useQuery<Redemption[]>({ queryKey: ['/api/rewards/redemptions'] });
   const { data: users } = useQuery<UserEntry[]>({ queryKey: ['/api/users'] });
+  const { data: departments } = useQuery<Department[]>({ queryKey: ['/api/departments'] });
+  const { data: rewardSettings } = useQuery<RewardSettingsConfig>({ queryKey: ['/api/rewards/settings'] });
+
+  // Settings mutation
+  const settingsMutation = useMutation({
+    mutationFn: async (config: RewardSettingsConfig) => {
+      return apiRequest({ url: '/api/rewards/settings', method: 'PUT', data: config });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/rewards/settings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/rewards/enabled'] });
+      toast({ title: "Reward settings saved" });
+    },
+    onError: (e: any) => toast({ title: "Error saving settings", description: e.message, variant: "destructive" }),
+  });
 
   // Dialog state
   const [sourceDialog, setSourceDialog] = useState(false);
@@ -258,6 +280,7 @@ export default function RewardsAdmin() {
           <TabsTrigger value="catalog" className="flex items-center gap-1"><ShoppingBag className="h-4 w-4" /> Catalog</TabsTrigger>
           <TabsTrigger value="redemptions" className="flex items-center gap-1"><Package className="h-4 w-4" /> Redemptions</TabsTrigger>
           <TabsTrigger value="adjust" className="flex items-center gap-1"><UserPlus className="h-4 w-4" /> Manual Adjust</TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-1"><Settings className="h-4 w-4" /> Settings</TabsTrigger>
         </TabsList>
 
         {/* ==================== SOURCES TAB ==================== */}
@@ -599,6 +622,62 @@ export default function RewardsAdmin() {
                   <UserPlus className="h-4 w-4 mr-1" /> Apply Adjustment
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ==================== SETTINGS TAB ==================== */}
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>Department Enablement</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Select which departments participate in the rewards program.
+                If no departments are selected, rewards are visible to all users.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {departments && departments.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    {departments.map((dept) => {
+                      const enabled = rewardSettings?.enabledDepartmentIds || [];
+                      const isChecked = enabled.includes(dept.id);
+                      return (
+                        <div key={dept.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`dept-${dept.id}`}
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              const current = rewardSettings?.enabledDepartmentIds || [];
+                              const updated = checked
+                                ? [...current, dept.id]
+                                : current.filter((id: number) => id !== dept.id);
+                              settingsMutation.mutate({ enabledDepartmentIds: updated });
+                            }}
+                          />
+                          <label htmlFor={`dept-${dept.id}`} className="text-sm font-medium leading-none cursor-pointer">
+                            {dept.name}
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {(rewardSettings?.enabledDepartmentIds?.length ?? 0) > 0 && (
+                    <div className="pt-2 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => settingsMutation.mutate({ enabledDepartmentIds: [] })}
+                      >
+                        Clear All (Enable for Everyone)
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No departments found. Create departments first.</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -4976,10 +4976,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Reward Settings (admin) ---
+  app.get('/api/rewards/settings', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getRewardSettings();
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching reward settings", error: error.message });
+    }
+  });
+
+  app.put('/api/rewards/settings', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { enabledDepartmentIds } = req.body;
+      const config = { enabledDepartmentIds: Array.isArray(enabledDepartmentIds) ? enabledDepartmentIds : [] };
+      const updated = await storage.updateRewardSettings(config);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error updating reward settings", error: error.message });
+    }
+  });
+
+  // --- Check if rewards are enabled for current user ---
+  app.get('/api/rewards/enabled', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionData = req.session as any;
+      const settings = await storage.getRewardSettings();
+      // Empty list = all departments enabled
+      if (!settings.enabledDepartmentIds || settings.enabledDepartmentIds.length === 0) {
+        return res.json({ enabled: true });
+      }
+      const user = await storage.getUserById(sessionData.userId);
+      if (!user) return res.json({ enabled: false });
+      // Admins always see rewards
+      if (user.role === 'admin') return res.json({ enabled: true });
+      const enabled = user.departmentId ? settings.enabledDepartmentIds.includes(user.departmentId) : false;
+      res.json({ enabled });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error checking rewards enabled", error: error.message });
+    }
+  });
+
   // --- All authenticated users ---
   app.get('/api/rewards/leaderboard', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const leaderboard = await storage.getRewardLeaderboard();
+      const settings = await storage.getRewardSettings();
+      const filter = settings.enabledDepartmentIds.length > 0 ? settings.enabledDepartmentIds : undefined;
+      const leaderboard = await storage.getRewardLeaderboard(filter);
       res.json(leaderboard);
     } catch (error: any) {
       res.status(500).json({ message: "Error fetching leaderboard", error: error.message });

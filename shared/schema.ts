@@ -795,3 +795,16 @@ export const insertRewardRedemptionSchema = createInsertSchema(rewardRedemptions
 
 export type InsertRewardRedemption = z.infer<typeof insertRewardRedemptionSchema>;
 export type RewardRedemption = typeof rewardRedemptions.$inferSelect;
+
+// Reward Settings - Controls which departments participate in rewards
+export const rewardSettings = pgTable("reward_settings", {
+  id: serial("id").primaryKey(),
+  config: text("config").notNull().default('{}'), // JSON: { enabledDepartmentIds: number[] }
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type RewardSettings = typeof rewardSettings.$inferSelect;
+
+export interface RewardSettingsConfig {
+  enabledDepartmentIds: number[];
+}

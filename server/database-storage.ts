@@ -17,6 +17,7 @@ import {
   type RewardUserBadge, type InsertRewardUserBadge,
   type RewardCatalog, type InsertRewardCatalog,
   type RewardRedemption, type InsertRewardRedemption,
+  type RewardSettingsConfig,
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
@@ -5109,7 +5110,8 @@ export class DatabaseStorage implements IStorage {
     `, [userId, earnedDelta, redeemedDelta]);
   }
 
-  async getRewardLeaderboard(): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null })[]> {
+  async getRewardLeaderboard(enabledDepartmentIds?: number[]): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null })[]> {
+    const hasFilter = enabledDepartmentIds && enabledDepartmentIds.length > 0;
     return await db.any(`
       SELECT rb.id, rb.user_id as "userId", rb.total_earned as "totalEarned",
         rb.total_redeemed as "totalRedeemed", rb.current_balance as "currentBalance",
@@ -5119,8 +5121,9 @@ export class DatabaseStorage implements IStorage {
       FROM reward_balances rb
       JOIN users u ON u.id = rb.user_id
       WHERE u.active = true
+      ${hasFilter ? 'AND u.department_id = ANY($1)' : ''}
       ORDER BY rb.total_earned DESC
-    `);
+    `, hasFilter ? [enabledDepartmentIds] : []);
   }
 
   // ==========================================
@@ -5379,5 +5382,30 @@ export class DatabaseStorage implements IStorage {
           notes, created_at as "createdAt", fulfilled_at as "fulfilledAt"
       `, values);
     } catch { return undefined; }
+  }
+
+  // ==========================================
+  // Reward Settings operations
+  // ==========================================
+
+  async getRewardSettings(): Promise<RewardSettingsConfig> {
+    try {
+      const row = await db.oneOrNone(`SELECT config FROM reward_settings WHERE id = 1`);
+      if (!row) return { enabledDepartmentIds: [] };
+      const parsed = JSON.parse(row.config);
+      return { enabledDepartmentIds: parsed.enabledDepartmentIds || [] };
+    } catch {
+      return { enabledDepartmentIds: [] };
+    }
+  }
+
+  async updateRewardSettings(config: RewardSettingsConfig): Promise<RewardSettingsConfig> {
+    const configJson = JSON.stringify(config);
+    await db.none(`
+      INSERT INTO reward_settings (id, config, updated_at)
+      VALUES (1, $1, NOW())
+      ON CONFLICT (id) DO UPDATE SET config = $1, updated_at = NOW()
+    `, [configJson]);
+    return config;
   }
 }

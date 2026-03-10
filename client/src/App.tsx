@@ -43,6 +43,7 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { BrandingProvider } from "@/components/branding/BrandingContext";
 import { FaviconManager } from "@/components/branding/FaviconManager";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import { PageTransition } from "@/components/layout/PageTransition";
 
 // Routes that require admin privileges
@@ -102,9 +103,17 @@ function MainRouter() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const isManager = user?.isManager;
-  const isAdminRoute = ADMIN_ROUTES.some(route => 
+  const isAdminRoute = ADMIN_ROUTES.some(route =>
     location === route || location.startsWith(`${route}/`)
   );
+
+  // Check if rewards are enabled for current user's department
+  const { data: rewardsEnabled } = useQuery<{ enabled: boolean }>({
+    queryKey: ['/api/rewards/enabled'],
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+  const showRewards = rewardsEnabled?.enabled !== false;
 
   // For regular users (not managers or admins), show only the user dashboard and guest pages
   if (!isAdmin && !isManager) {
@@ -116,9 +125,9 @@ function MainRouter() {
         <Route path="/notifications" component={() => <ProtectedPageWrapper component={Notifications} />} />
         <Route path="/user-settings" component={() => <ProtectedPageWrapper component={UserSettings} />} />
         <Route path="/settings/two-factor" component={() => <ProtectedPageWrapper component={TwoFactorSettings} />} />
-        <Route path="/rewards" component={() => <ProtectedPageWrapper component={RewardsLeaderboard} />} />
-        <Route path="/rewards/catalog" component={() => <ProtectedPageWrapper component={RewardsCatalog} />} />
-        <Route path="/rewards/my" component={() => <ProtectedPageWrapper component={MyRewards} />} />
+        {showRewards && <Route path="/rewards" component={() => <ProtectedPageWrapper component={RewardsLeaderboard} />} />}
+        {showRewards && <Route path="/rewards/catalog" component={() => <ProtectedPageWrapper component={RewardsCatalog} />} />}
+        {showRewards && <Route path="/rewards/my" component={() => <ProtectedPageWrapper component={MyRewards} />} />}
         {/* Redirect all other routes to user dashboard */}
         <Route component={() => <ProtectedPageWrapper component={UserDashboard} />} />
       </Switch>
@@ -139,14 +148,14 @@ function MainRouter() {
         <Route path="/notifications" component={() => <ProtectedPageWrapper component={Notifications} />} />
         <Route path="/user-settings" component={() => <ProtectedPageWrapper component={UserSettings} />} />
         <Route path="/settings/two-factor" component={() => <ProtectedPageWrapper component={TwoFactorSettings} />} />
-        
+
         {/* Manager user account pages - manager viewing their own account */}
         <Route path="/user-dashboard" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
         <Route path="/guest-devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
         <Route path="/guest-software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
-        <Route path="/rewards" component={() => <ProtectedPageWrapper component={RewardsLeaderboard} />} />
-        <Route path="/rewards/catalog" component={() => <ProtectedPageWrapper component={RewardsCatalog} />} />
-        <Route path="/rewards/my" component={() => <ProtectedPageWrapper component={MyRewards} />} />
+        {showRewards && <Route path="/rewards" component={() => <ProtectedPageWrapper component={RewardsLeaderboard} />} />}
+        {showRewards && <Route path="/rewards/catalog" component={() => <ProtectedPageWrapper component={RewardsCatalog} />} />}
+        {showRewards && <Route path="/rewards/my" component={() => <ProtectedPageWrapper component={MyRewards} />} />}
 
         {/* Redirect all other routes to manager dashboard */}
         <Route component={() => <ProtectedPageWrapper component={Dashboard} />} />
@@ -180,7 +189,7 @@ function MainRouter() {
       <Route path="/departments" component={() => <ProtectedPageWrapper component={Departments} adminRequired />} />
       <Route path="/problem-reports" component={() => <ProtectedPageWrapper component={ProblemReports} adminRequired />} />
       <Route path="/cloud" component={() => <ProtectedPageWrapper component={Cloud} adminRequired />} />
-      
+
       {/* Admin user account pages - admin viewing their own account */}
       <Route path="/user-dashboard" component={() => <ProtectedPageWrapper component={UserDashboard} />} />
       <Route path="/guest-devices" component={() => <ProtectedPageWrapper component={GuestDevices} />} />
@@ -190,7 +199,7 @@ function MainRouter() {
       <Route path="/rewards/catalog" component={() => <ProtectedPageWrapper component={RewardsCatalog} />} />
       <Route path="/rewards/my" component={() => <ProtectedPageWrapper component={MyRewards} />} />
       <Route path="/rewards/admin" component={() => <ProtectedPageWrapper component={RewardsAdmin} adminRequired />} />
-      
+
       {/* Fallback to 404 - this is still inside the protected wrapper */}
       <Route component={() => <ProtectedPageWrapper component={NotFound} />} />
     </Switch>

@@ -83,6 +83,13 @@ export function DesktopSidebar() {
     refetchOnMount: true
   });
 
+  // Check if rewards are enabled for the current user's department
+  const { data: rewardsEnabled } = useQuery<{ enabled: boolean }>({
+    queryKey: ['/api/rewards/enabled'],
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
   // Define the route type
   type RouteType = {
     href: string;
@@ -265,6 +272,10 @@ export function DesktopSidebar() {
     // If no user data, only show dashboard (for logout transition)
     if (!currentUser) {
       return route.href === '/';
+    }
+    // Hide rewards routes if rewards are disabled for this user's department (admins always see rewards-admin)
+    if (route.category === 'rewards' && rewardsEnabled?.enabled === false) {
+      return false;
     }
     // Managers (users with isManager: true) can see dashboard, users, devices, software, notifications, personal pages, and rewards
     if (currentUser.isManager) {

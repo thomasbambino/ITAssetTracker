@@ -19,6 +19,7 @@ import {
   type RewardUserBadge, type InsertRewardUserBadge,
   type RewardCatalog, type InsertRewardCatalog,
   type RewardRedemption, type InsertRewardRedemption,
+  type RewardSettingsConfig,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -180,7 +181,7 @@ export interface IStorage {
   // Reward Balance operations
   getRewardBalance(userId: number): Promise<RewardBalance | undefined>;
   updateRewardBalance(userId: number, earnedDelta: number, redeemedDelta: number): Promise<RewardBalance>;
-  getRewardLeaderboard(): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null })[]>;
+  getRewardLeaderboard(enabledDepartmentIds?: number[]): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null })[]>;
 
   // Reward Badge operations
   getRewardBadges(): Promise<RewardBadge[]>;
@@ -203,6 +204,10 @@ export interface IStorage {
   getRewardRedemptionsByUser(userId: number): Promise<RewardRedemption[]>;
   getRewardRedemptions(status?: string): Promise<(RewardRedemption & { firstName: string; lastName: string; itemName: string })[]>;
   updateRewardRedemption(id: number, data: Partial<RewardRedemption>): Promise<RewardRedemption | undefined>;
+
+  // Reward Settings operations
+  getRewardSettings(): Promise<RewardSettingsConfig>;
+  updateRewardSettings(config: RewardSettingsConfig): Promise<RewardSettingsConfig>;
 }
 
 export class MemStorage implements IStorage {
@@ -738,6 +743,8 @@ export class MemStorage implements IStorage {
   async getRewardRedemptionsByUser(userId: number): Promise<RewardRedemption[]> { return []; }
   async getRewardRedemptions(status?: string): Promise<any[]> { return []; }
   async updateRewardRedemption(id: number, data: Partial<RewardRedemption>): Promise<RewardRedemption | undefined> { return undefined; }
+  async getRewardSettings(): Promise<RewardSettingsConfig> { return { enabledDepartmentIds: [] }; }
+  async updateRewardSettings(config: RewardSettingsConfig): Promise<RewardSettingsConfig> { return config; }
 }
 
 // Import DatabaseStorage
