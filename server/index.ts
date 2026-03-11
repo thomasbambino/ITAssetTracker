@@ -18,6 +18,7 @@ import { addManagerFields } from "./migrations/add-manager-fields";
 import { addApplicationUrlToBranding } from "./migrations/add-application-url-to-branding";
 import { addCloudAssetsTableMigration } from "./migrations/add-cloud-assets-table";
 import { addRewardsSystemMigration } from "./migrations/add-rewards-system";
+import { addSecondaryEmailField } from "./migrations/add-secondary-email";
 import { startRewardsSyncScheduler } from "./rewards-sync";
 
 const app = express();
@@ -99,6 +100,7 @@ app.use((req, res, next) => {
     await addApplicationUrlToBranding();
     await addCloudAssetsTableMigration();
     await addRewardsSystemMigration();
+    await addSecondaryEmailField();
     log('Database migrations completed.');
 
     // Start rewards sync scheduler

@@ -45,6 +45,7 @@ export const users = pgTable("users", {
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
   twoFactorBackupCodes: text("two_factor_backup_codes"), // JSON array of backup codes
   profilePhoto: text("profile_photo"), // Base64 encoded photo or file path
+  secondaryEmail: text("secondary_email"), // Alternate email for matching (e.g. Zoom Phone email)
   createdAt: timestamp("created_at").defaultNow(),
 });
 

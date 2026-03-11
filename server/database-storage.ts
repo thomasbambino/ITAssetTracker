@@ -327,6 +327,7 @@ export class DatabaseStorage implements IStorage {
           two_factor_enabled as "twoFactorEnabled",
           two_factor_backup_codes as "twoFactorBackupCodes",
           profile_photo as "profilePhoto",
+          secondary_email as "secondaryEmail",
           role,
           active,
           is_manager as "isManager",
@@ -346,12 +347,13 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     try {
       const user = await db.one(`
-        SELECT 
-          id, 
-          first_name as "firstName", 
-          last_name as "lastName", 
-          email, 
-          phone_number as "phoneNumber", 
+        SELECT
+          id,
+          first_name as "firstName",
+          last_name as "lastName",
+          email,
+          secondary_email as "secondaryEmail",
+          phone_number as "phoneNumber",
           department,
           department_id as "departmentId",
           password_hash as "passwordHash",
@@ -363,14 +365,15 @@ export class DatabaseStorage implements IStorage {
           two_factor_enabled as "twoFactorEnabled",
           two_factor_backup_codes as "twoFactorBackupCodes",
           profile_photo as "profilePhoto",
+          secondary_email as "secondaryEmail",
           role,
           active,
           is_manager as "isManager",
           managed_department_ids as "managedDepartmentIds",
           last_login as "lastLogin",
           created_at as "createdAt" 
-        FROM users 
-        WHERE email ILIKE $1
+        FROM users
+        WHERE email ILIKE $1 OR secondary_email ILIKE $1
       `, [email]);
       return user;
     } catch (error) {
@@ -524,7 +527,12 @@ export class DatabaseStorage implements IStorage {
         updates.push(`profile_photo = $${paramCount++}`);
         values.push(user.profilePhoto);
       }
-      
+
+      if (user.secondaryEmail !== undefined) {
+        updates.push(`secondary_email = $${paramCount++}`);
+        values.push(user.secondaryEmail);
+      }
+
       // If no updates, return the user
       if (updates.length === 0) {
         return this.getUserById(id);
@@ -553,6 +561,7 @@ export class DatabaseStorage implements IStorage {
           two_factor_enabled as "twoFactorEnabled",
           two_factor_backup_codes as "twoFactorBackupCodes",
           profile_photo as "profilePhoto",
+          secondary_email as "secondaryEmail",
           role,
           active,
           is_manager as "isManager",

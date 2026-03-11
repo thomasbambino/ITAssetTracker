@@ -30,6 +30,7 @@ import { Loader2 } from "lucide-react";
 // Create a schema for user creation/update
 const formSchema = insertUserSchema.extend({
   email: emailSchema,
+  secondaryEmail: z.string().email().optional().or(z.literal('')),
   phoneNumber: phoneSchema.optional(),
   role: z.enum(['user', 'admin']).default('user'),
   // Add support for departmentId
@@ -82,6 +83,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       email: user?.email || "",
+      secondaryEmail: user?.secondaryEmail || "",
       phoneNumber: user?.phoneNumber || "",
       department: user?.department || "",
       departmentId: user?.departmentId || null,
@@ -101,6 +103,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
       form.setValue('firstName', user.firstName || '');
       form.setValue('lastName', user.lastName || '');
       form.setValue('email', user.email || '');
+      form.setValue('secondaryEmail', user.secondaryEmail || '');
       form.setValue('phoneNumber', user.phoneNumber || '');
       form.setValue('department', user.department || '');
       form.setValue('role', user.role || 'user');
@@ -238,6 +241,23 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
               </FormControl>
               <FormDescription>
                 Email address will be used for notifications
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="secondaryEmail"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Secondary Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="alternate@example.com" {...field} />
+              </FormControl>
+              <FormDescription>
+                Alternate email for matching integrations (e.g. Zoom Phone)
               </FormDescription>
               <FormMessage />
             </FormItem>
