@@ -257,7 +257,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
                 <Input type="email" placeholder="alternate@example.com" {...field} />
               </FormControl>
               <FormDescription>
-                Alternate email for matching integrations (e.g. Zoom Phone)
+                Optional alternate email address
               </FormDescription>
               <FormMessage />
             </FormItem>
