@@ -4805,7 +4805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!source.apiKey) return res.status(400).json({ message: "Client ID not configured" });
 
       const branding = await storage.getBrandingSettings();
-      const baseUrl = branding?.applicationUrl || `${req.protocol}://${req.get('host')}`;
+      const baseUrl = (branding?.applicationUrl || `${req.protocol}://${req.get('host')}`).replace(/^http:\/\//, 'https://');
       const redirectUri = `${baseUrl}/api/zoom/oauth/callback`;
 
       const authUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${encodeURIComponent(source.apiKey)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${source.id}`;
@@ -4834,7 +4834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const branding = await storage.getBrandingSettings();
-      const baseUrl = branding?.applicationUrl || `${req.protocol}://${req.get('host')}`;
+      const baseUrl = (branding?.applicationUrl || `${req.protocol}://${req.get('host')}`).replace(/^http:\/\//, 'https://');
       const redirectUri = `${baseUrl}/api/zoom/oauth/callback`;
 
       const tokenData = await exchangeZoomCode(source.apiKey, source.apiSecret, code as string, redirectUri);
