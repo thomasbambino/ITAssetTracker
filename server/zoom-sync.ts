@@ -25,7 +25,7 @@ async function getOAuthToken(accountId: string, clientId: string, clientSecret: 
       Authorization: `Basic ${credentials}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: `grant_type=account_credentials&account_id=${encodeURIComponent(accountId)}`,
+    body: `grant_type=client_credentials&account_id=${encodeURIComponent(accountId)}`,
   });
 
   if (!res.ok) {
