@@ -205,11 +205,11 @@ export default function RewardsAdmin() {
     mutationFn: async (sourceId: number) => {
       await apiRequest({
         url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'tickets_solved', name: 'Tickets Solved', pointsPerUnit: 10, description: 'Points for each Zendesk ticket solved', isActive: true },
+        data: { sourceId, key: 'tickets_solved', name: 'Tickets Solved', pointsPerUnit: 10, description: 'Coins for each Zendesk ticket solved', isActive: true },
       });
       await apiRequest({
         url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'fast_first_reply', name: 'Fast First Reply (<30min)', pointsPerUnit: 5, description: 'Bonus points for responding to a ticket within 30 minutes', isActive: true },
+        data: { sourceId, key: 'fast_first_reply', name: 'Fast First Reply (<30min)', pointsPerUnit: 5, description: 'Bonus coins for responding to a ticket within 30 minutes', isActive: true },
       });
     },
     onSuccess: () => {
@@ -224,11 +224,11 @@ export default function RewardsAdmin() {
     mutationFn: async (sourceId: number) => {
       await apiRequest({
         url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'calls_handled', name: 'Calls Handled', pointsPerUnit: 5, description: 'Points for each answered Zoom Phone call', isActive: true },
+        data: { sourceId, key: 'calls_handled', name: 'Calls Handled', pointsPerUnit: 5, description: 'Coins for each answered Zoom Phone call', isActive: true },
       });
       await apiRequest({
         url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'call_duration', name: 'Call Duration (minutes)', pointsPerUnit: 1, description: 'Points per minute of call time', isActive: true },
+        data: { sourceId, key: 'call_duration', name: 'Call Duration (minutes)', pointsPerUnit: 1, description: 'Coins per minute of call time', isActive: true },
       });
     },
     onSuccess: () => {
@@ -325,7 +325,7 @@ export default function RewardsAdmin() {
     onSuccess: () => {
       invalidateAll();
       setAdjustData({ userId: '', points: '', description: '', type: 'bonus' });
-      toast({ title: "Points adjusted successfully" });
+      toast({ title: "Coins adjusted successfully" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -357,7 +357,7 @@ export default function RewardsAdmin() {
           <TabsTrigger value="badges" className="flex items-center gap-1"><Award className="h-4 w-4" /> Badges</TabsTrigger>
           <TabsTrigger value="catalog" className="flex items-center gap-1"><ShoppingBag className="h-4 w-4" /> Catalog</TabsTrigger>
           <TabsTrigger value="redemptions" className="flex items-center gap-1"><Package className="h-4 w-4" /> Redemptions</TabsTrigger>
-          <TabsTrigger value="activity" className="flex items-center gap-1"><ClipboardList className="h-4 w-4" /> Points Activity</TabsTrigger>
+          <TabsTrigger value="activity" className="flex items-center gap-1"><ClipboardList className="h-4 w-4" /> Coins Activity</TabsTrigger>
           <TabsTrigger value="adjust" className="flex items-center gap-1"><UserPlus className="h-4 w-4" /> Manual Adjust</TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-1"><Settings className="h-4 w-4" /> Settings</TabsTrigger>
         </TabsList>
@@ -419,7 +419,7 @@ export default function RewardsAdmin() {
                                   toast({ title: "Error", description: e.message, variant: "destructive" });
                                 }
                               }}>
-                                {s.config && JSON.parse(s.config || '{}').zoomRefreshToken ? '🔄 Re-authorize Zoom' : '🔗 Authorize with Zoom'}
+                                {s.config && JSON.parse(s.config || '{}').zoomRefreshToken ? 'Re-authorize Zoom' : 'Authorize with Zoom'}
                               </Button>
                             )}
                             {s.lastSyncAt && (
@@ -504,7 +504,7 @@ export default function RewardsAdmin() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Key</TableHead>
-                      <TableHead>Points/Unit</TableHead>
+                      <TableHead>Coins/Unit</TableHead>
                       <TableHead>Source</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -560,7 +560,7 @@ export default function RewardsAdmin() {
                       <span className="text-2xl">{b.icon || '🏆'}</span>
                       <div className="flex-1">
                         <p className="font-medium">{b.name}</p>
-                        <p className="text-xs text-muted-foreground">{b.threshold.toLocaleString()} points{b.metricId ? ' (metric-specific)' : ''}</p>
+                        <p className="text-xs text-muted-foreground">{b.threshold.toLocaleString()} coins{b.metricId ? ' (metric-specific)' : ''}</p>
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => {
@@ -609,7 +609,7 @@ export default function RewardsAdmin() {
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.name}</TableCell>
                         <TableCell>{item.category || '-'}</TableCell>
-                        <TableCell>{item.pointsCost.toLocaleString()} pts</TableCell>
+                        <TableCell>{item.pointsCost.toLocaleString()} coins</TableCell>
                         <TableCell>{item.stock !== null ? item.stock : 'Unlimited'}</TableCell>
                         <TableCell>
                           <Badge variant={item.isActive ? "default" : "secondary"}>{item.isActive ? 'Active' : 'Inactive'}</Badge>
@@ -651,7 +651,7 @@ export default function RewardsAdmin() {
                       <TableHead>Date</TableHead>
                       <TableHead>Employee</TableHead>
                       <TableHead>Item</TableHead>
-                      <TableHead>Points</TableHead>
+                      <TableHead>Coins</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -698,7 +698,7 @@ export default function RewardsAdmin() {
         <TabsContent value="activity">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Points Activity Log</CardTitle>
+              <CardTitle className="text-lg">Coins Activity Log</CardTitle>
               <div className="flex items-center gap-2 w-[220px]">
                 <CustomDropdown
                   options={userDropdownOptions}
@@ -711,7 +711,7 @@ export default function RewardsAdmin() {
             </CardHeader>
             <CardContent>
               {pointsLogLoading ? <Skeleton className="h-40" /> : !pointsLog?.length ? (
-                <p className="text-center text-muted-foreground py-8">No points activity yet.</p>
+                <p className="text-center text-muted-foreground py-8">No coins activity yet.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
@@ -723,7 +723,7 @@ export default function RewardsAdmin() {
                         <TableHead>Metric</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead>Reference</TableHead>
-                        <TableHead className="text-right">Points</TableHead>
+                        <TableHead className="text-right">Coins</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -792,7 +792,7 @@ export default function RewardsAdmin() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Points (negative to deduct)</Label>
+                  <Label>Coins (negative to deduct)</Label>
                   <Input type="number" value={adjustData.points} onChange={e => setAdjustData({ ...adjustData, points: e.target.value })} placeholder="e.g. 100 or -50" />
                 </div>
                 <div>
@@ -957,7 +957,7 @@ export default function RewardsAdmin() {
                     value={formData._zendeskFastReplyMinutes ?? 30}
                     onChange={e => setFormData({ ...formData, _zendeskFastReplyMinutes: parseInt(e.target.value) || 30 })}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Replies faster than this earn bonus points</p>
+                  <p className="text-xs text-muted-foreground mt-1">Replies faster than this earn bonus coins</p>
                 </div>
               </>
             )}
@@ -1048,7 +1048,7 @@ export default function RewardsAdmin() {
           <div className="space-y-4">
             <div><Label>Name</Label><Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} /></div>
             <div><Label>Key</Label><Input value={formData.key || ''} onChange={e => setFormData({ ...formData, key: e.target.value })} placeholder="e.g. tickets_closed" /></div>
-            <div><Label>Points Per Unit</Label><Input type="number" value={formData.pointsPerUnit || 1} onChange={e => setFormData({ ...formData, pointsPerUnit: parseInt(e.target.value) })} /></div>
+            <div><Label>Coins Per Unit</Label><Input type="number" value={formData.pointsPerUnit || 1} onChange={e => setFormData({ ...formData, pointsPerUnit: parseInt(e.target.value) })} /></div>
             <div><Label>Source (optional)</Label>
               <Select value={String(formData.sourceId || '')} onValueChange={v => setFormData({ ...formData, sourceId: v ? parseInt(v) : null })}>
                 <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>

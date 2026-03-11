@@ -182,7 +182,7 @@ export interface IStorage {
   // Reward Balance operations
   getRewardBalance(userId: number): Promise<RewardBalance | undefined>;
   updateRewardBalance(userId: number, earnedDelta: number, redeemedDelta: number): Promise<RewardBalance>;
-  getRewardLeaderboard(enabledDepartmentIds?: number[]): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null })[]>;
+  getRewardLeaderboard(enabledDepartmentIds?: number[]): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null; ticketsSolved: number; callsHandled: number })[]>;
 
   // Reward Badge operations
   getRewardBadges(): Promise<RewardBadge[]>;

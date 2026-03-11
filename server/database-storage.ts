@@ -5137,16 +5137,32 @@ export class DatabaseStorage implements IStorage {
     `, [userId, earnedDelta, redeemedDelta]);
   }
 
-  async getRewardLeaderboard(enabledDepartmentIds?: number[]): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null })[]> {
+  async getRewardLeaderboard(enabledDepartmentIds?: number[]): Promise<(RewardBalance & { firstName: string; lastName: string; department: string | null; profilePhoto: string | null; ticketsSolved: number; callsHandled: number })[]> {
     const hasFilter = enabledDepartmentIds && enabledDepartmentIds.length > 0;
     return await db.any(`
       SELECT rb.id, rb.user_id as "userId", rb.total_earned as "totalEarned",
         rb.total_redeemed as "totalRedeemed", rb.current_balance as "currentBalance",
         rb.updated_at as "updatedAt",
         u.first_name as "firstName", u.last_name as "lastName",
-        u.department, u.profile_photo as "profilePhoto"
+        u.department, u.profile_photo as "profilePhoto",
+        COALESCE(ts.total, 0)::int as "ticketsSolved",
+        COALESCE(ch.total, 0)::int as "callsHandled"
       FROM reward_balances rb
       JOIN users u ON u.id = rb.user_id
+      LEFT JOIN (
+        SELECT rpl.user_id, SUM(rpl.quantity) as total
+        FROM reward_points_log rpl
+        JOIN reward_kpi_metrics rkm ON rkm.id = rpl.metric_id
+        WHERE rkm.key = 'tickets_solved'
+        GROUP BY rpl.user_id
+      ) ts ON ts.user_id = rb.user_id
+      LEFT JOIN (
+        SELECT rpl.user_id, SUM(rpl.quantity) as total
+        FROM reward_points_log rpl
+        JOIN reward_kpi_metrics rkm ON rkm.id = rpl.metric_id
+        WHERE rkm.key = 'calls_handled'
+        GROUP BY rpl.user_id
+      ) ch ON ch.user_id = rb.user_id
       WHERE u.active = true
       ${hasFilter ? 'AND u.department_id = ANY($1)' : ''}
       ORDER BY rb.total_earned DESC

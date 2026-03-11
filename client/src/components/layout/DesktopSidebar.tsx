@@ -239,31 +239,19 @@ export function DesktopSidebar() {
       icon: SettingsIcon,
       category: 'user',
     },
-    // Rewards - visible to all roles
+    // Rewards - visible to all roles (single entry in My Account)
     {
       href: '/rewards',
-      label: 'Leaderboard',
+      label: 'Rewards',
       icon: TrophyIcon,
-      category: 'rewards',
+      category: 'user',
     },
-    {
-      href: '/rewards/catalog',
-      label: 'Rewards Catalog',
-      icon: TrophyIcon,
-      category: 'rewards',
-    },
-    {
-      href: '/rewards/my',
-      label: 'My Rewards',
-      icon: TrophyIcon,
-      category: 'rewards',
-    },
-    // Admin-only rewards management
+    // Admin-only rewards management (in Management section)
     {
       href: '/rewards/admin',
-      label: 'Rewards Admin',
+      label: 'Rewards Settings',
       icon: TrophyIcon,
-      category: 'rewards-admin',
+      category: 'management',
     },
   ];
 
@@ -273,17 +261,17 @@ export function DesktopSidebar() {
     if (!currentUser) {
       return route.href === '/';
     }
-    // Hide rewards routes if rewards are disabled for this user's department (admins always see rewards-admin)
-    if (route.category === 'rewards' && rewardsEnabled?.enabled === false) {
+    // Hide rewards routes if rewards are disabled for this user's department (admins always see rewards settings)
+    if (route.href === '/rewards' && rewardsEnabled?.enabled === false) {
       return false;
     }
     // Managers (users with isManager: true) can see dashboard, users, devices, software, notifications, personal pages, and rewards
     if (currentUser.isManager) {
-      return ['/', '/users', '/devices', '/software', '/notifications', '/user-dashboard', '/guest-devices', '/guest-software', '/user-settings', '/rewards', '/rewards/catalog', '/rewards/my'].includes(route.href);
+      return ['/', '/users', '/devices', '/software', '/notifications', '/user-dashboard', '/guest-devices', '/guest-software', '/user-settings', '/rewards'].includes(route.href);
     }
     // Regular users can see dashboard, devices, software, notifications, user settings, and rewards
     if (currentUser.role === 'user') {
-      return ['/', '/devices', '/software', '/notifications', '/user-settings', '/rewards', '/rewards/catalog', '/rewards/my'].includes(route.href);
+      return ['/', '/devices', '/software', '/notifications', '/user-settings', '/rewards'].includes(route.href);
     }
     // Admins can see all routes
     return true;
@@ -410,24 +398,6 @@ export function DesktopSidebar() {
           </div>
         </div>
 
-        {/* Rewards Group for all users */}
-        {routes.some(r => r.category === 'rewards') && (
-          <>
-            <Separator className="mx-2" />
-            <div>
-              <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Rewards
-              </h3>
-              <div className="mt-1 space-y-1">
-                {routes
-                  .filter(route => route.category === 'rewards')
-                  .map(renderNavItem)
-                }
-              </div>
-            </div>
-          </>
-        )}
-
         {/* System Group for regular users only (not managers) */}
         {currentUser?.role === 'user' && !currentUser?.isManager && (
           <>
@@ -475,7 +445,7 @@ export function DesktopSidebar() {
                   </h3>
                   <div className="mt-1 space-y-1">
                     {routes
-                      .filter(route => route.category === 'management' || route.category === 'rewards-admin')
+                      .filter(route => route.category === 'management')
                       .map(renderNavItem)
                     }
                   </div>
