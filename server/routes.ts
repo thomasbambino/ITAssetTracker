@@ -31,6 +31,7 @@ import {
 } from "@shared/schema";
 import { triggerManualSync } from "./rewards-sync";
 import { fetchZendeskGroups } from "./zendesk-sync";
+import { exchangeZoomCode } from "./zoom-sync";
 
 // Define the session data type to fix type errors
 interface SessionData {
@@ -4792,6 +4793,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Last sync timestamp cleared. Next sync will use the configured start date." });
     } catch (error: any) {
       res.status(500).json({ message: "Error resetting sync", error: error.message });
+    }
+  });
+
+  // Zoom OAuth: generate authorization URL
+  app.get('/api/rewards/sources/:id/zoom-auth-url', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const source = await storage.getRewardKpiSourceById(parseInt(req.params.id));
+      if (!source) return res.status(404).json({ message: "Source not found" });
+      if (source.type !== 'zoom_phone') return res.status(400).json({ message: "Not a Zoom Phone source" });
+      if (!source.apiKey) return res.status(400).json({ message: "Client ID not configured" });
+
+      const branding = await storage.getBrandingSettings();
+      const baseUrl = branding?.applicationUrl || `${req.protocol}://${req.get('host')}`;
+      const redirectUri = `${baseUrl}/api/zoom/oauth/callback`;
+
+      const authUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${encodeURIComponent(source.apiKey)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${source.id}`;
+      res.json({ authUrl, redirectUri });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error generating Zoom auth URL", error: error.message });
+    }
+  });
+
+  // Zoom OAuth callback: exchange code for tokens
+  app.get('/api/zoom/oauth/callback', async (req: Request, res: Response) => {
+    try {
+      const { code, state } = req.query;
+      if (!code || !state) {
+        return res.status(400).send("Missing code or state parameter from Zoom");
+      }
+
+      const sourceId = parseInt(state as string);
+      const source = await storage.getRewardKpiSourceById(sourceId);
+      if (!source || source.type !== 'zoom_phone') {
+        return res.status(400).send("Invalid source");
+      }
+
+      if (!source.apiKey || !source.apiSecret) {
+        return res.status(400).send("Source missing Client ID or Client Secret");
+      }
+
+      const branding = await storage.getBrandingSettings();
+      const baseUrl = branding?.applicationUrl || `${req.protocol}://${req.get('host')}`;
+      const redirectUri = `${baseUrl}/api/zoom/oauth/callback`;
+
+      const tokenData = await exchangeZoomCode(source.apiKey, source.apiSecret, code as string, redirectUri);
+
+      // Merge tokens into existing config
+      let config: any = {};
+      try { config = JSON.parse(source.config || "{}"); } catch {}
+      config.zoomAccessToken = tokenData.access_token;
+      config.zoomRefreshToken = tokenData.refresh_token;
+      config.zoomTokenExpiresAt = Date.now() + tokenData.expires_in * 1000;
+
+      await storage.updateRewardKpiSource(source.id, {
+        config: JSON.stringify(config),
+      });
+
+      // Redirect back to rewards admin page
+      res.redirect('/rewards/admin?zoom_auth=success');
+    } catch (error: any) {
+      console.error("Zoom OAuth callback error:", error);
+      res.redirect('/rewards/admin?zoom_auth=error&message=' + encodeURIComponent(error.message || 'Unknown error'));
     }
   });
 

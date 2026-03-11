@@ -7,17 +7,19 @@ interface ZoomConfig {
   syncStartDate?: string;       // YYYY-MM-DD
   callDirection?: 'inbound' | 'outbound' | 'all'; // Default: 'all'
   minDurationSeconds?: number;  // Skip very short calls (default: 0)
+  // OAuth tokens stored after authorization
+  zoomAccessToken?: string;
+  zoomRefreshToken?: string;
+  zoomTokenExpiresAt?: number;  // epoch ms
 }
 
-// Cached OAuth token
-let cachedToken: { token: string; expiresAt: number } | null = null;
-
-async function getOAuthToken(accountId: string, clientId: string, clientSecret: string): Promise<string> {
-  // Return cached token if still valid (with 60s buffer)
-  if (cachedToken && Date.now() < cachedToken.expiresAt - 60_000) {
-    return cachedToken.token;
-  }
-
+// Exchange authorization code for tokens
+export async function exchangeZoomCode(
+  clientId: string,
+  clientSecret: string,
+  code: string,
+  redirectUri: string
+): Promise<{ access_token: string; refresh_token: string; expires_in: number }> {
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
   const res = await fetch("https://zoom.us/oauth/token", {
     method: "POST",
@@ -25,20 +27,75 @@ async function getOAuthToken(accountId: string, clientId: string, clientSecret: 
       Authorization: `Basic ${credentials}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: `grant_type=client_credentials&account_id=${encodeURIComponent(accountId)}`,
+    body: `grant_type=authorization_code&code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`,
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Zoom OAuth error ${res.status}: ${text}`);
+    throw new Error(`Zoom OAuth token exchange error ${res.status}: ${text}`);
   }
 
-  const data = await res.json();
-  cachedToken = {
-    token: data.access_token,
-    expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
-  };
-  return cachedToken.token;
+  return res.json();
+}
+
+// Refresh an access token using a refresh token
+async function refreshAccessToken(
+  clientId: string,
+  clientSecret: string,
+  refreshToken: string
+): Promise<{ access_token: string; refresh_token: string; expires_in: number }> {
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+  const res = await fetch("https://zoom.us/oauth/token", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refreshToken)}`,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Zoom token refresh error ${res.status}: ${text}`);
+  }
+
+  return res.json();
+}
+
+// Get a valid access token, refreshing if needed, and persist updated tokens
+async function getValidToken(source: RewardKpiSource, config: ZoomConfig, emit: (msg: string) => void): Promise<string> {
+  const clientId = source.apiKey;
+  const clientSecret = source.apiSecret;
+
+  if (!clientId || !clientSecret) {
+    throw new Error("Zoom source missing Client ID or Client Secret");
+  }
+
+  if (!config.zoomRefreshToken) {
+    throw new Error("Zoom source not authorized. Click 'Authorize with Zoom' in the source settings.");
+  }
+
+  // Check if current token is still valid (with 60s buffer)
+  if (config.zoomAccessToken && config.zoomTokenExpiresAt && Date.now() < config.zoomTokenExpiresAt - 60_000) {
+    return config.zoomAccessToken;
+  }
+
+  // Refresh the token
+  emit("Refreshing OAuth token...");
+  const tokenData = await refreshAccessToken(clientId, clientSecret, config.zoomRefreshToken);
+
+  // Update config with new tokens
+  config.zoomAccessToken = tokenData.access_token;
+  config.zoomRefreshToken = tokenData.refresh_token;
+  config.zoomTokenExpiresAt = Date.now() + tokenData.expires_in * 1000;
+
+  // Persist updated tokens back to the source
+  await storage.updateRewardKpiSource(source.id, {
+    config: JSON.stringify(config),
+  });
+
+  emit("OAuth token refreshed and saved");
+  return tokenData.access_token;
 }
 
 function formatDate(date: Date): string {
@@ -68,13 +125,6 @@ function getMonthlyChunks(start: Date, end: Date): Array<{ from: string; to: str
 export class ZoomSyncProvider implements KPISyncProvider {
   async fetchMetrics(source: RewardKpiSource, since: Date, log?: (msg: string) => void): Promise<KPIDataPoint[]> {
     const emit = log || (() => {});
-    const accountId = source.accountId;
-    const clientId = source.apiKey;
-    const clientSecret = source.apiSecret;
-
-    if (!accountId || !clientId || !clientSecret) {
-      throw new Error("Zoom Phone source requires accountId (Zoom Account ID), apiKey (Client ID), and apiSecret (Client Secret)");
-    }
 
     let config: ZoomConfig;
     try {
@@ -98,14 +148,13 @@ export class ZoomSyncProvider implements KPISyncProvider {
     // Normalize filter lists
     const filterEmails = (config.agentEmails || []).map(e => e.toLowerCase().trim()).filter(Boolean);
 
-    emit(`Config: accountId=${accountId}, callDirection=${callDirection}, minDuration=${minDuration}s`);
+    emit(`Config: callDirection=${callDirection}, minDuration=${minDuration}s`);
     emit(`Date range: ${formatDate(effectiveSince)} → ${formatDate(new Date())}`);
     emit(`Agent email filter: ${filterEmails.length > 0 ? filterEmails.join(', ') : '(none — all agents)'}`);
 
-    // Get OAuth token
-    emit(`Fetching OAuth token...`);
-    const token = await getOAuthToken(accountId, clientId, clientSecret);
-    emit(`OAuth token obtained`);
+    // Get valid OAuth token (refresh if needed)
+    const token = await getValidToken(source, config, emit);
+    emit(`OAuth token ready`);
 
     const dataPoints: KPIDataPoint[] = [];
     const now = new Date();

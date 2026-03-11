@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomDropdown, type DropdownOption } from "@/components/ui/custom-dropdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,6 +98,19 @@ export default function RewardsAdmin() {
   const { data: pointsLog, isLoading: pointsLogLoading } = useQuery<PointsLogEntry[]>({
     queryKey: [pointsLogUrl],
   });
+
+  // Handle Zoom OAuth callback redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const zoomAuth = params.get('zoom_auth');
+    if (zoomAuth === 'success') {
+      toast({ title: "Zoom authorized successfully", description: "You can now sync Zoom Phone call data." });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (zoomAuth === 'error') {
+      toast({ title: "Zoom authorization failed", description: params.get('message') || 'Unknown error', variant: "destructive" });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Build user dropdown options (alphabetical with "All Users" first)
   const userDropdownOptions: DropdownOption[] = useMemo(() => {
@@ -393,6 +406,20 @@ export default function RewardsAdmin() {
                             {s.type === 'zendesk' && (
                               <Button variant="outline" size="sm" onClick={() => fetchGroups(s.id)} disabled={groupsLoading}>
                                 Groups
+                              </Button>
+                            )}
+                            {s.type === 'zoom_phone' && (
+                              <Button variant="outline" size="sm" onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/rewards/sources/${s.id}/zoom-auth-url`, { credentials: 'include' });
+                                  if (!res.ok) { const err = await res.json(); throw new Error(err.message); }
+                                  const { authUrl } = await res.json();
+                                  window.location.href = authUrl;
+                                } catch (e: any) {
+                                  toast({ title: "Error", description: e.message, variant: "destructive" });
+                                }
+                              }}>
+                                {s.config && JSON.parse(s.config || '{}').zoomRefreshToken ? '🔄 Re-authorize Zoom' : '🔗 Authorize with Zoom'}
                               </Button>
                             )}
                             {s.lastSyncAt && (
@@ -876,12 +903,13 @@ export default function RewardsAdmin() {
                 <Input type="password" value={formData.apiSecret || ''} onChange={e => setFormData({ ...formData, apiSecret: e.target.value })} placeholder="Zoom Client Secret" />
               </div>
             )}
-            <div>
-              <Label>{formData.type === 'zendesk' ? 'Zendesk Subdomain' : formData.type === 'zoom_phone' ? 'Zoom Account ID' : 'Account ID (optional)'}</Label>
-              <Input value={formData.accountId || ''} onChange={e => setFormData({ ...formData, accountId: e.target.value })} placeholder={formData.type === 'zendesk' ? 'mycompany' : formData.type === 'zoom_phone' ? 'Zoom Account ID' : ''} />
-              {formData.type === 'zendesk' && <p className="text-xs text-muted-foreground mt-1">The subdomain from your Zendesk URL (mycompany.zendesk.com)</p>}
-              {formData.type === 'zoom_phone' && <p className="text-xs text-muted-foreground mt-1">Found in the Zoom Server-to-Server OAuth app settings</p>}
-            </div>
+            {formData.type !== 'zoom_phone' && (
+              <div>
+                <Label>{formData.type === 'zendesk' ? 'Zendesk Subdomain' : 'Account ID (optional)'}</Label>
+                <Input value={formData.accountId || ''} onChange={e => setFormData({ ...formData, accountId: e.target.value })} placeholder={formData.type === 'zendesk' ? 'mycompany' : ''} />
+                {formData.type === 'zendesk' && <p className="text-xs text-muted-foreground mt-1">The subdomain from your Zendesk URL (mycompany.zendesk.com)</p>}
+              </div>
+            )}
             {formData.type === 'zendesk' && (
               <>
                 <div>
