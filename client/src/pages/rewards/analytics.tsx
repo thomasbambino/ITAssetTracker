@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   BarChart,
   Bar,
@@ -19,6 +26,7 @@ import {
   Star,
   Users,
   ArrowUpDown,
+  X,
 } from 'lucide-react';
 
 type LeaderboardEntry = {
@@ -34,15 +42,43 @@ type LeaderboardEntry = {
   callsHandled: number;
 };
 
+type PointsLogEntry = {
+  id: number;
+  userId: number;
+  metricId?: number;
+  points: number;
+  quantity: number;
+  description?: string;
+  type: string;
+  referenceId?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  createdAt: string;
+  firstName: string;
+  lastName: string;
+  metricName?: string;
+};
+
 type SortKey = 'name' | 'department' | 'ticketsSolved' | 'callsHandled' | 'totalEarned' | 'currentBalance';
 type SortDir = 'asc' | 'desc';
 
 export default function RewardsAnalytics() {
   const [sortKey, setSortKey] = useState<SortKey>('totalEarned');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [selectedUser, setSelectedUser] = useState<LeaderboardEntry | null>(null);
 
   const { data: leaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['/api/rewards/leaderboard'],
+  });
+
+  const { data: userHistory, isLoading: historyLoading } = useQuery<PointsLogEntry[]>({
+    queryKey: ['/api/rewards/points-log', selectedUser?.userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/rewards/points-log?userId=${selectedUser!.userId}&limit=200`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      return res.json();
+    },
+    enabled: !!selectedUser,
   });
 
   const toggleSort = (key: SortKey) => {
@@ -116,6 +152,16 @@ export default function RewardsAnalytics() {
     </th>
   );
 
+  const typeBadgeVariant = (type: string) => {
+    switch (type) {
+      case 'earned': return 'default';
+      case 'redeemed': return 'destructive';
+      case 'bonus': return 'secondary';
+      case 'adjustment': return 'outline';
+      default: return 'outline';
+    }
+  };
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <h1 className="text-2xl font-bold">Rewards Analytics</h1>
@@ -187,8 +233,8 @@ export default function RewardsAnalytics() {
             ) : top10Activity.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">No data available</div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={top10Activity} margin={{ top: 5, right: 20, left: 0, bottom: 60 }}>
+              <ResponsiveContainer width="100%" height={340}>
+                <BarChart data={top10Activity} margin={{ top: 30, right: 20, left: 0, bottom: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="name" angle={-45} textAnchor="end" fontSize={11} className="fill-muted-foreground" />
                   <YAxis fontSize={11} className="fill-muted-foreground" />
@@ -196,7 +242,7 @@ export default function RewardsAnalytics() {
                     contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
-                  <Legend />
+                  <Legend verticalAlign="top" height={30} />
                   <Bar dataKey="tickets" name="Tickets Solved" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="calls" name="Calls Handled" fill="#22c55e" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -235,8 +281,12 @@ export default function RewardsAnalytics() {
                 </thead>
                 <tbody className="divide-y">
                   {sortedData.map(entry => (
-                    <tr key={entry.userId} className="hover:bg-muted/50">
-                      <td className="px-4 py-3 text-sm font-medium">
+                    <tr
+                      key={entry.userId}
+                      className="hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => setSelectedUser(entry)}
+                    >
+                      <td className="px-4 py-3 text-sm font-medium text-primary">
                         {entry.firstName} {entry.lastName}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
@@ -254,6 +304,95 @@ export default function RewardsAnalytics() {
           )}
         </CardContent>
       </Card>
+
+      {/* User Detail Dialog */}
+      <Dialog open={!!selectedUser} onOpenChange={(open) => { if (!open) setSelectedUser(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          {selectedUser && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedUser.firstName} {selectedUser.lastName}
+                  {selectedUser.department && (
+                    <span className="text-sm font-normal text-muted-foreground ml-2">
+                      {selectedUser.department}
+                    </span>
+                  )}
+                </DialogTitle>
+              </DialogHeader>
+
+              {/* User Stats Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Tickets Solved</p>
+                  <p className="text-xl font-bold text-blue-500">{selectedUser.ticketsSolved}</p>
+                </div>
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Calls Handled</p>
+                  <p className="text-xl font-bold text-green-500">{selectedUser.callsHandled}</p>
+                </div>
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Total Earned</p>
+                  <p className="text-xl font-bold text-yellow-500">{selectedUser.totalEarned.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Balance</p>
+                  <p className="text-xl font-bold">{selectedUser.currentBalance.toLocaleString()}</p>
+                </div>
+              </div>
+
+              {/* Points History */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3">Points History</h3>
+                {historyLoading ? (
+                  <div className="space-y-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-10 w-full" />
+                    ))}
+                  </div>
+                ) : !userHistory || userHistory.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    No history records found
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Date</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Type</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Description</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Points</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {userHistory.map(entry => (
+                          <tr key={entry.id} className="hover:bg-muted/50">
+                            <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+                              {new Date(entry.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-3 py-2">
+                              <Badge variant={typeBadgeVariant(entry.type)}>
+                                {entry.type}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-2">
+                              {entry.description || entry.metricName || '—'}
+                            </td>
+                            <td className={`px-3 py-2 text-right font-medium ${entry.points >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                              {entry.points >= 0 ? '+' : ''}{entry.points}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
