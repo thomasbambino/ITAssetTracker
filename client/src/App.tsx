@@ -33,6 +33,7 @@ import GuestSoftware from "@/pages/guest-software";
 import UserSettings from "@/pages/user-settings";
 import RewardsPage from "@/pages/rewards/index";
 import RewardsAdmin from "@/pages/rewards/admin";
+import RewardsAnalytics from "@/pages/rewards/analytics";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import LoginPage from "@/pages/auth/login";
 import ResetPasswordPage from "@/pages/auth/reset-password";
@@ -192,6 +193,7 @@ function MainRouter() {
       <Route path="/guest-software" component={() => <ProtectedPageWrapper component={GuestSoftware} />} />
       <Route path="/user-settings" component={() => <ProtectedPageWrapper component={UserSettings} />} />
       <Route path="/rewards" component={() => <ProtectedPageWrapper component={RewardsPage} />} />
+      <Route path="/rewards/analytics" component={() => <ProtectedPageWrapper component={RewardsAnalytics} adminRequired />} />
       <Route path="/rewards/admin" component={() => <ProtectedPageWrapper component={RewardsAdmin} adminRequired />} />
 
       {/* Fallback to 404 - this is still inside the protected wrapper */}

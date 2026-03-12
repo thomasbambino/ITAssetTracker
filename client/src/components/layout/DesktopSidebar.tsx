@@ -26,6 +26,7 @@ import {
   AlertCircleIcon,
   AlertTriangleIcon,
   TrophyIcon,
+  BarChart3Icon,
 } from 'lucide-react';
 
 // Define category groups
@@ -247,6 +248,12 @@ export function DesktopSidebar() {
       category: 'user',
     },
     // Admin-only rewards management (in Management section)
+    {
+      href: '/rewards/analytics',
+      label: 'Rewards Analytics',
+      icon: BarChart3Icon,
+      category: 'management',
+    },
     {
       href: '/rewards/admin',
       label: 'Rewards Settings',
