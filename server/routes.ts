@@ -29,7 +29,7 @@ import {
   insertRewardKpiSourceSchema, insertRewardKpiMetricSchema, insertRewardPointsLogSchema,
   insertRewardBadgeSchema, insertRewardCatalogSchema, insertRewardRedemptionSchema,
 } from "@shared/schema";
-import { triggerManualSync } from "./rewards-sync";
+import { triggerManualSync, startBackgroundSync, getSyncJob } from "./rewards-sync";
 import { fetchZendeskGroups } from "./zendesk-sync";
 import { exchangeZoomCode } from "./zoom-sync";
 
@@ -4765,25 +4765,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Start a background sync job (returns immediately)
   app.post('/api/rewards/sources/:id/sync', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
-      const result = await triggerManualSync(parseInt(req.params.id));
-      res.json(result);
+      const sourceId = parseInt(req.params.id);
+      const source = await storage.getRewardKpiSourceById(sourceId);
+      if (!source) {
+        return res.status(404).json({ message: 'Source not found' });
+      }
+      const job = startBackgroundSync(sourceId);
+      res.json({ jobId: job.id, status: job.status });
     } catch (error: any) {
-      const message = error?.message || String(error);
-      // Return as a sync result with errors so the frontend can display it in the dialog
-      const source = await storage.getRewardKpiSourceById(parseInt(req.params.id));
-      res.status(500).json({
-        sourceName: source?.name || 'Unknown',
-        dataPointsFetched: 0,
-        pointsAwarded: 0,
-        duplicatesSkipped: 0,
-        unmatchedMetrics: 0,
-        errors: [message],
-        details: [],
-        message: "Error triggering sync",
-      });
+      res.status(500).json({ message: "Error starting sync", error: error.message });
     }
+  });
+
+  // Poll for sync job status/result
+  app.get('/api/rewards/sync-jobs/:jobId', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    const job = getSyncJob(req.params.jobId);
+    if (!job) {
+      return res.status(404).json({ message: 'Sync job not found' });
+    }
+    res.json({ jobId: job.id, status: job.status, result: job.result });
   });
 
   // Fetch available Zendesk groups for a source (helps admin validate group IDs)

@@ -174,3 +174,69 @@ export async function triggerManualSync(sourceId: number): Promise<SyncResult> {
   }
   return syncSource(source);
 }
+
+// ---- Background (async) sync support ----
+
+export interface SyncJob {
+  id: string;
+  sourceId: number;
+  status: 'running' | 'completed' | 'failed';
+  startedAt: number;
+  result: SyncResult | null;
+}
+
+const activeSyncJobs = new Map<string, SyncJob>();
+
+export function startBackgroundSync(sourceId: number): SyncJob {
+  // Prevent duplicate syncs for the same source
+  const existingJobs = Array.from(activeSyncJobs.values());
+  const running = existingJobs.find(j => j.sourceId === sourceId && j.status === 'running');
+  if (running) {
+    return running;
+  }
+
+  const jobId = `sync_${sourceId}_${Date.now()}`;
+  const job: SyncJob = {
+    id: jobId,
+    sourceId,
+    status: 'running',
+    startedAt: Date.now(),
+    result: null,
+  };
+  activeSyncJobs.set(jobId, job);
+
+  // Run sync in background (fire-and-forget)
+  triggerManualSync(sourceId)
+    .then((result) => {
+      job.status = 'completed';
+      job.result = result;
+    })
+    .catch((error) => {
+      job.status = 'failed';
+      job.result = {
+        sourceName: `Source #${sourceId}`,
+        dataPointsFetched: 0,
+        pointsAwarded: 0,
+        duplicatesSkipped: 0,
+        unmatchedMetrics: 0,
+        errors: [error?.message || String(error)],
+        details: [],
+      };
+    });
+
+  return job;
+}
+
+export function getSyncJob(jobId: string): SyncJob | undefined {
+  return activeSyncJobs.get(jobId);
+}
+
+// Clean up old completed jobs after 10 minutes
+setInterval(() => {
+  const cutoff = Date.now() - 10 * 60 * 1000;
+  Array.from(activeSyncJobs.entries()).forEach(([id, job]) => {
+    if (job.status !== 'running' && job.startedAt < cutoff) {
+      activeSyncJobs.delete(id);
+    }
+  });
+}, 60 * 1000);

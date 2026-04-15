@@ -174,27 +174,62 @@ export default function RewardsAdmin() {
     setGroupsLoading(false);
   };
 
-  // Sync Now mutation
+  // Poll a sync job until it completes
+  const pollSyncJob = (jobId: string, sourceName: string) => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/rewards/sync-jobs/${jobId}`, { credentials: 'include' });
+        if (!res.ok) {
+          clearInterval(interval);
+          setSyncingSourceId(null);
+          toast({ title: "Sync failed", description: `Error polling sync status`, variant: "destructive" });
+          return;
+        }
+        const data = await res.json();
+        if (data.status === 'completed' || data.status === 'failed') {
+          clearInterval(interval);
+          setSyncingSourceId(null);
+          invalidateAll();
+          if (data.result) {
+            data.result.sourceName = data.result.sourceName || sourceName;
+            setSyncResult(data.result);
+            setSyncResultDialog(true);
+          }
+          if (data.status === 'failed' || data.result?.errors?.length) {
+            toast({ title: "Sync completed with errors", variant: "destructive" });
+          } else {
+            toast({ title: "Sync completed" });
+          }
+        }
+      } catch {
+        clearInterval(interval);
+        setSyncingSourceId(null);
+        toast({ title: "Sync failed", description: "Lost connection while syncing", variant: "destructive" });
+      }
+    }, 2000); // Poll every 2 seconds
+  };
+
+  // Sync Now mutation (starts background job, then polls)
   const syncMutation = useMutation({
     mutationFn: async (sourceId: number) => {
       setSyncingSourceId(sourceId);
       return apiRequest({ url: `/api/rewards/sources/${sourceId}/sync`, method: 'POST' });
     },
     onSuccess: (data: any) => {
-      setSyncingSourceId(null);
-      invalidateAll();
-      setSyncResult(data);
-      setSyncResultDialog(true);
-      if (data.errors?.length) {
-        toast({ title: "Sync completed with errors", variant: "destructive" });
+      if (data.jobId) {
+        const sourceName = sources?.find(s => s.id === syncingSourceId)?.name || 'Unknown';
+        pollSyncJob(data.jobId, sourceName);
       } else {
-        toast({ title: "Sync completed" });
+        // Fallback: direct result (shouldn't happen with new backend)
+        setSyncingSourceId(null);
+        invalidateAll();
+        setSyncResult(data);
+        setSyncResultDialog(true);
       }
     },
     onError: (e: any) => {
       const sourceName = sources?.find(s => s.id === syncingSourceId)?.name || 'Unknown';
       setSyncingSourceId(null);
-      // Show error in the sync result dialog so user can see details
       setSyncResult({
         sourceName,
         dataPointsFetched: 0,
