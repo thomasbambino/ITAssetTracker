@@ -4770,7 +4770,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await triggerManualSync(parseInt(req.params.id));
       res.json(result);
     } catch (error: any) {
-      res.status(500).json({ message: "Error triggering sync", error: error.message });
+      const message = error?.message || String(error);
+      // Return as a sync result with errors so the frontend can display it in the dialog
+      const source = await storage.getRewardKpiSourceById(parseInt(req.params.id));
+      res.status(500).json({
+        sourceName: source?.name || 'Unknown',
+        dataPointsFetched: 0,
+        pointsAwarded: 0,
+        duplicatesSkipped: 0,
+        unmatchedMetrics: 0,
+        errors: [message],
+        details: [],
+        message: "Error triggering sync",
+      });
     }
   });
 

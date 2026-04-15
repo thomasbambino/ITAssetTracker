@@ -136,6 +136,9 @@ export default function RewardsAdmin() {
     onError: (e: any) => toast({ title: "Error saving settings", description: e.message, variant: "destructive" }),
   });
 
+  // Sync tracking state
+  const [syncingSourceId, setSyncingSourceId] = useState<number | null>(null);
+
   // Dialog state
   const [sourceDialog, setSourceDialog] = useState(false);
   const [metricDialog, setMetricDialog] = useState(false);
@@ -174,9 +177,11 @@ export default function RewardsAdmin() {
   // Sync Now mutation
   const syncMutation = useMutation({
     mutationFn: async (sourceId: number) => {
+      setSyncingSourceId(sourceId);
       return apiRequest({ url: `/api/rewards/sources/${sourceId}/sync`, method: 'POST' });
     },
     onSuccess: (data: any) => {
+      setSyncingSourceId(null);
       invalidateAll();
       setSyncResult(data);
       setSyncResultDialog(true);
@@ -186,7 +191,22 @@ export default function RewardsAdmin() {
         toast({ title: "Sync completed" });
       }
     },
-    onError: (e: any) => toast({ title: "Sync failed", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      const sourceName = sources?.find(s => s.id === syncingSourceId)?.name || 'Unknown';
+      setSyncingSourceId(null);
+      // Show error in the sync result dialog so user can see details
+      setSyncResult({
+        sourceName,
+        dataPointsFetched: 0,
+        pointsAwarded: 0,
+        duplicatesSkipped: 0,
+        unmatchedMetrics: 0,
+        errors: [e.message || 'Unknown error'],
+        details: [],
+      });
+      setSyncResultDialog(true);
+      toast({ title: "Sync failed", description: e.message, variant: "destructive" });
+    },
   });
 
   const resetSyncMutation = useMutation({
@@ -381,6 +401,7 @@ export default function RewardsAdmin() {
                       <TableHead>Name</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Sync Interval</TableHead>
                       <TableHead>Last Sync</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -395,13 +416,18 @@ export default function RewardsAdmin() {
                             {s.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {s.syncIntervalMinutes >= 60
+                            ? `${Math.floor(s.syncIntervalMinutes / 60)}h ${s.syncIntervalMinutes % 60 ? (s.syncIntervalMinutes % 60) + 'm' : ''}`
+                            : `${s.syncIntervalMinutes}m`}
+                        </TableCell>
                         <TableCell className="text-sm">
                           {s.lastSyncAt ? new Date(s.lastSyncAt).toLocaleString() : 'Never'}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             <Button variant="outline" size="sm" onClick={() => syncMutation.mutate(s.id)} disabled={syncMutation.isPending}>
-                              <RefreshCw className={`h-4 w-4 mr-1 ${syncMutation.isPending ? 'animate-spin' : ''}`} /> Sync Now
+                              <RefreshCw className={`h-4 w-4 mr-1 ${syncingSourceId === s.id ? 'animate-spin' : ''}`} style={syncingSourceId === s.id ? { animationDuration: '2s' } : undefined} /> {syncingSourceId === s.id ? 'Syncing...' : 'Sync Now'}
                             </Button>
                             {s.type === 'zendesk' && (
                               <Button variant="outline" size="sm" onClick={() => fetchGroups(s.id)} disabled={groupsLoading}>
@@ -1157,10 +1183,19 @@ export default function RewardsAdmin() {
 
               {syncResult.errors?.length > 0 && (
                 <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                  <p className="text-sm font-medium text-destructive mb-1">Errors</p>
-                  {syncResult.errors.map((err: string, i: number) => (
-                    <p key={i} className="text-sm text-destructive">{err}</p>
-                  ))}
+                  <p className="text-sm font-medium text-destructive mb-2">Errors ({syncResult.errors.length})</p>
+                  {syncResult.errors.map((err: string, i: number) => {
+                    const isAuth = /auth|token|unauthorized|403|401/i.test(err);
+                    const isApi = /api|fetch|network|timeout|500|502|503/i.test(err);
+                    const isConfig = /config|missing|invalid|not found/i.test(err);
+                    const errorType = isAuth ? 'Authentication' : isApi ? 'API/Network' : isConfig ? 'Configuration' : 'Error';
+                    return (
+                      <div key={i} className="mb-2 last:mb-0">
+                        <Badge variant="outline" className="text-destructive border-destructive/40 mb-1 text-xs">{errorType}</Badge>
+                        <p className="text-sm text-destructive font-mono break-all">{err}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
