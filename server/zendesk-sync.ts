@@ -8,6 +8,7 @@ interface ZendeskConfig {
   agentEmails?: string[];   // Only track these agent emails (empty = all)
   groupIds?: number[];      // Only track tickets from these Zendesk group IDs (empty = all)
   syncStartDate?: string;   // Earliest date to sync from (YYYY-MM-DD)
+  fcrLookbackDays?: number; // Days to wait before evaluating FCR (default 7)
 }
 
 // Cache of Zendesk agent ID -> email
@@ -121,6 +122,7 @@ export class ZendeskSyncProvider implements KPISyncProvider {
     }
 
     const thresholdMinutes = config.fastReplyThresholdMinutes || 30;
+    const fcrLookbackDays = config.fcrLookbackDays || 7;
     const authHeader = buildAuthHeader(config.adminEmail, apiToken);
 
     // Use syncStartDate if configured and it's earlier than `since`
@@ -141,6 +143,7 @@ export class ZendeskSyncProvider implements KPISyncProvider {
     emit(`Group filter: ${filterGroupIds.length > 0 ? filterGroupIds.join(', ') : '(none — all groups)'}`);
     emit(`Agent email filter: ${filterEmails.length > 0 ? filterEmails.join(', ') : '(none — all agents)'}`);
     emit(`Fast reply threshold: ${thresholdMinutes} minutes`);
+    emit(`FCR lookback: ${fcrLookbackDays} days`);
 
     // Fetch and log available groups for reference
     try {
@@ -268,6 +271,34 @@ export class ZendeskSyncProvider implements KPISyncProvider {
                 periodEnd: ticketDate,
               });
             }
+
+            // SLA Resolution Time bonus (skip abandoned tickets without solved_at)
+            if (ticket.solved_at) {
+              const fullResolutionMinutes = metricsData.ticket_metric?.full_resolution_time_in_minutes?.calendar;
+              if (fullResolutionMinutes != null) {
+                if (fullResolutionMinutes <= 240) {
+                  dataPoints.push({
+                    userId: appUser.id,
+                    metricKey: "sla_resolution_4h",
+                    quantity: 1,
+                    referenceId: `zendesk_sla4h_${ticket.id}`,
+                    description: `SLA resolution within 4h on ticket #${ticket.id} (${fullResolutionMinutes}min)`,
+                    periodStart: ticketDate,
+                    periodEnd: ticketDate,
+                  });
+                } else if (fullResolutionMinutes <= 1440) {
+                  dataPoints.push({
+                    userId: appUser.id,
+                    metricKey: "sla_resolution_24h",
+                    quantity: 1,
+                    referenceId: `zendesk_sla24h_${ticket.id}`,
+                    description: `SLA resolution within 24h on ticket #${ticket.id} (${fullResolutionMinutes}min)`,
+                    periodStart: ticketDate,
+                    periodEnd: ticketDate,
+                  });
+                }
+              }
+            }
           } catch {
             // Skip metrics if unavailable for this ticket
           }
@@ -283,6 +314,93 @@ export class ZendeskSyncProvider implements KPISyncProvider {
       emit(`  Chunk done: ${chunkTickets} tickets processed`);
       await delay(RATE_LIMIT_DELAY);
     }
+
+    // --- FCR (First Contact Resolution) Pass ---
+    // Evaluate tickets solved 7-21 days ago to confirm no reopens
+    const fcrWindowEnd = new Date(now);
+    fcrWindowEnd.setDate(fcrWindowEnd.getDate() - fcrLookbackDays);
+    const fcrWindowStart = new Date(now);
+    fcrWindowStart.setDate(fcrWindowStart.getDate() - 21);
+
+    emit(`--- FCR Pass ---`);
+    emit(`FCR window: ${formatDate(fcrWindowStart)} → ${formatDate(fcrWindowEnd)}`);
+
+    let fcrEvaluated = 0;
+    let fcrAwarded = 0;
+
+    const fcrChunks = getMonthlyChunks(fcrWindowStart, fcrWindowEnd);
+
+    for (const chunk of fcrChunks) {
+      let fcrQuery = `type:ticket status>=solved solved>=${chunk.from} solved<${chunk.to}`;
+      if (filterGroupIds.length === 1) {
+        fcrQuery += ` group:${filterGroupIds[0]}`;
+      }
+
+      let fcrSearchUrl: string | null = `/api/v2/search.json?query=${encodeURIComponent(fcrQuery)}`;
+
+      while (fcrSearchUrl) {
+        const searchData = await zendeskFetch(subdomain, fcrSearchUrl, authHeader);
+        const tickets = searchData.results || [];
+
+        for (const ticket of tickets) {
+          if (!ticket.assignee_id) continue;
+          if (!ticket.solved_at) continue;
+
+          // Filter by group IDs
+          if (filterGroupIds.length > 0 && !filterGroupIds.map(String).includes(String(ticket.group_id))) {
+            continue;
+          }
+
+          await delay(RATE_LIMIT_DELAY);
+
+          const agentEmail = await getAgentEmail(subdomain, ticket.assignee_id, authHeader);
+          if (!agentEmail) continue;
+
+          if (filterEmails.length > 0 && !filterEmails.includes(agentEmail.toLowerCase())) {
+            continue;
+          }
+
+          const appUser = await storage.getUserByEmail(agentEmail);
+          if (!appUser) continue;
+
+          fcrEvaluated++;
+
+          // Fetch ticket metrics to check reopens
+          try {
+            await delay(RATE_LIMIT_DELAY);
+            const metricsData = await zendeskFetch(
+              subdomain,
+              `/api/v2/tickets/${ticket.id}/metrics.json`,
+              authHeader
+            );
+
+            const reopens = metricsData.ticket_metric?.reopens ?? -1;
+            if (reopens === 0) {
+              const ticketDate = new Date(ticket.solved_at);
+              dataPoints.push({
+                userId: appUser.id,
+                metricKey: "first_contact_resolution",
+                quantity: 1,
+                referenceId: `zendesk_fcr_${ticket.id}`,
+                description: `First contact resolution on ticket #${ticket.id}: ${ticket.subject || "No subject"}`,
+                periodStart: ticketDate,
+                periodEnd: ticketDate,
+              });
+              fcrAwarded++;
+            }
+          } catch {
+            // Skip if metrics unavailable
+          }
+        }
+
+        fcrSearchUrl = searchData.next_page || null;
+        if (fcrSearchUrl) {
+          await delay(RATE_LIMIT_DELAY);
+        }
+      }
+    }
+
+    emit(`FCR evaluated: ${fcrEvaluated}, awarded: ${fcrAwarded}`);
 
     emit(`--- Summary ---`);
     emit(`Total tickets seen: ${totalTicketsSeen}`);
