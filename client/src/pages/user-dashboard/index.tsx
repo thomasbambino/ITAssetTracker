@@ -401,6 +401,15 @@ export default function UserDashboard() {
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <h3 className="font-medium flex items-center gap-2">
+                        {assignment.software.icon ? (
+                          <img
+                            src={assignment.software.icon}
+                            alt={`${assignment.software.name} icon`}
+                            className="h-5 w-5 rounded object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <Package className="h-5 w-5 text-primary flex-shrink-0" />
+                        )}
                         <span>{assignment.software.name} {assignment.software.version || ''}</span>
                         {assignment.software.url && (
                           <a 
