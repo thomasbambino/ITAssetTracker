@@ -5095,6 +5095,31 @@ export class DatabaseStorage implements IStorage {
     `, params);
   }
 
+  async clearRewardPointsLogBySource(sourceId: number): Promise<number> {
+    const result = await db.result(`
+      DELETE FROM reward_points_log WHERE metric_id IN (SELECT id FROM reward_kpi_metrics WHERE source_id = $1)
+    `, [sourceId]);
+    // Reset lastSyncAt so next sync re-pulls
+    await db.none(`UPDATE reward_kpi_sources SET last_sync_at = NULL WHERE id = $1`, [sourceId]);
+    return result.rowCount;
+  }
+
+  async getRewardPointsLogBySource(sourceId: number, limit: number = 200, offset: number = 0): Promise<(RewardPointsLog & { firstName: string; lastName: string; metricName: string | null })[]> {
+    return await db.any(`
+      SELECT pl.id, pl.user_id as "userId", pl.metric_id as "metricId", pl.points, pl.quantity,
+        pl.description, pl.type, pl.reference_id as "referenceId",
+        pl.period_start as "periodStart", pl.period_end as "periodEnd", pl.created_at as "createdAt",
+        u.first_name as "firstName", u.last_name as "lastName",
+        m.name as "metricName"
+      FROM reward_points_log pl
+      JOIN users u ON u.id = pl.user_id
+      JOIN reward_kpi_metrics m ON m.id = pl.metric_id
+      WHERE m.source_id = $1
+      ORDER BY pl.created_at DESC
+      LIMIT $2 OFFSET $3
+    `, [sourceId, limit, offset]);
+  }
+
   async getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined> {
     try {
       return await db.one(`

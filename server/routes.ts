@@ -4731,7 +4731,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/rewards/sources', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
       const sources = await storage.getRewardKpiSources();
-      res.json(sources);
+      // Mask sensitive tokens before returning
+      const masked = sources.map(s => {
+        const maskToken = (val: string | null) => {
+          if (!val) return val;
+          return val.length > 4 ? '••••••' + val.slice(-4) : '••••••••';
+        };
+        let config = s.config;
+        if (config) {
+          try {
+            const cfg = JSON.parse(config);
+            delete cfg.zoomAccessToken;
+            delete cfg.zoomRefreshToken;
+            config = JSON.stringify(cfg);
+          } catch {}
+        }
+        return { ...s, apiKey: maskToken(s.apiKey), apiSecret: maskToken(s.apiSecret), config };
+      });
+      res.json(masked);
     } catch (error: any) {
       res.status(500).json({ message: "Error fetching KPI sources", error: error.message });
     }
@@ -4748,7 +4765,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/rewards/sources/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
-      const source = await storage.updateRewardKpiSource(parseInt(req.params.id), req.body);
+      const body = { ...req.body };
+      // If apiKey/apiSecret starts with masked prefix, don't update it (keep existing DB value)
+      if (typeof body.apiKey === 'string' && body.apiKey.startsWith('••')) delete body.apiKey;
+      if (typeof body.apiSecret === 'string' && body.apiSecret.startsWith('••')) delete body.apiSecret;
+      const source = await storage.updateRewardKpiSource(parseInt(req.params.id), body);
       if (!source) return res.status(404).json({ message: "Source not found" });
       res.json(source);
     } catch (error: any) {
@@ -4808,6 +4829,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Last sync timestamp cleared. Next sync will use the configured start date." });
     } catch (error: any) {
       res.status(500).json({ message: "Error resetting sync", error: error.message });
+    }
+  });
+
+  // Clear all synced points data for a source
+  app.post('/api/rewards/sources/:id/clear-data', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const sourceId = parseInt(req.params.id);
+      const source = await storage.getRewardKpiSourceById(sourceId);
+      if (!source) return res.status(404).json({ message: "Source not found" });
+      const deleted = await storage.clearRewardPointsLogBySource(sourceId);
+      res.json({ deleted, message: `Cleared ${deleted} points log entries for source "${source.name}"` });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error clearing source data", error: error.message });
+    }
+  });
+
+  // Get raw points log data for a source (paginated)
+  app.get('/api/rewards/sources/:id/data', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const sourceId = parseInt(req.params.id);
+      const limit = parseInt(req.query.limit as string) || 200;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const data = await storage.getRewardPointsLogBySource(sourceId, limit, offset);
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching source data", error: error.message });
     }
   });
 

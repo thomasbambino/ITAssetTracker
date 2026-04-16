@@ -25,7 +25,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   PlusCircle, Edit, Trash2, Database, BarChart3, Award, ShoppingBag,
-  CheckCircle, XCircle, Package, UserPlus, RefreshCw, RotateCcw, Settings, ClipboardList,
+  CheckCircle, XCircle, Package, UserPlus, RefreshCw, RotateCcw, Settings, ClipboardList, FileText, Eraser,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -152,6 +152,17 @@ export default function RewardsAdmin() {
   const [editItem, setEditItem] = useState<any>(null);
   const [formData, setFormData] = useState<any>({});
 
+  // Clear data dialog state
+  const [clearDataDialog, setClearDataDialog] = useState<{ id: number; name: string } | null>(null);
+
+  // Raw data tab state
+  const [rawDataSourceId, setRawDataSourceId] = useState<string>('');
+  const rawDataUrl = rawDataSourceId ? `/api/rewards/sources/${rawDataSourceId}/data?limit=200` : null;
+  const { data: rawData, isLoading: rawDataLoading } = useQuery<PointsLogEntry[]>({
+    queryKey: [rawDataUrl],
+    enabled: !!rawDataSourceId,
+  });
+
   // Manual adjust state
   const [adjustData, setAdjustData] = useState({ userId: '', points: '', description: '', type: 'bonus' });
 
@@ -251,6 +262,19 @@ export default function RewardsAdmin() {
     onSuccess: () => {
       invalidateAll();
       toast({ title: "Sync reset", description: "Next sync will pull from the configured start date." });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Clear data mutation
+  const clearDataMutation = useMutation({
+    mutationFn: async (sourceId: number) => {
+      return apiRequest({ url: `/api/rewards/sources/${sourceId}/clear-data`, method: 'POST' });
+    },
+    onSuccess: (data: any) => {
+      invalidateAll();
+      setClearDataDialog(null);
+      toast({ title: "Data cleared", description: data.message || "All points data deleted for this source." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -412,6 +436,7 @@ export default function RewardsAdmin() {
           <TabsTrigger value="badges" className="flex items-center gap-1"><Award className="h-4 w-4" /> Badges</TabsTrigger>
           <TabsTrigger value="catalog" className="flex items-center gap-1"><ShoppingBag className="h-4 w-4" /> Catalog</TabsTrigger>
           <TabsTrigger value="redemptions" className="flex items-center gap-1"><Package className="h-4 w-4" /> Redemptions</TabsTrigger>
+          <TabsTrigger value="rawdata" className="flex items-center gap-1"><FileText className="h-4 w-4" /> Raw Data</TabsTrigger>
           <TabsTrigger value="activity" className="flex items-center gap-1"><ClipboardList className="h-4 w-4" /> Coins Activity</TabsTrigger>
           <TabsTrigger value="adjust" className="flex items-center gap-1"><UserPlus className="h-4 w-4" /> Manual Adjust</TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-1"><Settings className="h-4 w-4" /> Settings</TabsTrigger>
@@ -488,6 +513,9 @@ export default function RewardsAdmin() {
                                 <RotateCcw className="h-4 w-4" />
                               </Button>
                             )}
+                            <Button variant="ghost" size="icon" title="Clear all synced data" onClick={() => setClearDataDialog({ id: s.id, name: s.name })}>
+                              <Eraser className="h-4 w-4 text-orange-500" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => {
                               setEditItem(s);
                               const fd: any = { name: s.name, type: s.type, apiKey: s.apiKey || '', apiSecret: s.apiSecret || '', accountId: s.accountId || '', config: s.config || '', isActive: s.isActive, syncIntervalMinutes: s.syncIntervalMinutes };
@@ -755,6 +783,68 @@ export default function RewardsAdmin() {
           </Card>
         </TabsContent>
 
+        {/* ==================== RAW DATA TAB ==================== */}
+        <TabsContent value="rawdata">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Raw Source Data</CardTitle>
+              <div className="w-[220px]">
+                <Select value={rawDataSourceId} onValueChange={setRawDataSourceId}>
+                  <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
+                  <SelectContent>
+                    {sources?.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!rawDataSourceId ? (
+                <p className="text-center text-muted-foreground py-8">Select a source to view its data.</p>
+              ) : rawDataLoading ? <Skeleton className="h-40" /> : !rawData?.length ? (
+                <p className="text-center text-muted-foreground py-8">No data for this source.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Metric</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Reference ID</TableHead>
+                        <TableHead className="text-right">Coins</TableHead>
+                        <TableHead className="text-right">Qty</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rawData.map(entry => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="whitespace-nowrap text-sm">
+                            {(() => {
+                              const d = new Date(entry.periodStart || entry.createdAt);
+                              return <>{d.toLocaleDateString()}{' '}<span className="text-muted-foreground">{d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></>;
+                            })()}
+                          </TableCell>
+                          <TableCell className="font-medium">{entry.firstName} {entry.lastName}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{entry.metricName || '—'}</TableCell>
+                          <TableCell className="text-sm max-w-[300px] truncate" title={entry.description || ''}>{entry.description || '—'}</TableCell>
+                          <TableCell className="text-sm font-mono">{entry.referenceId || '—'}</TableCell>
+                          <TableCell className="text-right font-bold">
+                            <span className={entry.points >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {entry.points >= 0 ? '+' : ''}{entry.points}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">{entry.quantity}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* ==================== POINTS ACTIVITY TAB ==================== */}
         <TabsContent value="activity">
           <Card>
@@ -956,12 +1046,12 @@ export default function RewardsAdmin() {
             </div>
             <div>
               <Label>{formData.type === 'zendesk' ? 'API Token' : formData.type === 'zoom_phone' ? 'Client ID' : 'API Key (optional)'}</Label>
-              <Input value={formData.apiKey || ''} onChange={e => setFormData({ ...formData, apiKey: e.target.value })} placeholder={formData.type === 'zendesk' ? 'Zendesk API token' : formData.type === 'zoom_phone' ? 'Zoom Client ID' : ''} />
+              <Input value={formData.apiKey || ''} onChange={e => setFormData({ ...formData, apiKey: e.target.value })} placeholder={editItem ? 'Enter new token to change' : formData.type === 'zendesk' ? 'Zendesk API token' : formData.type === 'zoom_phone' ? 'Zoom Client ID' : ''} />
             </div>
             {formData.type === 'zoom_phone' && (
               <div>
                 <Label>Client Secret</Label>
-                <Input type="password" value={formData.apiSecret || ''} onChange={e => setFormData({ ...formData, apiSecret: e.target.value })} placeholder="Zoom Client Secret" />
+                <Input type="password" value={formData.apiSecret || ''} onChange={e => setFormData({ ...formData, apiSecret: e.target.value })} placeholder={editItem ? 'Enter new secret to change' : 'Zoom Client Secret'} />
               </div>
             )}
             {formData.type !== 'zoom_phone' && (
@@ -1286,6 +1376,20 @@ export default function RewardsAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Clear Data Confirmation */}
+      <AlertDialog open={!!clearDataDialog} onOpenChange={() => setClearDataDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all data for "{clearDataDialog?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>This will delete all synced points log entries for this source and reset the last sync timestamp. This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => clearDataDialog && clearDataMutation.mutate(clearDataDialog.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Clear Data</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
