@@ -771,45 +771,76 @@ export default function RewardsAdmin() {
                 <p className="text-center text-muted-foreground py-8">Select a source to view its data.</p>
               ) : rawDataLoading ? <Skeleton className="h-40" /> : !rawData?.length ? (
                 <p className="text-center text-muted-foreground py-8">No data for this source.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Metric</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Reference ID</TableHead>
-                        <TableHead className="text-right">Coins</TableHead>
-                        <TableHead className="text-right">Qty</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rawData.map(entry => (
-                        <TableRow key={entry.id}>
-                          <TableCell className="whitespace-nowrap text-sm">
-                            {(() => {
-                              const d = new Date(entry.periodStart || entry.createdAt);
-                              return <>{d.toLocaleDateString()}{' '}<span className="text-muted-foreground">{d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></>;
-                            })()}
-                          </TableCell>
-                          <TableCell className="font-medium">{entry.firstName} {entry.lastName}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{entry.metricName || '—'}</TableCell>
-                          <TableCell className="text-sm max-w-[300px] truncate" title={entry.description || ''}>{entry.description || '—'}</TableCell>
-                          <TableCell className="text-sm font-mono">{entry.referenceId || '—'}</TableCell>
-                          <TableCell className="text-right font-bold">
-                            <span className={entry.points >= 0 ? 'text-green-600' : 'text-red-600'}>
-                              {entry.points >= 0 ? '+' : ''}{entry.points}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">{entry.quantity}</TableCell>
+              ) : (() => {
+                const sourceType = sources?.find(s => s.id === parseInt(rawDataSourceId))?.type;
+                const isZendesk = sourceType === 'zendesk';
+                const isZoom = sourceType === 'zoom_phone';
+                return (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          {isZendesk && <TableHead>Ticket #</TableHead>}
+                          {isZoom && <TableHead>Direction</TableHead>}
+                          <TableHead>Agent</TableHead>
+                          <TableHead>Event</TableHead>
+                          <TableHead>Details</TableHead>
+                          {isZoom && <TableHead className="text-right">Duration</TableHead>}
+                          <TableHead className="text-right">Coins</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+                      </TableHeader>
+                      <TableBody>
+                        {rawData.map(entry => {
+                          // Parse reference ID for source-specific display
+                          const ticketMatch = entry.referenceId?.match(/zendesk_(?:solved|frt|fcr|sla4h|sla24h)_(\d+)/);
+                          const zoomMatch = entry.referenceId?.match(/zoom_(inbound|outbound|missed)_/);
+                          const durationMatch = entry.description?.match(/([\d.]+)\s*min/);
+                          return (
+                            <TableRow key={entry.id}>
+                              <TableCell className="whitespace-nowrap text-sm">
+                                {(() => {
+                                  const d = new Date(entry.periodStart || entry.createdAt);
+                                  return <>{d.toLocaleDateString()}{' '}<span className="text-muted-foreground">{d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></>;
+                                })()}
+                              </TableCell>
+                              {isZendesk && (
+                                <TableCell className="text-sm">
+                                  {ticketMatch ? (
+                                    <a href={`https://satellitephonestore.zendesk.com/agent/tickets/${ticketMatch[1]}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-mono">#{ticketMatch[1]}</a>
+                                  ) : <span className="text-muted-foreground">—</span>}
+                                </TableCell>
+                              )}
+                              {isZoom && (
+                                <TableCell>
+                                  <Badge variant="outline" className="text-xs">
+                                    {zoomMatch ? zoomMatch[1] : 'call'}
+                                  </Badge>
+                                </TableCell>
+                              )}
+                              <TableCell className="font-medium">{entry.firstName} {entry.lastName}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="text-xs">{entry.metricName || '—'}</Badge>
+                              </TableCell>
+                              <TableCell className="text-sm max-w-[300px] truncate" title={entry.description || ''}>{entry.description || '—'}</TableCell>
+                              {isZoom && (
+                                <TableCell className="text-right text-sm">
+                                  {durationMatch ? `${durationMatch[1]} min` : '—'}
+                                </TableCell>
+                              )}
+                              <TableCell className="text-right font-bold">
+                                <span className={entry.points >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                  {entry.points >= 0 ? '+' : ''}{entry.points}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -868,7 +899,7 @@ export default function RewardsAdmin() {
                           <TableCell className="text-sm font-mono">
                             {(() => {
                               if (!entry.referenceId) return '—';
-                              const ticketMatch = entry.referenceId.match(/zendesk_(?:solved|frt)_(\d+)/);
+                              const ticketMatch = entry.referenceId.match(/zendesk_(?:solved|frt|fcr|sla4h|sla24h)_(\d+)/);
                               if (ticketMatch) {
                                 return <a href={`https://satellitephonestore.zendesk.com/agent/tickets/${ticketMatch[1]}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">#{ticketMatch[1]}</a>;
                               }
