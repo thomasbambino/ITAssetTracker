@@ -23,13 +23,17 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   PlusCircle, Edit, Trash2, Database, BarChart3, Award, ShoppingBag,
   CheckCircle, XCircle, Package, UserPlus, RefreshCw, RotateCcw, Settings, ClipboardList, FileText, Eraser,
+  ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, Calculator,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
 
 // ------ Types ------
 type KpiSource = {
@@ -69,6 +73,95 @@ type PointsLogEntry = {
 type RewardSettingsConfig = {
   enabledDepartmentIds: number[];
 };
+type RawDataEntry = {
+  id: number; sourceId: number; referenceId: string; userId: number | null;
+  rawPayload: Record<string, any>; fetchedAt: string;
+  firstName: string | null; lastName: string | null;
+};
+type PaginatedResponse<T> = { data: T[]; total: number };
+
+// ---- Inline helper components ----
+
+function SortableHeader({ label, sortKey, currentSort, currentDir, onSort }: {
+  label: string; sortKey: string; currentSort: string; currentDir: string;
+  onSort: (key: string) => void;
+}) {
+  const isActive = currentSort === sortKey;
+  return (
+    <TableHead className="cursor-pointer select-none" onClick={() => onSort(sortKey)}>
+      <div className="flex items-center gap-1">
+        {label}
+        {isActive ? (currentDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+      </div>
+    </TableHead>
+  );
+}
+
+function DateRangePicker({ dateFrom, dateTo, onChange }: {
+  dateFrom: string; dateTo: string;
+  onChange: (from: string, to: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+            <CalendarIcon className="h-3 w-3" />
+            {dateFrom || 'From'}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar mode="single" selected={dateFrom ? new Date(dateFrom + 'T00:00:00') : undefined}
+            onSelect={(d) => onChange(d ? format(d, 'yyyy-MM-dd') : '', dateTo)} />
+        </PopoverContent>
+      </Popover>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+            <CalendarIcon className="h-3 w-3" />
+            {dateTo || 'To'}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar mode="single" selected={dateTo ? new Date(dateTo + 'T00:00:00') : undefined}
+            onSelect={(d) => onChange(dateFrom, d ? format(d, 'yyyy-MM-dd') : '')} />
+        </PopoverContent>
+      </Popover>
+      {(dateFrom || dateTo) && (
+        <Button variant="ghost" size="sm" className="h-8 text-xs px-2" onClick={() => onChange('', '')}>Clear</Button>
+      )}
+    </div>
+  );
+}
+
+function PaginationControls({ total, page, pageSize, onPageChange, onPageSizeChange }: {
+  total: number; page: number; pageSize: number;
+  onPageChange: (p: number) => void; onPageSizeChange: (s: number) => void;
+}) {
+  const totalPages = Math.ceil(total / pageSize);
+  const start = page * pageSize + 1;
+  const end = Math.min((page + 1) * pageSize, total);
+  return (
+    <div className="flex items-center justify-between pt-4">
+      <div className="text-sm text-muted-foreground">
+        Showing {total > 0 ? start : 0}–{end} of {total}
+      </div>
+      <div className="flex items-center gap-2">
+        <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(parseInt(v))}>
+          <SelectTrigger className="w-[80px] h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="25">25</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" className="h-8" disabled={page === 0} onClick={() => onPageChange(page - 1)}>Prev</Button>
+        <span className="text-sm text-muted-foreground">{totalPages > 0 ? page + 1 : 0} / {totalPages}</span>
+        <Button variant="outline" size="sm" className="h-8" disabled={page >= totalPages - 1} onClick={() => onPageChange(page + 1)}>Next</Button>
+      </div>
+    </div>
+  );
+}
 
 const PREDEFINED_METRICS: Record<string, Array<{ key: string; name: string; defaultPoints: number; description: string }>> = {
   zendesk: [
@@ -109,14 +202,35 @@ export default function RewardsAdmin() {
   const { data: departments } = useQuery<Department[]>({ queryKey: ['/api/departments'] });
   const { data: rewardSettings } = useQuery<RewardSettingsConfig>({ queryKey: ['/api/rewards/settings'] });
 
-  // Points activity log state
+  // Points activity log state (paginated + sortable + filterable)
   const [activityFilterUser, setActivityFilterUser] = useState<string>('all');
-  const pointsLogUrl = activityFilterUser && activityFilterUser !== 'all'
-    ? `/api/rewards/points-log?limit=200&userId=${activityFilterUser}`
-    : '/api/rewards/points-log?limit=200';
-  const { data: pointsLog, isLoading: pointsLogLoading } = useQuery<PointsLogEntry[]>({
+  const [activitySort, setActivitySort] = useState('');
+  const [activitySortDir, setActivitySortDir] = useState('desc');
+  const [activityPage, setActivityPage] = useState(0);
+  const [activityPageSize, setActivityPageSize] = useState(50);
+  const [activityDateFrom, setActivityDateFrom] = useState('');
+  const [activityDateTo, setActivityDateTo] = useState('');
+  const [activityMetricFilter, setActivityMetricFilter] = useState<string>('all');
+
+  const pointsLogParams = useMemo(() => {
+    const p = new URLSearchParams();
+    p.set('limit', String(activityPageSize));
+    p.set('offset', String(activityPage * activityPageSize));
+    if (activityFilterUser && activityFilterUser !== 'all') p.set('userId', activityFilterUser);
+    if (activitySort) p.set('sortBy', activitySort);
+    if (activitySortDir) p.set('sortDir', activitySortDir);
+    if (activityDateFrom) p.set('dateFrom', activityDateFrom);
+    if (activityDateTo) p.set('dateTo', activityDateTo);
+    if (activityMetricFilter && activityMetricFilter !== 'all') p.set('metricId', activityMetricFilter);
+    return p.toString();
+  }, [activityFilterUser, activitySort, activitySortDir, activityPage, activityPageSize, activityDateFrom, activityDateTo, activityMetricFilter]);
+
+  const pointsLogUrl = `/api/rewards/points-log?${pointsLogParams}`;
+  const { data: pointsLogResponse, isLoading: pointsLogLoading } = useQuery<PaginatedResponse<PointsLogEntry>>({
     queryKey: [pointsLogUrl],
   });
+  const pointsLog = pointsLogResponse?.data;
+  const pointsLogTotal = pointsLogResponse?.total ?? 0;
 
   // Handle Zoom OAuth callback redirect
   useEffect(() => {
@@ -174,13 +288,39 @@ export default function RewardsAdmin() {
   // Clear data dialog state
   const [clearDataDialog, setClearDataDialog] = useState<{ id: number; name: string } | null>(null);
 
-  // Raw data tab state
+  // Raw data tab state (paginated + sortable + filterable)
   const [rawDataSourceId, setRawDataSourceId] = useState<string>('');
-  const rawDataUrl = rawDataSourceId ? `/api/rewards/sources/${rawDataSourceId}/data?limit=200` : null;
-  const { data: rawData, isLoading: rawDataLoading } = useQuery<PointsLogEntry[]>({
+  const [rawDataSort, setRawDataSort] = useState('');
+  const [rawDataSortDir, setRawDataSortDir] = useState('desc');
+  const [rawDataPage, setRawDataPage] = useState(0);
+  const [rawDataPageSize, setRawDataPageSize] = useState(50);
+  const [rawDataDateFrom, setRawDataDateFrom] = useState('');
+  const [rawDataDateTo, setRawDataDateTo] = useState('');
+  const [rawDataUserFilter, setRawDataUserFilter] = useState<string>('all');
+
+  const rawDataParams = useMemo(() => {
+    const p = new URLSearchParams();
+    p.set('limit', String(rawDataPageSize));
+    p.set('offset', String(rawDataPage * rawDataPageSize));
+    if (rawDataSort) p.set('sortBy', rawDataSort);
+    if (rawDataSortDir) p.set('sortDir', rawDataSortDir);
+    if (rawDataDateFrom) p.set('dateFrom', rawDataDateFrom);
+    if (rawDataDateTo) p.set('dateTo', rawDataDateTo);
+    if (rawDataUserFilter && rawDataUserFilter !== 'all') p.set('userId', rawDataUserFilter);
+    return p.toString();
+  }, [rawDataSort, rawDataSortDir, rawDataPage, rawDataPageSize, rawDataDateFrom, rawDataDateTo, rawDataUserFilter]);
+
+  const rawDataUrl = rawDataSourceId ? `/api/rewards/sources/${rawDataSourceId}/data?${rawDataParams}` : null;
+  const { data: rawDataResponse, isLoading: rawDataLoading } = useQuery<PaginatedResponse<RawDataEntry>>({
     queryKey: [rawDataUrl],
     enabled: !!rawDataSourceId,
   });
+  const rawData = rawDataResponse?.data;
+  const rawDataTotal = rawDataResponse?.total ?? 0;
+
+  // Recalculate dialog state
+  const [recalcDialog, setRecalcDialog] = useState<{ sourceId: number; sourceName: string } | null>(null);
+  const [recalcMetricIds, setRecalcMetricIds] = useState<number[]>([]);
 
   // Manual adjust state
   const [adjustData, setAdjustData] = useState({ userId: '', points: '', description: '', type: 'bonus' });
@@ -395,6 +535,34 @@ export default function RewardsAdmin() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  // Recalculate mutation
+  const recalcMutation = useMutation({
+    mutationFn: async ({ sourceId, metricIds }: { sourceId: number; metricIds?: number[] }) => {
+      return apiRequest({ url: `/api/rewards/sources/${sourceId}/recalculate`, method: 'POST', data: { metricIds } });
+    },
+    onSuccess: (data: any) => {
+      setRecalcDialog(null);
+      if (data.jobId) {
+        setSyncingSourceId(recalcDialog?.sourceId ?? null);
+        pollSyncJob(data.jobId, recalcDialog?.sourceName || 'Recalculation');
+      }
+    },
+    onError: (e: any) => toast({ title: "Error starting recalculation", description: e.message, variant: "destructive" }),
+  });
+
+  // Sort toggle helpers
+  const toggleSort = (setter: (v: string) => void, dirSetter: (v: string) => void, current: string, currentDir: string) => (key: string) => {
+    if (current === key) {
+      dirSetter(currentDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setter(key);
+      dirSetter('desc');
+    }
+  };
+
+  const toggleActivitySort = toggleSort(setActivitySort, setActivitySortDir, activitySort, activitySortDir);
+  const toggleRawDataSort = toggleSort(setRawDataSort, setRawDataSortDir, rawDataSort, rawDataSortDir);
+
   // Delete handler
   const handleDelete = async () => {
     if (!deleteDialog) return;
@@ -494,6 +662,12 @@ export default function RewardsAdmin() {
                                 {s.config && JSON.parse(s.config || '{}').zoomRefreshToken ? 'Re-authorize Zoom' : 'Authorize with Zoom'}
                               </Button>
                             )}
+                            <Button variant="outline" size="sm" title="Recalculate coins from raw data" onClick={() => {
+                              setRecalcDialog({ sourceId: s.id, sourceName: s.name });
+                              setRecalcMetricIds([]);
+                            }}>
+                              <Calculator className="h-4 w-4 mr-1" /> Recalculate
+                            </Button>
                             {s.lastSyncAt && (
                               <Button variant="ghost" size="icon" title="Reset sync — re-pull from start date" onClick={() => resetSyncMutation.mutate(s.id)} disabled={resetSyncMutation.isPending}>
                                 <RotateCcw className="h-4 w-4" />
@@ -758,7 +932,7 @@ export default function RewardsAdmin() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Raw Source Data</CardTitle>
               <div className="w-[220px]">
-                <Select value={rawDataSourceId} onValueChange={setRawDataSourceId}>
+                <Select value={rawDataSourceId} onValueChange={(v) => { setRawDataSourceId(v); setRawDataPage(0); }}>
                   <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
                   <SelectContent>
                     {sources?.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
@@ -769,78 +943,90 @@ export default function RewardsAdmin() {
             <CardContent>
               {!rawDataSourceId ? (
                 <p className="text-center text-muted-foreground py-8">Select a source to view its data.</p>
-              ) : rawDataLoading ? <Skeleton className="h-40" /> : !rawData?.length ? (
-                <p className="text-center text-muted-foreground py-8">No data for this source.</p>
-              ) : (() => {
-                const sourceType = sources?.find(s => s.id === parseInt(rawDataSourceId))?.type;
-                const isZendesk = sourceType === 'zendesk';
-                const isZoom = sourceType === 'zoom_phone';
-                return (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          {isZendesk && <TableHead>Ticket #</TableHead>}
-                          {isZoom && <TableHead>Direction</TableHead>}
-                          <TableHead>Agent</TableHead>
-                          <TableHead>Event</TableHead>
-                          <TableHead>Details</TableHead>
-                          {isZoom && <TableHead className="text-right">Duration</TableHead>}
-                          <TableHead className="text-right">Coins</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {rawData.map(entry => {
-                          // Parse reference ID for source-specific display
-                          const ticketMatch = entry.referenceId?.match(/zendesk_(?:solved|frt|fcr|sla4h|sla24h)_(\d+)/);
-                          const zoomMatch = entry.referenceId?.match(/zoom_(inbound|outbound|missed)_/);
-                          const durationMatch = entry.description?.match(/([\d.]+)\s*min/);
-                          return (
-                            <TableRow key={entry.id}>
-                              <TableCell className="whitespace-nowrap text-sm">
-                                {(() => {
-                                  const d = new Date(entry.periodStart || entry.createdAt);
-                                  return <>{d.toLocaleDateString()}{' '}<span className="text-muted-foreground">{d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></>;
-                                })()}
-                              </TableCell>
-                              {isZendesk && (
-                                <TableCell className="text-sm">
-                                  {ticketMatch ? (
-                                    <a href={`https://satellitephonestore.zendesk.com/agent/tickets/${ticketMatch[1]}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-mono">#{ticketMatch[1]}</a>
-                                  ) : <span className="text-muted-foreground">—</span>}
-                                </TableCell>
-                              )}
-                              {isZoom && (
-                                <TableCell>
-                                  <Badge variant="outline" className="text-xs">
-                                    {zoomMatch ? zoomMatch[1] : 'call'}
-                                  </Badge>
-                                </TableCell>
-                              )}
-                              <TableCell className="font-medium">{entry.firstName} {entry.lastName}</TableCell>
-                              <TableCell>
-                                <Badge variant="secondary" className="text-xs">{entry.metricName || '—'}</Badge>
-                              </TableCell>
-                              <TableCell className="text-sm max-w-[300px] truncate" title={entry.description || ''}>{entry.description || '—'}</TableCell>
-                              {isZoom && (
-                                <TableCell className="text-right text-sm">
-                                  {durationMatch ? `${durationMatch[1]} min` : '—'}
-                                </TableCell>
-                              )}
-                              <TableCell className="text-right font-bold">
-                                <span className={entry.points >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                  {entry.points >= 0 ? '+' : ''}{entry.points}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+              ) : (
+                <>
+                  {/* Filter bar */}
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <div className="min-w-[220px] max-w-[350px]">
+                      <CustomDropdown options={userDropdownOptions} value={rawDataUserFilter}
+                        onChange={(v) => { setRawDataUserFilter(String(v)); setRawDataPage(0); }}
+                        placeholder="All Users" searchPlaceholder="Search users..." />
+                    </div>
+                    <DateRangePicker dateFrom={rawDataDateFrom} dateTo={rawDataDateTo}
+                      onChange={(f, t) => { setRawDataDateFrom(f); setRawDataDateTo(t); setRawDataPage(0); }} />
                   </div>
-                );
-              })()}
+
+                  {rawDataLoading ? <Skeleton className="h-40" /> : !rawData?.length ? (
+                    <p className="text-center text-muted-foreground py-8">No raw data yet. Run a sync to populate.</p>
+                  ) : (() => {
+                    const sourceType = sources?.find(s => s.id === parseInt(rawDataSourceId))?.type;
+                    const isZendesk = sourceType === 'zendesk';
+                    const isZoom = sourceType === 'zoom_phone';
+                    return (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <SortableHeader label="Date" sortKey="date" currentSort={rawDataSort} currentDir={rawDataSortDir} onSort={toggleRawDataSort} />
+                              {isZendesk && <TableHead>Ticket #</TableHead>}
+                              {isZendesk && <TableHead>Subject</TableHead>}
+                              {isZoom && <TableHead>Direction</TableHead>}
+                              <SortableHeader label="Agent" sortKey="user" currentSort={rawDataSort} currentDir={rawDataSortDir} onSort={toggleRawDataSort} />
+                              {isZoom && <TableHead>Caller</TableHead>}
+                              {isZoom && <TableHead>Callee</TableHead>}
+                              {isZendesk && <TableHead className="text-right">Reply Time</TableHead>}
+                              {isZendesk && <TableHead className="text-right">Resolution Time</TableHead>}
+                              {isZendesk && <TableHead className="text-right">Reopens</TableHead>}
+                              {isZoom && <TableHead className="text-right">Duration</TableHead>}
+                              {isZoom && <TableHead>Result</TableHead>}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {rawData.map(entry => {
+                              const p = entry.rawPayload || {};
+                              return (
+                                <TableRow key={entry.id}>
+                                  <TableCell className="whitespace-nowrap text-sm">
+                                    {(() => {
+                                      const d = new Date(p.solved_at || p.date_time || entry.fetchedAt);
+                                      return <>{d.toLocaleDateString()}{' '}<span className="text-muted-foreground">{d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></>;
+                                    })()}
+                                  </TableCell>
+                                  {isZendesk && (
+                                    <TableCell className="text-sm">
+                                      {p.ticket_id ? (
+                                        <a href={`https://satellitephonestore.zendesk.com/agent/tickets/${p.ticket_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-mono">#{p.ticket_id}</a>
+                                      ) : <span className="text-muted-foreground">—</span>}
+                                    </TableCell>
+                                  )}
+                                  {isZendesk && (
+                                    <TableCell className="text-sm max-w-[200px] truncate" title={p.subject || ''}>{p.subject || '—'}</TableCell>
+                                  )}
+                                  {isZoom && (
+                                    <TableCell>
+                                      <Badge variant="outline" className="text-xs">{p.direction || '—'}</Badge>
+                                    </TableCell>
+                                  )}
+                                  <TableCell className="font-medium">{entry.firstName} {entry.lastName}</TableCell>
+                                  {isZoom && <TableCell className="text-sm">{p.caller_name || p.caller_number || '—'}</TableCell>}
+                                  {isZoom && <TableCell className="text-sm">{p.callee_name || p.callee_number || '—'}</TableCell>}
+                                  {isZendesk && <TableCell className="text-right text-sm">{p.reply_time_minutes != null ? `${p.reply_time_minutes} min` : '—'}</TableCell>}
+                                  {isZendesk && <TableCell className="text-right text-sm">{p.full_resolution_minutes != null ? `${p.full_resolution_minutes} min` : '—'}</TableCell>}
+                                  {isZendesk && <TableCell className="text-right text-sm">{p.reopens != null ? p.reopens : '—'}</TableCell>}
+                                  {isZoom && <TableCell className="text-right text-sm">{p.duration_seconds != null ? `${Math.round(p.duration_seconds / 60 * 100) / 100} min` : '—'}</TableCell>}
+                                  {isZoom && <TableCell className="text-sm">{p.result || '—'}</TableCell>}
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                        <PaginationControls total={rawDataTotal} page={rawDataPage} pageSize={rawDataPageSize}
+                          onPageChange={setRawDataPage} onPageSizeChange={(s) => { setRawDataPageSize(s); setRawDataPage(0); }} />
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -850,17 +1036,28 @@ export default function RewardsAdmin() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Coins Activity Log</CardTitle>
-              <div className="flex items-center gap-2 w-[220px]">
-                <CustomDropdown
-                  options={userDropdownOptions}
-                  value={activityFilterUser}
-                  onChange={(v) => setActivityFilterUser(String(v))}
-                  placeholder="All Users"
-                  searchPlaceholder="Search users..."
-                />
-              </div>
             </CardHeader>
             <CardContent>
+              {/* Filter bar */}
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <div className="min-w-[220px] max-w-[350px]">
+                  <CustomDropdown options={userDropdownOptions} value={activityFilterUser}
+                    onChange={(v) => { setActivityFilterUser(String(v)); setActivityPage(0); }}
+                    placeholder="All Users" searchPlaceholder="Search users..." />
+                </div>
+                <div className="min-w-[180px]">
+                  <Select value={activityMetricFilter} onValueChange={(v) => { setActivityMetricFilter(v); setActivityPage(0); }}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All Metrics" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Metrics</SelectItem>
+                      {metrics?.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DateRangePicker dateFrom={activityDateFrom} dateTo={activityDateTo}
+                  onChange={(f, t) => { setActivityDateFrom(f); setActivityDateTo(t); setActivityPage(0); }} />
+              </div>
+
               {pointsLogLoading ? <Skeleton className="h-40" /> : !pointsLog?.length ? (
                 <p className="text-center text-muted-foreground py-8">No coins activity yet.</p>
               ) : (
@@ -868,13 +1065,13 @@ export default function RewardsAdmin() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Metric</TableHead>
+                        <SortableHeader label="Date" sortKey="date" currentSort={activitySort} currentDir={activitySortDir} onSort={toggleActivitySort} />
+                        <SortableHeader label="User" sortKey="user" currentSort={activitySort} currentDir={activitySortDir} onSort={toggleActivitySort} />
+                        <SortableHeader label="Type" sortKey="type" currentSort={activitySort} currentDir={activitySortDir} onSort={toggleActivitySort} />
+                        <SortableHeader label="Metric" sortKey="metric" currentSort={activitySort} currentDir={activitySortDir} onSort={toggleActivitySort} />
                         <TableHead>Description</TableHead>
                         <TableHead>Reference</TableHead>
-                        <TableHead className="text-right">Coins</TableHead>
+                        <SortableHeader label="Coins" sortKey="points" currentSort={activitySort} currentDir={activitySortDir} onSort={toggleActivitySort} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -915,6 +1112,8 @@ export default function RewardsAdmin() {
                       ))}
                     </TableBody>
                   </Table>
+                  <PaginationControls total={pointsLogTotal} page={activityPage} pageSize={activityPageSize}
+                    onPageChange={setActivityPage} onPageSizeChange={(s) => { setActivityPageSize(s); setActivityPage(0); }} />
                 </div>
               )}
             </CardContent>
@@ -1447,6 +1646,45 @@ export default function RewardsAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Recalculate Dialog */}
+      <Dialog open={!!recalcDialog} onOpenChange={(open) => { if (!open) setRecalcDialog(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Recalculate Coins — {recalcDialog?.sourceName}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground mb-3">
+            Re-evaluate stored raw data against metrics to award any missing coins (e.g. for newly added metrics).
+            Only new entries will be created — existing awards are not affected.
+          </p>
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Select metrics to recalculate:</Label>
+            {metrics?.filter(m => m.sourceId === recalcDialog?.sourceId).map(m => (
+              <div key={m.id} className="flex items-center space-x-2">
+                <Checkbox id={`recalc-m-${m.id}`}
+                  checked={recalcMetricIds.includes(m.id)}
+                  onCheckedChange={(checked) => {
+                    setRecalcMetricIds(prev => checked ? [...prev, m.id] : prev.filter(id => id !== m.id));
+                  }} />
+                <label htmlFor={`recalc-m-${m.id}`} className="text-sm">{m.name} ({m.pointsPerUnit} coins/unit)</label>
+              </div>
+            ))}
+            {!metrics?.some(m => m.sourceId === recalcDialog?.sourceId) && (
+              <p className="text-sm text-muted-foreground">No metrics configured for this source.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecalcDialog(null)}>Cancel</Button>
+            <Button onClick={() => {
+              if (!recalcDialog) return;
+              recalcMutation.mutate({
+                sourceId: recalcDialog.sourceId,
+                metricIds: recalcMetricIds.length > 0 ? recalcMetricIds : undefined,
+              });
+            }} disabled={recalcMutation.isPending}>
+              <Calculator className="h-4 w-4 mr-1" /> Recalculate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>

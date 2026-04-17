@@ -5134,6 +5134,118 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==========================================
+  // Reward Raw Data operations
+  // ==========================================
+
+  async upsertRewardRawData(entry: { sourceId: number; referenceId: string; userId: number | null; rawPayload: Record<string, any> }): Promise<void> {
+    await db.none(`
+      INSERT INTO reward_raw_data (source_id, reference_id, user_id, raw_payload, fetched_at)
+      VALUES ($1, $2, $3, $4::jsonb, NOW())
+      ON CONFLICT (source_id, reference_id) DO UPDATE SET
+        raw_payload = $4::jsonb, user_id = COALESCE($3, reward_raw_data.user_id), fetched_at = NOW()
+    `, [entry.sourceId, entry.referenceId, entry.userId, JSON.stringify(entry.rawPayload)]);
+  }
+
+  async getRewardRawDataBySource(sourceId: number, options: {
+    limit: number; offset: number; sortBy?: string; sortDir?: string;
+    dateFrom?: string; dateTo?: string; userId?: number;
+  }): Promise<{ data: any[]; total: number }> {
+    const sortWhitelist: Record<string, string> = {
+      date: 'rd.fetched_at', user: 'u.last_name', referenceId: 'rd.reference_id',
+    };
+    const orderCol = sortWhitelist[options.sortBy || ''] || 'rd.fetched_at';
+    const orderDir = options.sortDir === 'asc' ? 'ASC' : 'DESC';
+
+    const conditions = ['rd.source_id = $1'];
+    const params: any[] = [sourceId];
+    let p = 2;
+
+    if (options.dateFrom) { conditions.push(`rd.fetched_at >= $${p++}`); params.push(options.dateFrom); }
+    if (options.dateTo) { conditions.push(`rd.fetched_at <= $${p++}`); params.push(options.dateTo + ' 23:59:59'); }
+    if (options.userId) { conditions.push(`rd.user_id = $${p++}`); params.push(options.userId); }
+
+    const where = conditions.join(' AND ');
+
+    const countResult = await db.one(`
+      SELECT COUNT(*)::int as total FROM reward_raw_data rd WHERE ${where}
+    `, params);
+
+    const limitParam = p++;
+    const offsetParam = p++;
+    params.push(options.limit, options.offset);
+
+    const data = await db.any(`
+      SELECT rd.id, rd.source_id as "sourceId", rd.reference_id as "referenceId",
+        rd.user_id as "userId", rd.raw_payload as "rawPayload", rd.fetched_at as "fetchedAt",
+        u.first_name as "firstName", u.last_name as "lastName"
+      FROM reward_raw_data rd
+      LEFT JOIN users u ON u.id = rd.user_id
+      WHERE ${where}
+      ORDER BY ${orderCol} ${orderDir}
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `, params);
+
+    return { data, total: countResult.total };
+  }
+
+  // ==========================================
+  // Reward Points Log Paginated
+  // ==========================================
+
+  async getAllRewardPointsLogPaginated(options: {
+    limit: number; offset: number; userId?: number; sortBy?: string; sortDir?: string;
+    dateFrom?: string; dateTo?: string; metricId?: number; sourceId?: number;
+  }): Promise<{ data: (RewardPointsLog & { firstName: string; lastName: string; metricName: string | null })[]; total: number }> {
+    const sortWhitelist: Record<string, string> = {
+      date: 'pl.period_start', user: 'u.last_name', points: 'pl.points',
+      metric: 'm.name', type: 'pl.type',
+    };
+    const orderCol = sortWhitelist[options.sortBy || ''] || 'pl.created_at';
+    const orderDir = options.sortDir === 'asc' ? 'ASC' : 'DESC';
+
+    const conditions = ['1=1'];
+    const params: any[] = [];
+    let p = 1;
+
+    if (options.userId) { conditions.push(`pl.user_id = $${p++}`); params.push(options.userId); }
+    if (options.dateFrom) { conditions.push(`pl.period_start >= $${p++}`); params.push(options.dateFrom); }
+    if (options.dateTo) { conditions.push(`pl.period_start <= $${p++}`); params.push(options.dateTo + ' 23:59:59'); }
+    if (options.metricId) { conditions.push(`pl.metric_id = $${p++}`); params.push(options.metricId); }
+    if (options.sourceId) { conditions.push(`m.source_id = $${p++}`); params.push(options.sourceId); }
+
+    const where = conditions.join(' AND ');
+
+    const countParams = [...params];
+    const countResult = await db.one(`
+      SELECT COUNT(*)::int as total
+      FROM reward_points_log pl
+      JOIN users u ON u.id = pl.user_id
+      LEFT JOIN reward_kpi_metrics m ON m.id = pl.metric_id
+      WHERE ${where}
+    `, countParams);
+
+    const limitParam = p++;
+    const offsetParam = p++;
+    params.push(options.limit, options.offset);
+
+    const data = await db.any(`
+      SELECT pl.id, pl.user_id as "userId", pl.metric_id as "metricId", pl.points, pl.quantity,
+        pl.description, pl.type, pl.reference_id as "referenceId",
+        pl.period_start as "periodStart", pl.period_end as "periodEnd", pl.created_at as "createdAt",
+        u.first_name as "firstName", u.last_name as "lastName",
+        m.name as "metricName"
+      FROM reward_points_log pl
+      JOIN users u ON u.id = pl.user_id
+      LEFT JOIN reward_kpi_metrics m ON m.id = pl.metric_id
+      WHERE ${where}
+      ORDER BY ${orderCol} ${orderDir}
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `, params);
+
+    return { data, total: countResult.total };
+  }
+
+  // ==========================================
   // Reward Balance operations
   // ==========================================
 

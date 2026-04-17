@@ -809,3 +809,13 @@ export type RewardSettings = typeof rewardSettings.$inferSelect;
 export interface RewardSettingsConfig {
   enabledDepartmentIds: number[];
 }
+
+// Raw source data (tickets, calls) stored for recalculation
+export type RewardRawData = {
+  id: number;
+  sourceId: number;
+  referenceId: string;
+  userId: number | null;
+  rawPayload: Record<string, any>;
+  fetchedAt: string;
+};

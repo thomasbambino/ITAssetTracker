@@ -238,6 +238,42 @@ export class ZendeskSyncProvider implements KPISyncProvider {
 
           const ticketDate = new Date(ticket.solved_at || ticket.updated_at);
 
+          // Fetch ticket metrics for this ticket
+          let replyTimeMinutes: number | null = null;
+          let fullResolutionMinutes: number | null = null;
+          let reopens: number | null = null;
+          try {
+            await delay(RATE_LIMIT_DELAY);
+            const metricsData = await zendeskFetch(
+              subdomain,
+              `/api/v2/tickets/${ticket.id}/metrics.json`,
+              authHeader
+            );
+            replyTimeMinutes = metricsData.ticket_metric?.reply_time_in_minutes?.calendar ?? null;
+            fullResolutionMinutes = metricsData.ticket_metric?.full_resolution_time_in_minutes?.calendar ?? null;
+            reopens = metricsData.ticket_metric?.reopens ?? null;
+          } catch {
+            // Skip metrics if unavailable for this ticket
+          }
+
+          // Build raw payload for this ticket
+          const ticketRawPayload = {
+            ticket_id: ticket.id,
+            subject: ticket.subject || null,
+            status: ticket.status,
+            assignee_id: ticket.assignee_id,
+            group_id: ticket.group_id,
+            solved_at: ticket.solved_at,
+            created_at: ticket.created_at,
+            updated_at: ticket.updated_at,
+            reply_time_minutes: replyTimeMinutes,
+            full_resolution_minutes: fullResolutionMinutes,
+            reopens,
+            agent_email: agentEmail,
+            agent_name: `${appUser.firstName} ${appUser.lastName}`,
+          };
+          const rawData = { sourceReferenceId: `zendesk_ticket_${ticket.id}`, payload: ticketRawPayload };
+
           // Emit tickets_solved data point
           dataPoints.push({
             userId: appUser.id,
@@ -247,60 +283,45 @@ export class ZendeskSyncProvider implements KPISyncProvider {
             description: `Solved ticket #${ticket.id}: ${ticket.subject || "No subject"}`,
             periodStart: ticketDate,
             periodEnd: ticketDate,
+            rawData,
           });
 
           // Check first reply time for fast response bonus
-          try {
-            await delay(RATE_LIMIT_DELAY);
-            const metricsData = await zendeskFetch(
-              subdomain,
-              `/api/v2/tickets/${ticket.id}/metrics.json`,
-              authHeader
-            );
+          if (replyTimeMinutes != null && replyTimeMinutes < thresholdMinutes) {
+            dataPoints.push({
+              userId: appUser.id,
+              metricKey: "fast_first_reply",
+              quantity: 1,
+              referenceId: `zendesk_frt_${ticket.id}`,
+              description: `Fast first reply on ticket #${ticket.id} (${replyTimeMinutes}min)`,
+              periodStart: ticketDate,
+              periodEnd: ticketDate,
+            });
+          }
 
-            const replyTimeMinutes = metricsData.ticket_metric?.reply_time_in_minutes?.calendar;
-
-            if (replyTimeMinutes != null && replyTimeMinutes < thresholdMinutes) {
+          // SLA Resolution Time bonus (skip abandoned tickets without solved_at)
+          if (ticket.solved_at && fullResolutionMinutes != null) {
+            if (fullResolutionMinutes <= 240) {
               dataPoints.push({
                 userId: appUser.id,
-                metricKey: "fast_first_reply",
+                metricKey: "sla_resolution_4h",
                 quantity: 1,
-                referenceId: `zendesk_frt_${ticket.id}`,
-                description: `Fast first reply on ticket #${ticket.id} (${replyTimeMinutes}min)`,
+                referenceId: `zendesk_sla4h_${ticket.id}`,
+                description: `SLA resolution within 4h on ticket #${ticket.id} (${fullResolutionMinutes}min)`,
+                periodStart: ticketDate,
+                periodEnd: ticketDate,
+              });
+            } else if (fullResolutionMinutes <= 1440) {
+              dataPoints.push({
+                userId: appUser.id,
+                metricKey: "sla_resolution_24h",
+                quantity: 1,
+                referenceId: `zendesk_sla24h_${ticket.id}`,
+                description: `SLA resolution within 24h on ticket #${ticket.id} (${fullResolutionMinutes}min)`,
                 periodStart: ticketDate,
                 periodEnd: ticketDate,
               });
             }
-
-            // SLA Resolution Time bonus (skip abandoned tickets without solved_at)
-            if (ticket.solved_at) {
-              const fullResolutionMinutes = metricsData.ticket_metric?.full_resolution_time_in_minutes?.calendar;
-              if (fullResolutionMinutes != null) {
-                if (fullResolutionMinutes <= 240) {
-                  dataPoints.push({
-                    userId: appUser.id,
-                    metricKey: "sla_resolution_4h",
-                    quantity: 1,
-                    referenceId: `zendesk_sla4h_${ticket.id}`,
-                    description: `SLA resolution within 4h on ticket #${ticket.id} (${fullResolutionMinutes}min)`,
-                    periodStart: ticketDate,
-                    periodEnd: ticketDate,
-                  });
-                } else if (fullResolutionMinutes <= 1440) {
-                  dataPoints.push({
-                    userId: appUser.id,
-                    metricKey: "sla_resolution_24h",
-                    quantity: 1,
-                    referenceId: `zendesk_sla24h_${ticket.id}`,
-                    description: `SLA resolution within 24h on ticket #${ticket.id} (${fullResolutionMinutes}min)`,
-                    periodStart: ticketDate,
-                    periodEnd: ticketDate,
-                  });
-                }
-              }
-            }
-          } catch {
-            // Skip metrics if unavailable for this ticket
           }
         }
 
@@ -374,8 +395,28 @@ export class ZendeskSyncProvider implements KPISyncProvider {
               authHeader
             );
 
-            const reopens = metricsData.ticket_metric?.reopens ?? -1;
-            if (reopens === 0) {
+            const fcrReopens = metricsData.ticket_metric?.reopens ?? -1;
+            const fcrReplyTime = metricsData.ticket_metric?.reply_time_in_minutes?.calendar ?? null;
+            const fcrResolutionTime = metricsData.ticket_metric?.full_resolution_time_in_minutes?.calendar ?? null;
+
+            // Store raw data for FCR-evaluated tickets too
+            const fcrRawPayload = {
+              ticket_id: ticket.id,
+              subject: ticket.subject || null,
+              status: ticket.status,
+              assignee_id: ticket.assignee_id,
+              group_id: ticket.group_id,
+              solved_at: ticket.solved_at,
+              created_at: ticket.created_at,
+              updated_at: ticket.updated_at,
+              reply_time_minutes: fcrReplyTime,
+              full_resolution_minutes: fcrResolutionTime,
+              reopens: fcrReopens,
+              agent_email: agentEmail,
+              agent_name: `${appUser.firstName} ${appUser.lastName}`,
+            };
+
+            if (fcrReopens === 0) {
               const ticketDate = new Date(ticket.solved_at);
               dataPoints.push({
                 userId: appUser.id,
@@ -385,6 +426,7 @@ export class ZendeskSyncProvider implements KPISyncProvider {
                 description: `First contact resolution on ticket #${ticket.id}: ${ticket.subject || "No subject"}`,
                 periodStart: ticketDate,
                 periodEnd: ticketDate,
+                rawData: { sourceReferenceId: `zendesk_ticket_${ticket.id}`, payload: fcrRawPayload },
               });
               fcrAwarded++;
             }

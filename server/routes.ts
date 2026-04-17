@@ -29,7 +29,7 @@ import {
   insertRewardKpiSourceSchema, insertRewardKpiMetricSchema, insertRewardPointsLogSchema,
   insertRewardBadgeSchema, insertRewardCatalogSchema, insertRewardRedemptionSchema,
 } from "@shared/schema";
-import { triggerManualSync, startBackgroundSync, getSyncJob } from "./rewards-sync";
+import { triggerManualSync, startBackgroundSync, startBackgroundRecalculation, getSyncJob } from "./rewards-sync";
 import { fetchZendeskGroups } from "./zendesk-sync";
 import { exchangeZoomCode } from "./zoom-sync";
 
@@ -4845,16 +4845,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get raw points log data for a source (paginated)
+  // Get raw source data (from reward_raw_data table, paginated + filtered)
   app.get('/api/rewards/sources/:id/data', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
       const sourceId = parseInt(req.params.id);
-      const limit = parseInt(req.query.limit as string) || 200;
+      const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
-      const data = await storage.getRewardPointsLogBySource(sourceId, limit, offset);
-      res.json(data);
+      const sortBy = req.query.sortBy as string | undefined;
+      const sortDir = req.query.sortDir as string | undefined;
+      const dateFrom = req.query.dateFrom as string | undefined;
+      const dateTo = req.query.dateTo as string | undefined;
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const result = await storage.getRewardRawDataBySource(sourceId, { limit, offset, sortBy, sortDir, dateFrom, dateTo, userId });
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: "Error fetching source data", error: error.message });
+    }
+  });
+
+  // Recalculate metrics for a source based on stored raw data
+  app.post('/api/rewards/sources/:id/recalculate', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const sourceId = parseInt(req.params.id);
+      const source = await storage.getRewardKpiSourceById(sourceId);
+      if (!source) return res.status(404).json({ message: 'Source not found' });
+      const { metricIds } = req.body || {};
+      const job = startBackgroundRecalculation(sourceId, metricIds);
+      res.json({ jobId: job.id, status: job.status });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error starting recalculation", error: error.message });
     }
   });
 
@@ -5115,14 +5134,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // --- Admin: Points Activity Log ---
+  // --- Admin: Points Activity Log (paginated, sortable, filterable) ---
   app.get('/api/rewards/points-log', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
-      const limit = parseInt(req.query.limit as string) || 100;
+      const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
       const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
-      const log = await storage.getAllRewardPointsLog(limit, offset, userId);
-      res.json(log);
+      const sortBy = req.query.sortBy as string | undefined;
+      const sortDir = req.query.sortDir as string | undefined;
+      const dateFrom = req.query.dateFrom as string | undefined;
+      const dateTo = req.query.dateTo as string | undefined;
+      const metricId = req.query.metricId ? parseInt(req.query.metricId as string) : undefined;
+      const sourceId = req.query.sourceId ? parseInt(req.query.sourceId as string) : undefined;
+      const result = await storage.getAllRewardPointsLogPaginated({
+        limit, offset, userId, sortBy, sortDir, dateFrom, dateTo, metricId, sourceId,
+      });
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: "Error fetching points log", error: error.message });
     }

@@ -178,6 +178,17 @@ export interface IStorage {
   getRewardPointsLogByUser(userId: number, limit?: number, offset?: number): Promise<RewardPointsLog[]>;
   getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined>;
   getAllRewardPointsLog(limit?: number, offset?: number, userId?: number): Promise<(RewardPointsLog & { firstName: string; lastName: string })[]>;
+  getAllRewardPointsLogPaginated(options: {
+    limit: number; offset: number; userId?: number; sortBy?: string; sortDir?: string;
+    dateFrom?: string; dateTo?: string; metricId?: number; sourceId?: number;
+  }): Promise<{ data: (RewardPointsLog & { firstName: string; lastName: string; metricName: string | null })[]; total: number }>;
+
+  // Reward Raw Data operations
+  upsertRewardRawData(entry: { sourceId: number; referenceId: string; userId: number | null; rawPayload: Record<string, any> }): Promise<void>;
+  getRewardRawDataBySource(sourceId: number, options: {
+    limit: number; offset: number; sortBy?: string; sortDir?: string;
+    dateFrom?: string; dateTo?: string; userId?: number;
+  }): Promise<{ data: any[]; total: number }>;
 
   // Reward Balance operations
   getRewardBalance(userId: number): Promise<RewardBalance | undefined>;
@@ -727,6 +738,9 @@ export class MemStorage implements IStorage {
   async getRewardPointsLogByUser(userId: number, limit?: number, offset?: number): Promise<RewardPointsLog[]> { return []; }
   async getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined> { return undefined; }
   async getAllRewardPointsLog(limit?: number, offset?: number, userId?: number): Promise<any[]> { return []; }
+  async getAllRewardPointsLogPaginated(options: any): Promise<{ data: any[]; total: number }> { return { data: [], total: 0 }; }
+  async upsertRewardRawData(entry: any): Promise<void> { }
+  async getRewardRawDataBySource(sourceId: number, options: any): Promise<{ data: any[]; total: number }> { return { data: [], total: 0 }; }
   async getRewardBalance(userId: number): Promise<RewardBalance | undefined> { return undefined; }
   async updateRewardBalance(userId: number, earnedDelta: number, redeemedDelta: number): Promise<RewardBalance> { throw new Error("Not implemented in MemStorage"); }
   async getRewardLeaderboard(): Promise<any[]> { return []; }

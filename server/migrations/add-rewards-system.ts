@@ -244,6 +244,33 @@ export async function addRewardsSystemMigration() {
       console.log('reward_settings table already exists, skipping');
     }
 
+    // 10. reward_raw_data — stores raw source entities (tickets, calls) for recalculation
+    const checkRawData = await db.one(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'reward_raw_data'
+      ) as exists;
+    `);
+
+    if (!checkRawData.exists) {
+      await db.none(`
+        CREATE TABLE reward_raw_data (
+          id SERIAL PRIMARY KEY,
+          source_id INTEGER NOT NULL REFERENCES reward_kpi_sources(id) ON DELETE CASCADE,
+          reference_id TEXT NOT NULL,
+          user_id INTEGER REFERENCES users(id),
+          raw_payload JSONB NOT NULL,
+          fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE UNIQUE INDEX idx_reward_raw_data_ref ON reward_raw_data(source_id, reference_id);
+        CREATE INDEX idx_reward_raw_data_source ON reward_raw_data(source_id);
+        CREATE INDEX idx_reward_raw_data_user ON reward_raw_data(user_id);
+      `);
+      console.log('Created reward_raw_data table with indexes');
+    } else {
+      console.log('reward_raw_data table already exists, skipping');
+    }
+
     console.log('Rewards system migration completed successfully');
     return true;
   } catch (error) {

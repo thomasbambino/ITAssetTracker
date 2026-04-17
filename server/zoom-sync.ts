@@ -263,6 +263,21 @@ export class ZoomSyncProvider implements KPISyncProvider {
           const callId = call.id || call.call_id;
           const durationMinutes = Math.round((durationSeconds / 60) * 100) / 100; // Round to 2 decimal places
 
+          // Build raw payload for this call
+          const callRawPayload = {
+            call_id: callId,
+            direction: call.direction || null,
+            caller_name: call.caller_name || null,
+            caller_number: call.caller_number || null,
+            callee_name: call.callee_name || null,
+            callee_number: call.callee_number || null,
+            duration_seconds: durationSeconds,
+            result: call.result || call.call_result || null,
+            date_time: call.date_time || call.start_time || null,
+            owner_email: agentEmail,
+          };
+          const rawData = { sourceReferenceId: `zoom_call_${callId}`, payload: callRawPayload };
+
           // Emit calls_handled data point
           dataPoints.push({
             userId: appUser.id,
@@ -272,6 +287,7 @@ export class ZoomSyncProvider implements KPISyncProvider {
             description: `Call ${callDirection !== 'all' ? callDirection + ' ' : ''}${call.callee_name || call.caller_name || callId} (${durationMinutes} min)`,
             periodStart: callDate,
             periodEnd: callDate,
+            rawData,
           });
 
           // Emit call_duration data point
