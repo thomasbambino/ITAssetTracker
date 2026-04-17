@@ -105,8 +105,8 @@ function DateRangePicker({ dateFrom, dateTo, onChange }: {
     <div className="flex items-center gap-1">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
-            <CalendarIcon className="h-3 w-3" />
+          <Button variant="outline" className="h-9 px-3 text-sm gap-1.5">
+            <CalendarIcon className="h-3.5 w-3.5" />
             {dateFrom || 'From'}
           </Button>
         </PopoverTrigger>
@@ -117,8 +117,8 @@ function DateRangePicker({ dateFrom, dateTo, onChange }: {
       </Popover>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
-            <CalendarIcon className="h-3 w-3" />
+          <Button variant="outline" className="h-9 px-3 text-sm gap-1.5">
+            <CalendarIcon className="h-3.5 w-3.5" />
             {dateTo || 'To'}
           </Button>
         </PopoverTrigger>
@@ -128,7 +128,7 @@ function DateRangePicker({ dateFrom, dateTo, onChange }: {
         </PopoverContent>
       </Popover>
       {(dateFrom || dateTo) && (
-        <Button variant="ghost" size="sm" className="h-8 text-xs px-2" onClick={() => onChange('', '')}>Clear</Button>
+        <Button variant="ghost" className="h-9 text-sm px-2" onClick={() => onChange('', '')}>Clear</Button>
       )}
     </div>
   );
@@ -624,7 +624,7 @@ export default function RewardsAdmin() {
                     {sources.map(s => (
                       <TableRow key={s.id}>
                         <TableCell className="font-medium">{s.name}</TableCell>
-                        <TableCell><Badge variant="outline">{s.type}</Badge></TableCell>
+                        <TableCell><Badge variant="outline">{SOURCE_TYPE_LABELS[s.type] || s.type}</Badge></TableCell>
                         <TableCell>
                           <Badge variant={s.isActive ? "default" : "secondary"}>
                             {s.isActive ? 'Active' : 'Inactive'}
@@ -1004,7 +1004,7 @@ export default function RewardsAdmin() {
                                   )}
                                   {isZoom && (
                                     <TableCell>
-                                      <Badge variant="outline" className="text-xs">{p.direction || '—'}</Badge>
+                                      <Badge variant="outline" className="text-xs">{p.direction ? p.direction.charAt(0).toUpperCase() + p.direction.slice(1) : '—'}</Badge>
                                     </TableCell>
                                   )}
                                   <TableCell className="font-medium">{entry.firstName} {entry.lastName}</TableCell>
@@ -1045,9 +1045,9 @@ export default function RewardsAdmin() {
                     onChange={(v) => { setActivityFilterUser(String(v)); setActivityPage(0); }}
                     placeholder="All Users" searchPlaceholder="Search users..." />
                 </div>
-                <div className="min-w-[180px]">
+                <div className="min-w-[220px] max-w-[350px]">
                   <Select value={activityMetricFilter} onValueChange={(v) => { setActivityMetricFilter(v); setActivityPage(0); }}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All Metrics" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="All Metrics" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Metrics</SelectItem>
                       {metrics?.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}
