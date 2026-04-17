@@ -1058,6 +1058,26 @@ export default function RewardsAdmin() {
                   onChange={(f, t) => { setActivityDateFrom(f); setActivityDateTo(t); setActivityPage(0); }} />
               </div>
 
+              {/* Summary stats */}
+              {pointsLog && pointsLog.length > 0 && (
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="p-3 rounded-lg bg-muted">
+                    <p className="text-xs text-muted-foreground">Total Entries</p>
+                    <p className="text-xl font-bold">{pointsLogTotal.toLocaleString()}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted">
+                    <p className="text-xs text-muted-foreground">Coins on Page</p>
+                    <p className="text-xl font-bold text-green-600">
+                      {pointsLog.reduce((sum, e) => sum + (e.points > 0 ? e.points : 0), 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted">
+                    <p className="text-xs text-muted-foreground">Unique Users on Page</p>
+                    <p className="text-xl font-bold">{new Set(pointsLog.map(e => e.userId)).size}</p>
+                  </div>
+                </div>
+              )}
+
               {pointsLogLoading ? <Skeleton className="h-40" /> : !pointsLog?.length ? (
                 <p className="text-center text-muted-foreground py-8">No coins activity yet.</p>
               ) : (
