@@ -5047,6 +5047,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteRewardKpiMetric(id: number): Promise<boolean> {
+    // Nullify references in reward_points_log to avoid FK constraint violation
+    await db.none(`UPDATE reward_points_log SET metric_id = NULL WHERE metric_id = $1`, [id]);
     const result = await db.result(`DELETE FROM reward_kpi_metrics WHERE id = $1`, [id]);
     return result.rowCount > 0;
   }

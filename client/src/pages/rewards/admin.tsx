@@ -290,6 +290,18 @@ export default function RewardsAdmin() {
         url: '/api/rewards/metrics', method: 'POST',
         data: { sourceId, key: 'fast_first_reply', name: 'Fast First Reply (<30min)', pointsPerUnit: 5, description: 'Bonus coins for responding to a ticket within 30 minutes', isActive: true },
       });
+      await apiRequest({
+        url: '/api/rewards/metrics', method: 'POST',
+        data: { sourceId, key: 'first_contact_resolution', name: 'First Contact Resolution', pointsPerUnit: 10, description: 'Coins for solving a ticket with zero reopens (evaluated after 7 days)', isActive: true },
+      });
+      await apiRequest({
+        url: '/api/rewards/metrics', method: 'POST',
+        data: { sourceId, key: 'sla_resolution_4h', name: 'SLA Resolution (≤4h)', pointsPerUnit: 15, description: 'Bonus coins for resolving a ticket within 4 hours', isActive: true },
+      });
+      await apiRequest({
+        url: '/api/rewards/metrics', method: 'POST',
+        data: { sourceId, key: 'sla_resolution_24h', name: 'SLA Resolution (≤24h)', pointsPerUnit: 10, description: 'Bonus coins for resolving a ticket within 24 hours', isActive: true },
+      });
     },
     onSuccess: () => {
       invalidateAll();
