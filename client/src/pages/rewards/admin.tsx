@@ -70,6 +70,25 @@ type RewardSettingsConfig = {
   enabledDepartmentIds: number[];
 };
 
+const PREDEFINED_METRICS: Record<string, Array<{ key: string; name: string; defaultPoints: number; description: string }>> = {
+  zendesk: [
+    { key: 'tickets_solved', name: 'Tickets Solved', defaultPoints: 10, description: 'Coins for each Zendesk ticket solved by the agent' },
+    { key: 'fast_first_reply', name: 'Fast First Reply', defaultPoints: 5, description: 'Bonus for responding within the configured threshold (default 30 min)' },
+    { key: 'first_contact_resolution', name: 'First Contact Resolution', defaultPoints: 10, description: 'Solved with zero reopens, evaluated after 7-day lookback' },
+    { key: 'sla_resolution_4h', name: 'SLA Resolution (≤4h)', defaultPoints: 15, description: 'Resolved within 4 hours' },
+    { key: 'sla_resolution_24h', name: 'SLA Resolution (≤24h)', defaultPoints: 10, description: 'Resolved within 24 hours (but more than 4h)' },
+  ],
+  zoom_phone: [
+    { key: 'calls_handled', name: 'Calls Handled', defaultPoints: 5, description: 'Coins for each answered Zoom Phone call' },
+    { key: 'call_duration', name: 'Call Duration (minutes)', defaultPoints: 1, description: 'Coins per minute of call time' },
+  ],
+};
+
+const SOURCE_TYPE_LABELS: Record<string, string> = {
+  zendesk: 'Zendesk',
+  zoom_phone: 'Zoom Phone',
+};
+
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   approved: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -279,56 +298,6 @@ export default function RewardsAdmin() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Add Zendesk default metrics
-  const addZendeskDefaultsMutation = useMutation({
-    mutationFn: async (sourceId: number) => {
-      await apiRequest({
-        url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'tickets_solved', name: 'Tickets Solved', pointsPerUnit: 10, description: 'Coins for each Zendesk ticket solved', isActive: true },
-      });
-      await apiRequest({
-        url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'fast_first_reply', name: 'Fast First Reply (<30min)', pointsPerUnit: 5, description: 'Bonus coins for responding to a ticket within 30 minutes', isActive: true },
-      });
-      await apiRequest({
-        url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'first_contact_resolution', name: 'First Contact Resolution', pointsPerUnit: 10, description: 'Coins for solving a ticket with zero reopens (evaluated after 7 days)', isActive: true },
-      });
-      await apiRequest({
-        url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'sla_resolution_4h', name: 'SLA Resolution (≤4h)', pointsPerUnit: 15, description: 'Bonus coins for resolving a ticket within 4 hours', isActive: true },
-      });
-      await apiRequest({
-        url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'sla_resolution_24h', name: 'SLA Resolution (≤24h)', pointsPerUnit: 10, description: 'Bonus coins for resolving a ticket within 24 hours', isActive: true },
-      });
-    },
-    onSuccess: () => {
-      invalidateAll();
-      toast({ title: "Zendesk default metrics created" });
-    },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
-
-  // Add Zoom Phone default metrics
-  const addZoomDefaultsMutation = useMutation({
-    mutationFn: async (sourceId: number) => {
-      await apiRequest({
-        url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'calls_handled', name: 'Calls Handled', pointsPerUnit: 5, description: 'Coins for each answered Zoom Phone call', isActive: true },
-      });
-      await apiRequest({
-        url: '/api/rewards/metrics', method: 'POST',
-        data: { sourceId, key: 'call_duration', name: 'Call Duration (minutes)', pointsPerUnit: 1, description: 'Coins per minute of call time', isActive: true },
-      });
-    },
-    onSuccess: () => {
-      invalidateAll();
-      toast({ title: "Zoom Phone default metrics created" });
-    },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
-
   // Helpers
   const resetForm = () => { setFormData({}); setEditItem(null); };
   const invalidateAll = () => {
@@ -357,7 +326,7 @@ export default function RewardsAdmin() {
     mutationFn: async (data: any) => {
       const url = data._editId ? `/api/rewards/metrics/${data._editId}` : '/api/rewards/metrics';
       const method = data._editId ? 'PUT' : 'POST';
-      const { _editId, ...body } = data;
+      const { _editId, _selectedKey, ...body } = data;
       return apiRequest({ url, method, data: body });
     },
     onSuccess: () => {
@@ -574,27 +543,9 @@ export default function RewardsAdmin() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">KPI Metrics</CardTitle>
-              <div className="flex gap-2">
-                {sources?.some(s => s.type === 'zendesk') && (
-                  <Button size="sm" variant="outline" onClick={() => {
-                    const zendeskSource = sources?.find(s => s.type === 'zendesk');
-                    if (zendeskSource) addZendeskDefaultsMutation.mutate(zendeskSource.id);
-                  }} disabled={addZendeskDefaultsMutation.isPending}>
-                    <Database className="h-4 w-4 mr-1" /> Add Zendesk Defaults
-                  </Button>
-                )}
-                {sources?.some(s => s.type === 'zoom_phone') && (
-                  <Button size="sm" variant="outline" onClick={() => {
-                    const zoomSource = sources?.find(s => s.type === 'zoom_phone');
-                    if (zoomSource) addZoomDefaultsMutation.mutate(zoomSource.id);
-                  }} disabled={addZoomDefaultsMutation.isPending}>
-                    <Database className="h-4 w-4 mr-1" /> Add Zoom Defaults
-                  </Button>
-                )}
-                <Button size="sm" onClick={() => { resetForm(); setMetricDialog(true); }}>
-                  <PlusCircle className="h-4 w-4 mr-1" /> Add Metric
-                </Button>
-              </div>
+              <Button size="sm" onClick={() => { resetForm(); setMetricDialog(true); }}>
+                <PlusCircle className="h-4 w-4 mr-1" /> Add Metric
+              </Button>
             </CardHeader>
             <CardContent>
               {!metrics?.length ? (
@@ -604,7 +555,6 @@ export default function RewardsAdmin() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
-                      <TableHead>Key</TableHead>
                       <TableHead>Coins/Unit</TableHead>
                       <TableHead>Source</TableHead>
                       <TableHead>Status</TableHead>
@@ -614,8 +564,10 @@ export default function RewardsAdmin() {
                   <TableBody>
                     {metrics.map(m => (
                       <TableRow key={m.id}>
-                        <TableCell className="font-medium">{m.name}</TableCell>
-                        <TableCell><code className="text-xs">{m.key}</code></TableCell>
+                        <TableCell>
+                          <div className="font-medium">{m.name}</div>
+                          {m.description && <div className="text-xs text-muted-foreground mt-0.5">{m.description}</div>}
+                        </TableCell>
                         <TableCell>{m.pointsPerUnit}</TableCell>
                         <TableCell>{sources?.find(s => s.id === m.sourceId)?.name || '-'}</TableCell>
                         <TableCell>
@@ -1204,32 +1156,89 @@ export default function RewardsAdmin() {
         </DialogContent>
       </Dialog>
 
-      {/* Metric Dialog */}
+      {/* Metric Dialog — Picker (add) or Edit form */}
       <Dialog open={metricDialog} onOpenChange={(open) => { if (!open) { setMetricDialog(false); resetForm(); } }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editItem ? 'Edit' : 'Add'} Metric</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div><Label>Name</Label><Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} /></div>
-            <div><Label>Key</Label><Input value={formData.key || ''} onChange={e => setFormData({ ...formData, key: e.target.value })} placeholder="e.g. tickets_closed" /></div>
-            <div><Label>Coins Per Unit</Label><Input type="number" value={formData.pointsPerUnit || 1} onChange={e => setFormData({ ...formData, pointsPerUnit: parseInt(e.target.value) })} /></div>
-            <div><Label>Source (optional)</Label>
-              <Select value={String(formData.sourceId || '')} onValueChange={v => setFormData({ ...formData, sourceId: v ? parseInt(v) : null })}>
-                <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">None</SelectItem>
-                  {sources?.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+        <DialogContent className={editItem ? '' : 'max-w-lg'}>
+          <DialogHeader><DialogTitle>{editItem ? 'Edit Metric' : 'Add Metric'}</DialogTitle></DialogHeader>
+
+          {editItem ? (
+            /* ---- EDIT MODE: name/description read-only, coins + active editable ---- */
+            <div className="space-y-4">
+              <div><Label>Name</Label><Input value={formData.name || ''} disabled /></div>
+              <div><Label>Description</Label><Textarea value={formData.description || ''} disabled className="resize-none" /></div>
+              <div><Label>Coins Per Unit</Label><Input type="number" value={formData.pointsPerUnit || 1} onChange={e => setFormData({ ...formData, pointsPerUnit: parseInt(e.target.value) })} /></div>
+              <div className="flex items-center gap-2">
+                <Switch checked={formData.isActive ?? true} onCheckedChange={v => setFormData({ ...formData, isActive: v })} />
+                <Label>Active</Label>
+              </div>
             </div>
-            <div><Label>Description</Label><Textarea value={formData.description || ''} onChange={e => setFormData({ ...formData, description: e.target.value })} /></div>
-            <div className="flex items-center gap-2">
-              <Switch checked={formData.isActive ?? true} onCheckedChange={v => setFormData({ ...formData, isActive: v })} />
-              <Label>Active</Label>
+          ) : (
+            /* ---- ADD MODE: predefined metric picker ---- */
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+              {(sources || [])
+                .filter(s => PREDEFINED_METRICS[s.type])
+                .map(s => (
+                  <div key={s.id}>
+                    <h4 className="text-sm font-semibold mb-2">{SOURCE_TYPE_LABELS[s.type] || s.type} — {s.name}</h4>
+                    <div className="space-y-2">
+                      {PREDEFINED_METRICS[s.type].map(pm => {
+                        const alreadyAdded = metrics?.some(m => m.key === pm.key && m.sourceId === s.id);
+                        return (
+                          <div
+                            key={pm.key}
+                            className={`border rounded-lg p-3 ${alreadyAdded ? 'opacity-50' : 'cursor-pointer hover:border-primary'} ${formData._selectedKey === pm.key && formData.sourceId === s.id ? 'border-primary ring-1 ring-primary' : ''}`}
+                            onClick={() => {
+                              if (alreadyAdded) return;
+                              setFormData({
+                                _selectedKey: pm.key,
+                                key: pm.key,
+                                name: pm.name,
+                                description: pm.description,
+                                pointsPerUnit: pm.defaultPoints,
+                                sourceId: s.id,
+                                isActive: true,
+                              });
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm">{pm.name}</span>
+                                  {alreadyAdded && <Badge variant="secondary" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />Added</Badge>}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">{pm.description}</p>
+                              </div>
+                              {!alreadyAdded && formData._selectedKey === pm.key && formData.sourceId === s.id && (
+                                <div className="flex items-center gap-2 ml-3">
+                                  <Label className="text-xs whitespace-nowrap">Coins</Label>
+                                  <Input
+                                    type="number"
+                                    className="w-20 h-8"
+                                    value={formData.pointsPerUnit}
+                                    onClick={e => e.stopPropagation()}
+                                    onChange={e => { e.stopPropagation(); setFormData({ ...formData, pointsPerUnit: parseInt(e.target.value) || 0 }); }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              {!(sources || []).some(s => PREDEFINED_METRICS[s.type]) && (
+                <p className="text-center text-muted-foreground py-4">No sources configured. Add a KPI source first.</p>
+              )}
             </div>
-          </div>
+          )}
+
           <DialogFooter>
             <Button variant="outline" onClick={() => { setMetricDialog(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={() => metricsMutation.mutate({ ...formData, _editId: editItem?.id })} disabled={metricsMutation.isPending}>Save</Button>
+            <Button
+              onClick={() => metricsMutation.mutate({ ...formData, _editId: editItem?.id, _selectedKey: undefined })}
+              disabled={metricsMutation.isPending || (!editItem && !formData._selectedKey)}
+            >Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
