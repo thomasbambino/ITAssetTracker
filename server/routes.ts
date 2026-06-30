@@ -4832,6 +4832,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dedupe reward_points_log rows that share a reference_id (keep oldest)
+  // and rebuild reward_balances from the cleaned log. Safe to run repeatedly.
+  app.post('/api/rewards/dedupe-points-log', isAuthenticated, isAdmin, async (_req: Request, res: Response) => {
+    try {
+      const result = await storage.dedupeRewardPointsLogAndRebuildBalances();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error deduping points log", error: error.message });
+    }
+  });
+
   // Clear all synced points data for a source
   app.post('/api/rewards/sources/:id/clear-data', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {

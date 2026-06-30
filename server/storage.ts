@@ -177,6 +177,7 @@ export interface IStorage {
   createRewardPointsLog(entry: InsertRewardPointsLog): Promise<RewardPointsLog>;
   getRewardPointsLogByUser(userId: number, limit?: number, offset?: number): Promise<RewardPointsLog[]>;
   getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined>;
+  dedupeRewardPointsLogAndRebuildBalances(): Promise<{ duplicateRowsDeleted: number; balancesRebuilt: number }>;
   getAllRewardPointsLog(limit?: number, offset?: number, userId?: number): Promise<(RewardPointsLog & { firstName: string; lastName: string })[]>;
   getAllRewardPointsLogPaginated(options: {
     limit: number; offset: number; userId?: number; sortBy?: string; sortDir?: string;
@@ -737,6 +738,7 @@ export class MemStorage implements IStorage {
   async createRewardPointsLog(entry: InsertRewardPointsLog): Promise<RewardPointsLog> { throw new Error("Not implemented in MemStorage"); }
   async getRewardPointsLogByUser(userId: number, limit?: number, offset?: number): Promise<RewardPointsLog[]> { return []; }
   async getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined> { return undefined; }
+  async dedupeRewardPointsLogAndRebuildBalances(): Promise<{ duplicateRowsDeleted: number; balancesRebuilt: number }> { return { duplicateRowsDeleted: 0, balancesRebuilt: 0 }; }
   async getAllRewardPointsLog(limit?: number, offset?: number, userId?: number): Promise<any[]> { return []; }
   async getAllRewardPointsLogPaginated(options: any): Promise<{ data: any[]; total: number }> { return { data: [], total: 0 }; }
   async upsertRewardRawData(entry: any): Promise<void> { }

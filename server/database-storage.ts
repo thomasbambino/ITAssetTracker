@@ -5123,14 +5123,61 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRewardPointsLogByReference(referenceId: string): Promise<RewardPointsLog | undefined> {
-    try {
-      return await db.one(`
-        SELECT id, user_id as "userId", metric_id as "metricId", points, quantity,
-          description, type, reference_id as "referenceId",
-          period_start as "periodStart", period_end as "periodEnd", created_at as "createdAt"
-        FROM reward_points_log WHERE reference_id = $1
-      `, [referenceId]);
-    } catch { return undefined; }
+    // Use LIMIT 1 so callers correctly detect existing rows even if duplicates
+    // already exist for this reference_id (prior versions used db.one, which
+    // threw on >1 row and falsely reported "no existing row", causing dedup
+    // to fail and the sync to insert yet another duplicate every run).
+    const row = await db.oneOrNone(`
+      SELECT id, user_id as "userId", metric_id as "metricId", points, quantity,
+        description, type, reference_id as "referenceId",
+        period_start as "periodStart", period_end as "periodEnd", created_at as "createdAt"
+      FROM reward_points_log WHERE reference_id = $1
+      ORDER BY id ASC
+      LIMIT 1
+    `, [referenceId]);
+    return row || undefined;
+  }
+
+  async dedupeRewardPointsLogAndRebuildBalances(): Promise<{ duplicateRowsDeleted: number; balancesRebuilt: number }> {
+    // 1. Delete duplicate rows that share a reference_id, keeping the lowest id.
+    //    Only applies to rows where reference_id is set (sync-generated rows).
+    const dedupeResult = await db.result(`
+      DELETE FROM reward_points_log
+      WHERE id IN (
+        SELECT id FROM (
+          SELECT id, ROW_NUMBER() OVER (PARTITION BY reference_id ORDER BY id ASC) AS rn
+          FROM reward_points_log
+          WHERE reference_id IS NOT NULL
+        ) ranked
+        WHERE rn > 1
+      )
+    `);
+
+    // 2. Rebuild reward_balances from the surviving rows. 'redeemed' rows
+    //    count as redemptions; everything else (earned/bonus/adjustment) is
+    //    treated as earnings, matching how updateRewardBalance is called.
+    const balancesResult = await db.result(`
+      WITH totals AS (
+        SELECT
+          user_id,
+          COALESCE(SUM(CASE WHEN type = 'redeemed' THEN 0 ELSE points END), 0)::int AS earned,
+          COALESCE(SUM(CASE WHEN type = 'redeemed' THEN points ELSE 0 END), 0)::int AS redeemed
+        FROM reward_points_log
+        GROUP BY user_id
+      )
+      UPDATE reward_balances rb
+      SET total_earned = t.earned,
+          total_redeemed = t.redeemed,
+          current_balance = t.earned - t.redeemed,
+          updated_at = NOW()
+      FROM totals t
+      WHERE rb.user_id = t.user_id
+    `);
+
+    return {
+      duplicateRowsDeleted: dedupeResult.rowCount,
+      balancesRebuilt: balancesResult.rowCount,
+    };
   }
 
   // ==========================================
