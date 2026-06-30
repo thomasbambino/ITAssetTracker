@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   BarChart,
@@ -76,7 +77,9 @@ export default function RewardsAnalytics() {
     queryFn: async () => {
       const res = await fetch(`/api/rewards/points-log?userId=${selectedUser!.userId}&limit=200`);
       if (!res.ok) throw new Error('Failed to fetch');
-      return res.json();
+      const json = await res.json();
+      // Endpoint returns { data, total } — unwrap to array
+      return Array.isArray(json) ? json : (json?.data ?? []);
     },
     enabled: !!selectedUser,
   });
@@ -319,6 +322,7 @@ export default function RewardsAnalytics() {
                     </span>
                   )}
                 </DialogTitle>
+                <DialogDescription>Reward points summary and history for this user.</DialogDescription>
               </DialogHeader>
 
               {/* User Stats Summary */}

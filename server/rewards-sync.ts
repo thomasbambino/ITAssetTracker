@@ -61,19 +61,22 @@ async function syncSource(source: RewardKpiSource, onProgress?: (msg: string) =>
   }
 
   const since = source.lastSyncAt || new Date(Date.now() - 24 * 60 * 60 * 1000); // Default: last 24 hours
-  result.details.push(`Syncing since: ${since.toISOString()}`);
+  const emit = (msg: string) => {
+    result.details.push(msg);
+    if (onProgress) onProgress(msg);
+  };
+  emit(`Syncing since: ${since.toISOString()}`);
 
   try {
-    const logToDetails = (msg: string) => {
-      result.details.push(msg);
-      if (onProgress) onProgress(msg);
-    };
-    const dataPoints = await provider.fetchMetrics(source, since, logToDetails);
+    const dataPoints = await provider.fetchMetrics(source, since, emit);
     result.dataPointsFetched = dataPoints.length;
-    result.details.push(`Fetched ${dataPoints.length} data points from ${source.type}`);
+    emit(`Fetched ${dataPoints.length} data points from ${source.type}`);
+    emit(`Processing ${dataPoints.length} data points (dedup + award)…`);
 
     const metrics = await storage.getRewardKpiMetricsBySource(source.id);
 
+    let processed = 0;
+    const PROGRESS_EVERY = Math.max(50, Math.floor(dataPoints.length / 50)); // ~50 updates total
     for (const dp of dataPoints) {
       // Store raw data if provided (once per source entity, before dedup)
       if (dp.rawData) {
@@ -94,43 +97,43 @@ async function syncSource(source: RewardKpiSource, onProgress?: (msg: string) =>
       if (!metric) {
         result.unmatchedMetrics++;
         result.details.push(`No active metric for key "${dp.metricKey}" — skipped`);
-        continue;
+      } else {
+        // Deduplicate by referenceId
+        const existing = await storage.getRewardPointsLogByReference(dp.referenceId);
+        if (existing) {
+          result.duplicatesSkipped++;
+        } else {
+          const points = dp.quantity * metric.pointsPerUnit;
+
+          await storage.createRewardPointsLog({
+            userId: dp.userId,
+            metricId: metric.id,
+            points,
+            quantity: dp.quantity,
+            description: dp.description,
+            type: 'earned',
+            referenceId: dp.referenceId,
+            periodStart: dp.periodStart,
+            periodEnd: dp.periodEnd,
+          });
+
+          await storage.updateRewardBalance(dp.userId, points, 0);
+          await storage.checkAndAwardBadges(dp.userId);
+
+          result.pointsAwarded += points;
+          result.details.push(`+${points} pts to user #${dp.userId}: ${dp.description}`);
+        }
       }
 
-      // Deduplicate by referenceId
-      const existing = await storage.getRewardPointsLogByReference(dp.referenceId);
-      if (existing) {
-        result.duplicatesSkipped++;
-        continue;
+      processed++;
+      if (onProgress && (processed % PROGRESS_EVERY === 0 || processed === dataPoints.length)) {
+        onProgress(`Processed ${processed}/${dataPoints.length} — awarded ${result.pointsAwarded} pts, ${result.duplicatesSkipped} duplicates`);
       }
-
-      const points = dp.quantity * metric.pointsPerUnit;
-
-      // Log the points
-      await storage.createRewardPointsLog({
-        userId: dp.userId,
-        metricId: metric.id,
-        points,
-        quantity: dp.quantity,
-        description: dp.description,
-        type: 'earned',
-        referenceId: dp.referenceId,
-        periodStart: dp.periodStart,
-        periodEnd: dp.periodEnd,
-      });
-
-      // Update balance
-      await storage.updateRewardBalance(dp.userId, points, 0);
-
-      // Check for badge eligibility
-      await storage.checkAndAwardBadges(dp.userId);
-
-      result.pointsAwarded += points;
-      result.details.push(`+${points} pts to user #${dp.userId}: ${dp.description}`);
     }
 
     // Update last sync timestamp
     await storage.updateRewardKpiSource(source.id, { lastSyncAt: new Date() });
+    emit(`Sync complete: ${result.pointsAwarded} pts awarded, ${result.duplicatesSkipped} duplicates skipped`);
 
     console.log(`Synced source "${source.name}": ${dataPoints.length} fetched, ${result.pointsAwarded} pts awarded, ${result.duplicatesSkipped} duplicates skipped`);
   } catch (error: any) {
