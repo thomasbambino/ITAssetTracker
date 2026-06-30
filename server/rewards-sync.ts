@@ -43,7 +43,7 @@ export interface SyncResult {
 }
 
 // Sync a single source: fetch new data points, deduplicate, and award points
-async function syncSource(source: RewardKpiSource): Promise<SyncResult> {
+async function syncSource(source: RewardKpiSource, onProgress?: (msg: string) => void): Promise<SyncResult> {
   const result: SyncResult = {
     sourceName: source.name,
     dataPointsFetched: 0,
@@ -64,7 +64,10 @@ async function syncSource(source: RewardKpiSource): Promise<SyncResult> {
   result.details.push(`Syncing since: ${since.toISOString()}`);
 
   try {
-    const logToDetails = (msg: string) => result.details.push(msg);
+    const logToDetails = (msg: string) => {
+      result.details.push(msg);
+      if (onProgress) onProgress(msg);
+    };
     const dataPoints = await provider.fetchMetrics(source, since, logToDetails);
     result.dataPointsFetched = dataPoints.length;
     result.details.push(`Fetched ${dataPoints.length} data points from ${source.type}`);
@@ -182,12 +185,12 @@ export function stopRewardsSyncScheduler() {
 }
 
 // Manual sync trigger for a specific source
-export async function triggerManualSync(sourceId: number): Promise<SyncResult> {
+export async function triggerManualSync(sourceId: number, onProgress?: (msg: string) => void): Promise<SyncResult> {
   const source = await storage.getRewardKpiSourceById(sourceId);
   if (!source) {
     throw new Error('Source not found');
   }
-  return syncSource(source);
+  return syncSource(source, onProgress);
 }
 
 // ---- Recalculation logic ----
@@ -384,7 +387,10 @@ export interface SyncJob {
   status: 'running' | 'completed' | 'failed';
   startedAt: number;
   result: SyncResult | null;
+  progress: string[];
 }
+
+const MAX_PROGRESS_LINES = 500;
 
 const activeSyncJobs = new Map<string, SyncJob>();
 
@@ -403,11 +409,19 @@ export function startBackgroundSync(sourceId: number): SyncJob {
     status: 'running',
     startedAt: Date.now(),
     result: null,
+    progress: [],
   };
   activeSyncJobs.set(jobId, job);
 
+  const pushProgress = (msg: string) => {
+    job.progress.push(`[${new Date().toISOString().slice(11, 19)}] ${msg}`);
+    if (job.progress.length > MAX_PROGRESS_LINES) {
+      job.progress.splice(0, job.progress.length - MAX_PROGRESS_LINES);
+    }
+  };
+
   // Run sync in background (fire-and-forget)
-  triggerManualSync(sourceId)
+  triggerManualSync(sourceId, pushProgress)
     .then((result) => {
       job.status = 'completed';
       job.result = result;
@@ -436,6 +450,7 @@ export function startBackgroundRecalculation(sourceId: number, metricIds?: numbe
     status: 'running',
     startedAt: Date.now(),
     result: null,
+    progress: [],
   };
   activeSyncJobs.set(jobId, job);
 

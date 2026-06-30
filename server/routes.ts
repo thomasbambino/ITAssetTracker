@@ -4807,7 +4807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!job) {
       return res.status(404).json({ message: 'Sync job not found' });
     }
-    res.json({ jobId: job.id, status: job.status, result: job.result });
+    res.json({ jobId: job.id, status: job.status, result: job.result, progress: job.progress, startedAt: job.startedAt });
   });
 
   // Fetch available Zendesk groups for a source (helps admin validate group IDs)

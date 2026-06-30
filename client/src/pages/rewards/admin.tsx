@@ -271,6 +271,9 @@ export default function RewardsAdmin() {
 
   // Sync tracking state
   const [syncingSourceId, setSyncingSourceId] = useState<number | null>(null);
+  const [syncProgress, setSyncProgress] = useState<string[]>([]);
+  const [syncProgressOpen, setSyncProgressOpen] = useState(false);
+  const [syncProgressTitle, setSyncProgressTitle] = useState<string>('');
 
   // Dialog state
   const [sourceDialog, setSourceDialog] = useState(false);
@@ -346,19 +349,27 @@ export default function RewardsAdmin() {
 
   // Poll a sync job until it completes
   const pollSyncJob = (jobId: string, sourceName: string) => {
+    setSyncProgress([]);
+    setSyncProgressTitle(`Syncing — ${sourceName}`);
+    setSyncProgressOpen(true);
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/rewards/sync-jobs/${jobId}`, { credentials: 'include' });
         if (!res.ok) {
           clearInterval(interval);
           setSyncingSourceId(null);
+          setSyncProgressOpen(false);
           toast({ title: "Sync failed", description: `Error polling sync status`, variant: "destructive" });
           return;
         }
         const data = await res.json();
+        if (Array.isArray(data.progress)) {
+          setSyncProgress(data.progress);
+        }
         if (data.status === 'completed' || data.status === 'failed') {
           clearInterval(interval);
           setSyncingSourceId(null);
+          setSyncProgressOpen(false);
           invalidateAll();
           if (data.result) {
             data.result.sourceName = data.result.sourceName || sourceName;
@@ -374,6 +385,7 @@ export default function RewardsAdmin() {
       } catch {
         clearInterval(interval);
         setSyncingSourceId(null);
+        setSyncProgressOpen(false);
         toast({ title: "Sync failed", description: "Lost connection while syncing", variant: "destructive" });
       }
     }, 2000); // Poll every 2 seconds
@@ -1554,6 +1566,28 @@ export default function RewardsAdmin() {
             <Button variant="outline" onClick={() => { setCatalogDialog(false); resetForm(); }}>Cancel</Button>
             <Button onClick={() => catalogMutation.mutate({ ...formData, _editId: editItem?.id })} disabled={catalogMutation.isPending}>Save</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Live Sync Progress Dialog */}
+      <Dialog open={syncProgressOpen} onOpenChange={() => { /* cannot close while running */ }}>
+        <DialogContent className="max-w-2xl" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 animate-spin" style={{ animationDuration: '2s' }} />
+              {syncProgressTitle}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-96 overflow-y-auto rounded border bg-muted/30 p-3 font-mono text-xs space-y-1">
+            {syncProgress.length === 0 ? (
+              <p className="text-muted-foreground">Waiting for first progress update…</p>
+            ) : (
+              syncProgress.map((line, i) => (
+                <div key={i} className="whitespace-pre-wrap break-words">{line}</div>
+              ))
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">This dialog will close automatically when the sync finishes.</p>
         </DialogContent>
       </Dialog>
 
