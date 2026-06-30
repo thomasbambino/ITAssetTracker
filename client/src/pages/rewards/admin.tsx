@@ -275,6 +275,9 @@ export default function RewardsAdmin() {
   const [syncProgressOpen, setSyncProgressOpen] = useState(false);
   const [syncProgressTitle, setSyncProgressTitle] = useState<string>('');
 
+  // Dedupe confirmation
+  const [dedupeConfirmOpen, setDedupeConfirmOpen] = useState(false);
+
   // Dialog state
   const [sourceDialog, setSourceDialog] = useState(false);
   const [metricDialog, setMetricDialog] = useState(false);
@@ -448,6 +451,24 @@ export default function RewardsAdmin() {
       toast({ title: "Data cleared", description: data.message || "All points data deleted for this source." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const dedupeMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest({ url: `/api/rewards/dedupe-points-log`, method: 'POST' });
+    },
+    onSuccess: (data: any) => {
+      invalidateAll();
+      setDedupeConfirmOpen(false);
+      toast({
+        title: "Dedupe complete",
+        description: `Deleted ${data.duplicateRowsDeleted} duplicate rows, rebuilt ${data.balancesRebuilt} balances.`,
+      });
+    },
+    onError: (e: any) => {
+      setDedupeConfirmOpen(false);
+      toast({ title: "Dedupe failed", description: e.message, variant: "destructive" });
+    },
   });
 
   // Helpers
@@ -1253,8 +1274,62 @@ export default function RewardsAdmin() {
               )}
             </CardContent>
           </Card>
+
+          <Card className="mt-4 border-destructive/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eraser className="h-4 w-4 text-destructive" /> Maintenance
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Repair tools for the rewards database. Use with care — destructive operations are not reversible.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-md border p-3">
+                <p className="text-sm font-medium">Dedupe points log &amp; rebuild balances</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Removes duplicate <code className="text-[11px]">reward_points_log</code> rows that share the same
+                  <code className="text-[11px]"> reference_id</code> (keeps the oldest of each) and recomputes every
+                  user's <code className="text-[11px]">reward_balances</code> from the cleaned log. Safe to run more
+                  than once.
+                </p>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => setDedupeConfirmOpen(true)}
+                  disabled={dedupeMutation.isPending}
+                >
+                  <Eraser className="h-4 w-4 mr-1" /> {dedupeMutation.isPending ? 'Running…' : 'Dedupe & Rebuild'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dedupe Confirmation */}
+      <AlertDialog open={dedupeConfirmOpen} onOpenChange={setDedupeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dedupe points log &amp; rebuild balances?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete duplicate rows from <code>reward_points_log</code> (keeping the oldest of
+              each <code>reference_id</code>) and overwrite every user's cached <code>reward_balances</code> totals
+              from the cleaned log. This cannot be undone — take a database backup first if you're not sure.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={dedupeMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); dedupeMutation.mutate(); }}
+              disabled={dedupeMutation.isPending}
+            >
+              {dedupeMutation.isPending ? 'Running…' : 'Run dedupe'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ==================== DIALOGS (outside tabs, stable) ==================== */}
 
